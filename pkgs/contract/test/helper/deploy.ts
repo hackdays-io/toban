@@ -1,2 +1,2 @@
-export * from "../../ignition/modules/Splits";
-export * from "../../ignition/modules/Hats";
+export * from "../../scripts/modules/Splits";
+export * from "../../scripts/modules/Hats";

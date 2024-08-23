@@ -1,37 +1,40 @@
-import { ethers } from "hardhat"
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
-import { parseEther } from "ethers"
-import { PullSplitFactory, PushSplitFactory, SplitsWarehouse } from "../typechain-types"
+import {ethers} from "hardhat";
+import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers";
+import {parseEther} from "ethers";
+import {
+  PullSplit,
+  PullSplitFactory,
+  PushSplitFactory,
+  SplitsWarehouse,
+} from "../typechain-types";
+import {deploySplitsProtocol} from "./helper/deploy";
+import {expect} from "chai";
 
 describe("Splits", () => {
-  let SplitsWarehouse: SplitsWarehouse
-  let PullSplitsFactory: PullSplitFactory
-  let PushSplitsFactory: PushSplitFactory
+  let SplitsWarehouse: SplitsWarehouse;
+  let PullSplitsFactory: PullSplitFactory;
+  let PushSplitsFactory: PushSplitFactory;
+  let DeployedPullSplit: PullSplit;
 
-  let address1: SignerWithAddress
-  let address2: SignerWithAddress
+  let address1: SignerWithAddress;
+  let address2: SignerWithAddress;
 
   before(async () => {
-    const warehouseFactory = await ethers.getContractFactory("SplitsWarehouse")
-    SplitsWarehouse = await warehouseFactory.deploy("ETH", "ETH")
-    await SplitsWarehouse.waitForDeployment()
+    const {
+      SplitsWarehouse: _SplitsWarehouse,
+      PullSplitsFactory: _PullSplitsFactory,
+      PushSplitsFactory: _PushSplitsFactory,
+    } = await deploySplitsProtocol();
 
-    const pullFactory = await ethers.getContractFactory("PullSplitFactory")
-    PullSplitsFactory = await pullFactory.deploy(
-      await SplitsWarehouse.getAddress()
-    )
+    SplitsWarehouse = _SplitsWarehouse;
+    PullSplitsFactory = _PullSplitsFactory;
+    PushSplitsFactory = _PushSplitsFactory;
 
-    const pushFactory = await ethers.getContractFactory("PushSplitFactory")
-    PushSplitsFactory = await pushFactory.deploy(
-      await SplitsWarehouse.getAddress()
-    )
-    ;[address1, address2] = await ethers.getSigners()
-  })
+    [address1, address2] = await ethers.getSigners();
+  });
 
-  it("should return the correct splits", async () => {
-    const address2Before = await ethers.provider.getBalance(address2.address)
-    console.log("Address 2 Balance Before: ", address2Before.toString())
-
+  it("should create PullSplits contract", async () => {
+    // address1とaddress2に50%ずつ配分するSplitを作成
     const split = await PullSplitsFactory.createSplit(
       {
         recipients: [address1.address, address2.address],
@@ -41,24 +44,37 @@ describe("Splits", () => {
       },
       address1.address,
       address1.address
-    )
+    );
 
-    const splitResult = await split.wait()
+    const splitResult = await split.wait();
 
     const splitAddress = (
       splitResult?.logs.find(
         (l: any) => l.fragment?.name === "SplitCreated"
       ) as any
-    ).args[0]
+    ).args[0];
 
+    DeployedPullSplit = await ethers.getContractAt("PullSplit", splitAddress);
+  });
+
+  it("Should destribute", async () => {
+    expect(
+      await ethers.provider.getBalance(await DeployedPullSplit.getAddress())
+    ).equal(0);
+
+    // Splitコントラクトに1ETH送金
     await address1.sendTransaction({
-      to: splitAddress,
+      to: await DeployedPullSplit.getAddress(),
       value: parseEther("1"),
-    })
+    });
 
-    const splitter = await ethers.getContractAt("PullSplit", splitAddress)
+    const beforeAddress2Balance = await ethers.provider.getBalance(
+      address2.address
+    );
 
-    await splitter[
+    // Distributeを実行
+    // Nativeトークンのアドレスが0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEらしい
+    let tx = await DeployedPullSplit[
       "distribute((address[],uint256[],uint256,uint16),address,address)"
     ](
       {
@@ -69,15 +85,23 @@ describe("Splits", () => {
       },
       "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
       address1.address
-    )
+    );
 
+    await tx.wait();
+
+    // withdrawを実行
     await SplitsWarehouse.connect(address2)["withdraw(address,address)"](
       address2.address,
       "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-    )
+    );
 
-    const address2Balance = await ethers.provider.getBalance(address2.address)
+    const afterAddress2Balance = await ethers.provider.getBalance(
+      address2.address
+    );
 
-    console.log("Split Balance: ", address2Balance.toString())
-  })
-})
+    // withdrawのガス代を引いて大体0.5ETH増えているはず
+    expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance)).gt(
+      499900000000000000
+    );
+  });
+});

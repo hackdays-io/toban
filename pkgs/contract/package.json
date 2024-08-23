@@ -1,6 +1,11 @@
 {
   "name": "contract",
   "version": "1.0.0",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "start": "node dist/index.js"
+  },
   "private": true,
   "main": "index.js",
   "license": "MIT",

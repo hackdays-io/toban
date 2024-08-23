@@ -4,6 +4,10 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// TODO: balanceの改修
+// ロールを持っているかどうか→isWearOfで見る
+// かつBalanceが0の場合→Fractionのbaanceを見る
+
 contract FractionToken is ERC1155, Ownable {
     uint256 public constant TOKEN_SUPPLY = 10000;
     mapping(uint256 => address[]) private tokenRecipients;

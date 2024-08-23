@@ -2,21 +2,8 @@ import SampleForwarderJson from "@/contracts/SampleForwarder.sol/SampleForwarder
 import { FORWARDER_CONTRACT_ADDRESS } from "@/lib/constants";
 import { getUint48 } from "@/lib/utils";
 import { RPC_URLS } from "@/lib/web3";
-import { ForwardRequest } from "@/types";
+import { ForwardRequest, NetworkNames } from "@/types";
 import { Contract, ethers } from "ethers";
-
-type NetworkNames = {
-  [key in 1 | 10 | 137 | 8453 | 42161 | 11155111]: string;
-};
-
-const networkNames: NetworkNames = {
-  1: 'Ethereum Mainnet',
-  10: 'Optimism',
-  137: 'Polygon',
-  8453: 'Base',
-  42161: 'Arbitrum',
-  11155111: 'Sepolia'
-};
 
 /**
  * Forwarderコントラクトインスタンスを作成するメソッド
@@ -100,9 +87,9 @@ export const createTypedSignData = async(
     message: {
       from: accountAddress!.toString(),
       to: contractAddress.toString(),
-      value: 0,
-      gas: 360000,
-      nonce: nonce,
+      value: (0).toString(),
+      gas: (360000).toString(),
+      nonce: nonce.toString(),
       //deadline: uint48Time.toString(),
       data: encodedData.toString(),
     },

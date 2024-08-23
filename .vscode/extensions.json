@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "PKief.material-icon-theme",
+    "tamasfe.even-better-toml",
+    "NomicFoundation.hardhat-solidity",
+    "tintinweb.solidity-visual-auditor"
+  ]
+}

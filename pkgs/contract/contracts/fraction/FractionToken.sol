@@ -5,11 +5,6 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {Hats} from "./Hats.sol";
 
-// TODO: balanceの改修
-// ロールを持っているかどうか→isWearOfで見るかつBalanceが0の場合→Fractionのbaanceを見る　trueなら10k3
-// ロールを持っているかつbalanceがそれ以上の時はそのまま
-// ロールを持っていない場合はbalanceそのまま
-
 contract FractionToken is ERC1155, Ownable, Hats {
     uint256 public constant TOKEN_SUPPLY = 10000;
     mapping(uint256 => address[]) private tokenRecipients;

@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
 
 // npx hardhat run ignition/modules/FractionToken.ts --network sepolia
-// npx hardhat verify --network sepolia 0x9b77A0cb4843dFAb108997928C840484C5247589 https://lime-giant-dove-621.mypinata.cloud/ipfs/QmWgN2Z4jTz9c9Yw9YSAp7KZJcoCU47qPwPS6hp6xQQZDY
+// npx hardhat verify --network sepolia 0xe512bD5060E900C6B23afC9A276F7012B1C65510 https://lime-giant-dove-621.mypinata.cloud/ipfs/QmWgN2Z4jTz9c9Yw9YSAp7KZJcoCU47qPwPS6hp6xQQZDY
 async function main() {
   const FractionToken = await ethers.getContractFactory("FractionToken");
   const uri = "https://lime-giant-dove-621.mypinata.cloud/ipfs/QmWgN2Z4jTz9c9Yw9YSAp7KZJcoCU47qPwPS6hp6xQQZDY"

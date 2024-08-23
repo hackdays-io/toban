@@ -11,14 +11,16 @@ import { Contract } from "ethers";
  */
 const getRelayer = async () => {
   const credentials: any = {
-    apiKey: process.env.DEFENDER_API_KEY,
-    apiSecret: process.env.DEFENDER_SECRET_KEY,
+    apiKey: process.env.NEXT_PUBLIC_DEFENDER_API_KEY,
+    apiSecret: process.env.NEXT_PUBLIC_DEFENDER_SECRET_KEY,
   };
 
   const ozProvider = new DefenderRelayProvider(credentials);
   const ozSigner = new DefenderRelaySigner(credentials, ozProvider, {
     speed: "fast",
   });
+
+  console.log("ozSigner:", await ozSigner.getAddress());
 
   return ozSigner;
 };
@@ -27,12 +29,16 @@ const getRelayer = async () => {
  * requestRelayer API
  * @param requestData
  */
-export async function POST(requestData: any) {
-  // リクエストデータを取得する
-  const request = requestData?.request;
-  console.log("request:", request);
+export async function POST(
+  req: any
+)  {
+  // let res:any;
+  // リクエストのJSONデータをパース
+  const { typedSignData, signature } = await req.json();
+  console.log("typedSignData:", typedSignData);
+  console.log("signature:", signature);
 
-  if (request === undefined) {
+  if (typedSignData === undefined || signature === undefined) {
     return new Response("Request has no request", {
       status: 503,
     });
@@ -47,36 +53,43 @@ export async function POST(requestData: any) {
     relayer
   ) as any;
 
-  // レスポンスデータ用のメソッド
-  let res: any;
-
   try {
+    // create meta transaction request data
+    const requestData = {
+      req:{
+        from: typedSignData.message.from,
+        to: typedSignData.message.to,
+        value: typedSignData.message.value,
+        gas: typedSignData.message.gas,
+        nonce: typedSignData.message.nonce,
+        data: typedSignData.message.data,
+      },
+      signature: signature,
+    }
     // call verify method
-    const result = await forwarder.verify(request);
-    console.log(result);
+    const result = await forwarder.verify(requestData.req, requestData.signature);
+    console.log("verify result:", result);
     if (!result) throw "invalid request data!";
 
     // call execute method from relayer
-    const result2 = await forwarder.execute(request);
+    const result2 = await forwarder.execute(requestData.req, requestData.signature);
 
     console.log("tx hash:", result2.hash);
 
     console.log(
       " ========================================= [RequestRaler: END] =============================================="
     );
-    res.setHeader("Content-Type", "text/json");
-    res.status(200).json({
+   
+    return new Response(JSON.stringify({ 
       result: "ok",
-      txHash: result2.hash,
-    });
+      txHash: result2.hash
+    }));
   } catch (error) {
     console.error("Error requestRelayer :", error);
     console.log(
       " ========================================= [RequestRaler: END] =============================================="
     );
-    res.setHeader("Content-Type", "text/json");
-    res.status(501).json({
-      result: "failed",
-    });
+    
+    return new Response(JSON.stringify({ result: "failed" }))
   }
 }

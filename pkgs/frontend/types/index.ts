@@ -41,3 +41,7 @@ export const ForwardRequest = [
   //{name: "deadline", type: "uint48"},
   {name: "data", type: "bytes"},
 ];
+
+export type NetworkNames = {
+  [key in 1 | 10 | 137 | 8453 | 42161 | 11155111]: string;
+};

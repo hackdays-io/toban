@@ -21,8 +21,8 @@ const additionalWallets = [
 			iconUrl: "https://wallet.intmax.io/favicon.ico",
 		},
 		metadata: {
-			name: "Rainbow-Kit Demo",
-			description: "Rainbow-Kit Demo",
+			name: "INTMAX Wallet",
+			description: "INTMAX Wallet",
 			icons: ["https://intmaxwallet-sdk-wallet.vercel.app/vite.svg"],
 		},
 	}),
@@ -44,7 +44,7 @@ export const explorerUrl = (chainId?: number) =>
 const connectors = connectorsForWallets(
   [
     {
-      groupName: "IntmaxWalletSDK",
+      groupName: "IntmaxWallet",
       wallets: additionalWallets,
     },
     /*
@@ -55,7 +55,7 @@ const connectors = connectorsForWallets(
     */
   ],
   {
-    appName: 'Create Hats Next App',
+    appName: 'toban',
     projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '',
   }
 );
@@ -86,7 +86,7 @@ export const RPC_URLS = {
 
 export const wagmiConfig = createConfig({
   connectors,
-  chains: [mainnet, optimism, base, arbitrum, polygon, sepolia],
+  chains: [sepolia,mainnet, optimism, base, arbitrum, polygon],
   storage,
   ssr: true, // If your dApp uses server side rendering (SSR)
   transports: {

@@ -19,3 +19,10 @@ export const deploySplitsProtocol = async () => {
 
   return {SplitsWarehouse, PullSplitsFactory, PushSplitsFactory};
 };
+
+export const deploySplitCreator = async (splitFactoryAddress: string) => {
+  const splitCreatorFactory = await ethers.getContractFactory("SplitCreator");
+  const SplitCreator = await splitCreatorFactory.deploy(splitFactoryAddress);
+
+  return {SplitCreator};
+};

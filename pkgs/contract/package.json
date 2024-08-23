@@ -3,5 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.9"
+  }
 }

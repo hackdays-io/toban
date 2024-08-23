@@ -1,4 +1,5 @@
 import '@rainbow-me/rainbowkit/styles.css';
+import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
 import { Toaster } from 'sonner';
@@ -6,6 +7,11 @@ import { Toaster } from 'sonner';
 import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'Create Hats Next App',
+  description: 'Create Hats Next App',
+};
 
 export default function RootLayout({
   children,

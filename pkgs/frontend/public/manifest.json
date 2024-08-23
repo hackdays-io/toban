@@ -4,9 +4,9 @@
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
-  "name": "toban",
-  "short_name": "toban",
-  "description": "toban",
+  "name": "sample-frontend",
+  "short_name": "sample-frontend",
+  "description": "sample-frontend",
   "icons": [
     {
       "src": "/hats-logo2.png",

@@ -49,7 +49,7 @@ contract FractionToken is ERC1155, Ownable {
     function _hasHatRole(
         address wearer,
         uint256 hatId
-    ) public view returns (bool) {
+    ) private view returns (bool) {
         uint256 balance = hatsContract.balanceOf(wearer, hatId);
         return balance > 0;
     }
@@ -72,24 +72,5 @@ contract FractionToken is ERC1155, Ownable {
         }
 
         return erc1155Balance;
-    }
-
-    function balanceOfBatch(
-        address[] memory accounts,
-        uint256[] memory ids
-    ) public view override(ERC1155) returns (uint256[] memory) {
-        uint256[] memory balances = new uint256[](accounts.length);
-
-        for (uint256 i = 0; i < accounts.length; i++) {
-            balances[i] = balanceOf(accounts[i], ids[i]);
-        }
-
-        return balances;
-    }
-
-    function uri(
-        uint256 tokenId
-    ) public view override(ERC1155) returns (string memory) {
-        return super.uri(tokenId);
     }
 }

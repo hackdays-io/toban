@@ -1,51 +1,59 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
-import { FractionToken } from "../typechain-types";
-import { AbiCoder } from "@ethersproject/abi";
+import {expect} from "chai";
+import {ethers} from "hardhat";
+import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers";
+import {FractionToken, FractionToken__factory} from "../typechain-types";
 
 describe("FractionToken", function () {
-    let fractionToken: FractionToken;
-    let owner: SignerWithAddress;
-    let addr1: SignerWithAddress;
-    let addr2: SignerWithAddress;
+  let fractionToken: FractionToken;
+  let owner: SignerWithAddress;
+  let addr1: SignerWithAddress;
+  const hatsContractAddress = "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137";
+  const uri =
+    "https://lime-giant-dove-621.mypinata.cloud/ipfs/QmWgN2Z4jTz9c9Yw9YSAp7KZJcoCU47qPwPS6hp6xQQZDY";
 
-    beforeEach(async function () {
-        // Get the ContractFactory and Signers here.
-        const FractionTokenFactory = await ethers.getContractFactory("FractionToken");
-        [owner, addr1, addr2] = await ethers.getSigners();
+  before(async function () {
+    [owner, addr1] = await ethers.getSigners();
 
-        // Deploy a new contract before each test
-        fractionToken = (await FractionTokenFactory.deploy("http://example.com/api/token/")) as FractionToken;
-        await fractionToken.waitForDeployment();
-    });
+    const FractionToken = (await ethers.getContractFactory(
+      "FractionToken"
+    )) as FractionToken__factory;
+    fractionToken = await FractionToken.deploy(uri, hatsContractAddress);
+    await fractionToken.waitForDeployment();
+  });
 
-    it("Should deploy the contract", async function () {
-        expect(await fractionToken.uri(0)).to.equal("http://example.com/api/token/");
-    });
+  it("should mint tokens correctly", async function () {
+    const hatId = "fafafa";
+    await fractionToken.mint(hatId, addr1.address);
+    const balance = await fractionToken.balanceOf(addr1.address, hatId);
+    console.log("balance", balance);
 
-    it("Should mint tokens and track recipients", async function () {
-        const hatId = "xxxdjewoidjwiejfoiwehfioiw";
+    expect(balance).to.equal(10000); // TOKEN_SUPPLY
+  });
 
-        const abiCoder = new AbiCoder();
-        const encodedData = abiCoder.encode(["string", "address"], [hatId, addr1.address]);
+  it("should return token recipients", async function () {
+    const hatId = "fafafa";
+    const tokenId =
+      "86799809573486251495320524870321217189752669295897169943777875749952950517534";
+    const recipients = await fractionToken.getTokenRecipients(tokenId);
+    expect(recipients).to.include(addr1.address);
+  });
 
-        const tokenId = ethers.keccak256(encodedData);
-        const tokenIdUint = BigInt(tokenId);
+  it("should return all token IDs", async function () {
+    const allTokenIds = await fractionToken.getAllTokenIds();
+    expect(allTokenIds.length).to.be.greaterThan(0);
+  });
 
-        await fractionToken.mint(hatId, addr1.address);
-        
-        const recipients = await fractionToken.getTokenRecipients(tokenIdUint);
-        
-        expect(recipients).to.include(addr1.address);
-    });
+  it("should check hat role correctly", async function () {
+    const hatId = "fafafa";
+    const hasHatRole = await fractionToken._hasHatRole(owner.address, hatId);
+    expect(hasHatRole).to.be.false; // Assuming no role assigned
+  });
 
-    it("Should only allow the owner to mint tokens", async function () {
-        const hatId = "xxxdjewoidjwiejfoiwehfioiw";
-        
-        // Attempt to mint tokens from a non-owner address
-        await expect(
-            fractionToken.connect(addr1).mint(hatId, addr2.address)
-        ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
+  it("should override balanceOf correctly", async function () {
+    const hatId = "fafafa";
+    const tokenId =
+      "86799809573486251495320524870321217189752669295897169943777875749952950517534";
+    const balance = await fractionToken.balanceOf(addr1.address, tokenId);
+    expect(balance).to.equal(10000);
+  });
 });

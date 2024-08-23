@@ -2,10 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {Hats} from "../hats/src/Hats.sol";
+import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {Hats} from "./Hats.sol";
 
-contract FractionToken is ERC1155, Ownable, Hats {
+contract FractionToken is ERC1155, Hats, Ownable {
     uint256 public constant TOKEN_SUPPLY = 10000;
     mapping(uint256 => address[]) private tokenRecipients;
     uint256[] private allTokenIds;

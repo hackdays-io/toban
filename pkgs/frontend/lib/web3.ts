@@ -95,7 +95,8 @@ export const RPC_URLS = {
   [polygon.id]: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
   [base.id]: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
   [arbitrum.id]: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
-  [sepolia.id]: `https://gateway-api.cabinet-node.com/${CABINET_ACCESS_TOKEN}`,
+  // [sepolia.id]: `https://gateway-api.cabinet-node.com/${CABINET_ACCESS_TOKEN}`,
+  [sepolia.id]: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_ID}`,
 };
 
 export const wagmiConfig = createConfig({

@@ -1,10 +1,21 @@
 "use client";
 
 import Toaster from "@/components/Toaster";
-import { Box, Button, Container, Heading, Image, Stack, Text, FormLabel, Input, Textarea } from "@chakra-ui/react";
-import { useRouter } from "next/navigation"; // useRouter をインポート
+import {
+  Box,
+  Button,
+  Container,
+  Heading,
+  Image,
+  Stack,
+  Text,
+  FormLabel,
+  Input,
+  Textarea,
+} from "@chakra-ui/react";
+import {useRouter} from "next/navigation"; // useRouter をインポート
 import Header from "@/components/Header";
-import { Controller, useForm } from "react-hook-form"; 
+import {Controller, useForm} from "react-hook-form";
 
 type FormData = {
   name: string;
@@ -14,7 +25,7 @@ type FormData = {
 export default function Home() {
   const router = useRouter(); // useRouter フックを使用
 
-  const { control, handleSubmit } = useForm<FormData>({
+  const {control, handleSubmit} = useForm<FormData>({
     defaultValues: {
       name: "",
       description: "",
@@ -80,7 +91,7 @@ export default function Home() {
         />
       </Box>
 
-      <Container textAlign="center" zIndex="2" mt="100px" pb="100px">
+      <Container textAlign="center" zIndex="2" mt="50px" pb="100px">
         <form onSubmit={handleSubmit(submit)}>
           <Stack spacing={4} width="full">
             <Box>
@@ -88,7 +99,7 @@ export default function Home() {
               <Controller
                 control={control}
                 name="name"
-                render={({ field }) => (
+                render={({field}) => (
                   <Input
                     value={field.value}
                     onChange={field.onChange}
@@ -104,7 +115,7 @@ export default function Home() {
               <Controller
                 control={control}
                 name="description"
-                render={({ field }) => (
+                render={({field}) => (
                   <Textarea
                     value={field.value}
                     onChange={field.onChange}
@@ -115,14 +126,20 @@ export default function Home() {
               />
             </Box>
 
-            <Button width="full" bg="yellow.400" size="lg" type="submit">
+            <Button
+              mt={10}
+              width="full"
+              bg="yellow.400"
+              size="lg"
+              type="submit"
+            >
               Create New Project
             </Button>
           </Stack>
         </form>
 
         {/* ページ遷移用のボタン */}
-        <Button
+        {/* <Button
           width="full"
           bg="black"
           color="white"
@@ -166,7 +183,7 @@ export default function Home() {
           onClick={() => navigateTo("/SplitterCreation")}
         >
           SplitterCreation
-        </Button>
+        </Button> */}
       </Container>
       <Toaster />
     </Box>

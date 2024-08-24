@@ -74,9 +74,6 @@ export const useGetHats = (topHatId: string) => {
         (hat) => hat.prettyId?.split(".").length === 3
       );
 
-      console.log("topHat:", topHat);
-      console.log("hatterHat:", hatterHat);
-
       const topCid = removeIpfsPrefix(topHat?.details || "");
       const hatterCid = removeIpfsPrefix(hatterHat?.details || "");
       const roleCids = roleHats?.map((hat) => {

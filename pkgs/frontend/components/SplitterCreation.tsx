@@ -1,6 +1,8 @@
 "use client";
 
 import SplitCreatorJson from "@/contracts/SplitCreator.sol/SplitCreator.json";
+import {useGetHats} from "@/hooks/useHatRead";
+import useSplitCreatorWrite from "@/hooks/useSplitCreatorWrite";
 import useSplitsRead from "@/hooks/useSplitsRead";
 import {SPLIT_CREATOR_CONTRACT_ADDRESS} from "@/lib/constants";
 import {createTypedSignData} from "@/lib/metaTransaction";
@@ -19,6 +21,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import {ethers} from "ethers";
+import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {toast} from "react-toastify";
 import {useAccount, useChainId, useSignTypedData} from "wagmi";
@@ -29,7 +32,7 @@ function SplitterCreation() {
 
   const [splitName, setSplitName] = useState("");
   const [selectedRoles, setSelectedRoles] = useState({
-    food: {selected: true, multiplier: 2},
+    food: {selected: true, multiplier: 1},
     cleaning: {selected: true, multiplier: 1},
     committee: {selected: false, multiplier: 1},
   });
@@ -44,6 +47,9 @@ function SplitterCreation() {
   const chainId = useChainId();
   const {signTypedDataAsync} = useSignTypedData();
 
+  const {hatId} = useParams();
+  const {roleHats} = useGetHats(hatId.toString());
+
   const {getRelatedSplits, relatedSplits} = useSplitsRead();
 
   // MetaTransactionを送信するメソッド
@@ -51,11 +57,23 @@ function SplitterCreation() {
     let result: any;
     // @todo リョーマさんに引数を準備してもらう。
     const splitData = [
-      1,
-      1,
-      10,
-      ["0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"],
+      {
+        hatId:
+          "13803493104969821108641795624824018123086259522856944229608942353776640",
+        multiplierBottom: 1,
+        multiplierTop: 1,
+        wearers: [
+          "0x777EE5eeEd30c3712bEE6C83260D786857d9C556",
+          "0x60C7C2A24b5e86C38639Fd1586917a8FEF66a56d",
+        ],
+      },
     ];
+    // [
+    //   1,
+    //   1,
+    //   10,
+    //   ["0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"],
+    // ];
     // create typed sign data
     const typedSignData: any = await createTypedSignData(
       address,
@@ -67,9 +85,8 @@ function SplitterCreation() {
     );
     // sign
     const signature = await signTypedDataAsync(typedSignData);
-    console.log("signature", signature);
     // send meta transaction
-    await fetch("api/requestRelayer", {
+    await fetch("/api/requestRelayer", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -120,6 +137,27 @@ function SplitterCreation() {
     setIsConfirmed(true);
   };
 
+  // const {writeAsync, isLoading} = useSplitCreatorWrite({
+  //   functionName: "create",
+  //   args: [
+  //     [
+  //       {
+  //         hatId:
+  //           "13803493104969821108641795624824018123086259522856944229608942353776640",
+  //         multiplierBottom: 1,
+  //         multiplierTop: 1,
+  //         wearers: [
+  //           "0x777EE5eeEd30c3712bEE6C83260D786857d9C556",
+  //           "0x60C7C2A24b5e86C38639Fd1586917a8FEF66a56d",
+  //         ],
+  //       },
+  //     ],
+  //   ] as any,
+  //   chainId: chainId,
+  //   onErrorToastData: {title: "Failed to create split"},
+  //   enabled: true,
+  // });
+
   /**
    * splitを作成するメソッド
    */
@@ -127,28 +165,29 @@ function SplitterCreation() {
     try {
       // Spliteをガスレスで作成する。
       const result = await sendMetaTx();
+      // const result = await writeAsync();
       // @ts-ignore
       const rpcUrl = RPC_URLS[chainId];
 
-      // provider
-      const provider = new ethers.JsonRpcProvider(rpcUrl);
-      const txData = await provider.getTransactionReceipt(result.txHash);
-      console.log("txData:", txData);
+      // // provider
+      // const provider = new ethers.JsonRpcProvider(rpcUrl);
+      // const txData = await provider.getTransactionReceipt(result.txHash);
+      // console.log("txData:", txData);
 
       // ENSのサブドメインとsplitのアドレスを紐づける。
-      await fetch("api/setAddr", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          txData: txData,
-          addr: address, // splitのアドレスを渡す。
-        }),
-      }).then(async (result) => {
-        // APIリクエストのリザルトをJSONとして解析
-        console.log("API response:", await result.json());
-      });
+      // await fetch("/api/setAddr", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     txData: txData,
+      //     addr: address, // splitのアドレスを渡す。
+      //   }),
+      // }).then(async (result) => {
+      //   // APIリクエストのリザルトをJSONとして解析
+      //   console.log("API response:", await result.json());
+      // });
 
       toast.success("🦄 Success!", {
         position: "top-right",
@@ -213,26 +252,28 @@ function SplitterCreation() {
             />
           </FormControl>
 
-          <Box>
-            <FormControl id="food-role">
-              <Checkbox
-                isChecked={selectedRoles.food.selected}
-                onChange={() => handleRoleChange("food")}
-              >
-                Food
-              </Checkbox>
-              <NumberInput
-                value={selectedRoles.food.multiplier}
-                onChange={(valueString) =>
-                  handleMultiplierChange("food", parseInt(valueString))
-                }
-                min={1}
-                mt={2}
-              >
-                <NumberInputField />
-              </NumberInput>
-            </FormControl>
-          </Box>
+          {roleHats?.map((roleHat) => (
+            <Box>
+              <FormControl id="food-role">
+                <Checkbox
+                  isChecked={selectedRoles.food.selected}
+                  onChange={() => handleRoleChange(roleHat.id)}
+                >
+                  {roleHat.parsedData.parsedData.data?.name}
+                </Checkbox>
+                <NumberInput
+                  value={selectedRoles.food.multiplier}
+                  onChange={(valueString) =>
+                    handleMultiplierChange("food", parseInt(valueString))
+                  }
+                  min={1}
+                  mt={2}
+                >
+                  <NumberInputField />
+                </NumberInput>
+              </FormControl>
+            </Box>
+          ))}
 
           <Box>
             <FormControl id="cleaning-role">

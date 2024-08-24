@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Button, Center, Flex, Heading, Spacer } from '@chakra-ui/react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import HatList from '../../components/HatList';
@@ -38,6 +39,7 @@ export default function ProjectTop() {
                 <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
                     <Heading size="md" color="white">Project Top</Heading>
                     <Spacer />
+                    <ConnectButton />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
                         Back to Main Page
                     </Button>

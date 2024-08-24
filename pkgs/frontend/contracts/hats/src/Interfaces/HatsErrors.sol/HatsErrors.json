@@ -1,0 +1,150 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "HatsErrors",
+  "sourceName": "contracts/hats/src/Interfaces/HatsErrors.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "hatId",
+          "type": "uint256"
+        }
+      ],
+      "name": "AllHatsWorn",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "wearer",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "hatId",
+          "type": "uint256"
+        }
+      ],
+      "name": "AlreadyWearingHat",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BatchArrayLengthMismatch",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CircularLinkage",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CrossTreeLinkage",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "hatId",
+          "type": "uint256"
+        }
+      ],
+      "name": "HatDoesNotExist",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "HatNotActive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Immutable",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidHatId",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidUnlink",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "LinkageNotRequested",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MaxLevelsReached",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NewMaxSupplyTooLow",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "hatId",
+          "type": "uint256"
+        }
+      ],
+      "name": "NotAdmin",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAdminOrWearer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotEligible",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotHatWearer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotHatsEligibility",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotHatsToggle",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "StringTooLong",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

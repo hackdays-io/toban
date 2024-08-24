@@ -1,7 +1,7 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import { Box, Button, Flex, Heading, Spacer, Text, VStack, useTheme } from '@chakra-ui/react';
-import Image from 'next/image'; // next/imageのインポート
+import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -9,9 +9,6 @@ import { useTopHatMint } from '@/hooks';
 
 export default function Home() {
   const router = useRouter();
-  const theme = useTheme(); // テーマを取得
-
-  console.log(theme); // テーマオブジェクトの中身を確認
 
   const navigateTo = (path: string) => {
     router.push(path);
@@ -37,15 +34,15 @@ export default function Home() {
   };
 
   return (
-    <>
+    <Box bg="#FFFCF4" minH="100vh"> {/* 背景色を#FFFCF4に設定 */}
       {/* Header */}
       <Box as="header" width="100%" position="relative" height="200px">
         <Image 
           src="/header.png" 
           alt="Header Image" 
           layout="fill" 
-          objectFit="cover" // 画像をカバーするように表示
-          priority={true} // ページロード時に優先的に読み込む
+          objectFit="cover" 
+          priority={true}
         />
         <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
           <Heading size="md" color="white">Main Page</Heading>
@@ -56,18 +53,21 @@ export default function Home() {
 
       {/* Main Content */}
       <Box textAlign="center" mt="20">
-        <Text fontSize="3xl" mb="4">Welcome</Text>
+        <Text fontSize="3xl" color="black" mb="4">Welcome</Text>
         <VStack spacing={4} width="full" maxW="400px" mx="auto">
-          <Button width="full" bg={theme.colors.yellow[400]} color="black" size="md" onClick={() => navigateTo('/CreateRole')}>
+          <Button width="full" bg="black" color="white" size="md" onClick={() => navigateTo('/ProjectTop')}>
+            ProjectTop
+          </Button>
+          <Button width="full" bg="yellow.400" color="black" size="md" onClick={() => navigateTo('/CreateRole')}>
             CreateRole
           </Button>
-          <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/NewRoleGranted')}>
+          <Button width="full" bg="blue.400" color="black" size="md" onClick={() => navigateTo('/NewRoleGranted')}>
             NewRoleGranted
           </Button>
-          <Button width="full" bg={theme.colors.orange[400]} color="black" size="md" onClick={() => navigateTo('/SendToken')}>
+          <Button width="full" bg="orange.400" color="black" size="md" onClick={() => navigateTo('/SendToken')}>
             SendToken
           </Button>
-          <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/SplitterCreation')}>
+          <Button width="full" bg="green.400" color="black" size="md" onClick={() => navigateTo('/SplitterCreation')}>
             SplitterCreation
           </Button>
           <hr/>
@@ -76,10 +76,10 @@ export default function Home() {
           </Button>
         </VStack>
       </Box>
-
-    </>
+    </Box>
   );
 }
+
 
 
       // {/* Main Content */}

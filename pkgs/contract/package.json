@@ -16,7 +16,8 @@
     "getBalance": "npx hardhat getBalance",
     "setSubnodeRecord": "npx hardhat setSubnodeRecord",
     "getAllTokenIds": "npx hardhat getAllTokenIds",
-    "setSubnodeRecordFromContract": "npx hardhat setSubnodeRecordFromContract"
+    "setSubnodeRecordFromContract": "npx hardhat setSubnodeRecordFromContract",
+    "setAddr": "npx hardhat setAddr"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",

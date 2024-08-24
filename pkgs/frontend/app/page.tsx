@@ -1,10 +1,11 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import { Box, Button, Flex, Heading, Spacer, Text, VStack, Image } from '@chakra-ui/react';
+import Toaster from '@/components/Toaster';
+import { useTopHatMint } from '@/hooks';
+import { Box, Button, Flex, Heading, Image, Spacer, Text, VStack } from '@chakra-ui/react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useRouter } from 'next/navigation';
 import { useChainId } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useTopHatMint } from '@/hooks';
 
 export default function Home() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function Home() {
       <Box as="header" width="100%" position="relative" height="200px">
         <Image 
           src="/header.png" 
-          alt="Header Image" 
+          alt="Header Image"
           layout="fill" 
           objectFit="cover" 
           priority={true}
@@ -115,6 +116,7 @@ export default function Home() {
           </Button>
         </VStack>
       </Box>
+      <Toaster />
     </Box>
   );
 }

@@ -1,8 +1,9 @@
 import '@rainbow-me/rainbowkit/styles.css';
 import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
-import { Toaster } from 'sonner';
+import "react-toastify/dist/ReactToastify.css";
 
+import Toaster from '@/components/Toaster';
 import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'] });

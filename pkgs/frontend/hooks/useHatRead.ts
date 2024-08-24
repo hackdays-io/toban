@@ -147,7 +147,7 @@ export const useGetMyRoles = () => {
   const {address} = useAccount();
 
   const [myRoles, setMyRoles] = useState<
-    {imageURI: string; details: DefaultHatsDetailsSchema}[]
+    {imageURI: string; details: DefaultHatsDetailsSchema; hatId: BigInt}[]
   >([]);
 
   useEffect(() => {
@@ -179,6 +179,7 @@ export const useGetMyRoles = () => {
             return {
               imageURI: role.imageUri!,
               details: metadata as any,
+              hatId: BigInt(role.id),
             };
           })
         );

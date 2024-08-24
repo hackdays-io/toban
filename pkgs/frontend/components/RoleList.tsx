@@ -10,20 +10,31 @@ interface RoleListProps {
 
 const RoleList: React.FC<RoleListProps> = ({hatId, roles}: any) => {
   return (
-    <Box mt={8}>
+    <Box mt={3}>
       <Grid templateColumns="repeat(4, 1fr)" gap={6}>
         {roles.map((role: any) => (
           <Link key={role.name} href={role.href}>
             <Box textAlign="center">
               <Box as="span" fontSize="2xl" mb={2}>
-                <Image src={role.icon} width={50} height={50} alt="role" />
+                <Image
+                  style={{borderRadius: "5px"}}
+                  src={role.icon}
+                  width={100}
+                  height={100}
+                  alt="role"
+                />
               </Box>
               <Text>{role.name}</Text>
             </Box>
           </Link>
         ))}
         <Link href={`/${hatId}/createrole`}>
-          <IconButton aria-label="Roleを追加" icon={<AddIcon />} />
+          <IconButton
+            width={90}
+            height={90}
+            aria-label="Roleを追加"
+            icon={<AddIcon />}
+          />
         </Link>
       </Grid>
     </Box>

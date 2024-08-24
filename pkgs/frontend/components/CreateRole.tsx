@@ -9,6 +9,43 @@ export default function CreateRoleComponent() {
   const [responsibilities, setResponsibilities] = useState([{ name: '', description: '', link: '' }]);
   const [file, setFile] = useState<any>();
 
+  /*
+  const { address } = useAccount();
+  const chainId = useChainId();
+  const { signTypedDataAsync } = useSignTypedData();
+
+  // MetaTransactionを送信するメソッド
+  const sendMetaTx = async () => {
+    console.log('sendMetaTransaction');
+    // create typed sign data
+    const typedSignData: any = await createTypedSignData(
+      address, 
+      chainId as any, 
+      HELLO_WORLD_CONTRACT_ADDRESS, // ガスレスにしたいコントラクトのアドレスを指定する
+      HelloWorldJson.abi,           // ガスレスにしたいコントラクトのABIを指定する
+      'setNewText', 
+      ["test"]
+    );
+    // sign
+    const signature = await signTypedDataAsync(typedSignData);
+    console.log('signature', signature);
+    // send meta transaction
+    await fetch("api/requestRelayer", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        typedSignData: typedSignData,
+        signature: signature,
+      })
+    }).then(async result => {
+      // APIリクエストのリザルトをJSONとして解析
+      console.log("API response:", await result.json());
+    });
+  };
+  */
+
   const handleAddResponsibility = () => {
     setResponsibilities([...responsibilities, { name: '', description: '', link: '' }]);
   };

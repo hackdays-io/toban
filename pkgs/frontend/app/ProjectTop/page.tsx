@@ -17,12 +17,7 @@ export default function ProjectTop() {
         { name: 'Cleaning', icon: '🧹', href: '/roles/cleaning' },
         { name: 'Committee', icon: '🧑‍💼', href: '/roles/committee' },
         { name: 'Contents', icon: '📝', href: '/roles/contents' },
-        { name: 'Food', icon: '🍴', href: '/roles/food' },
-    ];
-
-    const hats = [
-        { name: 'Hat 1', href: '/hats/1' },
-        { name: 'Hat 2', href: '/hats/2' },
+        { name: 'Food', icon: '🍴', href: '/app/RoleList' }, // この行が更新されました
     ];
 
     return (

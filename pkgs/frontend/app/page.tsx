@@ -37,20 +37,20 @@ export default function Home() {
 
   const handleBigBangClick = async () => {
     try {
-      // hatId = await resTopHatMint.writeAsync();
-      // console.log(`😺 TopHat minted successfully!, hatId = ${hatId}`);
+      hatId = await resTopHatMint.writeAsync();
+      console.log(`😺 TopHat minted successfully!, hatId = ${hatId}`);
 
       // TODO: HatterHatのモジュールをデプロイ
       // const hatterHatId = await resHatterHatMint.writeAsync()
       // console.log('hatterHatId', hatterHatId);
 
       // TODO: TimeschejuleManagerにHatterHatをミント
-      const res = await resHatMint.writeAsync()
-      console.log('res🐈', res);
+      // const res = await resHatMint.writeAsync()
+      // console.log('res🐈', res);
 
-      if (res === '1n'){
-        navigateTo('/hatid');
-      }
+      // if (res === '1n'){
+      //   navigateTo('/hatid');
+      // }
       
     } catch (error) {
       console.error('Failed to mint TopHat:', error);

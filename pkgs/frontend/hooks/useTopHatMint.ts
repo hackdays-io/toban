@@ -1,21 +1,16 @@
-import { HatsClient, hatIdDecimalToIp } from '@hatsprotocol/sdk-v1-core';
-import { useChainId } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import useHatContractWrite, { ValidFunctionName } from './useHatContractWrite';
-import { createHatsClient } from '@/lib/hats';
-import { getWalletClient } from 'wagmi/actions';
-import { wagmiConfig } from '@/lib/web3';
 
-const useTopHatMint = async({
+const useTopHatMint = ({
   chainId,
-  adminWearer,
 }: {
   chainId: number;
-  adminWearer: `0x${string}`;
 }) => {
-    const walletClient: any = await getWalletClient(wagmiConfig);
+    // const walletClient: any = await getWalletClient(wagmiConfig);
+    const {address} = useAccount()
     const currentNetworkId = useChainId();
-    const txDescription = `TopHatMinted hat to 0x${adminWearer}`;
     const imageURI = "ipfs://bafkreiflezpk3kjz6zsv23pbvowtatnd5hmqfkdro33x5mh2azlhne3ah4"
+    const imageURTVerNekko = "https://lime-giant-dove-621.mypinata.cloud/ipfs/QmWgN2Z4jTz9c9Yw9YSAp7KZJcoCU47qPwPS6hp6xQQZDY"
 
   /**
    * TopHatをMintするメソッド
@@ -24,10 +19,9 @@ const useTopHatMint = async({
     writeAsync,
     isLoading,
   } = useHatContractWrite({
-    functionName: 'mintHat' as ValidFunctionName,
-    args: [walletClient, adminWearer, txDescription, imageURI],
+    functionName: 'mintTopHat' as ValidFunctionName,
+    args: [address!,  "test project", imageURTVerNekko],
     chainId,
-    txDescription,
     enabled: chainId === currentNetworkId,
   });
 

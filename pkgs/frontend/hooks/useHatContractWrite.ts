@@ -2,7 +2,7 @@ import { HATS_ABI, HATS_V1 } from '@hatsprotocol/sdk-v1-core';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { TransactionReceipt } from 'viem';
+import { TransactionReceipt, decodeEventLog } from 'viem';
 import {
   useChainId,
   useWriteContract,
@@ -63,10 +63,17 @@ const useHatContractWrite = <T extends ValidFunctionName>({
     }).then(async (hash) => {
       toast.info('Waiting for your transaction to be accepted...');
 
-      await waitForTransactionReceipt(wagmiConfig, { chainId: chainId as any, hash });
-
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: chainId as any, hash });
+      
+      const decodedLogs = receipt.logs.map((log) => {
+        return decodeEventLog({
+         abi: HATS_ABI,
+         data: log.data,
+         topics: log.topics
+       })
+      })
       toast.info('Transaction submitted');
-      router.refresh();
+      return decodedLogs[0].args?.id;
     }).catch((error) => {
       console.log('Error!!', error);
       if (

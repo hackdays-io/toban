@@ -26,7 +26,7 @@
        NEXT_PUBLIC_DEFENDER_SECRET_KEY=
        ```
 
-  - **smartconract**
+  - **smartcontract**
 
 - **install**
 
@@ -44,4 +44,16 @@
 
   ```bash
   yarn frontend dev
+  ```
+
+- **compile smartcontract**
+
+  ```bash
+  yarn contract compile
+  ```
+
+- **test smartcontract**
+
+  ```bash
+  yarn contract test
   ```

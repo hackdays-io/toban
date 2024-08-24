@@ -23,7 +23,7 @@ export default function Home() {
           priority={true} // ページロード時に優先的に読み込む
         />
         <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
-          <Heading size="md" color="white">My App</Heading>
+          <Heading size="md" color="white">Main Page</Heading>
           <Spacer />
           <Button 
             colorScheme="teal" 

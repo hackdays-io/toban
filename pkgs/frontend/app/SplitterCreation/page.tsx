@@ -24,7 +24,7 @@ export default function SplitterCreation() {
                     <Heading size="md" color="white">Splitter Creation</Heading>
                     <Spacer />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
-                        メインページに戻る
+                        Back to Main Page
                     </Button>
                 </Flex>
             </Box>

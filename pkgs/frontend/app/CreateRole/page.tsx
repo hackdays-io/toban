@@ -24,7 +24,7 @@ export default function CreateRole() {
                     <Heading size="md" color="white">Create Role</Heading>
                     <Spacer />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
-                        メインページに戻る
+                        Back to Main Page
                     </Button>
                 </Flex>
             </Box>

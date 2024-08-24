@@ -24,7 +24,7 @@ export default function NewRoleGranted() {
                     <Heading size="md" color="white">New Role Granted</Heading>
                     <Spacer />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
-                        メインページに戻る
+                        Back to Main Page
                     </Button>
                 </Flex>
             </Box>

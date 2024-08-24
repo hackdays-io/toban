@@ -22,7 +22,7 @@ export default function SendToken() {
 
   const handleSubmit = () => {
     // トークン送信のロジックをここに追加
-    alert(`%${percentage} を ${selectedRecipient} に送信しました`);
+    alert(`Sent ${percentage}% to ${selectedRecipient}`);
   };
 
   return (
@@ -36,7 +36,7 @@ export default function SendToken() {
         {/* ここに他のオプションを追加できます */}
       </Select>
 
-      <Text fontSize="2xl" mb={3}>役割単位をシェアする</Text>
+      <Text fontSize="2xl" mb={3}>Share role units</Text>
 
       <Text fontSize="4xl" mb={3}>{percentage} %</Text>
 
@@ -48,12 +48,13 @@ export default function SendToken() {
       />
 
       <Box mb={5}>
-        <Text>あなたのシェア: {yourShare}%</Text>
-        <Text>{selectedRecipient} のシェア: {recipientShare}%</Text>
+        <Text>Your Share: {yourShare}%</Text>
+        <Text>{selectedRecipient}'s Share: {recipientShare}%</Text>
       </Box>
 
+
       <Button colorScheme="blue" onClick={handleSubmit} w="full">
-        送信
+        Submit
       </Button>
     </Box>
   );

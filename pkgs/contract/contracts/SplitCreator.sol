@@ -6,13 +6,18 @@ import "./splits/interfaces/ISplitFactoryV2.sol";
 import "./splits/libraries/SplitV2.sol";
 import "./fraction/IFractionToken.sol";
 import "hardhat/console.sol";
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract SplitCreator {
+contract SplitCreator is ERC2771Context {
     ISplitFactoryV2 splitFactoryV2;
 
     IFractionToken fractionToken;
 
-    constructor(address _splitFactoryV2, address _fractionToken) {
+    constructor(
+        address _splitFactoryV2,
+        address _fractionToken,
+        address _trustedForwarder
+    ) ERC2771Context(_trustedForwarder) {
         splitFactoryV2 = ISplitFactoryV2(_splitFactoryV2);
         fractionToken = IFractionToken(_fractionToken);
     }

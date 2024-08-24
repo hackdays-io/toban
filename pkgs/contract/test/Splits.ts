@@ -12,12 +12,12 @@ import {
   SampleForwarder,
 } from "../typechain-types";
 import {
+  deployFractionToken,
   deployHatsProtocol,
   deploySplitCreator,
   deploySplitsProtocol,
 } from "./helper/deploy";
 import {expect} from "chai";
-import {deployFractionToken} from "../scripts/modules/FractionToken";
 
 describe("Splits", () => {
   let SplitsWarehouse: SplitsWarehouse;
@@ -160,7 +160,7 @@ describe("CreateSplit", () => {
     const {SplitCreator: _SplitCreator} = await deploySplitCreator(
       await PullSplitsFactory.getAddress(),
       await FractionToken.getAddress(),
-      await SampleForwarder.getAddress()
+      ZeroAddress
     );
     SplitCreator = _SplitCreator;
 

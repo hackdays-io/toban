@@ -9,4 +9,4 @@ export { default as useIsSameChain } from './useIsSameChain';
 export { default as useModuleDetails } from './useModuleDetails';
 export { default as useMultiClaimsHatterCheck } from './useMultiClaimsHatterCheck';
 export { default as useWearersEligibilityCheck } from './useWearersEligibilityCheck';
-
+export { default as useTopHatMint } from './useTopHatMint';

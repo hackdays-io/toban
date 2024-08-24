@@ -7,6 +7,7 @@ import * as React from 'react';
 import { WagmiProvider } from 'wagmi';
 
 import { wagmiConfig } from '@/lib/web3';
+import { sepolia } from 'viem/chains';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -48,7 +49,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider>
-          <RainbowKitProvider modalSize="compact">
+          <RainbowKitProvider modalSize="compact" initialChain={sepolia}>
             {children}
           </RainbowKitProvider>
         </ChakraProvider>

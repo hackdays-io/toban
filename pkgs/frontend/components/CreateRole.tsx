@@ -4,6 +4,8 @@ import { uploadFileToIpfs } from '@/lib/ipfs';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { Box, Button, FormControl, FormLabel, HStack, IconButton, Input, Textarea, VStack } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
+import { toast } from "react-toastify";
+import Toaster from './Toaster';
 
 export default function CreateRoleComponent() {
   const [responsibilities, setResponsibilities] = useState([{ name: '', description: '', link: '' }]);
@@ -42,9 +44,34 @@ export default function CreateRoleComponent() {
 
   useEffect(() => {
     const uploadToIpfs = async() => {
-      // IPFSにファイルを呼び出すためのメソッドを呼び出す。
-      const url = await uploadFileToIpfs(file);
-      console.log("content url:", url);
+      try {
+        // IPFSにファイルを呼び出すためのメソッドを呼び出す。
+        const url = await uploadFileToIpfs(file);
+        console.log("content url:", url);
+
+        toast.success("🦄 file upload Success!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      } catch(err: any) {
+        console.error("error:", err);
+        toast.error("file upload Failed....", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      }
     }
     uploadToIpfs();
   }, [file])
@@ -117,6 +144,7 @@ export default function CreateRoleComponent() {
           </Button>
         </VStack>
       </form>
+      <Toaster/>
     </Box>
   );
 }

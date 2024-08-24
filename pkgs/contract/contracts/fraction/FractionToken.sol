@@ -4,27 +4,61 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import { ERC2771Context } from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract FractionToken is ERC1155, ERC2771Context, Ownable {
     uint256 public constant TOKEN_SUPPLY = 10000;
+
     mapping(uint256 => address[]) private tokenRecipients;
+
     uint256[] private allTokenIds;
+
     IHats private hatsContract;
 
-    constructor(string memory _uri, address _hatsAddress, address _trustedForwarder) ERC1155(_uri) ERC2771Context(_trustedForwarder) Ownable() {
+    constructor(
+        string memory _uri,
+        address _hatsAddress,
+        address _trustedForwarder
+    ) ERC1155(_uri) ERC2771Context(_trustedForwarder) Ownable() {
         hatsContract = IHats(_hatsAddress); // Initialize the Hats contract
     }
 
-    function mint(string memory hatId, address account) public onlyOwner {
-        uint256 tokenId = uint256(keccak256(abi.encodePacked(hatId, account)));
-
+    function mint(uint256 hatId, address account) public onlyOwner {
+        uint256 tokenId = getTokenId(hatId, account);
         _mint(account, tokenId, TOKEN_SUPPLY, "");
-
-        tokenRecipients[tokenId].push(account);
 
         if (!_containsTokenId(tokenId)) {
             allTokenIds.push(tokenId);
+        }
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 amount,
+        bytes memory data
+    ) public override {
+        super.safeTransferFrom(from, to, tokenId, amount, data);
+
+        if (!_containsRecipient(tokenId, to)) {
+            tokenRecipients[tokenId].push(to);
+        }
+    }
+
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        bytes memory data
+    ) public override {
+        super.safeBatchTransferFrom(from, to, tokenIds, amounts, data);
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            if (!_containsRecipient(tokenIds[i], to)) {
+                tokenRecipients[tokenIds[i]].push(to);
+            }
         }
     }
 
@@ -36,6 +70,26 @@ contract FractionToken is ERC1155, ERC2771Context, Ownable {
 
     function getAllTokenIds() public view returns (uint256[] memory) {
         return allTokenIds;
+    }
+
+    function getTokenId(
+        uint256 hatId,
+        address account
+    ) public pure returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(hatId, account)));
+    }
+
+    function _containsRecipient(
+        uint256 tokenId,
+        address recipient
+    ) private view returns (bool) {
+        address[] memory recipients = tokenRecipients[tokenId];
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (recipients[i] == recipient) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function _containsTokenId(uint256 tokenId) private view returns (bool) {
@@ -58,11 +112,12 @@ contract FractionToken is ERC1155, ERC2771Context, Ownable {
     // *** override ***
     function balanceOf(
         address account,
+        address wearer,
         uint256 hatId
-    ) public view override returns (uint256) {
+    ) public view returns (uint256) {
         bool hasRole = _hasHatRole(account, hatId);
 
-        uint256 tokenId = uint256(keccak256(abi.encodePacked(hatId, account)));
+        uint256 tokenId = getTokenId(hatId, wearer);
         uint256 erc1155Balance = super.balanceOf(account, tokenId);
 
         if (hasRole && erc1155Balance == 0) {
@@ -78,12 +133,13 @@ contract FractionToken is ERC1155, ERC2771Context, Ownable {
 
     function balanceOfBatch(
         address[] memory accounts,
-        uint256[] memory ids
-    ) public view override(ERC1155) returns (uint256[] memory) {
+        address[] memory wearers,
+        uint256[] memory hatIds
+    ) public view returns (uint256[] memory) {
         uint256[] memory balances = new uint256[](accounts.length);
 
         for (uint256 i = 0; i < accounts.length; i++) {
-            balances[i] = balanceOf(accounts[i], ids[i]);
+            balances[i] = balanceOf(accounts[i], wearers[i], hatIds[i]);
         }
 
         return balances;
@@ -93,7 +149,7 @@ contract FractionToken is ERC1155, ERC2771Context, Ownable {
         uint256 tokenId
     ) public view override(ERC1155) returns (string memory) {
         return super.uri(tokenId);
-    }  
+    }
 
     function _msgSender()
         internal

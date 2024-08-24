@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
-import {IFractionToken} from "../fraction/FractionToken.sol"; // Ryomaさん作成のものと競合する可能性
+import {IFractionToken} from "../fraction/IFractionToken.sol"; // Ryomaさん作成のものと競合する可能性
 import {ITimeframe} from "../timeframe/interfaces/ITimeframe.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
@@ -46,22 +46,29 @@ contract MultiClaimsFractionHatter is ERC2771Context {
         );
 
         // Step 2: Mint the fraction token
-        fractionTokenContract.mint(
-            string(abi.encodePacked(newHatId)),
-            _wearer
-        );
+        fractionTokenContract.mint(string(abi.encodePacked(newHatId)), _wearer);
 
         // Step 3: Set the wore time
         timeframeContract.setWoreTime(_wearer, newHatId);
     }
 
     // Override _msgSender to use the context from ERC2771Context.
-    function _msgSender() internal view override(ERC2771Context) returns (address) {
+    function _msgSender()
+        internal
+        view
+        override(ERC2771Context)
+        returns (address)
+    {
         return ERC2771Context._msgSender();
     }
 
     // Override _msgData to use the context from ERC2771Context.
-    function _msgData() internal view override(ERC2771Context) returns (bytes calldata) {
+    function _msgData()
+        internal
+        view
+        override(ERC2771Context)
+        returns (bytes calldata)
+    {
         return ERC2771Context._msgData();
     }
 }

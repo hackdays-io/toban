@@ -1,11 +1,14 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Spacer, Text, VStack, useTheme } from '@chakra-ui/react';
 import Image from 'next/image'; // next/imageのインポート
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
+  const theme = useTheme(); // テーマを取得
+
+  console.log(theme); // テーマオブジェクトの中身を確認
 
   const navigateTo = (path: string) => {
     router.push(path);
@@ -38,16 +41,16 @@ export default function Home() {
       <Box textAlign="center" mt="20">
         <Text fontSize="3xl" mb="4">Welcome</Text>
         <VStack spacing={4} width="full" maxW="400px" mx="auto">
-          <Button width="full" colorScheme="teal" size="md" onClick={() => navigateTo('/CreateRole')}>
+          <Button width="full" bg={theme.colors.yellow[400]} color="black" size="md" onClick={() => navigateTo('/CreateRole')}>
             CreateRole
           </Button>
-          <Button width="full" colorScheme="teal" size="md" onClick={() => navigateTo('/NewRoleGranted')}>
+          <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/NewRoleGranted')}>
             NewRoleGranted
           </Button>
-          <Button width="full" colorScheme="teal" size="md" onClick={() => navigateTo('/SendToken')}>
+          <Button width="full" bg={theme.colors.orange[400]} color="black" size="md" onClick={() => navigateTo('/SendToken')}>
             SendToken
           </Button>
-          <Button width="full" colorScheme="teal" size="md" onClick={() => navigateTo('/SplitterCreation')}>
+          <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/SplitterCreation')}>
             SplitterCreation
           </Button>
         </VStack>
@@ -56,7 +59,6 @@ export default function Home() {
     </>
   );
 }
-
 
 
       // {/* Main Content */}

@@ -58,10 +58,9 @@
 
 "use client"; // クライアントコンポーネントとして指定
 
-import React from "react";
 import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image'; // next/imageのインポート
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
@@ -84,7 +83,10 @@ export default function Home() {
         <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
           <Heading size="md" color="white">My App</Heading>
           <Spacer />
-          <Button colorScheme="teal" variant="outline">
+          <Button 
+            colorScheme="teal" 
+            variant="outline"
+          >
             Login
           </Button>
         </Flex>

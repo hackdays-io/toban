@@ -1,11 +1,13 @@
 "use client";
 
+import { uploadFileToIpfs } from '@/lib/ipfs';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { Box, Button, FormControl, FormLabel, HStack, IconButton, Input, Textarea, VStack } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function CreateRoleComponent() {
   const [responsibilities, setResponsibilities] = useState([{ name: '', description: '', link: '' }]);
+  const [file, setFile] = useState<any>();
 
   const handleAddResponsibility = () => {
     setResponsibilities([...responsibilities, { name: '', description: '', link: '' }]);
@@ -30,13 +32,30 @@ export default function CreateRoleComponent() {
     });
   };
 
+  /**
+   * ファイルが選択されたときにステートを更新するメソッド
+   */
+  const handleFileChange = (event: any) => {
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile);
+  };
+
+  useEffect(() => {
+    const uploadToIpfs = async() => {
+      // IPFSにファイルを呼び出すためのメソッドを呼び出す。
+      const url = await uploadFileToIpfs(file);
+      console.log("content url:", url);
+    }
+    uploadToIpfs();
+  }, [file])
+
   return (
     <Box maxW="800px" mx="auto" mt="10">
       <form onSubmit={handleSubmit}>
         <VStack spacing="5">
           <FormControl id="image">
             <FormLabel>Image</FormLabel>
-            <Input type="file" />
+            <Input type="file" onChange={handleFileChange} />
           </FormControl>
           <FormControl id="name" isRequired>
             <FormLabel>Name</FormLabel>

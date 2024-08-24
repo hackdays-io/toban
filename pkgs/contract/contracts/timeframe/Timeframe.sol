@@ -14,6 +14,8 @@ contract Timeframe is ERC2771Context, ITimeframe {
      */
     constructor(address _trustedForwarder) ERC2771Context(_trustedForwarder) {}
 
+    // TODO: createHat
+
     /**
      * @dev Sets the timestamp when a specific hat was minted for a specific address.
      * Can only be called by the contract that handles the minting logic.

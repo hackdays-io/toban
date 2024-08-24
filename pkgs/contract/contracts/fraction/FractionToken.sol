@@ -3,10 +3,9 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract FractionToken is ERC1155, ERC2771Context, Ownable {
+contract FractionToken is ERC1155, ERC2771Context {
     uint256 public constant TOKEN_SUPPLY = 10000;
 
     mapping(uint256 => address[]) private tokenRecipients;
@@ -19,11 +18,11 @@ contract FractionToken is ERC1155, ERC2771Context, Ownable {
         string memory _uri,
         address _hatsAddress,
         address _trustedForwarder
-    ) ERC1155(_uri) ERC2771Context(_trustedForwarder) Ownable() {
+    ) ERC1155(_uri) ERC2771Context(_trustedForwarder) {
         hatsContract = IHats(_hatsAddress); // Initialize the Hats contract
     }
 
-    function mint(uint256 hatId, address account) public onlyOwner {
+    function mint(uint256 hatId, address account) public {
         uint256 tokenId = getTokenId(hatId, account);
         _mint(account, tokenId, TOKEN_SUPPLY, "");
 

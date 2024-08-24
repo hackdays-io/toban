@@ -1,24 +1,27 @@
 "use client";
 
+import {useGetHats, useGetMyRoles} from "@/hooks/useHatRead";
 import {Box, Button, Center, Flex, Heading, Spacer} from "@chakra-ui/react";
+import {ConnectButton} from "@rainbow-me/rainbowkit";
 import Image from "next/image";
 import {useParams, useRouter} from "next/navigation";
+import {useEffect, useState} from "react";
+import {useAccount} from "wagmi";
 import HatList from "../../components/HatList";
 import ProjectInfo from "../../components/ProjectInfo";
 import RoleList from "../../components/RoleList";
-import {ConnectButton} from "@rainbow-me/rainbowkit";
-import {useGetHats, useGetMyRoles} from "@/hooks/useHatRead";
 
 export default function ProjectTop() {
-  const {hatId} = useParams();
+  const [hatsInfos, setHatsInfos] = useState<any[]>([]);
 
+  const {isConnected} = useAccount();
+  const {hatId} = useParams();
   const {topHat, roleHats} = useGetHats(hatId.toString());
   const {myRoles} = useGetMyRoles();
 
   const router = useRouter();
 
-  const isWalletConnected = false; // 実際のウォレット接続ロジックと置き換えてください
-
+  // ダミーデータ
   const roles: any = [
     {name: "Cleaning", icon: "🧹", href: "/roles/cleaning"},
     {name: "Committee", icon: "🧑‍💼", href: "/roles/committee"},
@@ -30,6 +33,34 @@ export default function ProjectTop() {
     {name: "Hat 1", href: "/hats/1"},
     {name: "Hat 2", href: "/hats/2"},
   ];
+
+  useEffect(() => {
+    if (roleHats != undefined) {
+      const formattedRoles = roleHats.map((role) => {
+        const name = role.parsedData.parsedData.data.name;
+        const imageUri = role.imageUri.replace(
+          "ipfs://",
+          "https://gateway.pinata.cloud/ipfs/"
+        );
+
+        const roleInfo = {
+          name,
+          imageUri,
+        };
+
+        setHatsInfos((prev) => [
+          ...prev,
+          {
+            name: name,
+            icon: imageUri,
+            href: `/roles/${name}`,
+          },
+        ]);
+        console.log("hatsInfos:", hatsInfos);
+      });
+      formattedRoles;
+    }
+  }, [roleHats]);
 
   return (
     <>
@@ -83,8 +114,8 @@ export default function ProjectTop() {
             projectName={topHat?.data.name}
             projectDescription={topHat?.data.description}
           />
-          <RoleList roles={roles} hatId={hatId.toString()} />
-          {isWalletConnected && <HatList hats={hats} />}
+          <RoleList roles={hatsInfos} hatId={hatId.toString()} />
+          {isConnected && <HatList hats={hats} />}
         </Box>
       </Center>
     </>

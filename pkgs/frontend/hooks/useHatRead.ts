@@ -1,4 +1,4 @@
-import {hatsDetailsClient, createSubgraphClient} from "@/lib/hats";
+import {createSubgraphClient, hatsDetailsClient} from "@/lib/hats";
 import {removeIpfsPrefix} from "@/lib/ipfs";
 import {DefaultHatsDetailsSchema} from "@/types/hats";
 import {useEffect, useMemo, useState} from "react";
@@ -73,6 +73,9 @@ export const useGetHats = (topHatId: string) => {
       const roleHats = data.hats?.filter(
         (hat) => hat.prettyId?.split(".").length === 3
       );
+
+      console.log("topHat:", topHat);
+      console.log("hatterHat:", hatterHat);
 
       const topCid = removeIpfsPrefix(topHat?.details || "");
       const hatterCid = removeIpfsPrefix(hatterHat?.details || "");

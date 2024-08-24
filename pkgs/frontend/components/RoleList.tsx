@@ -1,5 +1,6 @@
 import {AddIcon} from "@chakra-ui/icons";
 import {Box, Grid, IconButton, Text} from "@chakra-ui/react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface RoleListProps {
@@ -15,7 +16,7 @@ const RoleList: React.FC<RoleListProps> = ({hatId, roles}: any) => {
           <Link key={role.name} href={role.href}>
             <Box textAlign="center">
               <Box as="span" fontSize="2xl" mb={2}>
-                {role.icon}
+                <Image src={role.icon} width={50} height={50} alt="role" />
               </Box>
               <Text>{role.name}</Text>
             </Box>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@0xsplits/splits-sdk": "^4.0.5",
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",

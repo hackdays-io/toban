@@ -29,7 +29,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["ipfs.io"],
+    domains: ["ipfs.io", "gateway.pinata.cloud"],
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {

@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
 import { Box, Button, Flex, Heading, Spacer } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import NewRoleGrantedComponent from '../../components/NewRoleGranted';
 
 export default function NewRoleGranted() {
@@ -23,6 +23,7 @@ export default function NewRoleGranted() {
                 <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
                     <Heading size="md" color="white">New Role Granted</Heading>
                     <Spacer />
+                    <ConnectButton />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
                         Back to Main Page
                     </Button>

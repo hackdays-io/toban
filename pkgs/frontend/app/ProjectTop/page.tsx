@@ -8,6 +8,7 @@ import ProjectInfo from "../../components/ProjectInfo";
 import RoleList from "../../components/RoleList";
 import {useGetTopHat} from "@/hooks/useHatRead";
 import {useUploadHatDetail} from "@/hooks/useHatDetail";
+import {ConnectButton} from "@rainbow-me/rainbowkit";
 
 export default function ProjectTop() {
   const a = useGetTopHat(461);
@@ -54,6 +55,7 @@ export default function ProjectTop() {
             Project Top
           </Heading>
           <Spacer />
+          <ConnectButton />
           <Button
             colorScheme="teal"
             variant="outline"

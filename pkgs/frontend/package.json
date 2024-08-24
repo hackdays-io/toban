@@ -41,8 +41,9 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.51.2",
     "react-markdown": "^9.0.1",
+    "react-toastify": "^10.0.5",
     "sonner": "^1.4.3",
-    "viem": "^2.18.5",
+    "viem": "^2.20.0",
     "wagmi": "^2.12.1",
     "yarn": "^1.22.22",
     "zod": "^3.23.8"

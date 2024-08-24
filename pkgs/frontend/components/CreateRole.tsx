@@ -13,6 +13,8 @@ import {
   Textarea,
   VStack,
 } from "@chakra-ui/react";
+import {toast} from "react-toastify";
+import Toaster from "./Toaster";
 import {useEffect, useState} from "react";
 
 export default function CreateRoleComponent() {
@@ -20,43 +22,6 @@ export default function CreateRoleComponent() {
     {name: "", description: "", link: ""},
   ]);
   const [file, setFile] = useState<any>();
-
-  /*
-  const { address } = useAccount();
-  const chainId = useChainId();
-  const { signTypedDataAsync } = useSignTypedData();
-
-  // MetaTransactionを送信するメソッド
-  const sendMetaTx = async () => {
-    console.log('sendMetaTransaction');
-    // create typed sign data
-    const typedSignData: any = await createTypedSignData(
-      address, 
-      chainId as any, 
-      HELLO_WORLD_CONTRACT_ADDRESS, // ガスレスにしたいコントラクトのアドレスを指定する
-      HelloWorldJson.abi,           // ガスレスにしたいコントラクトのABIを指定する
-      'setNewText', 
-      ["test"]
-    );
-    // sign
-    const signature = await signTypedDataAsync(typedSignData);
-    console.log('signature', signature);
-    // send meta transaction
-    await fetch("api/requestRelayer", {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        typedSignData: typedSignData,
-        signature: signature,
-      })
-    }).then(async result => {
-      // APIリクエストのリザルトをJSONとして解析
-      console.log("API response:", await result.json());
-    });
-  };
-  */
 
   const handleAddResponsibility = () => {
     setResponsibilities([
@@ -96,9 +61,34 @@ export default function CreateRoleComponent() {
 
   useEffect(() => {
     const uploadToIpfs = async () => {
-      // IPFSにファイルを呼び出すためのメソッドを呼び出す。
-      const {cid, contentsURL} = await uploadFileToIpfs(file);
-      console.log("content url:", contentsURL);
+      try {
+        // IPFSにファイルを呼び出すためのメソッドを呼び出す。
+        const url = await uploadFileToIpfs(file);
+        console.log("content url:", url);
+
+        toast.success("🦄 file upload Success!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      } catch (err: any) {
+        console.error("error:", err);
+        toast.error("file upload Failed....", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      }
     };
     uploadToIpfs();
   }, [file]);
@@ -192,6 +182,7 @@ export default function CreateRoleComponent() {
           </Button>
         </VStack>
       </form>
+      <Toaster />
     </Box>
   );
 }

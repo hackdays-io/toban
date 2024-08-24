@@ -1,8 +1,16 @@
 "use client";
 
+import TimeFrameHatModuleJson from "@/contracts/timeframe/TimeFrameHatModule.sol/TimeFrameHatModule.json";
+import { TIME_FRAME_MODULE_CONTRACT_ADDRESS } from '@/lib/constants';
+import { createTypedSignData } from '@/lib/metaTransaction';
+import { wagmiConfig } from "@/lib/web3";
 import { Box, Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, Textarea } from '@chakra-ui/react';
+import { getEnsResolver } from '@wagmi/core';
 import { useState } from 'react';
 import { FaCalendarAlt, FaQrcode } from 'react-icons/fa';
+import { zeroAddress } from "viem";
+import { normalize } from 'viem/ens';
+import { useAccount, useChainId, useSignTypedData } from 'wagmi';
 
 export default function NewRoleGrantedComponent() {
   const [address, setAddress] = useState("");
@@ -12,23 +20,23 @@ export default function NewRoleGrantedComponent() {
   const [initialUnits, setInitialUnits] = useState(100);
   const [startDate, setStartDate] = useState("");
 
-
-  /*
-  const { address } = useAccount();
+  const { address: connectedAddress } = useAccount();
   const chainId = useChainId();
   const { signTypedDataAsync } = useSignTypedData();
 
-  // MetaTransactionを送信するメソッド
+  /**
+   * MetaTransactionを送信するメソッド
+   */
   const sendMetaTx = async () => {
     console.log('sendMetaTransaction');
     // create typed sign data
     const typedSignData: any = await createTypedSignData(
-      address, 
+      connectedAddress, 
       chainId as any, 
-      HELLO_WORLD_CONTRACT_ADDRESS, // ガスレスにしたいコントラクトのアドレスを指定する
-      HelloWorldJson.abi,           // ガスレスにしたいコントラクトのABIを指定する
-      'setNewText', 
-      ["test"]
+      TIME_FRAME_MODULE_CONTRACT_ADDRESS, 
+      TimeFrameHatModuleJson.abi,           
+      'mintHat', 
+      [0x033 , address] // rolehatIdはルーターで受け取れるようにする。
     );
     // sign
     const signature = await signTypedDataAsync(typedSignData);
@@ -48,26 +56,25 @@ export default function NewRoleGrantedComponent() {
       console.log("API response:", await result.json());
     });
   };
-  */
 
-  const handleAddressChange = (e:any) => setAddress(e.target.value);
+  const handleAddressClick = async(e:any) => {
+    const ensResolver = await getEnsResolver(wagmiConfig, {
+      name: normalize(e.target.value),
+    })
+    console.log("ensResolver", ensResolver);
+
+    if(ensResolver == zeroAddress) {
+      console.error("resolve error", ensResolver);
+    } else {
+      setAddress(ensResolver)
+    }
+  };
+
   const handleRoleNameChange = (e:any) => setRoleName(e.target.value);
   const handleRoleDescriptionChange = (e:any) => setRoleDescription(e.target.value);
   const handleWorkScopeChange = (e:any) => setWorkScope(e.target.value);
   const handleInitialUnitsChange = (e:any) => setInitialUnits(e.target.value);
   const handleStartDateChange = (e:any) => setStartDate(e.target.value);
-
-  const handleSubmit = () => {
-    console.log("The form was submitted with the following data:");
-    console.log({
-      address,
-      roleName,
-      roleDescription,
-      workScope,
-      initialUnits,
-      startDate,
-    });
-  };
 
   return (
     <Box maxWidth="400px" mx="auto" mt="10" p="5" borderWidth="1px" borderRadius="lg">
@@ -76,7 +83,7 @@ export default function NewRoleGrantedComponent() {
         <InputGroup>
           <Input
             value={address}
-            onChange={handleAddressChange}
+            onChange={(e:any) => setAddress(e.target.value)}
             placeholder="vitalik.eth"
           />
           <InputRightElement width="4.5rem">
@@ -85,6 +92,9 @@ export default function NewRoleGrantedComponent() {
             </Button>
           </InputRightElement>
         </InputGroup>
+        <Button colorScheme="green" width="full" onClick={handleAddressClick}>
+          Resolve
+        </Button>
       </FormControl>
 
       <FormControl mb="4">
@@ -142,7 +152,7 @@ export default function NewRoleGrantedComponent() {
         </InputGroup>
       </FormControl>
 
-      <Button colorScheme="blue" width="full" onClick={handleSubmit}>
+      <Button colorScheme="blue" width="full" onClick={sendMetaTx}>
         Submit
       </Button>
     </Box>

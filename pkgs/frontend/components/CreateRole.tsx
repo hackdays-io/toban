@@ -85,7 +85,7 @@ export default function CreateRoleComponent() {
                     type="text"
                     value={resp.name}
                     onChange={(e) => handleResponsibilityChange(index, 'name', e.target.value)}
-                    placeholder="Enter responsibility name"
+                    placeholder="Enter Responsibility Name"
                   />
                 </FormControl>
                 <FormControl id={`responsibility-description-${index}`}>
@@ -93,7 +93,7 @@ export default function CreateRoleComponent() {
                   <Textarea
                     value={resp.description}
                     onChange={(e) => handleResponsibilityChange(index, 'description', e.target.value)}
-                    placeholder="Enter responsibility description"
+                    placeholder="Enter Responsibility Description"
                   />
                 </FormControl>
                 <FormControl id={`responsibility-link-${index}`}>
@@ -102,7 +102,7 @@ export default function CreateRoleComponent() {
                     type="url"
                     value={resp.link}
                     onChange={(e) => handleResponsibilityChange(index, 'link', e.target.value)}
-                    placeholder="Enter responsibility link"
+                    placeholder="Enter Responsibility Link"
                   />
                 </FormControl>
               </VStack>

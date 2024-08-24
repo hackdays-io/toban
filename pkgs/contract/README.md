@@ -1,13 +1,25 @@
-# Sample Hardhat Project
+# Deploy on local
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+### 1. Up hardhat local node
 
-Try running some of the following tasks:
+```
+$ pwd
+~/toban/pkgs/contract
+$ npx hardhat node
+```
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
+### 2. Deploy on local node
+
+```
+$ npx hardhat run scripts/deploy/local.ts --network localhost
+```
+
+# Create Top level hat
+
+ローカルで ether.js のコントラクトインスタンスで top hat を作ろうと失敗することがあるので、sendTransaction で直接作るスクリプトを用意しています。
+
+```
+$ pwd
+~/toban/pkgs/contract
+$ npx hardhat run scripts/helper/mintTopHat.ts --network localhost
 ```

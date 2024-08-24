@@ -22,11 +22,11 @@
        NEXT_PUBLIC_ENABLE_TESTNETS=true
        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
        NEXT_PUBLIC_ALCHEMY_ID=
-       DEFENDER_API_KEY=
-       DEFENDER_SECRET_KEY=
+       NEXT_PUBLIC_DEFENDER_API_KEY=
+       NEXT_PUBLIC_DEFENDER_SECRET_KEY=
        ```
 
-  - **smartconract**
+  - **smartcontract**
 
 - **install**
 
@@ -44,4 +44,16 @@
 
   ```bash
   yarn frontend dev
+  ```
+
+- **compile smartcontract**
+
+  ```bash
+  yarn contract compile
+  ```
+
+- **test smartcontract**
+
+  ```bash
+  yarn contract test
   ```

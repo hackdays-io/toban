@@ -32,13 +32,13 @@ export const deploySplitsProtocol = async () => {
 export const deploySplitCreator = async (
   splitFactoryAddress: string,
   fractionTokenAddress: string,
-  trustedForwarderAddress: string
+  forwarderAddress: string
 ) => {
   const splitCreatorFactory = await ethers.getContractFactory("SplitCreator");
   const SplitCreator = await splitCreatorFactory.deploy(
     splitFactoryAddress,
     fractionTokenAddress,
-    trustedForwarderAddress
+    forwarderAddress
   );
 
   return {SplitCreator};

@@ -1,6 +1,11 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import React, {useEffect, useState} from "react";
+import Toaster from "@/components/Toaster";
+import {useHatMint, useTopHatMint} from "@/hooks";
+import {useUploadHatDetail} from "@/hooks/useHatDetail";
+import {useWaitForIndexGraphAPI} from "@/hooks/useHatRead";
+import useHatterHatMint from "@/hooks/useHatterHatMint";
+import {uploadFileToIpfs} from "@/lib/ipfs";
 import {
   Box,
   Button,
@@ -14,20 +19,13 @@ import {
   Stack,
   Text,
   Textarea,
-  VStack,
 } from "@chakra-ui/react";
-import {useRouter} from "next/navigation";
-import {useChainId} from "wagmi";
 import {ConnectButton} from "@rainbow-me/rainbowkit";
-import {useHatMint, useTopHatMint} from "@/hooks";
-import useHatterHatMint from "@/hooks/useHatterHatMint";
-import {delay, removeTrailingN} from "@/lib/utils";
-import Toaster from "@/components/Toaster";
+import {useRouter} from "next/navigation";
+import {useEffect, useState} from "react";
 import {Controller, useForm} from "react-hook-form";
-import {uploadFileToIpfs} from "@/lib/ipfs";
 import {toast} from "react-toastify";
-import {useUploadHatDetail} from "@/hooks/useHatDetail";
-import {useWaitForIndexGraphAPI} from "@/hooks/useHatRead";
+import {useChainId} from "wagmi";
 
 type FormData = {
   name: string;

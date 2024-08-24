@@ -17,7 +17,16 @@ export const deploySplitsProtocol = async () => {
   );
   await PushSplitsFactory.waitForDeployment();
 
-  return {SplitsWarehouse, PullSplitsFactory, PushSplitsFactory};
+  const sampleForwarder = await ethers.getContractFactory("SampleForwarder");
+  const SampleForwarder = await sampleForwarder.deploy();
+  await SampleForwarder.waitForDeployment();
+
+  return {
+    SplitsWarehouse,
+    PullSplitsFactory,
+    PushSplitsFactory,
+    SampleForwarder,
+  };
 };
 
 export const deploySplitCreator = async (

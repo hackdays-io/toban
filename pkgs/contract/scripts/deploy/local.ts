@@ -1,11 +1,16 @@
+import {ZeroAddress} from "ethers";
 import {deployForwarder} from "../modules/Forwarder";
 import {deployFractionToken} from "../modules/FractionToken";
 import {deployHatsProtocol} from "../modules/Hats";
 import {deploySplitCreator, deploySplitsProtocol} from "../modules/Splits";
 
 const main = async () => {
-  const {SplitsWarehouse, PullSplitsFactory, PushSplitsFactory} =
-    await deploySplitsProtocol();
+  const {
+    SplitsWarehouse,
+    PullSplitsFactory,
+    PushSplitsFactory,
+    SampleForwarder,
+  } = await deploySplitsProtocol();
   const {Hats} = await deployHatsProtocol();
 
   const {Forwarder} = await deployForwarder();

@@ -1,0 +1,118 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ISplitFactoryV2",
+  "sourceName": "contracts/splits/interfaces/ISplitFactoryV2.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "recipients",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "allocations",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalAllocation",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint16",
+              "name": "distributionIncentive",
+              "type": "uint16"
+            }
+          ],
+          "internalType": "struct SplitV2Lib.Split",
+          "name": "_splitParams",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_creator",
+          "type": "address"
+        }
+      ],
+      "name": "createSplit",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "split",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "recipients",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "allocations",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalAllocation",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint16",
+              "name": "distributionIncentive",
+              "type": "uint16"
+            }
+          ],
+          "internalType": "struct SplitV2Lib.Split",
+          "name": "_splitParams",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_creator",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_salt",
+          "type": "bytes32"
+        }
+      ],
+      "name": "createSplitDeterministic",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "split",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

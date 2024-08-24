@@ -53,6 +53,8 @@ export const createTypedSignData = async(
   const logicContract = new Contract(contractAddress, contractAbi, provider);
   console.log("logicContract", logicContract.target);
 
+  console.log("accountAddress", accountAddress);
+
   // 呼び出すメソッドの関数のエンコード済みデータを用意する。
   const encodedData: any = logicContract.interface.encodeFunctionData(
     functionName,

@@ -1,19 +1,19 @@
 "use client";
 
-import React from 'react';
-import { Box, Button, Flex, Heading, Spacer, Center } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
+import { Box, Button, Center, Flex, Heading, Spacer } from '@chakra-ui/react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import HatList from '../../components/HatList';
 import ProjectInfo from '../../components/ProjectInfo';
 import RoleList from '../../components/RoleList';
-import HatList from '../../components/HatList';
 
 export default function ProjectTop() {
     const router = useRouter();
     
     const isWalletConnected = false; // 実際のウォレット接続ロジックと置き換えてください
 
-    const roles = [
+    const roles: any = [
         { name: 'Cleaning', icon: '🧹', href: '/roles/cleaning' },
         { name: 'Committee', icon: '🧑‍💼', href: '/roles/committee' },
         { name: 'Contents', icon: '📝', href: '/roles/contents' },
@@ -39,6 +39,7 @@ export default function ProjectTop() {
                 <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
                     <Heading size="md" color="white">Project Top</Heading>
                     <Spacer />
+                    <ConnectButton />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
                         Back to Main Page
                     </Button>

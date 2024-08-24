@@ -32,6 +32,7 @@ export const chakraTheme = extendTheme({
   styles: {
     global: {
       body: {
+        // @ts-ignore
         color: colors.blue[700], // 黒に近い色に変更
       },
     },

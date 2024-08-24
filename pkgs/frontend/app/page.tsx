@@ -2,12 +2,34 @@
 
 import { Box, Button, Flex, Heading, Spacer, Text, VStack, Image } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
+import { useChainId } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useTopHatMint } from '@/hooks';
 
 export default function Home() {
   const router = useRouter();
 
   const navigateTo = (path: string) => {
     router.push(path);
+  };
+
+  const chainId = useChainId();
+
+  const { writeAsync } = useTopHatMint({
+    chainId,
+  });   
+
+  const handleBigBangClick = async () => {
+    try {
+      const hatid = await writeAsync();
+      console.log(`😺 TopHat minted successfully!, hatId = ${hatid}`);
+
+      // TODO: HatterHatのモジュールをデプロイ
+      // TODO: TimeschejuleManagerにHatterHatをミント
+      // navigateTo('/hatid');
+    } catch (error) {
+      console.error('Failed to mint TopHat:', error);
+    }
   };
 
   return (
@@ -26,21 +48,18 @@ export default function Home() {
       />
 
       {/* Header */}
-      <Box as="header" width="100%" position="relative" height="120px" zIndex="2">
-        <Flex alignItems="center" justifyContent="space-between" p="4">
-          <Image 
-            src="/toban_logo_color_top.png" 
-            alt="Toban Logo Top" 
-            height="50px"
-            width="auto"
-            objectFit="contain"  
-          />
-          <Button 
-            colorScheme="teal" 
-            variant="outline"
-          >
-            Login
-          </Button>
+      <Box as="header" width="100%" position="relative" height="200px">
+        <Image 
+          src="/header.png" 
+          alt="Header Image" 
+          layout="fill" 
+          objectFit="cover" 
+          priority={true}
+        />
+        <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
+          <Heading size="md" color="white">Main Page</Heading>
+          <Spacer />
+          <ConnectButton />
         </Flex>
       </Box>
 
@@ -89,6 +108,10 @@ export default function Home() {
           </Button>
           <Button width="full" bg="green.400" color="black" size="lg" onClick={() => navigateTo('/SplitterCreation')}>
             SplitterCreation
+          </Button>
+          <hr/>
+          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => handleBigBangClick()}>
+            BigBang
           </Button>
         </VStack>
       </Box>

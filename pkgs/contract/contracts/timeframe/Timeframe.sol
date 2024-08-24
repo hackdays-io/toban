@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract Timeframe is ERC2771Context {
-    // Mapping from address and hatId to the timestamp when the hat was minted
     mapping(address => mapping(uint256 => uint256)) private woreTime;
 
     /**
@@ -18,8 +17,7 @@ contract Timeframe is ERC2771Context {
      * Can only be called by the contract that handles the minting logic.
      * @param hatId The ID of the hat that was minted.
      */
-    function setWoreTime(uint256 hatId) external {
-        address wearer = _msgSender();
+    function setWoreTime(address wearer, uint256 hatId) external {
         require(woreTime[wearer][hatId] == 0, "Hat already minted");
         woreTime[wearer][hatId] = block.timestamp;
     }
@@ -28,7 +26,6 @@ contract Timeframe is ERC2771Context {
      * @dev Gets the timestamp when a specific hat was minted for a specific address.
      * @param wearer The address of the person who received the hat.
      * @param hatId The ID of the hat that was minted.
-     * @return The timestamp when the hat was minted.
      */
     function getWoreTime(address wearer, uint256 hatId) external view returns (uint256) {
         return woreTime[wearer][hatId];

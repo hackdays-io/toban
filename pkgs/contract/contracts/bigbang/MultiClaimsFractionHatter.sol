@@ -23,16 +23,6 @@ contract MultiClaimsFractionHatter is ERC2771Context {
         timeframeContract = ITimeframe(_timeframeAddress);
     }
 
-    // Override _msgSender to use the context from ERC2771Context.
-    function _msgSender() internal view override(ERC2771Context) returns (address) {
-        return ERC2771Context._msgSender();
-    }
-
-    // Override _msgData to use the context from ERC2771Context.
-    function _msgData() internal view override(ERC2771Context) returns (bytes calldata) {
-        return ERC2771Context._msgData();
-    }
-
     // Function to create a hat, mint a fraction token, and set the wore time
     function bigbang(
         uint256 _admin,
@@ -63,5 +53,15 @@ contract MultiClaimsFractionHatter is ERC2771Context {
 
         // Step 3: Set the wore time
         timeframeContract.setWoreTime(_wearer, newHatId);
+    }
+
+    // Override _msgSender to use the context from ERC2771Context.
+    function _msgSender() internal view override(ERC2771Context) returns (address) {
+        return ERC2771Context._msgSender();
+    }
+
+    // Override _msgData to use the context from ERC2771Context.
+    function _msgData() internal view override(ERC2771Context) returns (bytes calldata) {
+        return ERC2771Context._msgData();
     }
 }

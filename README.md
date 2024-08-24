@@ -29,6 +29,18 @@
 
   - **smartcontract**
 
+    You must set some ENVs
+
+    1. create `pkgs/contact/.env`
+
+    2. set below values
+
+       ```txt
+       PRIVATE_KEY=
+       ETHERSCAN_API_KEY=
+       CABINET_ACCESS_TOKEN=
+       ```
+
 - **install**
 
   ```bash
@@ -46,6 +58,17 @@
   ```bash
   yarn frontend dev
   ```
+
+- **setup contract**
+
+  ```bash
+  yarn contract setup --network sepolia
+  ```
+
+- **get Balance of .env address**
+
+  ```bash
+  yarn contract getBalance --network sepolia
 
 - **compile smartcontract**
 

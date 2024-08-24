@@ -1,13 +1,14 @@
 import {ethers} from "hardhat";
 import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers";
-import {parseEther} from "ethers";
+import {parseEther, ZeroAddress} from "ethers";
 import {
   PullSplit,
   PullSplitFactory,
   PushSplitFactory,
+  SplitCreator,
   SplitsWarehouse,
 } from "../typechain-types";
-import {deploySplitsProtocol} from "./helper/deploy";
+import {deploySplitCreator, deploySplitsProtocol} from "./helper/deploy";
 import {expect} from "chai";
 
 describe("Splits", () => {
@@ -103,5 +104,36 @@ describe("Splits", () => {
     expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance)).gt(
       499900000000000000
     );
+  });
+});
+
+describe("CreateSplit", () => {
+  let SplitsWarehouse: SplitsWarehouse;
+  let PullSplitsFactory: PullSplitFactory;
+  let PushSplitsFactory: PushSplitFactory;
+  let SplitCreator: SplitCreator;
+
+  let address1: SignerWithAddress;
+  let address2: SignerWithAddress;
+  let address3: SignerWithAddress;
+
+  before(async () => {
+    const {
+      SplitsWarehouse: _SplitsWarehouse,
+      PullSplitsFactory: _PullSplitsFactory,
+      PushSplitsFactory: _PushSplitsFactory,
+    } = await deploySplitsProtocol();
+
+    SplitsWarehouse = _SplitsWarehouse;
+    PullSplitsFactory = _PullSplitsFactory;
+    PushSplitsFactory = _PushSplitsFactory;
+
+    const {SplitCreator: _SplitCreator} = await deploySplitCreator(
+      await PullSplitsFactory.getAddress(),
+      ZeroAddress
+    );
+    SplitCreator = _SplitCreator;
+
+    [address1, address2, address3] = await ethers.getSigners();
   });
 });

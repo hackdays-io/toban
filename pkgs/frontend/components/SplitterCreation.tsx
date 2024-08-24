@@ -17,17 +17,10 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-<<<<<<< HEAD
-import {useState} from "react";
-import {toast} from "react-toastify";
-import {useAccount, useChainId, useSignTypedData} from "wagmi";
-=======
 import {ethers} from "ethers";
 import {useState} from "react";
 import {toast} from "react-toastify";
 import {useAccount, useChainId, useSignTypedData} from "wagmi";
-import Toaster from "./Toaster";
->>>>>>> main
 
 function SplitterCreation() {
   // 状態の追加：画面の表示状態を管理
@@ -52,11 +45,8 @@ function SplitterCreation() {
 
   // MetaTransactionを送信するメソッド
   const sendMetaTx = async () => {
-<<<<<<< HEAD
-=======
     let result: any;
     // @todo リョーマさんに引数を準備してもらう。
->>>>>>> main
     const splitData = [
       1,
       1,
@@ -70,11 +60,7 @@ function SplitterCreation() {
       SPLIT_CREATOR_CONTRACT_ADDRESS,
       SplitCreatorJson.abi,
       "create",
-<<<<<<< HEAD
-      [splitData] //今は仮のデータ
-=======
       [splitData]
->>>>>>> main
     );
     // sign
     const signature = await signTypedDataAsync(typedSignData);
@@ -137,10 +123,6 @@ function SplitterCreation() {
   const handleCreate = async () => {
     try {
       // Spliteをガスレスで作成する。
-<<<<<<< HEAD
-      await sendMetaTx();
-      // @todo ここにENSとの紐付けロジックを入れる。
-=======
       const result = await sendMetaTx();
       // @ts-ignore
       const rpcUrl = RPC_URLS[chainId];
@@ -164,7 +146,6 @@ function SplitterCreation() {
         // APIリクエストのリザルトをJSONとして解析
         console.log("API response:", await result.json());
       });
->>>>>>> main
 
       toast.success("🦄 Success!", {
         position: "top-right",
@@ -289,10 +270,6 @@ function SplitterCreation() {
           </Button>
         </VStack>
       )}
-<<<<<<< HEAD
-=======
-      <Toaster />
->>>>>>> main
     </Box>
   );
 }

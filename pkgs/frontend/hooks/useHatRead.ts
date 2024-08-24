@@ -35,7 +35,9 @@ export const useGetTopHat = (treeId: number) => {
       const cid = removeIpfsPrefix(data.hats[0].details || "");
 
       if (!data.hats || data.hats.length === 0) return;
-      const metadata = await hatsDetailsClient.get(cid);
+      const metadata = await hatsDetailsClient.get(
+        "QmXEsYeiRtUovpAYQaRhELkbr9Ra4kWGXhmF2THUEwwHYZ"
+      );
       console.log(data);
       console.log(metadata);
     };

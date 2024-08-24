@@ -84,9 +84,12 @@ export const uploadFileToIpfs = async (file: any) => {
     const data = await pinata.gateways.get(upload.IpfsHash);
     console.log("uploaded data:", data);
     // コンテンツまでのURLを返却する。
-    return `${PINATA_PUBLIC_GATEWAY_URL}/${upload.IpfsHash}`;
+    return {
+      contentsURL: `${PINATA_PUBLIC_GATEWAY_URL}/${upload.IpfsHash}`,
+      cid: upload.IpfsHash,
+    };
   } catch (error) {
     console.log("error occuered when uploading file to IPFS:", error);
-    return null;
+    return {contentsURL: "", cid: ""};
   }
 };

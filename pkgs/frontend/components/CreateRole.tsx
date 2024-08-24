@@ -1,28 +1,44 @@
 "use client";
 
-import { uploadFileToIpfs } from '@/lib/ipfs';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
-import { Box, Button, FormControl, FormLabel, HStack, IconButton, Input, Textarea, VStack } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import { toast } from "react-toastify";
-import Toaster from './Toaster';
+import {uploadFileToIpfs} from "@/lib/ipfs";
+import {AddIcon, DeleteIcon} from "@chakra-ui/icons";
+import {
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  HStack,
+  IconButton,
+  Input,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
+import {toast} from "react-toastify";
+import {useEffect, useState} from "react";
 
 export default function CreateRoleComponent() {
-  const [responsibilities, setResponsibilities] = useState([{ name: '', description: '', link: '' }]);
+  const [responsibilities, setResponsibilities] = useState([
+    {name: "", description: "", link: ""},
+  ]);
   const [file, setFile] = useState<any>();
 
   const handleAddResponsibility = () => {
-    setResponsibilities([...responsibilities, { name: '', description: '', link: '' }]);
+    setResponsibilities([
+      ...responsibilities,
+      {name: "", description: "", link: ""},
+    ]);
   };
 
   const handleRemoveResponsibility = (index: any) => {
-    const updatedResponsibilities = responsibilities.filter((_, i) => i !== index);
+    const updatedResponsibilities = responsibilities.filter(
+      (_, i) => i !== index
+    );
     setResponsibilities(updatedResponsibilities);
   };
 
   const handleResponsibilityChange = (index: any, field: any, value: any) => {
-    const updatedResponsibilities = responsibilities.map((resp, i) => 
-      i === index ? { ...resp, [field]: value } : resp
+    const updatedResponsibilities = responsibilities.map((resp, i) =>
+      i === index ? {...resp, [field]: value} : resp
     );
     setResponsibilities(updatedResponsibilities);
   };
@@ -43,7 +59,7 @@ export default function CreateRoleComponent() {
   };
 
   useEffect(() => {
-    const uploadToIpfs = async() => {
+    const uploadToIpfs = async () => {
       try {
         // IPFSにファイルを呼び出すためのメソッドを呼び出す。
         const url = await uploadFileToIpfs(file);
@@ -59,7 +75,7 @@ export default function CreateRoleComponent() {
           progress: undefined,
           theme: "colored",
         });
-      } catch(err: any) {
+      } catch (err: any) {
         console.error("error:", err);
         toast.error("file upload Failed....", {
           position: "top-right",
@@ -72,9 +88,9 @@ export default function CreateRoleComponent() {
           theme: "colored",
         });
       }
-    }
+    };
     uploadToIpfs();
-  }, [file])
+  }, [file]);
 
   return (
     <Box maxW="800px" mx="auto" mt="10">
@@ -94,7 +110,13 @@ export default function CreateRoleComponent() {
           </FormControl>
 
           {responsibilities.map((resp, index) => (
-            <Box key={index} p="4" borderWidth="1px" borderRadius="lg" width="100%">
+            <Box
+              key={index}
+              p="4"
+              borderWidth="1px"
+              borderRadius="lg"
+              width="100%"
+            >
               <HStack justify="space-between" mb="2">
                 <FormLabel>Responsibility {index + 1}</FormLabel>
                 <IconButton
@@ -111,7 +133,9 @@ export default function CreateRoleComponent() {
                   <Input
                     type="text"
                     value={resp.name}
-                    onChange={(e) => handleResponsibilityChange(index, 'name', e.target.value)}
+                    onChange={(e) =>
+                      handleResponsibilityChange(index, "name", e.target.value)
+                    }
                     placeholder="Enter Responsibility Name"
                   />
                 </FormControl>
@@ -119,7 +143,13 @@ export default function CreateRoleComponent() {
                   <FormLabel>Description</FormLabel>
                   <Textarea
                     value={resp.description}
-                    onChange={(e) => handleResponsibilityChange(index, 'description', e.target.value)}
+                    onChange={(e) =>
+                      handleResponsibilityChange(
+                        index,
+                        "description",
+                        e.target.value
+                      )
+                    }
                     placeholder="Enter Responsibility Description"
                   />
                 </FormControl>
@@ -128,7 +158,9 @@ export default function CreateRoleComponent() {
                   <Input
                     type="url"
                     value={resp.link}
-                    onChange={(e) => handleResponsibilityChange(index, 'link', e.target.value)}
+                    onChange={(e) =>
+                      handleResponsibilityChange(index, "link", e.target.value)
+                    }
                     placeholder="Enter Responsibility Link"
                   />
                 </FormControl>
@@ -136,7 +168,12 @@ export default function CreateRoleComponent() {
             </Box>
           ))}
 
-          <Button onClick={handleAddResponsibility} leftIcon={<AddIcon />} colorScheme="blue" variant="outline">
+          <Button
+            onClick={handleAddResponsibility}
+            leftIcon={<AddIcon />}
+            colorScheme="blue"
+            variant="outline"
+          >
             Add Responsibility
           </Button>
           <Button type="submit" colorScheme="teal" width="full">
@@ -144,7 +181,6 @@ export default function CreateRoleComponent() {
           </Button>
         </VStack>
       </form>
-      <Toaster/>
     </Box>
   );
 }

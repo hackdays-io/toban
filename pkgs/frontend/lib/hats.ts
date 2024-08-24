@@ -1,16 +1,17 @@
-import { HatsModulesClient } from '@hatsprotocol/modules-sdk';
-import { HatsClient } from '@hatsprotocol/sdk-v1-core';
-import { HatsSubgraphClient } from '@hatsprotocol/sdk-v1-subgraph';
-import { first, get, has } from 'lodash';
-import { createPublicClient, http } from 'viem';
-import { getWalletClient } from 'wagmi/actions';
+import {HatsModulesClient} from "@hatsprotocol/modules-sdk";
+import {HatsClient} from "@hatsprotocol/sdk-v1-core";
+import {HatsSubgraphClient} from "@hatsprotocol/sdk-v1-subgraph";
+import {first, get, has} from "lodash";
+import {createPublicClient, http} from "viem";
+import {getWalletClient} from "wagmi/actions";
 
-import { chainsMap, RPC_URLS, wagmiConfig } from './web3';
+import {chainsMap, RPC_URLS, wagmiConfig} from "./web3";
+import {HatsDetailsClient} from "@hatsprotocol/details-sdk";
 
 export const getRpcUrl = (chainId: number) => {
   if (!has(RPC_URLS, chainId)) {
     const chain = chainsMap(chainId);
-    return first(get(chain, 'rpcUrls.default.http'));
+    return first(get(chain, "rpcUrls.default.http"));
   }
 
   return get(RPC_URLS, chainId);
@@ -18,20 +19,20 @@ export const getRpcUrl = (chainId: number) => {
 
 /**
  * Viem用のクライアントインスタンスを生成するメソッド
- * @param chainId 
- * @returns 
+ * @param chainId
+ * @returns
  */
 export const viemPublicClient = (chainId: number) => {
   return createPublicClient({
     chain: chainsMap(chainId),
-    transport: http(getRpcUrl(chainId) as any, { batch: true }),
+    transport: http(getRpcUrl(chainId) as any, {batch: true}),
   });
 };
 
 /**
  * Hats Protocol SDK用のクライアントインスタンスを生成するメソッド
- * @param chainId 
- * @returns 
+ * @param chainId
+ * @returns
  */
 export async function createHatsClient(
   chainId: number | undefined
@@ -52,19 +53,21 @@ export async function createHatsClient(
     return Promise.resolve(hatsClient);
   } catch (e) {
     // If we can't create a wallet client, we can still create a public client
-    return Promise.resolve(new HatsClient({
-      chainId,
-      publicClient,
-    }));
+    return Promise.resolve(
+      new HatsClient({
+        chainId,
+        publicClient,
+      })
+    );
   }
 }
 
 /**
  * HatsProtocolのSubgraph用のクライアントインスタンスを生成するメソッド
- * @returns 
+ * @returns
  */
 export function createSubgraphClient(): HatsSubgraphClient {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     return new HatsSubgraphClient({});
   }
 
@@ -73,8 +76,8 @@ export function createSubgraphClient(): HatsSubgraphClient {
 
 /**
  * HatsModulesSDK用のクライアントインスタンスを生成するメソッド
- * @param chainId 
- * @returns 
+ * @param chainId
+ * @returns
  */
 export async function createHatsModulesClient(
   chainId: number | undefined
@@ -84,7 +87,6 @@ export async function createHatsModulesClient(
   const publicClient = viemPublicClient(chainId);
 
   try {
-
     const walletClient = await getWalletClient(wagmiConfig);
 
     const hatsModulesClient = new HatsModulesClient({
@@ -97,8 +99,19 @@ export async function createHatsModulesClient(
     return Promise.resolve(hatsModulesClient as HatsModulesClient);
   } catch (e) {
     // If we can't create a wallet client, we can still create a public client
-    return Promise.resolve(new HatsModulesClient({
-      publicClient,
-    }));
+    return Promise.resolve(
+      new HatsModulesClient({
+        publicClient,
+      })
+    );
   }
 }
+
+// create HatsDetailsClient
+export const hatsDetailsClient: HatsDetailsClient = new HatsDetailsClient({
+  provider: "pinata",
+  pinata: {
+    pinningKey: process.env.NEXT_PUBLIC_PINATA_JWT as string,
+    gateway: process.env.NEXT_PUBLIC_PINATA_GATEWAY,
+  },
+});

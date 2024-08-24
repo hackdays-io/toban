@@ -1,10 +1,10 @@
-import { IpfsDetails } from '@/types';
-import { HatsDetailsClient } from "@hatsprotocol/details-sdk";
-import { PinataSDK } from "pinata";
-import { PINATA_PUBLIC_GATEWAY_URL } from './constants';
+import {IpfsDetails} from "@/types";
+import {HatsDetailsClient} from "@hatsprotocol/details-sdk";
+import {PinataSDK} from "pinata";
+import {PINATA_PUBLIC_GATEWAY_URL} from "./constants";
 
-const IPFS_PREFIX = 'ipfs://';
-const GATEWAY_URL = 'https://ipfs.io/ipfs/';
+const IPFS_PREFIX = "ipfs://";
+const GATEWAY_URL = "https://ipfs.io/ipfs/";
 
 // create HatsDetailsClient
 let hatsDetailsClient: HatsDetailsClient = new HatsDetailsClient({
@@ -20,36 +20,35 @@ const pinata = new PinataSDK({
   pinataGateway: "gateway.pinata.cloud/ipfs",
 });
 
-
 export const ipfsToHttp = (ipfsUrl: string) => {
   if (ipfsUrl === undefined) return;
   if (!ipfsUrl.startsWith(IPFS_PREFIX)) {
     return ipfsUrl;
   }
 
-  const cid = ipfsUrl.split('://')[1];
+  const cid = ipfsUrl.split("://")[1];
   return `${GATEWAY_URL}${cid}`;
 };
 
 /**
  * ipfs:// という文言を削除するメソッド
- * @param uri 
- * @returns 
+ * @param uri
+ * @returns
  */
-function removeIpfsPrefix(uri: string): string {
-  const prefix = 'ipfs://';
+export const removeIpfsPrefix = (uri: string) => {
+  const prefix = "ipfs://";
   if (uri.startsWith(prefix)) {
-      return uri.substring(prefix.length);
+    return uri.substring(prefix.length);
   }
   return uri;
-}
+};
 
 export const resolveIpfsUri = async (uri: string): Promise<IpfsDetails> => {
-  const ipfsGateway = 'https://ipfs.io/ipfs/';
+  const ipfsGateway = "https://ipfs.io/ipfs/";
   let cid = removeIpfsPrefix(uri);
 
   const data: any = await hatsDetailsClient.get(cid);
-  console.log('data:', data);
+  console.log("data:", data);
   /*
   const response = await fetch(`${ipfsGateway}${cid}`);
   console.log(`${ipfsGateway}${cid}`)
@@ -61,14 +60,14 @@ export const resolveIpfsUri = async (uri: string): Promise<IpfsDetails> => {
   */
 
   return {
-    name: data.data.name ?? '',
-    description: data.data.description ?? '',
+    name: data.data.name ?? "",
+    description: data.data.description ?? "",
     guilds: data.data.guilds ?? [],
     spaces: data.data.spaces ?? [],
     responsibilities: data.data.responsibilities ?? [],
     authorities: data.data.authorities ?? [],
-    eligibility: data.data.eligibility ?? { manual: false, criteria: [] },
-    toggle: data.data.toggle ?? { manual: false, criteria: [] },
+    eligibility: data.data.eligibility ?? {manual: false, criteria: []},
+    toggle: data.data.toggle ?? {manual: false, criteria: []},
   };
 };
 
@@ -76,18 +75,21 @@ export const resolveIpfsUri = async (uri: string): Promise<IpfsDetails> => {
  * ファイルをIPFSにアップロードするためのメソッド
  * @param file
  */
-export const uploadFileToIpfs = async(file: any) => {
+export const uploadFileToIpfs = async (file: any) => {
   try {
     // ファイルをアップロード
     const upload = await pinata.upload.file(file);
     console.log("upload result:", upload);
     // IPFSからデータを取得する。
     const data = await pinata.gateways.get(upload.IpfsHash);
-    console.log("uploaded data:",data);
+    console.log("uploaded data:", data);
     // コンテンツまでのURLを返却する。
-    return `${PINATA_PUBLIC_GATEWAY_URL}/${upload.IpfsHash}`;
+    return {
+      contentsURL: `${PINATA_PUBLIC_GATEWAY_URL}/${upload.IpfsHash}`,
+      cid: upload.IpfsHash,
+    };
   } catch (error) {
     console.log("error occuered when uploading file to IPFS:", error);
-    return null;
+    return {contentsURL: "", cid: ""};
   }
-}
+};

@@ -7,8 +7,11 @@ import Image from 'next/image';
 import ProjectInfo from '../../components/ProjectInfo';
 import RoleList from '../../components/RoleList';
 import HatList from '../../components/HatList';
+import { useGetTopHat } from '@/hooks/useHatRead';
 
 export default function ProjectTop() {
+    const a = useGetTopHat();
+
     const router = useRouter();
     
     const isWalletConnected = false; // 実際のウォレット接続ロジックと置き換えてください

@@ -3,7 +3,7 @@ import { AddIcon } from '@chakra-ui/icons';
 import Link from 'next/link';
 
 interface RoleListProps {
-  roles: { name: string; icon: JSX.Element; href: string }[];
+  roles: { name: string; icon: JSX.Element | string; href: string }[];
 }
 
 const RoleList: React.FC<RoleListProps> = ({ roles }) => {

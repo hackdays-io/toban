@@ -7,7 +7,7 @@ const useHatMint = ({
   hatId,
 }: {
   chainId: number;
-  hatId: string;
+  hatId: bigint;
 }) => {
   const currentNetworkId = useChainId();
   const wearer = "0xe3946ec13631B04CF9AB3630d1c7165AC719de13" // TimeFrameHatModule

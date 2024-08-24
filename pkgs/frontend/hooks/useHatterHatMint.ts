@@ -6,7 +6,7 @@ const useHatterHatMint = ({
   hatId
 }: {
   chainId: number;
-  hatId: string;
+  hatId: BigInt;
 }) => {
     const currentNetworkId = useChainId();
     const imageURI = "ipfs://bafkreiflezpk3kjz6zsv23pbvowtatnd5hmqfkdro33x5mh2azlhne3ah4"

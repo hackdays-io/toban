@@ -1,6 +1,6 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -19,39 +19,33 @@ export default function Home() {
 
   const chainId = useChainId();
   
-  const [topHatId, setTopHatId] = useState("");
-  const [hatterHatId, setHatterHatId] = useState("");
+  const [topHatId, setTopHatId] = useState<bigint>(BigInt(0));
+  const [hatterHatId, setHatterHatId] = useState<bigint>(BigInt(0));
 
   const resTopHatMint = useTopHatMint({
     chainId,
   });
 
-  // console.log('topHatId', topHatId);
-  // const resHatterHatMint = useHatterHatMint({
-  //   chainId,
-  //   hatId: topHatId
-  // });
+  const resHatterHatMint = useHatterHatMint({
+    chainId,
+    hatId: topHatId
+  });
 
-  // console.log('hatterHatId', hatterHatId);
-  // const resHatMint = useHatMint({
-  //   chainId,
-  //   hatId: hatterHatId
-  // });
+  const resHatMint = useHatMint({
+    chainId,
+    hatId: hatterHatId
+  });
 
   const handleBigBangClick = async () => {
     try {
-      const bigbang1 = await resTopHatMint.writeAsync();
+      const bigbang1 = await resTopHatMint.writeAsync()
+      setTopHatId(bigbang1)
       console.log(`😺 TopHat minted successfully!, hatId = ${bigbang1}`);
 
-      // const hatterHatId = await resHatterHatMint.writeAsync()
-      // console.log('hatterHatId', hatterHatId);
+      
 
-      // // 15秒の遅延
-      // await delay(15000);
-
-      // TODO: TimeschejuleManagerにHatterHatをミント
-      // const res = await resHatMint.writeAsync()
-      // console.log('res🐈', res);
+      // const bigbang3 = await resHatMint.writeAsync()
+      // console.log('bigbang3', bigbang3);
 
       // if (res === '1n'){
       //   navigateTo('/hatid');
@@ -61,6 +55,15 @@ export default function Home() {
       console.error('Failed to mint TopHat:', error);
     }
   };
+
+  useEffect(() => {
+    const fetch = async () => {
+      const bigbang2 = await resHatterHatMint.writeAsync()
+        setHatterHatId(bigbang2)
+        console.log(`😺 HatterHat minted successfully!, hatId = ${bigbang2}`)
+    }
+    fetch()
+  }, [topHatId])
 
   return (
     <Box bg="#FFFCF4" minH="100vh"> {/* 背景色を#FFFCF4に設定 */}

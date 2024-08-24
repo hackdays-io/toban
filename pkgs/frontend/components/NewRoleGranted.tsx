@@ -41,8 +41,11 @@ export default function NewRoleGrantedComponent() {
   const {signTypedDataAsync} = useSignTypedData();
 
   const {roleId} = useParams();
+  if (!roleId) {
+    return;
+  }
 
-  const {details, imageUri} = useGetHat(BigInt(roleId.toString()));
+  const {details, imageUri} = useGetHat(BigInt(roleId?.toString()));
 
   console.log(details, imageUri);
 
@@ -58,7 +61,7 @@ export default function NewRoleGrantedComponent() {
         TIME_FRAME_MODULE_CONTRACT_ADDRESS,
         TimeFrameHatModuleJson.abi,
         "mintHat",
-        [BigInt(roleId.toString()), address] // rolehatIdはルーターで受け取れるようにする。
+        [BigInt(roleId?.toString()), address] // rolehatIdはルーターで受け取れるようにする。
       );
       // sign
       const signature = await signTypedDataAsync(typedSignData);

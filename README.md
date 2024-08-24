@@ -50,6 +50,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 | Forwarder          | 0xbE914D66aF1D6B7C46e1dfB641E4adCb6205cFc2 |                    |
 | Splits Factory     | 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | From Splits        |
 | Hats               | 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | From Hats Protocol |
+| NameWrapper        | 0x0635513f179D50A207757E05759CbD106d7dFcE8 | From ENS           |
 
 ## How to work
 

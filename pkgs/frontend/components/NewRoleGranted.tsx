@@ -8,9 +8,11 @@ import { Box, Button, FormControl, FormLabel, Input, InputGroup, InputRightEleme
 import { getEnsResolver } from '@wagmi/core';
 import { useState } from 'react';
 import { FaCalendarAlt, FaQrcode } from 'react-icons/fa';
+import { toast } from "react-toastify";
 import { zeroAddress } from "viem";
 import { normalize } from 'viem/ens';
 import { useAccount, useChainId, useSignTypedData } from 'wagmi';
+import Toaster from "./Toaster";
 
 export default function NewRoleGrantedComponent() {
   const [address, setAddress] = useState("");
@@ -28,33 +30,56 @@ export default function NewRoleGrantedComponent() {
    * MetaTransactionを送信するメソッド
    */
   const sendMetaTx = async () => {
-    console.log('sendMetaTransaction');
-    // create typed sign data
-    const typedSignData: any = await createTypedSignData(
-      connectedAddress, 
-      chainId as any, 
-      TIME_FRAME_MODULE_CONTRACT_ADDRESS, 
-      TimeFrameHatModuleJson.abi,           
-      'mintHat', 
-      [0x033 , address] // rolehatIdはルーターで受け取れるようにする。
-    );
-    // sign
-    const signature = await signTypedDataAsync(typedSignData);
-    console.log('signature', signature);
-    // send meta transaction
-    await fetch("api/requestRelayer", {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        typedSignData: typedSignData,
-        signature: signature,
-      })
-    }).then(async result => {
-      // APIリクエストのリザルトをJSONとして解析
-      console.log("API response:", await result.json());
-    });
+    try {
+      // create typed sign data
+      const typedSignData: any = await createTypedSignData(
+        connectedAddress, 
+        chainId as any, 
+        TIME_FRAME_MODULE_CONTRACT_ADDRESS, 
+        TimeFrameHatModuleJson.abi,           
+        'mintHat', 
+        [0x033 , address] // rolehatIdはルーターで受け取れるようにする。
+      );
+      // sign
+      const signature = await signTypedDataAsync(typedSignData);
+      console.log('signature', signature);
+      // send meta transaction
+      await fetch("api/requestRelayer", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          typedSignData: typedSignData,
+          signature: signature,
+        })
+      }).then(async result => {
+        // APIリクエストのリザルトをJSONとして解析
+        console.log("API response:", await result.json());
+      });
+      toast.success("🦄 Success!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    } catch(err: any) {
+      console.error("error:", err);
+      toast.error("resolve Failed....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    }
   };
 
   const handleAddressClick = async(e:any) => {
@@ -65,8 +90,28 @@ export default function NewRoleGrantedComponent() {
 
     if(ensResolver == zeroAddress) {
       console.error("resolve error", ensResolver);
+      toast.error("resolve Failed....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     } else {
       setAddress(ensResolver)
+      toast.success("🦄 Success!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     }
   };
 
@@ -155,6 +200,7 @@ export default function NewRoleGrantedComponent() {
       <Button colorScheme="blue" width="full" onClick={sendMetaTx}>
         Submit
       </Button>
+      <Toaster/>
     </Box>
   );
 }

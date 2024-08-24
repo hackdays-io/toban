@@ -1,5 +1,8 @@
 "use client";
 
+import SplitCreatorJson from "@/contracts/SplitCreator.sol/SplitCreator.json";
+import { SPLIT_CREATOR_CONTRACT_ADDRESS } from '@/lib/constants';
+import { createTypedSignData } from '@/lib/metaTransaction';
 import {
   Box,
   Button,
@@ -15,6 +18,9 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useState } from 'react';
+import { toast } from "react-toastify";
+import { useAccount, useChainId, useSignTypedData } from 'wagmi';
+import Toaster from "./Toaster";
 
 function SplitterCreation() {
   // 状態の追加：画面の表示状態を管理
@@ -33,22 +39,21 @@ function SplitterCreation() {
     halsk: 15,
   });
 
-  /*
   const { address } = useAccount();
   const chainId = useChainId();
   const { signTypedDataAsync } = useSignTypedData();
 
   // MetaTransactionを送信するメソッド
   const sendMetaTx = async () => {
-    console.log('sendMetaTransaction');
+    const splitData = [1, 1, 10, ["0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"]]
     // create typed sign data
     const typedSignData: any = await createTypedSignData(
       address, 
       chainId as any, 
-      HELLO_WORLD_CONTRACT_ADDRESS, // ガスレスにしたいコントラクトのアドレスを指定する
-      HelloWorldJson.abi,           // ガスレスにしたいコントラクトのABIを指定する
-      'setNewText', 
-      ["test"]
+      SPLIT_CREATOR_CONTRACT_ADDRESS, 
+      SplitCreatorJson.abi,           
+      'create', 
+      [splitData] //今は仮のデータ
     );
     // sign
     const signature = await signTypedDataAsync(typedSignData);
@@ -68,7 +73,6 @@ function SplitterCreation() {
       console.log("API response:", await result.json());
     });
   };
-  */
 
   const handleRoleChange = (role: any) => {
     setSelectedRoles({
@@ -104,8 +108,38 @@ function SplitterCreation() {
     setIsConfirmed(true);
   };
 
-  const handleCreate = () => {
-    // スプリットを作成し、選択したチェーンにデプロイするロジック
+  /**
+   * splitを作成するメソッド
+   */
+  const handleCreate = async() => {
+    try {
+      // Spliteをガスレスで作成する。
+      await sendMetaTx();
+      // @todo ここにENSとの紐付けロジックを入れる。 
+
+      toast.success("🦄 Success!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    } catch(err: any) {
+      console.error("error:", err);
+      toast.error("Failed....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    }
   };
 
   return (
@@ -200,6 +234,7 @@ function SplitterCreation() {
           </Button>
         </VStack>
       )}
+      <Toaster/>
     </Box>
   );
 }

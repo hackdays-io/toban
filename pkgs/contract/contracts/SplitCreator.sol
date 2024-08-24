@@ -94,7 +94,7 @@ contract SplitCreator {
     emit SplitCreated(split);
 
     // Splitの作成と同時にENSサブドメインを紐づける
-    _asignENSSubDomain(split, _subDomain)
+    _asignENSSubDomain(split, _subDomain);
 
     return split;
   }

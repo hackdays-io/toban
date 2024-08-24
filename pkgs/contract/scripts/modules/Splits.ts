@@ -22,12 +22,14 @@ export const deploySplitsProtocol = async () => {
 
 export const deploySplitCreator = async (
   splitFactoryAddress: string,
-  fractionTokenAddress: string
+  fractionTokenAddress: string,
+  forwarderAddress: string
 ) => {
   const splitCreatorFactory = await ethers.getContractFactory("SplitCreator");
   const SplitCreator = await splitCreatorFactory.deploy(
     splitFactoryAddress,
-    fractionTokenAddress
+    fractionTokenAddress,
+    forwarderAddress
   );
 
   return {SplitCreator};

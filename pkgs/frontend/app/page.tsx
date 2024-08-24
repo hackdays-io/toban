@@ -3,12 +3,34 @@
 import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useChainId } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useTopHatMint } from '@/hooks';
 
 export default function Home() {
   const router = useRouter();
 
   const navigateTo = (path: string) => {
     router.push(path);
+  };
+
+  const chainId = useChainId();
+
+  const { writeAsync } = useTopHatMint({
+    chainId,
+  });   
+
+  const handleBigBangClick = async () => {
+    try {
+      const hatid = await writeAsync();
+      console.log(`😺 TopHat minted successfully!, hatId = ${hatid}`);
+
+      // TODO: HatterHatのモジュールをデプロイ
+      // TODO: TimeschejuleManagerにHatterHatをミント
+      // navigateTo('/hatid');
+    } catch (error) {
+      console.error('Failed to mint TopHat:', error);
+    }
   };
 
   return (
@@ -25,9 +47,7 @@ export default function Home() {
         <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
           <Heading size="md" color="white">Main Page</Heading>
           <Spacer />
-          <Button colorScheme="teal" variant="outline">
-            Login
-          </Button>
+          <ConnectButton />
         </Flex>
       </Box>
 
@@ -49,6 +69,10 @@ export default function Home() {
           </Button>
           <Button width="full" bg="green.400" color="black" size="md" onClick={() => navigateTo('/SplitterCreation')}>
             SplitterCreation
+          </Button>
+          <hr/>
+          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => handleBigBangClick()}>
+            BigBang
           </Button>
         </VStack>
       </Box>

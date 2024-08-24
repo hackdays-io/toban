@@ -114,11 +114,4 @@ contract SplitCreator {
 
         return split;
     }
-
-    function _asignENSSubDomain(
-        address _split,
-        string memory _subDomain
-    ) internal {
-        // ENSにサブドメインを登録する
-    }
 }

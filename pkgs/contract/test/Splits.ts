@@ -145,7 +145,8 @@ describe("CreateSplit", () => {
 
     const {FractionToken: _FractionToken} = await deployFractionToken(
       "",
-      await Hats.getAddress()
+      await Hats.getAddress(),
+      ZeroAddress
     );
     FractionToken = _FractionToken;
 

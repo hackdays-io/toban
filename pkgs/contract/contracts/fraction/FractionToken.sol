@@ -4,16 +4,23 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract FractionToken is ERC1155, Ownable {
+contract FractionToken is ERC1155, ERC2771Context, Ownable {
     uint256 public constant TOKEN_SUPPLY = 10000;
+
     mapping(uint256 => address[]) private tokenRecipients;
+
     uint256[] private allTokenIds;
+
     IHats private hatsContract;
 
-    constructor(string memory uri, address hatsAddress) ERC1155(uri) Ownable() {
-        hatsContract = IHats(hatsAddress); // Initialize the Hats contract
+    constructor(
+        string memory _uri,
+        address _hatsAddress,
+        address _trustedForwarder
+    ) ERC1155(_uri) ERC2771Context(_trustedForwarder) Ownable() {
+        hatsContract = IHats(_hatsAddress); // Initialize the Hats contract
     }
 
     function mint(uint256 hatId, address account) public onlyOwner {
@@ -102,6 +109,7 @@ contract FractionToken is ERC1155, Ownable {
         return balance > 0;
     }
 
+    // *** override ***
     function balanceOf(
         address account,
         address wearer,
@@ -135,6 +143,40 @@ contract FractionToken is ERC1155, Ownable {
         }
 
         return balances;
+    }
+
+    function uri(
+        uint256 tokenId
+    ) public view override(ERC1155) returns (string memory) {
+        return super.uri(tokenId);
+    }
+
+    function _msgSender()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (address sender)
+    {
+        return ERC2771Context._msgSender();
+    }
+
+    function _msgData()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (bytes calldata)
+    {
+        return ERC2771Context._msgData();
+    }
+
+    function _contextSuffixLength()
+        internal
+        view
+        virtual
+        override(Context, ERC2771Context)
+        returns (uint256)
+    {
+        return ERC2771Context._contextSuffixLength();
     }
 
     // // test because retunrn 0

@@ -1,0 +1,8 @@
+{
+  "contracts": {
+    "NameWrapper": "0x0635513f179D50A207757E05759CbD106d7dFcE8",
+    "SampleForwarder": "0x273EAEC332c86a942358C3b45921639b0e7Ebff3",
+    "FractionToken": "0x06eDd105B205Eae5d6A2D319c2605F4C632073E4",
+    "SampleCreateSubDomain": "0x56Ce163A1909eC0c6F363FfdB71e781d56D41505"
+  }
+}

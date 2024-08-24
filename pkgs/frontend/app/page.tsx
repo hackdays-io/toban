@@ -1,70 +1,14 @@
-// import React from "react";
-// import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
-// import SplitterCreation from "../components/SplitterCreation";
-// import NewRoleGranted from "../components/NewRoleGranted";
-// import CreateRole from "../components/CreateRole";
-// import SendToken from "../components/SendToken";
-
-// export default function Home() {
-//   return (
-//     <>
-//       {/* Header */}
-//       <Flex as="header" p="4" bg="teal.500" color="white" alignItems="center">
-//         <Heading size="md">My App</Heading>
-//         <Spacer />
-//         <Button colorScheme="teal" variant="outline">
-//           Login
-//         </Button>
-//       </Flex>
-
-//       {/* Main Content */}
-//       <Box textAlign="center" mt="20">
-//         <Text fontSize="3xl" mb="4">Welcome</Text>
-//         <VStack spacing={4}>
-//           <Button colorScheme="teal" size="md">
-//             ButtonA
-//           </Button>
-//           <Button colorScheme="teal" size="md">
-//             ButtonB
-//           </Button>
-//           <Button colorScheme="teal" size="md">
-//             ButtonC
-//           </Button>
-//         </VStack>
-//       </Box>
-
-//       {/* SplitterCreation Component */}
-//       <Box mt="10">
-//         <SplitterCreation />
-//       </Box>
-
-//       {/* CreateRole Component */}
-//       <Box mt="10">
-//         <CreateRole />
-//       </Box>
-
-//       {/* NewRoleGranted Component */}
-//       <Box mt="10">
-//         <NewRoleGranted />
-//       </Box>
-
-//       {/* SendToken Component */}
-//       <Box mt="10">
-//         <SendToken />
-//       </Box>
-//     </>
-//   );
-// }
-
 "use client"; // クライアントコンポーネントとして指定
 
-import React from "react";
-import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
+import { Box, Button, Flex, Heading, Spacer, Text, VStack, useTheme } from '@chakra-ui/react';
 import Image from 'next/image'; // next/imageのインポート
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
+  const theme = useTheme(); // テーマを取得
+
+  console.log(theme); // テーマオブジェクトの中身を確認
 
   const navigateTo = (path: string) => {
     router.push(path);
@@ -82,9 +26,12 @@ export default function Home() {
           priority={true} // ページロード時に優先的に読み込む
         />
         <Flex position="absolute" top="0" left="0" right="0" p="4" alignItems="center" bg="rgba(0, 0, 0, 0.5)">
-          <Heading size="md" color="white">My App</Heading>
+          <Heading size="md" color="white">Main Page</Heading>
           <Spacer />
-          <Button colorScheme="teal" variant="outline">
+          <Button 
+            colorScheme="teal" 
+            variant="outline"
+          >
             Login
           </Button>
         </Flex>
@@ -93,21 +40,87 @@ export default function Home() {
       {/* Main Content */}
       <Box textAlign="center" mt="20">
         <Text fontSize="3xl" mb="4">Welcome</Text>
-        <VStack spacing={4}>
-          <Button colorScheme="teal" size="md" onClick={() => navigateTo('/SplitterCreation')}>
-            SplitterCreation
-          </Button>
-          <Button colorScheme="teal" size="md" onClick={() => navigateTo('/NewRoleGranted')}>
-            NewRoleGranted
-          </Button>
-          <Button colorScheme="teal" size="md" onClick={() => navigateTo('/CreateRole')}>
+        <VStack spacing={4} width="full" maxW="400px" mx="auto">
+          <Button width="full" bg={theme.colors.yellow[400]} color="black" size="md" onClick={() => navigateTo('/CreateRole')}>
             CreateRole
           </Button>
-          <Button colorScheme="teal" size="md" onClick={() => navigateTo('/SendToken')}>
+          <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/NewRoleGranted')}>
+            NewRoleGranted
+          </Button>
+          <Button width="full" bg={theme.colors.orange[400]} color="black" size="md" onClick={() => navigateTo('/SendToken')}>
             SendToken
+          </Button>
+          <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/SplitterCreation')}>
+            SplitterCreation
           </Button>
         </VStack>
       </Box>
+
     </>
   );
 }
+
+
+      // {/* Main Content */}
+      // <Box textAlign="center" mt="20">
+      //   <Text fontSize="3xl" mb="4">Welcome</Text>
+      //   <Box
+      //     position="relative"
+      //     width="300px"
+      //     height="300px"
+      //     mx="auto"
+      //     borderRadius="50%"
+      //     overflow="hidden"
+      //     display="flex"
+      //     flexWrap="wrap"
+      //   >
+      //     <Button
+      //       position="absolute"
+      //       top="0"
+      //       left="0"
+      //       width="50%"
+      //       height="50%"
+      //       bg="yellow.400"
+      //       borderRadius="0"
+      //       onClick={() => navigateTo('/CreateRole')}
+      //     >
+      //       CreateRole
+      //     </Button>
+      //     <Button
+      //       position="absolute"
+      //       top="0"
+      //       left="50%"
+      //       width="50%"
+      //       height="50%"
+      //       bg="orange.400"
+      //       borderRadius="0"
+      //       onClick={() => navigateTo('/NewRoleGranted')}
+      //     >
+      //       NewRoleGranted
+      //     </Button>
+      //     <Button
+      //       position="absolute"
+      //       top="50%"
+      //       left="0"
+      //       width="50%"
+      //       height="50%"
+      //       bg="blue.400"
+      //       borderRadius="0"
+      //       onClick={() => navigateTo('/SendToken')}
+      //     >
+      //       SendToken
+      //     </Button>
+      //     <Button
+      //       position="absolute"
+      //       top="50%"
+      //       left="50%"
+      //       width="50%"
+      //       height="50%"
+      //       bg="teal.400"
+      //       borderRadius="0"
+      //       onClick={() => navigateTo('/SplitterCreation')}
+      //     >
+      //       SplitterCreation
+      //     </Button>
+      //   </Box>
+      // </Box>

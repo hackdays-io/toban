@@ -1,11 +1,50 @@
 "use client";
 
+import { uploadFileToIpfs } from '@/lib/ipfs';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { Box, Button, FormControl, FormLabel, HStack, IconButton, Input, Textarea, VStack } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function CreateRoleComponent() {
   const [responsibilities, setResponsibilities] = useState([{ name: '', description: '', link: '' }]);
+  const [file, setFile] = useState<any>();
+
+  /*
+  const { address } = useAccount();
+  const chainId = useChainId();
+  const { signTypedDataAsync } = useSignTypedData();
+
+  // MetaTransactionを送信するメソッド
+  const sendMetaTx = async () => {
+    console.log('sendMetaTransaction');
+    // create typed sign data
+    const typedSignData: any = await createTypedSignData(
+      address, 
+      chainId as any, 
+      HELLO_WORLD_CONTRACT_ADDRESS, // ガスレスにしたいコントラクトのアドレスを指定する
+      HelloWorldJson.abi,           // ガスレスにしたいコントラクトのABIを指定する
+      'setNewText', 
+      ["test"]
+    );
+    // sign
+    const signature = await signTypedDataAsync(typedSignData);
+    console.log('signature', signature);
+    // send meta transaction
+    await fetch("api/requestRelayer", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        typedSignData: typedSignData,
+        signature: signature,
+      })
+    }).then(async result => {
+      // APIリクエストのリザルトをJSONとして解析
+      console.log("API response:", await result.json());
+    });
+  };
+  */
 
   const handleAddResponsibility = () => {
     setResponsibilities([...responsibilities, { name: '', description: '', link: '' }]);
@@ -30,13 +69,30 @@ export default function CreateRoleComponent() {
     });
   };
 
+  /**
+   * ファイルが選択されたときにステートを更新するメソッド
+   */
+  const handleFileChange = (event: any) => {
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile);
+  };
+
+  useEffect(() => {
+    const uploadToIpfs = async() => {
+      // IPFSにファイルを呼び出すためのメソッドを呼び出す。
+      const url = await uploadFileToIpfs(file);
+      console.log("content url:", url);
+    }
+    uploadToIpfs();
+  }, [file])
+
   return (
     <Box maxW="800px" mx="auto" mt="10">
       <form onSubmit={handleSubmit}>
         <VStack spacing="5">
           <FormControl id="image">
             <FormLabel>Image</FormLabel>
-            <Input type="file" />
+            <Input type="file" onChange={handleFileChange} />
           </FormControl>
           <FormControl id="name" isRequired>
             <FormLabel>Name</FormLabel>
@@ -66,7 +122,7 @@ export default function CreateRoleComponent() {
                     type="text"
                     value={resp.name}
                     onChange={(e) => handleResponsibilityChange(index, 'name', e.target.value)}
-                    placeholder="Enter responsibility name"
+                    placeholder="Enter Responsibility Name"
                   />
                 </FormControl>
                 <FormControl id={`responsibility-description-${index}`}>
@@ -74,7 +130,7 @@ export default function CreateRoleComponent() {
                   <Textarea
                     value={resp.description}
                     onChange={(e) => handleResponsibilityChange(index, 'description', e.target.value)}
-                    placeholder="Enter responsibility description"
+                    placeholder="Enter Responsibility Description"
                   />
                 </FormControl>
                 <FormControl id={`responsibility-link-${index}`}>
@@ -83,7 +139,7 @@ export default function CreateRoleComponent() {
                     type="url"
                     value={resp.link}
                     onChange={(e) => handleResponsibilityChange(index, 'link', e.target.value)}
-                    placeholder="Enter responsibility link"
+                    placeholder="Enter Responsibility Link"
                   />
                 </FormControl>
               </VStack>

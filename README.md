@@ -118,7 +118,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   label の部分が subdomain の名前になる。
 
   ```bash
-  yarn contract setSubnodeRecord --parent 0x8f16dcf0ba3c4c5b2bb9786c84c45925294ff9e18b65e97dda3521708b071a33 --label test3 --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --resolver 0x8FADE66B79cC9f707aB26799354482EB93a5B7dD --network sepolia
+  yarn contract setSubnodeRecord --parent 0x97cd6f9ae139c32c43a0343366f02acaf191af1d32ff86da66b9a672d120944c --label test11 --owner 0xd51b4abd15ff578d61047235D8D42bc030D19682 --resolver 0x8FADE66B79cC9f707aB26799354482EB93a5B7dD --network sepolia
   ```
 
 - **getAllTokenIds from FractionalToken**
@@ -149,4 +149,10 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
   ```bash
   yarn contract setSubnodeRecordFromContract --label test --network sepolia
+  ```
+
+- **setAddr from Resolver Contract**
+
+  ```bash
+  yarn contract setAddr --hash 0xc8082b5c79fbbd2fc869eac7c1da00eb53f37e6b2e4fd056bb675f0aed653333 --addr 0x06eDd105B205Eae5d6A2D319c2605F4C632073E4 --network sepolia
   ```

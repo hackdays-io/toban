@@ -9,7 +9,7 @@ import { Contract } from "ethers";
 /**
  * get Relayer method
  */
-const getRelayer = async () => {
+export const getRelayer = async () => {
   const credentials: any = {
     apiKey: process.env.NEXT_PUBLIC_DEFENDER_API_KEY,
     apiSecret: process.env.NEXT_PUBLIC_DEFENDER_SECRET_KEY,

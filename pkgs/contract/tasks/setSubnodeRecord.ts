@@ -1,6 +1,7 @@
 import {task} from "hardhat/config";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {loadDeployedContractAddresses} from "../helper/contractsJsonHelper";
+import {getRelayer} from "../helper/ozSigner";
 
 task("setSubnodeRecord", "setSubnodeRecord on ENS")
   .addParam("parent", "parentNode (bytes32)")
@@ -17,23 +18,38 @@ task("setSubnodeRecord", "setSubnodeRecord on ENS")
       contracts: {NameWrapper},
     } = loadDeployedContractAddresses(hre.network.name);
 
+    // OpenZeppelin DefenderのSignerを用意する。
+    const ozSigner: any = await getRelayer();
     // コントラクトインスタンスを生成する。
-    const nameWrapper = await hre.ethers.getContractAt(ABI, NameWrapper);
+    const nameWrapper = await hre.ethers.getContractAt(
+      NameWrapperABI,
+      NameWrapper,
+      ozSigner
+    );
 
     try {
       // sub domainを登録する。
-      const tx = await nameWrapper.setSubnodeRecord(
-        taskArgs.parent,
-        taskArgs.label,
-        taskArgs.owner,
-        taskArgs.resolver,
-        0,
-        0,
-        0
-      );
-
-      await tx.wait();
-      console.log("tx:", tx);
+      await nameWrapper
+        .setSubnodeRecord(
+          taskArgs.parent,
+          taskArgs.label,
+          taskArgs.owner,
+          taskArgs.resolver,
+          0,
+          0,
+          0,
+          {
+            gasLimit: 6000000,
+          }
+        )
+        .then(async (tx) => {
+          console.log("tx hash:", tx.hash);
+          // const provider = await hre.ethers.provider.getTransactionReceipt(
+          //  tx.hash
+          //);
+          // const contractInterface = new hre.ethers.Interface(NameWrapperABI);
+          // await getEventData(tx.hash, ozSigner.provider, contractInterface);
+        });
     } catch (e: any) {
       console.error("err:", e);
     } finally {
@@ -44,7 +60,7 @@ task("setSubnodeRecord", "setSubnodeRecord on ENS")
   });
 
 // NameWrapperコントラクトのABI
-const ABI = [
+export const NameWrapperABI = [
   {
     inputs: [
       {internalType: "contract ENS", name: "_ens", type: "address"},

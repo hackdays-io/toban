@@ -20,7 +20,7 @@ const useHatMint = ({
     hatId && `Minted hat ${hatIdDecimalToIp(BigInt(hatId))}`;
 
   /**
-   * Hatを民とするメソッド
+   * Hatをミントするメソッド
    */
   const {
     writeAsync,

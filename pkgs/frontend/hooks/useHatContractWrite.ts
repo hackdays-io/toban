@@ -73,7 +73,10 @@ const useHatContractWrite = <T extends ValidFunctionName>({
        })
       })
       toast.info('Transaction submitted');
-      return decodedLogs[0].args?.id;
+      console.log('decodedLogs[0].args', decodedLogs);
+      if (functionName === 'mintTopHat' || functionName === 'createHat'){
+        return decodedLogs[0].args?.id;
+      }
     }).catch((error) => {
       console.log('Error!!', error);
       if (

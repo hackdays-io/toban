@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useTopHatMint } from '@/hooks';
+import useHatterHatMint from '@/hooks/useHatterHatMint';
 
 export default function Home() {
   const router = useRouter();
@@ -16,16 +17,26 @@ export default function Home() {
 
   const chainId = useChainId();
 
-  const { writeAsync } = useTopHatMint({
+  let hatId: any = '13075574133568060300413502317204520876714015044932177653335250970869760';
+
+  const resTopHatMint = useTopHatMint({
     chainId,
-  });   
+  });
+
+  const resHatterHatMint = useHatterHatMint({
+    chainId,
+    hatId
+  });
 
   const handleBigBangClick = async () => {
     try {
-      const hatid = await writeAsync();
-      console.log(`😺 TopHat minted successfully!, hatId = ${hatid}`);
+      // hatId = await resTopHatMint.writeAsync();
+      // console.log(`😺 TopHat minted successfully!, hatId = ${hatId}`);
 
       // TODO: HatterHatのモジュールをデプロイ
+      const hatterHatId = await resHatterHatMint.writeAsync()
+      console.log('hatterHatId', hatterHatId);
+
       // TODO: TimeschejuleManagerにHatterHatをミント
       // navigateTo('/hatid');
     } catch (error) {

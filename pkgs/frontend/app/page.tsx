@@ -53,6 +53,10 @@ export default function Home() {
           <Button width="full" bg={theme.colors.blue[400]} color="black" size="md" onClick={() => navigateTo('/SplitterCreation')}>
             SplitterCreation
           </Button>
+          <hr/>
+          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => console.log('😺')}>
+            Bigbang
+          </Button>
         </VStack>
       </Box>
 

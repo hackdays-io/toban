@@ -35,7 +35,7 @@ export const useWaitForIndexGraphAPI = () => {
   return {waitForIndexGraphAPI};
 };
 
-export const useGetHats = (hatId: string) => {
+export const useGetHats = (topHatId: string) => {
   const chainId = useChainId();
 
   const [topHat, setTopHat] = useState<DefaultHatsDetailsSchema>();
@@ -44,9 +44,9 @@ export const useGetHats = (hatId: string) => {
   const [roleHats, setRoleHats] = useState<any[]>();
 
   const treeId = useMemo(() => {
-    const _treeId = parseInt(BigInt(hatId).toString(16).slice(0, 3), 16);
+    const _treeId = parseInt(BigInt(topHatId).toString(16).slice(0, 3), 16);
     return _treeId;
-  }, [hatId]);
+  }, [topHatId]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -107,4 +107,84 @@ export const useGetHats = (hatId: string) => {
   }, [chainId, treeId]);
 
   return {topHat, hatterHat, hatterHatId, roleHats};
+};
+
+export const useGetHat = (hatId: bigint) => {
+  const chainId = useChainId();
+
+  const [details, setDetails] = useState<DefaultHatsDetailsSchema>();
+  const [imageUri, setImageUri] = useState<string>();
+
+  useEffect(() => {
+    const fetch = async () => {
+      const data = await hatSubgraphClient.getHat({
+        chainId,
+        hatId,
+        props: {
+          details: true,
+          imageUri: true,
+        },
+      });
+
+      const cid = removeIpfsPrefix(data.details || "");
+      const metadata = await hatsDetailsClient.get(cid);
+
+      setDetails(metadata.parsedData as any);
+      setImageUri(data.imageUri);
+    };
+
+    fetch();
+  }, []);
+
+  return {details, imageUri};
+};
+
+export const useGetMyRoles = () => {
+  const chainId = useChainId();
+  const {address} = useAccount();
+
+  const [myRoles, setMyRoles] = useState<
+    {imageURI: string; details: DefaultHatsDetailsSchema}[]
+  >([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!address) return;
+      const data = await hatSubgraphClient.getWearer({
+        chainId,
+        wearerAddress: address!,
+        props: {
+          currentHats: {
+            props: {
+              details: true,
+              imageUri: true,
+              prettyId: true,
+            },
+          },
+        },
+      });
+
+      const roles = data.currentHats?.filter(
+        (ch) => ch.prettyId?.split(".").length === 3
+      );
+
+      if (roles) {
+        const rolesMetadata = await Promise.all(
+          roles.map(async (role) => {
+            const cid = removeIpfsPrefix(role.details || "");
+            const metadata = await hatsDetailsClient.get(cid);
+            return {
+              imageURI: role.imageUri!,
+              details: metadata as any,
+            };
+          })
+        );
+        setMyRoles(rolesMetadata);
+      }
+    };
+
+    fetch();
+  }, [address]);
+
+  return {myRoles};
 };

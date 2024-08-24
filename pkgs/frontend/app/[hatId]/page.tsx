@@ -7,14 +7,13 @@ import HatList from "../../components/HatList";
 import ProjectInfo from "../../components/ProjectInfo";
 import RoleList from "../../components/RoleList";
 import {ConnectButton} from "@rainbow-me/rainbowkit";
-import {useGetHats} from "@/hooks/useHatRead";
+import {useGetHats, useGetMyRoles} from "@/hooks/useHatRead";
 
 export default function ProjectTop() {
   const {hatId} = useParams();
 
   const {topHat, roleHats} = useGetHats(hatId.toString());
-
-  console.log(JSON.stringify(roleHats));
+  const {myRoles} = useGetMyRoles();
 
   const router = useRouter();
 

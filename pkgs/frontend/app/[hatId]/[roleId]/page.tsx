@@ -1,18 +1,39 @@
-import { Box, Button, Flex, Heading, Text, Image, Tag, VStack } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
+"use client";
+
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Text,
+  Image,
+  Tag,
+  VStack,
+} from "@chakra-ui/react";
+import Link from "next/link";
+import {useParams, useRouter} from "next/navigation";
 
 const RoleList = () => {
   const router = useRouter();
-  
+
+  const {hatId, roleId} = useParams();
+
   const contributors = [
-    { name: 'halsk.eth', isCore: true },
-    { name: '0xyyy...123', isCore: true },
-    { name: '0xtkd...adt', isCore: false },
-    { name: 'bob.eth', isCore: false },
+    {name: "halsk.eth", isCore: true},
+    {name: "0xyyy...123", isCore: true},
+    {name: "0xtkd...adt", isCore: false},
+    {name: "bob.eth", isCore: false},
   ];
 
   return (
-    <Box p={8} maxW="600px" mx="auto" bg="white" borderRadius="lg" boxShadow="lg">
+    <Box
+      p={8}
+      maxW="600px"
+      mx="auto"
+      bg="white"
+      borderRadius="lg"
+      boxShadow="lg"
+    >
       <Flex alignItems="center" mb={8}>
         <Image
           src="/path/to/your/image.png" // 実際の画像パスに置き換えてください
@@ -26,7 +47,8 @@ const RoleList = () => {
             Food
           </Heading>
           <Text color="gray.600">
-            Lorem Ipsum is just dummy text for the printing and typesetting industry.
+            Lorem Ipsum is just dummy text for the printing and typesetting
+            industry.
           </Text>
         </VStack>
       </Flex>
@@ -36,7 +58,7 @@ const RoleList = () => {
           Work Scope
         </Heading>
         <VStack align="start" spacing={2}>
-            <Text>- Cleaning public spaces</Text>
+          <Text>- Cleaning public spaces</Text>
           <Text>- Planning cleaning challenge</Text>
           <Text>- Responsible for cleaning</Text>
         </VStack>
@@ -53,9 +75,11 @@ const RoleList = () => {
               {contributor.isCore && <Tag colorScheme="red">Core</Tag>}
             </Flex>
           ))}
-          <Button colorScheme="green" mt={4} onClick={() => router.push('/app/NewRoleGranted/page')}>
-            + Core Contributor
-          </Button>
+          <Link href={`/${hatId}/${roleId}/grant-role`}>
+            <Button colorScheme="green" mt={4}>
+              + Core Contributor
+            </Button>
+          </Link>
         </VStack>
       </Box>
     </Box>
@@ -63,4 +87,3 @@ const RoleList = () => {
 };
 
 export default RoleList;
-

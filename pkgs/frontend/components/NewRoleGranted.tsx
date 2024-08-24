@@ -1,18 +1,26 @@
 "use client";
 
 import TimeFrameHatModuleJson from "@/contracts/timeframe/TimeFrameHatModule.sol/TimeFrameHatModule.json";
-import { TIME_FRAME_MODULE_CONTRACT_ADDRESS } from '@/lib/constants';
-import { createTypedSignData } from '@/lib/metaTransaction';
-import { wagmiConfig } from "@/lib/web3";
-import { Box, Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, Textarea } from '@chakra-ui/react';
-import { getEnsResolver } from '@wagmi/core';
-import { useState } from 'react';
-import { FaCalendarAlt, FaQrcode } from 'react-icons/fa';
-import { toast } from "react-toastify";
-import { zeroAddress } from "viem";
-import { normalize } from 'viem/ens';
-import { useAccount, useChainId, useSignTypedData } from 'wagmi';
-import Toaster from "./Toaster";
+import {TIME_FRAME_MODULE_CONTRACT_ADDRESS} from "@/lib/constants";
+import {createTypedSignData} from "@/lib/metaTransaction";
+import {wagmiConfig} from "@/lib/web3";
+import {
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  InputGroup,
+  InputRightElement,
+  Textarea,
+} from "@chakra-ui/react";
+import {getEnsResolver} from "@wagmi/core";
+import {useState} from "react";
+import {FaCalendarAlt, FaQrcode} from "react-icons/fa";
+import {toast} from "react-toastify";
+import {zeroAddress} from "viem";
+import {normalize} from "viem/ens";
+import {useAccount, useChainId, useSignTypedData} from "wagmi";
 
 export default function NewRoleGrantedComponent() {
   const [address, setAddress] = useState("");
@@ -22,9 +30,9 @@ export default function NewRoleGrantedComponent() {
   const [initialUnits, setInitialUnits] = useState(100);
   const [startDate, setStartDate] = useState("");
 
-  const { address: connectedAddress } = useAccount();
+  const {address: connectedAddress} = useAccount();
   const chainId = useChainId();
-  const { signTypedDataAsync } = useSignTypedData();
+  const {signTypedDataAsync} = useSignTypedData();
 
   /**
    * MetaTransactionを送信するメソッド
@@ -33,27 +41,27 @@ export default function NewRoleGrantedComponent() {
     try {
       // create typed sign data
       const typedSignData: any = await createTypedSignData(
-        connectedAddress, 
-        chainId as any, 
-        TIME_FRAME_MODULE_CONTRACT_ADDRESS, 
-        TimeFrameHatModuleJson.abi,           
-        'mintHat', 
-        [0x033 , address] // rolehatIdはルーターで受け取れるようにする。
+        connectedAddress,
+        chainId as any,
+        TIME_FRAME_MODULE_CONTRACT_ADDRESS,
+        TimeFrameHatModuleJson.abi,
+        "mintHat",
+        [0x033, address] // rolehatIdはルーターで受け取れるようにする。
       );
       // sign
       const signature = await signTypedDataAsync(typedSignData);
-      console.log('signature', signature);
+      console.log("signature", signature);
       // send meta transaction
       await fetch("api/requestRelayer", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           typedSignData: typedSignData,
           signature: signature,
-        })
-      }).then(async result => {
+        }),
+      }).then(async (result) => {
         // APIリクエストのリザルトをJSONとして解析
         console.log("API response:", await result.json());
       });
@@ -67,7 +75,7 @@ export default function NewRoleGrantedComponent() {
         progress: undefined,
         theme: "colored",
       });
-    } catch(err: any) {
+    } catch (err: any) {
       console.error("error:", err);
       toast.error("resolve Failed....", {
         position: "top-right",
@@ -82,13 +90,13 @@ export default function NewRoleGrantedComponent() {
     }
   };
 
-  const handleAddressClick = async(e:any) => {
+  const handleAddressClick = async (e: any) => {
     const ensResolver = await getEnsResolver(wagmiConfig, {
       name: normalize(e.target.value),
-    })
+    });
     console.log("ensResolver", ensResolver);
 
-    if(ensResolver == zeroAddress) {
+    if (ensResolver == zeroAddress) {
       console.error("resolve error", ensResolver);
       toast.error("resolve Failed....", {
         position: "top-right",
@@ -101,7 +109,7 @@ export default function NewRoleGrantedComponent() {
         theme: "colored",
       });
     } else {
-      setAddress(ensResolver)
+      setAddress(ensResolver);
       toast.success("🦄 Success!", {
         position: "top-right",
         autoClose: 5000,
@@ -115,24 +123,35 @@ export default function NewRoleGrantedComponent() {
     }
   };
 
-  const handleRoleNameChange = (e:any) => setRoleName(e.target.value);
-  const handleRoleDescriptionChange = (e:any) => setRoleDescription(e.target.value);
-  const handleWorkScopeChange = (e:any) => setWorkScope(e.target.value);
-  const handleInitialUnitsChange = (e:any) => setInitialUnits(e.target.value);
-  const handleStartDateChange = (e:any) => setStartDate(e.target.value);
+  const handleRoleNameChange = (e: any) => setRoleName(e.target.value);
+  const handleRoleDescriptionChange = (e: any) =>
+    setRoleDescription(e.target.value);
+  const handleWorkScopeChange = (e: any) => setWorkScope(e.target.value);
+  const handleInitialUnitsChange = (e: any) => setInitialUnits(e.target.value);
+  const handleStartDateChange = (e: any) => setStartDate(e.target.value);
 
   return (
-    <Box maxWidth="400px" mx="auto" mt="10" p="5" borderWidth="1px" borderRadius="lg">
+    <Box
+      maxWidth="400px"
+      mx="auto"
+      mt="10"
+      p="5"
+      borderWidth="1px"
+      borderRadius="lg"
+    >
       <FormControl mb="4">
         <FormLabel>Address to be granted</FormLabel>
         <InputGroup>
           <Input
             value={address}
-            onChange={(e:any) => setAddress(e.target.value)}
+            onChange={(e: any) => setAddress(e.target.value)}
             placeholder="vitalik.eth"
           />
           <InputRightElement width="4.5rem">
-            <Button size="sm" onClick={() => console.log("QR code button was clicked")}>
+            <Button
+              size="sm"
+              onClick={() => console.log("QR code button was clicked")}
+            >
               <FaQrcode />
             </Button>
           </InputRightElement>
@@ -200,7 +219,6 @@ export default function NewRoleGrantedComponent() {
       <Button colorScheme="blue" width="full" onClick={sendMetaTx}>
         Submit
       </Button>
-      <Toaster/>
     </Box>
   );
 }

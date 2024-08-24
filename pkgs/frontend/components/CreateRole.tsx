@@ -14,7 +14,6 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import {toast} from "react-toastify";
-import Toaster from "./Toaster";
 import {useEffect, useState} from "react";
 
 export default function CreateRoleComponent() {
@@ -182,7 +181,6 @@ export default function CreateRoleComponent() {
           </Button>
         </VStack>
       </form>
-      <Toaster />
     </Box>
   );
 }

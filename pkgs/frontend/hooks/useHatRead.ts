@@ -1,19 +1,49 @@
 import {hatsDetailsClient, createSubgraphClient} from "@/lib/hats";
 import {removeIpfsPrefix} from "@/lib/ipfs";
-import {useEffect, useState} from "react";
+import {DefaultHatsDetailsSchema} from "@/types/hats";
+import {useEffect, useMemo, useState} from "react";
 import {useAccount, useChainId} from "wagmi";
 
 const hatSubgraphClient = createSubgraphClient();
 
-export const useGetTopHat = (treeId: number) => {
+export const useWaitForIndexGraphAPI = () => {
   const chainId = useChainId();
 
-  type TopHat = {
-    id: string;
-    prettyId: string;
-    details: string;
+  const waitForIndexGraphAPI = async (hatId: string) => {
+    while (true) {
+      const data = await hatSubgraphClient.getTree({
+        chainId: chainId,
+        treeId: parseInt(BigInt(hatId).toString(16).slice(0, 3), 16),
+        props: {
+          hats: {
+            props: {
+              details: true,
+            },
+          },
+        },
+      });
+
+      console.log(data);
+
+      if (data.hats?.length) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
   };
-  const [topHat, setTopHat] = useState<TopHat>();
+
+  return {waitForIndexGraphAPI};
+};
+
+export const useGetTopHat = (hatId: string) => {
+  const chainId = useChainId();
+
+  const [topHat, setTopHat] = useState<DefaultHatsDetailsSchema>();
+
+  const treeId = useMemo(() => {
+    const _treeId = parseInt(BigInt(hatId).toString(16).slice(0, 3), 16);
+    return _treeId;
+  }, [hatId]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -32,17 +62,16 @@ export const useGetTopHat = (treeId: number) => {
         },
       });
 
-      const cid = removeIpfsPrefix(data.hats[0].details || "");
+      const topHat = data.hats?.find((hat) => !hat.prettyId?.includes("."));
 
-      if (!data.hats || data.hats.length === 0) return;
-      const metadata = await hatsDetailsClient.get(
-        "QmXEsYeiRtUovpAYQaRhELkbr9Ra4kWGXhmF2THUEwwHYZ"
-      );
-      console.log(data);
-      console.log(metadata);
+      const cid = removeIpfsPrefix(topHat?.details || "");
+
+      const metadata = await hatsDetailsClient.get(cid);
+
+      setTopHat(metadata.parsedData as any);
     };
     fetch();
   }, [chainId, treeId]);
 
-  return;
+  return {topHat};
 };

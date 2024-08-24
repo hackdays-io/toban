@@ -2,18 +2,17 @@
 
 import {Box, Button, Center, Flex, Heading, Spacer} from "@chakra-ui/react";
 import Image from "next/image";
-import {useRouter} from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import HatList from "../../components/HatList";
 import ProjectInfo from "../../components/ProjectInfo";
 import RoleList from "../../components/RoleList";
 import {useGetTopHat} from "@/hooks/useHatRead";
-import {useUploadHatDetail} from "@/hooks/useHatDetail";
 import {ConnectButton} from "@rainbow-me/rainbowkit";
 
 export default function ProjectTop() {
-  const a = useGetTopHat(461);
+  const {hatId} = useParams();
 
-  const {uploadHatDetail} = useUploadHatDetail("name", "description");
+  const {topHat} = useGetTopHat(hatId.toString());
 
   const router = useRouter();
 
@@ -77,13 +76,16 @@ export default function ProjectTop() {
           borderRadius="lg"
           boxShadow="lg"
         >
-          <ProjectInfo members={15} splitters={2} />
+          <ProjectInfo
+            members={15}
+            splitters={2}
+            projectName={topHat?.data.name}
+            projectDescription={topHat?.data.description}
+          />
           <RoleList roles={roles} />
           {isWalletConnected && <HatList hats={hats} />}
         </Box>
       </Center>
-
-      <Button onClick={uploadHatDetail}>test</Button>
     </>
   );
 }

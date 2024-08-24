@@ -1,18 +1,26 @@
-import { Box, Flex, Text, Icon, VStack } from '@chakra-ui/react';
-import { FaUserFriends } from 'react-icons/fa';
-import { IoMdArrowRoundForward } from 'react-icons/io';
+import {Box, Flex, Text, Icon, VStack} from "@chakra-ui/react";
+import {FaUserFriends} from "react-icons/fa";
+import {IoMdArrowRoundForward} from "react-icons/io";
 
 interface ProjectInfoProps {
   members: number;
   splitters: number;
+  projectName?: string;
+  projectDescription?: string;
 }
 
-const ProjectInfo: React.FC<ProjectInfoProps> = ({ members, splitters }) => {
+const ProjectInfo: React.FC<ProjectInfoProps> = ({
+  members,
+  splitters,
+  projectName,
+  projectDescription,
+}) => {
   return (
     <VStack align="start" spacing={4}>
       <Text fontSize="2xl" fontWeight="bold">
-        Project Information
+        {projectName}
       </Text>
+      <Text>{projectDescription}</Text>
       <Flex align="center">
         <Icon as={FaUserFriends} w={6} h={6} mr={2} />
         <Text>{members} members</Text>

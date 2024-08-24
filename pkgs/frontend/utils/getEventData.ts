@@ -1,7 +1,7 @@
 /**
  * getEventData メソッド
  */
-export async function getEventData(txReceipt: any, contractInterface: any) {
+export const getEventData = (txReceipt: any, contractInterface: any) => {
   try {
     // Loop through all logs in the transaction receipt
     for (const log of txReceipt.logs) {
@@ -21,4 +21,4 @@ export async function getEventData(txReceipt: any, contractInterface: any) {
   } catch (error) {
     console.error("Error fetching transaction receipt:", error);
   }
-}
+};

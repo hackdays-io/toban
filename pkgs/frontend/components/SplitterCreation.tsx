@@ -17,9 +17,17 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+<<<<<<< HEAD
 import {useState} from "react";
 import {toast} from "react-toastify";
 import {useAccount, useChainId, useSignTypedData} from "wagmi";
+=======
+import {ethers} from "ethers";
+import {useState} from "react";
+import {toast} from "react-toastify";
+import {useAccount, useChainId, useSignTypedData} from "wagmi";
+import Toaster from "./Toaster";
+>>>>>>> main
 
 function SplitterCreation() {
   // 状態の追加：画面の表示状態を管理
@@ -44,6 +52,11 @@ function SplitterCreation() {
 
   // MetaTransactionを送信するメソッド
   const sendMetaTx = async () => {
+<<<<<<< HEAD
+=======
+    let result: any;
+    // @todo リョーマさんに引数を準備してもらう。
+>>>>>>> main
     const splitData = [
       1,
       1,
@@ -57,7 +70,11 @@ function SplitterCreation() {
       SPLIT_CREATOR_CONTRACT_ADDRESS,
       SplitCreatorJson.abi,
       "create",
+<<<<<<< HEAD
       [splitData] //今は仮のデータ
+=======
+      [splitData]
+>>>>>>> main
     );
     // sign
     const signature = await signTypedDataAsync(typedSignData);
@@ -75,7 +92,9 @@ function SplitterCreation() {
     }).then(async (result) => {
       // APIリクエストのリザルトをJSONとして解析
       console.log("API response:", await result.json());
+      result = await result.json();
     });
+    return result;
   };
 
   const handleRoleChange = (role: any) => {
@@ -118,8 +137,34 @@ function SplitterCreation() {
   const handleCreate = async () => {
     try {
       // Spliteをガスレスで作成する。
+<<<<<<< HEAD
       await sendMetaTx();
       // @todo ここにENSとの紐付けロジックを入れる。
+=======
+      const result = await sendMetaTx();
+      // @ts-ignore
+      const rpcUrl = RPC_URLS[chainId];
+
+      // provider
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
+      const txData = await provider.getTransactionReceipt(result.txHash);
+      console.log("txData:", txData);
+
+      // ENSのサブドメインとsplitのアドレスを紐づける。
+      await fetch("api/setAddr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          txData: txData,
+          addr: address, // splitのアドレスを渡す。
+        }),
+      }).then(async (result) => {
+        // APIリクエストのリザルトをJSONとして解析
+        console.log("API response:", await result.json());
+      });
+>>>>>>> main
 
       toast.success("🦄 Success!", {
         position: "top-right",
@@ -244,6 +289,10 @@ function SplitterCreation() {
           </Button>
         </VStack>
       )}
+<<<<<<< HEAD
+=======
+      <Toaster />
+>>>>>>> main
     </Box>
   );
 }

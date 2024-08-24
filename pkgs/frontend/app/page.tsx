@@ -167,6 +167,9 @@ export default function Home() {
         position="absolute"
         top="0"
         right="0"
+        // @ts-ignore
+        width="60%"
+        // @ts-ignore
         height="100%"
         objectFit="cover"
         zIndex="0"
@@ -196,7 +199,9 @@ export default function Home() {
         <Image
           src="/toban_logo_color_middle.png"
           alt="Toban Logo Middle"
+          // @ts-ignore
           height="100px"
+          // @ts-ignore
           width="auto"
           objectFit="contain"
           mb="4"
@@ -213,7 +218,9 @@ export default function Home() {
         <Image
           src="/obi.png"
           alt="Background Design"
+          // @ts-ignore
           width="100%"
+          // @ts-ignore
           height="auto"
           objectFit="contain"
           zIndex="1"

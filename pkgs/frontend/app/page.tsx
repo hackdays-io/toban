@@ -40,17 +40,7 @@ export default function Home() {
     try {
       const bigbang1 = await resTopHatMint.writeAsync()
       setTopHatId(bigbang1)
-      console.log(`😺 TopHat minted successfully!, hatId = ${bigbang1}`);
-
-      
-
-      // const bigbang3 = await resHatMint.writeAsync()
-      // console.log('bigbang3', bigbang3);
-
-      // if (res === '1n'){
-      //   navigateTo('/hatid');
-      // }
-      
+      console.log(`😺 TopHat minted successfully!, hatId = ${bigbang1}`);      
     } catch (error) {
       console.error('Failed to mint TopHat:', error);
     }
@@ -64,6 +54,18 @@ export default function Home() {
     }
     fetch()
   }, [topHatId])
+
+  useEffect(() => {
+    const fetch = async () => {
+      const bigbang3 = await resHatMint.writeAsync()
+      console.log(`😺 HatterHat minted successfully!, amount = ${bigbang3}`)
+
+      if (Number(bigbang3) === 1){
+        navigateTo(`/${topHatId}`)
+      }
+    }
+    fetch()
+  }, [hatterHatId])
 
   return (
     <Box bg="#FFFCF4" minH="100vh"> {/* 背景色を#FFFCF4に設定 */}

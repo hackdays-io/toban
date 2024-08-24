@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState } from 'react';
 import {
   Box,
   Button,
   Checkbox,
   FormControl,
   FormLabel,
+  Heading,
   Input,
   NumberInput,
   NumberInputField,
   Stack,
   Text,
   VStack,
-  Heading,
 } from '@chakra-ui/react';
+import { useState } from 'react';
 
 function SplitterCreation() {
   // ここに先ほどのコードを貼り付け
@@ -31,20 +31,23 @@ function SplitterCreation() {
     halsk: 15,
   });
 
-  const handleRoleChange = (role) => {
+  const handleRoleChange = (role: any) => {
     setSelectedRoles({
       ...selectedRoles,
       [role]: {
+        // @ts-ignore
         ...selectedRoles[role],
+        // @ts-ignore
         selected: !selectedRoles[role].selected,
       },
     });
   };
 
-  const handleMultiplierChange = (role, value) => {
+  const handleMultiplierChange = (role: any, value: any) => {
     setSelectedRoles({
       ...selectedRoles,
       [role]: {
+        // @ts-ignore
         ...selectedRoles[role],
         multiplier: value,
       },

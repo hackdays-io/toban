@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
 import { Box, Button, Input, Select, Text } from '@chakra-ui/react';
+import { useState } from 'react';
 
 export default function SendToken() {
   const [selectedRecipient, setSelectedRecipient] = useState('vitalik.eth');
@@ -9,7 +9,7 @@ export default function SendToken() {
   const [yourShare, setYourShare] = useState(65);
   const [recipientShare, setRecipientShare] = useState(10);
 
-  const handlePercentageChange = (e) => {
+  const handlePercentageChange = (e:any) => {
     const newPercentage = parseFloat(e.target.value);
     setPercentage(newPercentage);
 

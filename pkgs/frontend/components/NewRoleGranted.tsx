@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
 import { Box, Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, Textarea } from '@chakra-ui/react';
+import { useState } from 'react';
 import { FaCalendarAlt, FaQrcode } from 'react-icons/fa';
 
 export default function NewRoleGrantedComponent() {
@@ -12,12 +12,12 @@ export default function NewRoleGrantedComponent() {
   const [initialUnits, setInitialUnits] = useState(100);
   const [startDate, setStartDate] = useState("");
 
-  const handleAddressChange = (e) => setAddress(e.target.value);
-  const handleRoleNameChange = (e) => setRoleName(e.target.value);
-  const handleRoleDescriptionChange = (e) => setRoleDescription(e.target.value);
-  const handleWorkScopeChange = (e) => setWorkScope(e.target.value);
-  const handleInitialUnitsChange = (e) => setInitialUnits(e.target.value);
-  const handleStartDateChange = (e) => setStartDate(e.target.value);
+  const handleAddressChange = (e:any) => setAddress(e.target.value);
+  const handleRoleNameChange = (e:any) => setRoleName(e.target.value);
+  const handleRoleDescriptionChange = (e:any) => setRoleDescription(e.target.value);
+  const handleWorkScopeChange = (e:any) => setWorkScope(e.target.value);
+  const handleInitialUnitsChange = (e:any) => setInitialUnits(e.target.value);
+  const handleStartDateChange = (e:any) => setStartDate(e.target.value);
 
   const handleSubmit = () => {
     console.log("以下のデータでフォームが送信されました:");

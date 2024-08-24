@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Box, Button, FormControl, FormLabel, Input, InputGroup, IconButton, Textarea, VStack, HStack } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { Box, Button, FormControl, FormLabel, HStack, IconButton, Input, Textarea, VStack } from '@chakra-ui/react';
+import { useState } from 'react';
 
 export default function CreateRoleComponent() {
   const [responsibilities, setResponsibilities] = useState([{ name: '', description: '', link: '' }]);
@@ -11,19 +11,19 @@ export default function CreateRoleComponent() {
     setResponsibilities([...responsibilities, { name: '', description: '', link: '' }]);
   };
 
-  const handleRemoveResponsibility = (index) => {
+  const handleRemoveResponsibility = (index: any) => {
     const updatedResponsibilities = responsibilities.filter((_, i) => i !== index);
     setResponsibilities(updatedResponsibilities);
   };
 
-  const handleResponsibilityChange = (index, field, value) => {
+  const handleResponsibilityChange = (index: any, field: any, value: any) => {
     const updatedResponsibilities = responsibilities.map((resp, i) => 
       i === index ? { ...resp, [field]: value } : resp
     );
     setResponsibilities(updatedResponsibilities);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     console.log({
       responsibilities,

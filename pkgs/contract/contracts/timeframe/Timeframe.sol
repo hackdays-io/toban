@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ITimeframe} from "./interfaces/ITimeframe.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract Timeframe is ERC2771Context {
+contract Timeframe is ERC2771Context, ITimeframe {
     mapping(address => mapping(uint256 => uint256)) private woreTime;
 
     /**

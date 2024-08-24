@@ -11,10 +11,12 @@
     "local:start": "npx hardhat node",
     "deploy:SampleForwarder": "npx hardhat run ignition/modules/SampleForwarder.ts",
     "deploy:FractionToken": "npx hardhat run ignition/modules/FractionToken.ts",
+    "deploy:mock:SampleCreateSubDomain": "npx hardhat run ignition/modules/mock/SampleCreateSubDomain.ts",
     "setup": "npx hardhat resetContractAddressesJson",
     "getBalance": "npx hardhat getBalance",
     "setSubnodeRecord": "npx hardhat setSubnodeRecord",
-    "getAllTokenIds": "npx hardhat getAllTokenIds"
+    "getAllTokenIds": "npx hardhat getAllTokenIds",
+    "setSubnodeRecordFromContract": "npx hardhat setSubnodeRecordFromContract"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",

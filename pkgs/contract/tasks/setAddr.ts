@@ -1,10 +1,12 @@
 import {task} from "hardhat/config";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {loadDeployedContractAddresses} from "../helper/contractsJsonHelper";
+import {getEventData} from "../helper/getEventData";
 import {getRelayer} from "../helper/ozSigner";
+import {NameWrapperABI} from "./setSubnodeRecord";
 
 task("setAddr", "setAddr")
-  .addParam("node", "node (bytes32)")
+  .addParam("hash", "node (bytes32)")
   .addParam("addr", "addr (string)")
   .setAction(async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
     console.log(
@@ -15,6 +17,15 @@ task("setAddr", "setAddr")
     const {
       contracts: {PublicResolver},
     } = loadDeployedContractAddresses(hre.network.name);
+
+    const txData = await hre.ethers.provider.getTransactionReceipt(
+      taskArgs.hash
+    );
+    console.log("txData:", txData);
+
+    // 生成されたサブドメインのnodeを取得する。
+    const contractInterface = new hre.ethers.Interface(NameWrapperABI);
+    const node = await getEventData(txData, contractInterface);
 
     // OpenZeppelin DefenderのSignerを用意する。
     const ozSigner: any = await getRelayer();
@@ -27,10 +38,9 @@ task("setAddr", "setAddr")
 
     try {
       // setAddr でレコードを登録する。
-      const tx = await resolver.setAddr(taskArgs.node, taskArgs.addr);
-
+      const tx = await resolver.setAddr(node, taskArgs.addr);
       // await tx.wait();
-      console.log("tx:", tx);
+      console.log("tx hash:", tx.hash);
     } catch (e: any) {
       console.error("err:", e);
     } finally {

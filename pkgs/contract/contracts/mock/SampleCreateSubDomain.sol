@@ -2,11 +2,12 @@
 pragma solidity ^0.8.24;
 
 import "./../ens/wrapper/INameWrapper.sol";
+import "./../ens/reverseRegistrar/ReverseClaimer.sol";
 
 /**
  * コントラクトからサブドメインが作成できるか確認するためのモックコントラクト
  */
-contract SampleCreateSubDomain {
+contract SampleCreateSubDomain is ReverseClaimer {
 
   INameWrapper nameWrapper;
 
@@ -15,8 +16,7 @@ contract SampleCreateSubDomain {
   address public resolverAddress = 0x8FADE66B79cC9f707aB26799354482EB93a5B7dD;
   address public nameWrapperAddress = 0x0635513f179D50A207757E05759CbD106d7dFcE8;
  
-  constructor() payable {
-  }
+  constructor(ENS ens) payable ReverseClaimer(ens, msg.sender) {}
 
   function createSubDomain(string memory _subDomain) public {
     // NameWrapperコントラクトを用意する。

@@ -8,7 +8,9 @@ async function main() {
   const SampleCreateSubDomain = await ethers.getContractFactory(
     "SampleCreateSubDomain"
   );
-  const sampleCreateSubDomain = await SampleCreateSubDomain.deploy();
+  const sampleCreateSubDomain = await SampleCreateSubDomain.deploy(
+    "contract.toban.eth"
+  );
 
   console.log(
     "SampleCreateSubDomain deployed to:",

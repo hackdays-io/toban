@@ -1,30 +1,46 @@
-import { Box, Text, Image, Badge } from "@chakra-ui/react";
+import {Badge, Box, Image, Text} from "@chakra-ui/react";
 
-const RoleCard = () => {
+type Props = {
+  name: string;
+  description: string;
+  imageUri: string;
+};
+
+const RoleCard = ({name, description, imageUri}: Props) => {
   return (
-    <Box 
-      p={5} 
-      shadow="md" 
-      borderWidth="1px" 
+    <Box
+      p={5}
+      shadow="md"
+      borderWidth="1px"
       borderRadius="lg"
       maxW="sm"
       bg="yellow.100"
     >
-      <Badge colorScheme="green" mb={2}>Active</Badge>
-      <Image 
-        borderRadius="full" 
-        boxSize="100px" 
-        src="/path_to_your_image.png" 
+      <Badge colorScheme="green" mb={2}>
+        Active
+      </Badge>
+      <Image
+        borderRadius="full"
+        boxSize="100px"
+        src={imageUri}
         alt="Role Image"
         mx="auto"
       />
-      <Text mt={4} fontWeight="bold" fontSize="xl">Cleaning</Text>
-      <Text fontSize="sm">2024/5/11 ~ 2024/7/12</Text>
-      <Text mt={2}>
-        Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+      <Text mt={4} fontWeight="bold" fontSize="xl">
+        name: {name}
       </Text>
+      <Text mt={4} fontWeight="bold" fontSize="xl">
+        Role: Cleaning
+      </Text>
+      <Text mt={4} fontWeight="bold" fontSize="xl">
+        description:
+      </Text>
+      {/*<Text fontSize="sm">2024/5/11 ~ 2024/7/12</Text>*/}
+      <Text mt={2}>{description}</Text>
       <Box mt={4}>
-        <Text fontWeight="bold" fontSize="md">Work Scope</Text>
+        <Text fontWeight="bold" fontSize="md">
+          Work Scope
+        </Text>
         <ul>
           <li>Cleaning public spaces</li>
           <li>Planning cleaning challenge</li>

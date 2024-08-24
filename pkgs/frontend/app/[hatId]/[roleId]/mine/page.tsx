@@ -1,15 +1,19 @@
 "use client";
 
+import {Box, Button, Flex, Heading, Spacer, VStack} from "@chakra-ui/react";
+import {useParams, useRouter} from "next/navigation";
 import React from "react";
-import {Box, VStack, Button, Flex, Heading, Spacer} from "@chakra-ui/react";
-import {useRouter} from "next/navigation";
-import ShareList from "@/components/ShareList";
-import ShareChart from "@/components/ShareChart";
-import RevokeButton from "@/components/RevokeButton";
-import RoleCard from "@/components/RoleCard";
+import RoleCard from "../../../../components/RoleCard";
+import {useGetHat} from "../../../../hooks";
 
 export default function IndividualRoleList() {
   const router = useRouter();
+  const {hatId} = useParams();
+  // hatIdと詳細を取得する
+  const {details, imageUri} = useGetHat(hatId as any);
+
+  console.log("details", details.data);
+  console.log("imageUri", imageUri);
 
   const handleNewButtonClick = () => {
     router.push("/app/SendToken/page");
@@ -49,12 +53,16 @@ export default function IndividualRoleList() {
       {/* Main Content */}
       <Box p={5}>
         <VStack spacing={5}>
-          <RoleCard />
-          <ShareList />
+          <RoleCard
+            name={details.data.name}
+            description={details.data.description}
+            imageUri={imageUri as any}
+          />
+          {/* <ShareList /> */}
           {/* <ShareChart /> */}
-          <RevokeButton />
+          {/* <RevokeButton /> */}
           <Button colorScheme="teal" size="md" onClick={handleNewButtonClick}>
-            + New
+            + Share My Fraction Token
           </Button>
         </VStack>
       </Box>

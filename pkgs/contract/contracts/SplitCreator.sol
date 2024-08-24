@@ -41,7 +41,7 @@ contract SplitCreator {
     uint64 expiry
   );
 
-  function create(SplitInfo[] memory _splitInfos) external returns (address) {
+  function create(SplitInfo[] memory _splitInfos, string memory _subDomain) external returns (address) {
     address[] memory shareHolders;
     uint256[] memory tokenIdsOfShareHolders;
     uint256[] memory multipliersOfShareHolders;
@@ -92,6 +92,9 @@ contract SplitCreator {
     );
 
     emit SplitCreated(split);
+
+    // Splitの作成と同時にENSサブドメインを紐づける
+    _asignENSSubDomain(split, _subDomain)
 
     return split;
   }

@@ -1,6 +1,7 @@
 import {task} from "hardhat/config";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {loadDeployedContractAddresses} from "../helper/contractsJsonHelper";
+import {getRelayer} from "../helper/ozSigner";
 
 task("setSubnodeRecord", "setSubnodeRecord on ENS")
   .addParam("parent", "parentNode (bytes32)")
@@ -17,8 +18,14 @@ task("setSubnodeRecord", "setSubnodeRecord on ENS")
       contracts: {NameWrapper},
     } = loadDeployedContractAddresses(hre.network.name);
 
+    // OpenZeppelin DefenderのSignerを用意する。
+    const ozSigner: any = await getRelayer();
     // コントラクトインスタンスを生成する。
-    const nameWrapper = await hre.ethers.getContractAt(ABI, NameWrapper);
+    const nameWrapper = await hre.ethers.getContractAt(
+      ABI,
+      NameWrapper,
+      ozSigner
+    );
 
     try {
       // sub domainを登録する。
@@ -29,10 +36,13 @@ task("setSubnodeRecord", "setSubnodeRecord on ENS")
         taskArgs.resolver,
         0,
         0,
-        0
+        0,
+        {
+          gasLimit: 6000000,
+        }
       );
 
-      await tx.wait();
+      // await tx.wait();
       console.log("tx:", tx);
     } catch (e: any) {
       console.error("err:", e);

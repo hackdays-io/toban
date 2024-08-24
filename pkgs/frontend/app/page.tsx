@@ -54,7 +54,7 @@ export default function Home() {
             SplitterCreation
           </Button>
           <hr/>
-          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => console.log('😺')}>
+          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => { console.log('😺'); navigateTo('/hatid');}}>
             Bigbang
           </Button>
         </VStack>

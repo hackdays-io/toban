@@ -24,7 +24,7 @@ export default function SendToken() {
                     <Heading size="md" color="white">Send Token</Heading>
                     <Spacer />
                     <Button colorScheme="teal" variant="outline" onClick={() => router.push('/')}>
-                        メインページに戻る
+                        Back to Main Page
                     </Button>
                 </Flex>
             </Box>

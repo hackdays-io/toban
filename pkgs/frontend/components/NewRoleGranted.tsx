@@ -20,7 +20,7 @@ export default function NewRoleGrantedComponent() {
   const handleStartDateChange = (e:any) => setStartDate(e.target.value);
 
   const handleSubmit = () => {
-    console.log("以下のデータでフォームが送信されました:");
+    console.log("The form was submitted with the following data:");
     console.log({
       address,
       roleName,
@@ -34,7 +34,7 @@ export default function NewRoleGrantedComponent() {
   return (
     <Box maxWidth="400px" mx="auto" mt="10" p="5" borderWidth="1px" borderRadius="lg">
       <FormControl mb="4">
-        <FormLabel>付与先アドレス</FormLabel>
+        <FormLabel>Address to be granted</FormLabel>
         <InputGroup>
           <Input
             value={address}
@@ -42,7 +42,7 @@ export default function NewRoleGrantedComponent() {
             placeholder="vitalik.eth"
           />
           <InputRightElement width="4.5rem">
-            <Button size="sm" onClick={() => console.log("QRコードボタンがクリックされました")}>
+            <Button size="sm" onClick={() => console.log("QR code button was clicked")}>
               <FaQrcode />
             </Button>
           </InputRightElement>
@@ -50,7 +50,7 @@ export default function NewRoleGrantedComponent() {
       </FormControl>
 
       <FormControl mb="4">
-        <FormLabel>ロール名</FormLabel>
+        <FormLabel>Role Name</FormLabel>
         <Input
           value={roleName}
           onChange={handleRoleNameChange}
@@ -59,25 +59,25 @@ export default function NewRoleGrantedComponent() {
       </FormControl>
 
       <FormControl mb="4">
-        <FormLabel>ロールの説明</FormLabel>
+        <FormLabel>Role Description</FormLabel>
         <Textarea
           value={roleDescription}
           onChange={handleRoleDescriptionChange}
-          placeholder="印刷および組版業界のダミーテキストです。"
+          placeholder="Enter a description of the role"
         />
       </FormControl>
 
       <FormControl mb="4">
-        <FormLabel>ワークスコープ</FormLabel>
+        <FormLabel>Work Scope</FormLabel>
         <Textarea
           value={workScope}
           onChange={handleWorkScopeChange}
-          placeholder="公共スペースの清掃、清掃チャレンジの計画、清掃の責任"
+          placeholder="Examples: cleaning public spaces, planning cleaning challenges, cleaning responsibilities"
         />
       </FormControl>
 
       <FormControl mb="4">
-        <FormLabel>初期ユニット数</FormLabel>
+        <FormLabel>Number of Initial Units</FormLabel>
         <InputGroup>
           <Input
             value={initialUnits}
@@ -91,7 +91,7 @@ export default function NewRoleGrantedComponent() {
       </FormControl>
 
       <FormControl mb="4">
-        <FormLabel>開始日</FormLabel>
+        <FormLabel>Starting Date</FormLabel>
         <InputGroup>
           <Input
             type="date"
@@ -105,7 +105,7 @@ export default function NewRoleGrantedComponent() {
       </FormControl>
 
       <Button colorScheme="blue" width="full" onClick={handleSubmit}>
-        送信
+        Submit
       </Button>
     </Box>
   );

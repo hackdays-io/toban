@@ -2,14 +2,14 @@
 pragma solidity ^0.8.24;
 
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
-import {IFractionToken} from "../fraction/IFractionToken.sol"; // Ryomaさん作成のものと競合する可能性
-import {ITimeframe} from "../timeframe/interfaces/ITimeframe.sol";
+import {IFractionToken} from "../fraction/IFractionToken.sol";
+import {ITimeFrameHatModule} from "../timeframe/interfaces/ITimeFrameHatModule.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract MultiClaimsFractionHatter is ERC2771Context {
     IHats public hatsContract;
     IFractionToken public fractionTokenContract;
-    ITimeframe public timeframeContract;
+    ITimeFrameHatModule public timeframeContract;
 
     // Constructor to initialize the contracts and trusted forwarder
     constructor(
@@ -20,7 +20,7 @@ contract MultiClaimsFractionHatter is ERC2771Context {
     ) ERC2771Context(_trustedForwarder) {
         hatsContract = IHats(_hatsAddress);
         fractionTokenContract = IFractionToken(_fractionTokenAddress);
-        timeframeContract = ITimeframe(_timeframeAddress);
+        timeframeContract = ITimeFrameHatModule(_timeframeAddress);
     }
 
     // Function to create a hat, mint a fraction token, and set the wore time
@@ -47,9 +47,6 @@ contract MultiClaimsFractionHatter is ERC2771Context {
 
         // Step 2: Mint the fraction token
         fractionTokenContract.mint(string(abi.encodePacked(newHatId)), _wearer);
-
-        // Step 3: Set the wore time
-        timeframeContract.setWoreTime(_wearer, newHatId);
     }
 
     // Override _msgSender to use the context from ERC2771Context.

@@ -1,15 +1,22 @@
 "use client";
 
-import {useGetHats} from "@/hooks/useHatRead";
-import {Box, Button, Center, Flex, Heading, Spacer} from "@chakra-ui/react";
-import {ConnectButton} from "@rainbow-me/rainbowkit";
-import Image from "next/image";
+import {useGetHats, useGetMyRoles} from "@/hooks/useHatRead";
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Heading,
+  Spacer,
+  Text,
+} from "@chakra-ui/react";
 import {useParams, useRouter} from "next/navigation";
 import {useEffect, useState} from "react";
 import {useAccount} from "wagmi";
 import HatList from "../../components/HatList";
 import ProjectInfo from "../../components/ProjectInfo";
 import RoleList from "../../components/RoleList";
+import Header from "@/components/Header";
 
 export default function ProjectTop() {
   const [hatsInfos, setHatsInfos] = useState<any[]>([]);
@@ -17,23 +24,7 @@ export default function ProjectTop() {
   const {isConnected} = useAccount();
   const {hatId} = useParams();
   const {topHat, roleHats} = useGetHats(hatId.toString());
-
-  console.log("roleHats:", JSON.stringify(roleHats));
-
-  const router = useRouter();
-
-  // ダミーデータ
-  const roles: any = [
-    {name: "Cleaning", icon: "🧹", href: "/roles/cleaning"},
-    {name: "Committee", icon: "🧑‍💼", href: "/roles/committee"},
-    {name: "Contents", icon: "📝", href: "/roles/contents"},
-    {name: "Food", icon: "🍴", href: "/roles/food"},
-  ];
-
-  const hats = [
-    {name: "Hat 1", href: "/hats/1"},
-    {name: "Hat 2", href: "/hats/2"},
-  ];
+  const {myRoles} = useGetMyRoles();
 
   useEffect(() => {
     if (roleHats != undefined) {
@@ -44,20 +35,14 @@ export default function ProjectTop() {
           "https://gateway.pinata.cloud/ipfs/"
         );
 
-        const roleInfo = {
-          name,
-          imageUri,
-        };
-
         setHatsInfos((prev) => [
           ...prev,
           {
             name: name,
             icon: imageUri,
-            href: `/roles/${name}`,
+            href: `/${hatId}/${BigInt(role.id).toString()}`,
           },
         ]);
-        console.log("hatsInfos:", hatsInfos);
       });
       formattedRoles;
     }
@@ -65,46 +50,15 @@ export default function ProjectTop() {
 
   return (
     <>
-      {/* Header */}
-      <Box as="header" width="100%" position="relative" height="200px">
-        <Image
-          src="/header.png"
-          alt="Header Image"
-          layout="fill"
-          objectFit="cover"
-          priority={true}
-        />
-        <Flex
-          position="absolute"
-          top="0"
-          left="0"
-          right="0"
-          p="4"
-          alignItems="center"
-          bg="rgba(0, 0, 0, 0.5)"
-        >
-          <Heading size="md" color="white">
-            Project Top
-          </Heading>
-          <Spacer />
-          <ConnectButton />
-          <Button
-            colorScheme="teal"
-            variant="outline"
-            onClick={() => router.push("/")}
-          >
-            Back to Main Page
-          </Button>
-        </Flex>
-      </Box>
+      <Header />
 
       {/* Main Content */}
-      <Center py={10} px={6} bg="gray.900">
+      <Center py={10} px={6}>
         <Box
           maxW="lg"
           w="full"
-          bg="gray.700"
-          color="white"
+          bg="white"
+          color="black.500"
           p={8}
           borderRadius="lg"
           boxShadow="lg"
@@ -115,8 +69,13 @@ export default function ProjectTop() {
             projectName={topHat?.data.name}
             projectDescription={topHat?.data.description}
           />
+
+          {isConnected && <HatList items={myRoles} />}
+
+          <Text fontSize="2xl" fontWeight="bold" mt={10}>
+            Project Roles
+          </Text>
           <RoleList roles={hatsInfos} hatId={hatId.toString()} />
-          {isConnected && <HatList hats={hats} />}
         </Box>
       </Center>
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import TimeFrameHatModuleJson from "@/contracts/timeframe/TimeFrameHatModule.sol/TimeFrameHatModule.json";
+import {useGetHat} from "@/hooks/useHatRead";
 import {TIME_FRAME_MODULE_CONTRACT_ADDRESS} from "@/lib/constants";
 import {createTypedSignData} from "@/lib/metaTransaction";
 import {wagmiConfig} from "@/lib/web3";
@@ -12,9 +13,14 @@ import {
   Input,
   InputGroup,
   InputRightElement,
+  List,
+  ListItem,
+  Text,
   Textarea,
+  UnorderedList,
 } from "@chakra-ui/react";
 import {getEnsResolver} from "@wagmi/core";
+import {useParams} from "next/navigation";
 import {useState} from "react";
 import {FaCalendarAlt, FaQrcode} from "react-icons/fa";
 import {toast} from "react-toastify";
@@ -34,6 +40,12 @@ export default function NewRoleGrantedComponent() {
   const chainId = useChainId();
   const {signTypedDataAsync} = useSignTypedData();
 
+  const {roleId} = useParams();
+
+  const {details, imageUri} = useGetHat(BigInt(roleId.toString()));
+
+  console.log(details, imageUri);
+
   /**
    * MetaTransactionを送信するメソッド
    */
@@ -46,13 +58,13 @@ export default function NewRoleGrantedComponent() {
         TIME_FRAME_MODULE_CONTRACT_ADDRESS,
         TimeFrameHatModuleJson.abi,
         "mintHat",
-        [0x033, address] // rolehatIdはルーターで受け取れるようにする。
+        [BigInt(roleId.toString()), address] // rolehatIdはルーターで受け取れるようにする。
       );
       // sign
       const signature = await signTypedDataAsync(typedSignData);
       console.log("signature", signature);
       // send meta transaction
-      await fetch("api/requestRelayer", {
+      await fetch("/api/requestRelayer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,7 +104,7 @@ export default function NewRoleGrantedComponent() {
 
   const handleAddressClick = async (e: any) => {
     const ensResolver = await getEnsResolver(wagmiConfig, {
-      name: normalize(e.target.value),
+      name: normalize(address),
     });
     console.log("ensResolver", ensResolver);
 
@@ -163,32 +175,27 @@ export default function NewRoleGrantedComponent() {
 
       <FormControl mb="4">
         <FormLabel>Role Name</FormLabel>
-        <Input
-          value={roleName}
-          onChange={handleRoleNameChange}
-          placeholder="Food"
-        />
+        <Text>{details?.data.name}</Text>
       </FormControl>
 
       <FormControl mb="4">
         <FormLabel>Role Description</FormLabel>
-        <Textarea
-          value={roleDescription}
-          onChange={handleRoleDescriptionChange}
-          placeholder="Enter a description of the role"
-        />
+        <Text>{details?.data.description}</Text>
       </FormControl>
 
       <FormControl mb="4">
         <FormLabel>Work Scope</FormLabel>
-        <Textarea
-          value={workScope}
-          onChange={handleWorkScopeChange}
-          placeholder="Examples: cleaning public spaces, planning cleaning challenges, cleaning responsibilities"
-        />
+        <UnorderedList>
+          {details?.data.responsabilities?.map((responsability, index) => (
+            <ListItem key={index} mb={2}>
+              <Text>{responsability.label}</Text>
+              <Text>{responsability.description}</Text>
+            </ListItem>
+          ))}
+        </UnorderedList>
       </FormControl>
 
-      <FormControl mb="4">
+      {/* <FormControl mb="4">
         <FormLabel>Number of Initial Units</FormLabel>
         <InputGroup>
           <Input
@@ -214,7 +221,7 @@ export default function NewRoleGrantedComponent() {
             <FaCalendarAlt />
           </InputRightElement>
         </InputGroup>
-      </FormControl>
+      </FormControl> */}
 
       <Button colorScheme="blue" width="full" onClick={sendMetaTx}>
         Submit

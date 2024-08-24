@@ -1,11 +1,11 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import { Box, Flex, Image, Spacer } from "@chakra-ui/react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import {Box, Flex, Image, Spacer} from "@chakra-ui/react";
+import {ConnectButton} from "@rainbow-me/rainbowkit";
 
 export default function Header() {
   return (
-    <Box as="header" width="100%" position="relative" height="200px">
+    <Box as="header" width="100%" position="relative" height="100px">
       <Flex
         position="absolute"
         top="0"
@@ -13,7 +13,7 @@ export default function Header() {
         right="0"
         p="4"
         alignItems="center"
-        bg="rgba(0, 0, 0, 0.5)"
+        boxShadow="0 0 5px 5px #d9d9d9"
       >
         <Image
           src="/toban_logo_color_top.png"

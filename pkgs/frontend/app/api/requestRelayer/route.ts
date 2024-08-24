@@ -77,7 +77,7 @@ export async function POST(
     console.log("tx hash:", result2.hash);
 
     console.log(
-      " ========================================= [RequestRaler: END] =============================================="
+      " ################################### [RequestRaler: END] ###################################"
     );
    
     return new Response(JSON.stringify({ 
@@ -87,7 +87,7 @@ export async function POST(
   } catch (error) {
     console.error("Error requestRelayer :", error);
     console.log(
-      " ========================================= [RequestRaler: END] =============================================="
+      "################################### [RequestRaler: END] ###################################"
     );
     
     return new Response(JSON.stringify({ result: "failed" }))

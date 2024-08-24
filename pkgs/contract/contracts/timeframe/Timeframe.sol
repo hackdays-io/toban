@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {ITimeframe} from "./interfaces/ITimeframe.sol";
+import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract Timeframe is ERC2771Context, ITimeframe {

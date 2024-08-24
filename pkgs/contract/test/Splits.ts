@@ -9,19 +9,21 @@ import {
   PushSplitFactory,
   SplitCreator,
   SplitsWarehouse,
+  SampleForwarder,
 } from "../typechain-types";
 import {
+  deployFractionToken,
   deployHatsProtocol,
   deploySplitCreator,
   deploySplitsProtocol,
 } from "./helper/deploy";
 import {expect} from "chai";
-import {deployFractionToken} from "../scripts/modules/FractionToken";
 
 describe("Splits", () => {
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitFactory;
   let PushSplitsFactory: PushSplitFactory;
+  let SampleForwarder: SampleForwarder;
   let DeployedPullSplit: PullSplit;
 
   let address1: SignerWithAddress;
@@ -32,11 +34,13 @@ describe("Splits", () => {
       SplitsWarehouse: _SplitsWarehouse,
       PullSplitsFactory: _PullSplitsFactory,
       PushSplitsFactory: _PushSplitsFactory,
+      SampleForwarder: _SampleForwarder,
     } = await deploySplitsProtocol();
 
     SplitsWarehouse = _SplitsWarehouse;
     PullSplitsFactory = _PullSplitsFactory;
     PushSplitsFactory = _PushSplitsFactory;
+    SampleForwarder = _SampleForwarder;
 
     [address1, address2] = await ethers.getSigners();
   });
@@ -119,6 +123,7 @@ describe("CreateSplit", () => {
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitFactory;
   let PushSplitsFactory: PushSplitFactory;
+  let SampleForwarder: SampleForwarder;
   let SplitCreator: SplitCreator;
   let FractionToken: FractionToken;
 
@@ -137,11 +142,13 @@ describe("CreateSplit", () => {
       SplitsWarehouse: _SplitsWarehouse,
       PullSplitsFactory: _PullSplitsFactory,
       PushSplitsFactory: _PushSplitsFactory,
+      SampleForwarder: _SampleForwarder,
     } = await deploySplitsProtocol();
 
     SplitsWarehouse = _SplitsWarehouse;
     PullSplitsFactory = _PullSplitsFactory;
     PushSplitsFactory = _PushSplitsFactory;
+    SampleForwarder = _SampleForwarder;
 
     const {FractionToken: _FractionToken} = await deployFractionToken(
       "",
@@ -152,7 +159,8 @@ describe("CreateSplit", () => {
 
     const {SplitCreator: _SplitCreator} = await deploySplitCreator(
       await PullSplitsFactory.getAddress(),
-      await FractionToken.getAddress()
+      await FractionToken.getAddress(),
+      ZeroAddress
     );
     SplitCreator = _SplitCreator;
 

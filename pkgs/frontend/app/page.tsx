@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useTopHatMint } from '@/hooks';
+import { useHatMint, useTopHatMint } from '@/hooks';
 import useHatterHatMint from '@/hooks/useHatterHatMint';
 
 export default function Home() {
@@ -28,17 +28,30 @@ export default function Home() {
     hatId
   });
 
+  const hatterHatId = '13075575367696478291318033933431407794726893781984076878520148482326528'
+
+  const resHatMint = useHatMint({
+    chainId,
+    hatId: hatterHatId
+  });
+
   const handleBigBangClick = async () => {
     try {
       // hatId = await resTopHatMint.writeAsync();
       // console.log(`😺 TopHat minted successfully!, hatId = ${hatId}`);
 
       // TODO: HatterHatのモジュールをデプロイ
-      const hatterHatId = await resHatterHatMint.writeAsync()
-      console.log('hatterHatId', hatterHatId);
+      // const hatterHatId = await resHatterHatMint.writeAsync()
+      // console.log('hatterHatId', hatterHatId);
 
       // TODO: TimeschejuleManagerにHatterHatをミント
-      // navigateTo('/hatid');
+      const res = await resHatMint.writeAsync()
+      console.log('res🐈', res);
+
+      if (res === '1n'){
+        navigateTo('/hatid');
+      }
+      
     } catch (error) {
       console.error('Failed to mint TopHat:', error);
     }

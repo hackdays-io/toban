@@ -1,6 +1,7 @@
 "use client";
 
 import SplitCreatorJson from "@/contracts/SplitCreator.sol/SplitCreator.json";
+import useSplitsRead from "@/hooks/useSplitsRead";
 import {SPLIT_CREATOR_CONTRACT_ADDRESS} from "@/lib/constants";
 import {createTypedSignData} from "@/lib/metaTransaction";
 import {
@@ -18,7 +19,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import {ethers} from "ethers";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {toast} from "react-toastify";
 import {useAccount, useChainId, useSignTypedData} from "wagmi";
 
@@ -42,6 +43,8 @@ function SplitterCreation() {
   const {address} = useAccount();
   const chainId = useChainId();
   const {signTypedDataAsync} = useSignTypedData();
+
+  const {getRelatedSplits, relatedSplits} = useSplitsRead();
 
   // MetaTransactionを送信するメソッド
   const sendMetaTx = async () => {
@@ -171,6 +174,14 @@ function SplitterCreation() {
       });
     }
   };
+
+  useEffect(() => {
+    const init = async () => {
+      await getRelatedSplits("0xdCb93093424447bF4FE9Df869750950922F1E30B");
+      console.log("relatedSplits", relatedSplits);
+    };
+    init();
+  }, []);
 
   return (
     <Box p={6} maxW="600px" mx="auto">

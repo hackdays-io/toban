@@ -74,9 +74,11 @@ const useHatContractWrite = <T extends ValidFunctionName>({
       })
       toast.info('Transaction submitted');
       if (functionName === 'mintTopHat' || functionName === 'createHat'){
+        // @ts-ignore
         return decodedLogs[0].args?.id;
       } else if(functionName === 'mintHat'){
         console.log('decodedLogs[0].args', decodedLogs[0].args);
+        // @ts-ignore
         return decodedLogs[0].args?.amount
       }
     }).catch((error) => {

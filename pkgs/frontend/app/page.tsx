@@ -1,14 +1,13 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import React, { useEffect, useState } from 'react';
-import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useChainId } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useHatMint, useTopHatMint } from '@/hooks';
 import useHatterHatMint from '@/hooks/useHatterHatMint';
-import { delay, removeTrailingN } from '@/lib/utils';
+import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useChainId } from 'wagmi';
 
 export default function Home() {
   const router = useRouter();
@@ -76,7 +75,9 @@ export default function Home() {
         position="absolute"
         top="0"
         right="0"  
+        // @ts-ignore
         width="60%"  
+        // @ts-ignore
         height="100%"
         objectFit="cover"  
         zIndex="0"
@@ -103,7 +104,9 @@ export default function Home() {
         <Image 
           src="/toban_logo_color_middle.png" 
           alt="Toban Logo Middle" 
+          // @ts-ignore
           height="100px"
+          // @ts-ignore
           width="auto"
           objectFit="contain"  
           mb="4"
@@ -120,7 +123,9 @@ export default function Home() {
         <Image 
           src="/obi.png" 
           alt="Background Design"
+          // @ts-ignore
           width="100%"
+          // @ts-ignore
           height="auto"
           objectFit="contain"
           zIndex="1"
@@ -150,7 +155,6 @@ export default function Home() {
           </Button>
         </VStack>
       </Box>
-      <Toaster />
     </Box>
   );
 }

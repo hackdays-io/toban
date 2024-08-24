@@ -63,7 +63,7 @@ export default function NewRoleGrantedComponent() {
         <Textarea
           value={roleDescription}
           onChange={handleRoleDescriptionChange}
-          placeholder="印刷および組版業界のダミーテキストです。"
+          placeholder="Enter a description of the role"
         />
       </FormControl>
 
@@ -72,7 +72,7 @@ export default function NewRoleGrantedComponent() {
         <Textarea
           value={workScope}
           onChange={handleWorkScopeChange}
-          placeholder="公共スペースの清掃、清掃チャレンジの計画、清掃の責任"
+          placeholder="Examples: cleaning public spaces, planning cleaning challenges, cleaning responsibilities"
         />
       </FormControl>
 

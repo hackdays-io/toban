@@ -69,21 +69,27 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
        NEXT_PUBLIC_ALCHEMY_ID=
        NEXT_PUBLIC_DEFENDER_API_KEY=
        NEXT_PUBLIC_DEFENDER_SECRET_KEY=
+       NEXT_PUBLIC_PINATA_JWT=
+       NEXT_PUBLIC_SPLITS_API_KEY=
+       NEXT_PUBLIC_PINATA_GATEWAY=
+       NEXT_PUBLIC_CABINET_ACCESS_TOKEN=
        ```
 
   - **smartconract**
 
-    You must set some ENVs
+        You must set some ENVs
 
-    1. create `pkgs/contact/.env`
+        1. create `pkgs/contact/.env`
 
-    2. set below values
+        2. set below values
 
-       ```txt
-       PRIVATE_KEY=
-       ETHERSCAN_API_KEY=
-       CABINET_ACCESS_TOKEN=
-       ```
+           ```txt
+           PRIVATE_KEY=
+           ETHERSCAN_API_KEY=
+           CABINET_ACCESS_TOKEN=
+           DEFENDER_API_KEY=
+           DEFENDER_SECRET_KEY=
+           ```
 
 - **install**
 

@@ -1,8 +1,8 @@
-import {hatsDetailsClient, createSubgraphClient} from "@/lib/hats";
+import {createSubgraphClient, hatsDetailsClient} from "@/lib/hats";
 import {removeIpfsPrefix} from "@/lib/ipfs";
 import {DefaultHatsDetailsSchema} from "@/types/hats";
 import {useEffect, useMemo, useState} from "react";
-import {useAccount, useChainId} from "wagmi";
+import {useChainId} from "wagmi";
 
 const hatSubgraphClient = createSubgraphClient();
 
@@ -44,6 +44,7 @@ export const useGetHats = (hatId: string) => {
   const [roleHats, setRoleHats] = useState<any[]>();
 
   const treeId = useMemo(() => {
+    console.log("hatId:", hatId);
     const _treeId = parseInt(BigInt(hatId).toString(16).slice(0, 3), 16);
     return _treeId;
   }, [hatId]);
@@ -73,6 +74,9 @@ export const useGetHats = (hatId: string) => {
       const roleHats = data.hats?.filter(
         (hat) => hat.prettyId?.split(".").length === 3
       );
+
+      console.log("topHat:", topHat);
+      console.log("hatterHat:", hatterHat);
 
       const topCid = removeIpfsPrefix(topHat?.details || "");
       const hatterCid = removeIpfsPrefix(hatterHat?.details || "");

@@ -54,6 +54,18 @@ contract FractionToken is ERC1155, Ownable {
         return balance > 0;
     }
 
+    // test because retunrn 0
+    // https://sepolia.etherscan.io/address/0x89ba4d26d9cf02d8edf9d7b46d1376e40a422b60#readContract
+    // 0x6a8432D321273E2be8A30AeF083915CFDB7F1B85
+    // 1234567890
+    function erc1155BalanceOf(
+        address account,
+        uint256 tokenId
+    ) public view returns (uint256) {
+        uint256 erc1155Balance = super.balanceOf(account, tokenId);
+        return erc1155Balance;
+    }
+
     function balanceOf(
         address account,
         uint256 hatId

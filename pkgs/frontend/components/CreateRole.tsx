@@ -15,17 +15,42 @@ import {
 } from "@chakra-ui/react";
 import {toast} from "react-toastify";
 import {useEffect, useState} from "react";
+import {Controller, useForm} from "react-hook-form";
+import {useUploadHatDetail} from "@/hooks/useHatDetail";
+import {HatsResponsibility} from "@/types/hats";
+import {useHatCreate} from "@/hooks/useHatCreate";
+import {useParams} from "next/navigation";
+import {useGetHats} from "@/hooks/useHatRead";
+
+type FormData = {
+  name: string;
+  description: string;
+};
 
 export default function CreateRoleComponent() {
-  const [responsibilities, setResponsibilities] = useState([
-    {name: "", description: "", link: ""},
-  ]);
+  const [responsibilities, setResponsibilities] = useState<
+    HatsResponsibility[]
+  >([]);
   const [file, setFile] = useState<any>();
+  const [detailsURI, setDetailsURI] = useState<string>("");
+  const [imageURI, setImageURI] = useState<string | null>(null);
+
+  const {hatId} = useParams();
+  const {hatterHatId} = useGetHats(hatId.toString());
+
+  const {uploadHatDetail} = useUploadHatDetail();
+
+  const {control, handleSubmit} = useForm<FormData>({
+    defaultValues: {
+      name: "",
+      description: "",
+    },
+  });
 
   const handleAddResponsibility = () => {
     setResponsibilities([
       ...responsibilities,
-      {name: "", description: "", link: ""},
+      {label: "", description: "", link: ""},
     ]);
   };
 
@@ -43,11 +68,13 @@ export default function CreateRoleComponent() {
     setResponsibilities(updatedResponsibilities);
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    console.log({
-      responsibilities,
-    });
+  const submit = async (data: FormData) => {
+    const {ipfs} = await uploadHatDetail(
+      data.name,
+      data.description,
+      responsibilities
+    );
+    setDetailsURI(ipfs);
   };
 
   /**
@@ -60,10 +87,12 @@ export default function CreateRoleComponent() {
 
   useEffect(() => {
     const uploadToIpfs = async () => {
+      if (!file) return;
+
       try {
         // IPFSにファイルを呼び出すためのメソッドを呼び出す。
-        const url = await uploadFileToIpfs(file);
-        console.log("content url:", url);
+        const {cid} = await uploadFileToIpfs(file);
+        setImageURI(`ipfs://${cid}`);
 
         toast.success("🦄 file upload Success!", {
           position: "top-right",
@@ -92,9 +121,24 @@ export default function CreateRoleComponent() {
     uploadToIpfs();
   }, [file]);
 
+  const {writeAsync} = useHatCreate({
+    hatId: hatterHatId,
+    imageURI: imageURI!,
+    detailsURI,
+  });
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (imageURI && detailsURI) {
+        await writeAsync();
+      }
+    };
+    fetch();
+  }, [imageURI, detailsURI]);
+
   return (
     <Box maxW="800px" mx="auto" mt="10">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(submit)}>
         <VStack spacing="5">
           <FormControl id="image">
             <FormLabel>Image</FormLabel>
@@ -102,11 +146,23 @@ export default function CreateRoleComponent() {
           </FormControl>
           <FormControl id="name" isRequired>
             <FormLabel>Name</FormLabel>
-            <Input type="text" placeholder="Enter role name" />
+            <Controller
+              control={control}
+              name="name"
+              render={({field}) => (
+                <Input {...field} type="text" placeholder="Enter role name" />
+              )}
+            />
           </FormControl>
           <FormControl id="description">
             <FormLabel>Description</FormLabel>
-            <Textarea placeholder="Enter role description" />
+            <Controller
+              control={control}
+              name="description"
+              render={({field}) => (
+                <Textarea {...field} placeholder="Enter role description" />
+              )}
+            />
           </FormControl>
 
           {responsibilities.map((resp, index) => (
@@ -132,9 +188,9 @@ export default function CreateRoleComponent() {
                   <FormLabel>Name</FormLabel>
                   <Input
                     type="text"
-                    value={resp.name}
+                    value={resp.label}
                     onChange={(e) =>
-                      handleResponsibilityChange(index, "name", e.target.value)
+                      handleResponsibilityChange(index, "label", e.target.value)
                     }
                     placeholder="Enter Responsibility Name"
                   />

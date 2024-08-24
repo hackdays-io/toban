@@ -6,13 +6,15 @@ import {useParams, useRouter} from "next/navigation";
 import HatList from "../../components/HatList";
 import ProjectInfo from "../../components/ProjectInfo";
 import RoleList from "../../components/RoleList";
-import {useGetTopHat} from "@/hooks/useHatRead";
 import {ConnectButton} from "@rainbow-me/rainbowkit";
+import {useGetHats} from "@/hooks/useHatRead";
 
 export default function ProjectTop() {
   const {hatId} = useParams();
 
-  const {topHat} = useGetTopHat(hatId.toString());
+  const {topHat, roleHats} = useGetHats(hatId.toString());
+
+  console.log(JSON.stringify(roleHats));
 
   const router = useRouter();
 
@@ -82,7 +84,7 @@ export default function ProjectTop() {
             projectName={topHat?.data.name}
             projectDescription={topHat?.data.description}
           />
-          <RoleList roles={roles} />
+          <RoleList roles={roles} hatId={hatId.toString()} />
           {isWalletConnected && <HatList hats={hats} />}
         </Box>
       </Center>

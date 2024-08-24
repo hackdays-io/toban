@@ -35,10 +35,13 @@ export const useWaitForIndexGraphAPI = () => {
   return {waitForIndexGraphAPI};
 };
 
-export const useGetTopHat = (hatId: string) => {
+export const useGetHats = (hatId: string) => {
   const chainId = useChainId();
 
   const [topHat, setTopHat] = useState<DefaultHatsDetailsSchema>();
+  const [hatterHat, setHatterHat] = useState<DefaultHatsDetailsSchema>();
+  const [hatterHatId, setHatterHatId] = useState<bigint>(BigInt(0));
+  const [roleHats, setRoleHats] = useState<any[]>();
 
   const treeId = useMemo(() => {
     const _treeId = parseInt(BigInt(hatId).toString(16).slice(0, 3), 16);
@@ -57,21 +60,51 @@ export const useGetTopHat = (hatId: string) => {
             props: {
               details: true,
               prettyId: true,
+              imageUri: true,
             },
           },
         },
       });
 
       const topHat = data.hats?.find((hat) => !hat.prettyId?.includes("."));
+      const hatterHat = data.hats?.find(
+        (hat) => hat.prettyId?.split(".").length === 2
+      );
+      const roleHats = data.hats?.filter(
+        (hat) => hat.prettyId?.split(".").length === 3
+      );
 
-      const cid = removeIpfsPrefix(topHat?.details || "");
+      const topCid = removeIpfsPrefix(topHat?.details || "");
+      const hatterCid = removeIpfsPrefix(hatterHat?.details || "");
+      const roleCids = roleHats?.map((hat) => {
+        return {
+          cid: removeIpfsPrefix(hat.details || ""),
+          imageUri: hat.imageUri,
+          id: hat.id,
+        };
+      });
 
-      const metadata = await hatsDetailsClient.get(cid);
+      const topMetadata = await hatsDetailsClient.get(topCid);
+      const hatterMetadata = await hatsDetailsClient.get(hatterCid);
+      if (roleCids) {
+        const rolesMetadata = await Promise.all(
+          roleCids.map(async (role) => {
+            const metadata = await hatsDetailsClient.get(role.cid);
+            return {
+              ...role,
+              parsedData: metadata,
+            };
+          })
+        );
+        setRoleHats(rolesMetadata);
+      }
 
-      setTopHat(metadata.parsedData as any);
+      setTopHat(topMetadata.parsedData as any);
+      setHatterHat(hatterMetadata.parsedData as any);
+      setHatterHatId(BigInt(hatterHat?.id || 0));
     };
     fetch();
   }, [chainId, treeId]);
 
-  return {topHat};
+  return {topHat, hatterHat, hatterHatId, roleHats};
 };

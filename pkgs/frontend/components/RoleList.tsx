@@ -1,12 +1,13 @@
-import { AddIcon } from '@chakra-ui/icons';
-import { Box, Grid, IconButton, Text } from '@chakra-ui/react';
-import Link from 'next/link';
+import {AddIcon} from "@chakra-ui/icons";
+import {Box, Grid, IconButton, Text} from "@chakra-ui/react";
+import Link from "next/link";
 
 interface RoleListProps {
-  roles: { name: string; icon: JSX.Element | string; href: string }[];
+  hatId: string;
+  roles: {name: string; icon: JSX.Element | string; href: string}[];
 }
 
-const RoleList: React.FC<RoleListProps> = ({ roles }: any) => {
+const RoleList: React.FC<RoleListProps> = ({hatId, roles}: any) => {
   return (
     <Box mt={8}>
       <Grid templateColumns="repeat(4, 1fr)" gap={6}>
@@ -20,7 +21,9 @@ const RoleList: React.FC<RoleListProps> = ({ roles }: any) => {
             </Box>
           </Link>
         ))}
-        <IconButton aria-label="Roleを追加" icon={<AddIcon />} />
+        <Link href={`/${hatId}/createrole`}>
+          <IconButton aria-label="Roleを追加" icon={<AddIcon />} />
+        </Link>
       </Grid>
     </Box>
   );

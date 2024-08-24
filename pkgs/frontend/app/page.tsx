@@ -1,11 +1,14 @@
 "use client"; // クライアントコンポーネントとして指定
 
-import Toaster from '@/components/Toaster';
-import { useTopHatMint } from '@/hooks';
-import { Box, Button, Flex, Heading, Image, Spacer, Text, VStack } from '@chakra-ui/react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import React, { useEffect, useState } from 'react';
+import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useChainId } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useHatMint, useTopHatMint } from '@/hooks';
+import useHatterHatMint from '@/hooks/useHatterHatMint';
+import { delay, removeTrailingN } from '@/lib/utils';
 
 export default function Home() {
   const router = useRouter();
@@ -15,23 +18,54 @@ export default function Home() {
   };
 
   const chainId = useChainId();
+  
+  const [topHatId, setTopHatId] = useState<bigint>(BigInt(0));
+  const [hatterHatId, setHatterHatId] = useState<bigint>(BigInt(0));
 
-  const { writeAsync } = useTopHatMint({
+  const resTopHatMint = useTopHatMint({
     chainId,
-  });   
+  });
+
+  const resHatterHatMint = useHatterHatMint({
+    chainId,
+    hatId: topHatId
+  });
+
+  const resHatMint = useHatMint({
+    chainId,
+    hatId: hatterHatId
+  });
 
   const handleBigBangClick = async () => {
     try {
-      const hatid = await writeAsync();
-      console.log(`😺 TopHat minted successfully!, hatId = ${hatid}`);
-
-      // TODO: HatterHatのモジュールをデプロイ
-      // TODO: TimeschejuleManagerにHatterHatをミント
-      // navigateTo('/hatid');
+      const bigbang1 = await resTopHatMint.writeAsync()
+      setTopHatId(bigbang1)
+      console.log(`😺 TopHat minted successfully!, hatId = ${bigbang1}`);      
     } catch (error) {
       console.error('Failed to mint TopHat:', error);
     }
   };
+
+  useEffect(() => {
+    const fetch = async () => {
+      const bigbang2 = await resHatterHatMint.writeAsync()
+        setHatterHatId(bigbang2)
+        console.log(`😺 HatterHat minted successfully!, hatId = ${bigbang2}`)
+    }
+    fetch()
+  }, [topHatId])
+
+  useEffect(() => {
+    const fetch = async () => {
+      const bigbang3 = await resHatMint.writeAsync()
+      console.log(`😺 HatterHat minted successfully!, amount = ${bigbang3}`)
+
+      if (Number(bigbang3) === 1){
+        navigateTo(`/${topHatId}`)
+      }
+    }
+    fetch()
+  }, [hatterHatId])
 
   return (
     <Box bg="#FFFCF4" minH="100vh" position="relative" overflowX="hidden">

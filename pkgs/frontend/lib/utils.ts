@@ -10,3 +10,15 @@ export const getUint48 = () => {
 
   return uint48Time;
 };
+
+export const removeTrailingN = (bigIntStr: any) => {
+  if (bigIntStr.endsWith('n')) {
+    return bigIntStr.slice(0, -1);
+  }
+  return bigIntStr;
+};
+
+
+export const delay = (ms: any) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

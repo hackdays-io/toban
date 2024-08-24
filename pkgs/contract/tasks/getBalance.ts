@@ -7,6 +7,9 @@ const {PRIVATE_KEY} = process.env;
 
 task("getBalance", "getBalance").setAction(
   async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
+    console.log(
+      "################################### [START] ###################################"
+    );
     // Walletインスタンスを生成
     const wallet = new Wallet(PRIVATE_KEY!);
 
@@ -16,5 +19,9 @@ task("getBalance", "getBalance").setAction(
 
     const balance = await hre.ethers.provider.getBalance(address);
     console.log("balance: ", hre.ethers.formatEther(balance));
+
+    console.log(
+      "################################### [END] ###################################"
+    );
   }
 );

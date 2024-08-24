@@ -4,12 +4,19 @@ pragma solidity ^0.8.24;
 
 import "./splits/interfaces/ISplitFactoryV2.sol";
 import "./splits/libraries/SplitV2.sol";
+import "./ens/wrapper/INameWrapper.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 contract SplitCreator {
   ISplitFactoryV2 splitFactoryV2;
 
   IERC1155 fractionToken;
+  INameWrapper nameWrapper;
+
+  // *.toban.ethのように発行するための設定
+  bytes32 public parentNode = 0x8f16dcf0ba3c4c5b2bb9786c84c45925294ff9e18b65e97dda3521708b071a33;
+  address public resolverAddress = 0x8FADE66B79cC9f707aB26799354482EB93a5B7dD;
+  address public nameWrapperAddress = 0x0635513f179D50A207757E05759CbD106d7dFcE8;
 
   constructor(address _splitFactoryV2, address _fractionToken) {
     splitFactoryV2 = ISplitFactoryV2(_splitFactoryV2);
@@ -24,8 +31,17 @@ contract SplitCreator {
   }
 
   event SplitCreated(address split);
+  event AsignedENSSubDomain(
+    bytes32 node,
+    string label,
+    address owner,
+    address resolver,
+    uint64 ttl,
+    uint32 fuses,
+    uint64 expiry
+  );
 
-  function create(SplitInfo[] memory _splitInfos) external returns (address) {
+  function create(SplitInfo[] memory _splitInfos, string memory _subDomain) external returns (address) {
     address[] memory shareHolders;
     uint256[] memory tokenIdsOfShareHolders;
     uint256[] memory multipliersOfShareHolders;
@@ -77,6 +93,9 @@ contract SplitCreator {
 
     emit SplitCreated(split);
 
+    // Splitの作成と同時にENSサブドメインを紐づける
+    _asignENSSubDomain(split, _subDomain);
+
     return split;
   }
 
@@ -84,6 +103,10 @@ contract SplitCreator {
     address _split,
     string memory _subDomain
   ) internal {
-    // ENSにサブドメインを登録する
+    // NameWrapperコントラクトを用意する。
+    INameWrapper nameWrapper = INameWrapper(nameWrapperAddress);
+    // subdomainを発行する。
+    nameWrapper.setSubnodeRecord(parentNode, _subDomain, _split, resolverAddress, 0, 0, 0);
+    emit AsignedENSSubDomain(parentNode, _subDomain, _split, resolverAddress, 0, 0, 0);
   }
 }

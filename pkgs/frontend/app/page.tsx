@@ -1,8 +1,10 @@
 "use client"; // クライアントコンポーネントとして指定
 
+import { useTopHatMint } from '@/hooks';
 import { Box, Button, Flex, Heading, Spacer, Text, VStack, useTheme } from '@chakra-ui/react';
 import Image from 'next/image'; // next/imageのインポート
 import { useRouter } from 'next/navigation';
+import { useChainId } from 'wagmi';
 
 export default function Home() {
   const router = useRouter();
@@ -12,6 +14,23 @@ export default function Home() {
 
   const navigateTo = (path: string) => {
     router.push(path);
+  };
+
+  const chainId = useChainId();
+  
+  const handleBigBangClick = async () => {
+    try {
+      const { writeAsync } = await useTopHatMint({
+        chainId,
+        adminWearer: '0xYourAdminWearerAddress', // Replace with the actual admin wearer address
+      });
+      
+      const res = await writeAsync();
+      console.log(`😺 TopHat minted successfully ${res}`);
+      navigateTo('/hatid');
+    } catch (error) {
+      console.error('Failed to mint TopHat:', error);
+    }
   };
 
   return (
@@ -54,8 +73,8 @@ export default function Home() {
             SplitterCreation
           </Button>
           <hr/>
-          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => { console.log('😺'); navigateTo('/hatid');}}>
-            Bigbang
+          <Button width="full" bg={"yellow"} color="black" size="md" onClick={() => handleBigBangClick()}>
+            BigBang
           </Button>
         </VStack>
       </Box>

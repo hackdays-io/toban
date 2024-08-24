@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
 import React from 'react';
-import { Box, Button, Flex, Heading, Spacer, Center } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Spacer, Center, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ProjectInfo from '../../components/ProjectInfo';
@@ -19,6 +19,10 @@ export default function ProjectTop() {
         { name: 'Contents', icon: '📝', href: '/roles/contents' },
         { name: 'Food', icon: '🍴', href: '/app/RoleList' }, // この行が更新されました
     ];
+
+    const handleSplitterClick = () => {
+        router.push('/app/SplitsList');
+    };
 
     return (
         <>
@@ -51,7 +55,7 @@ export default function ProjectTop() {
                     borderRadius="lg" 
                     boxShadow="lg"
                 >
-                    <ProjectInfo members={15} splitters={2} />
+                    <ProjectInfo members={15} splitters={2} onSplitterClick={handleSplitterClick} />
                     <RoleList roles={roles} />
                     {isWalletConnected && <HatList hats={hats} />}
                 </Box>

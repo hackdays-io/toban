@@ -37,7 +37,9 @@ function SplitterCreation() {
     setSelectedRoles({
       ...selectedRoles,
       [role]: {
+        // @ts-ignore
         ...selectedRoles[role],
+        // @ts-ignore
         selected: !selectedRoles[role].selected,
       },
     });
@@ -47,6 +49,7 @@ function SplitterCreation() {
     setSelectedRoles({
       ...selectedRoles,
       [role]: {
+        // @ts-ignore
         ...selectedRoles[role],
         multiplier: value,
       },

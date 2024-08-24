@@ -1,4 +1,12 @@
 import {connectorsForWallets} from "@rainbow-me/rainbowkit";
+import {
+  coinbaseWallet,
+  ledgerWallet,
+  metaMaskWallet,
+  rainbowWallet,
+  safeWallet,
+  walletConnectWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 import {intmaxwalletsdk} from "intmax-walletsdk/rainbowkit";
 import _ from "lodash";
 import {Chain, http} from "viem";
@@ -48,12 +56,17 @@ const connectors = connectorsForWallets(
       groupName: "IntmaxWallet",
       wallets: additionalWallets,
     },
-    /*
     {
-      groupName: 'Recommended',
-      wallets: [rainbowWallet, walletConnectWallet],
+      groupName: "Recommended",
+      wallets: [
+        rainbowWallet,
+        walletConnectWallet,
+        coinbaseWallet,
+        metaMaskWallet,
+        ledgerWallet,
+        safeWallet,
+      ],
     },
-    */
   ],
   {
     appName: "toban",

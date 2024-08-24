@@ -6,11 +6,13 @@ const useHatterHatMint = ({
   hatId
 }: {
   chainId: number;
-  hatId: number;
+  hatId: string;
 }) => {
     const currentNetworkId = useChainId();
     const imageURI = "ipfs://bafkreiflezpk3kjz6zsv23pbvowtatnd5hmqfkdro33x5mh2azlhne3ah4"
     const imageURTVerNekko = "https://lime-giant-dove-621.mypinata.cloud/ipfs/QmWgN2Z4jTz9c9Yw9YSAp7KZJcoCU47qPwPS6hp6xQQZDY"
+
+    console.log('hatId', hatId);
 
   /**
    * HatterHatをMintするメソッド

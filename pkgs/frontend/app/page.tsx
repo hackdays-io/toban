@@ -1,5 +1,6 @@
 "use client"; // クライアントコンポーネントとして指定
 
+import React, { useState } from 'react';
 import { Box, Button, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -7,6 +8,7 @@ import { useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useHatMint, useTopHatMint } from '@/hooks';
 import useHatterHatMint from '@/hooks/useHatterHatMint';
+import { delay, removeTrailingN } from '@/lib/utils';
 
 export default function Home() {
   const router = useRouter();
@@ -16,33 +18,36 @@ export default function Home() {
   };
 
   const chainId = useChainId();
-
-  let hatId: any = '13075574133568060300413502317204520876714015044932177653335250970869760';
+  
+  const [topHatId, setTopHatId] = useState("");
+  const [hatterHatId, setHatterHatId] = useState("");
 
   const resTopHatMint = useTopHatMint({
     chainId,
   });
 
-  const resHatterHatMint = useHatterHatMint({
-    chainId,
-    hatId
-  });
+  // console.log('topHatId', topHatId);
+  // const resHatterHatMint = useHatterHatMint({
+  //   chainId,
+  //   hatId: topHatId
+  // });
 
-  const hatterHatId = '13075575367696478291318033933431407794726893781984076878520148482326528'
-
-  const resHatMint = useHatMint({
-    chainId,
-    hatId: hatterHatId
-  });
+  // console.log('hatterHatId', hatterHatId);
+  // const resHatMint = useHatMint({
+  //   chainId,
+  //   hatId: hatterHatId
+  // });
 
   const handleBigBangClick = async () => {
     try {
-      hatId = await resTopHatMint.writeAsync();
-      console.log(`😺 TopHat minted successfully!, hatId = ${hatId}`);
+      const bigbang1 = await resTopHatMint.writeAsync();
+      console.log(`😺 TopHat minted successfully!, hatId = ${bigbang1}`);
 
-      // TODO: HatterHatのモジュールをデプロイ
       // const hatterHatId = await resHatterHatMint.writeAsync()
       // console.log('hatterHatId', hatterHatId);
+
+      // // 15秒の遅延
+      // await delay(15000);
 
       // TODO: TimeschejuleManagerにHatterHatをミント
       // const res = await resHatMint.writeAsync()

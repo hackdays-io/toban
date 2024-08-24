@@ -1,35 +1,27 @@
-import { hatIdDecimalToIp } from '@hatsprotocol/sdk-v1-core';
-import { Hat } from '@hatsprotocol/sdk-v1-subgraph';
 import { useChainId } from 'wagmi';
 
 import useHatContractWrite, { ValidFunctionName } from './useHatContractWrite';
 
 const useHatMint = ({
-  selectedHat,
   chainId,
-  wearer,
+  hatId,
 }: {
-  selectedHat: Hat;
   chainId: number;
-  wearer: `0x${string}`;
+  hatId: bigint;
 }) => {
   const currentNetworkId = useChainId();
-  const hatId = selectedHat?.id;
-
-  const txDescription =
-    hatId && `Minted hat ${hatIdDecimalToIp(BigInt(hatId))}`;
+  const wearer = "0xe3946ec13631B04CF9AB3630d1c7165AC719de13" // TimeFrameHatModule
 
   /**
-   * Hatを民とするメソッド
+   * Hatをミントするメソッド
    */
   const {
     writeAsync,
     isLoading,
   } = useHatContractWrite({
     functionName: 'mintHat' as ValidFunctionName,
-    args: [BigInt(hatId), wearer],
+    args: [hatId, wearer],
     chainId,
-    txDescription,
     enabled: Boolean(hatId) && chainId === currentNetworkId,
   });
 

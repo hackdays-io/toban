@@ -1,0 +1,16 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Clone",
+  "sourceName": "contracts/splits/libraries/Clone.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "DeploymentFailed",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x608060405234601d57600e6021565b603f602d823930815050603f90f35b6027565b60405190565b600080fdfe6080604052600080fdfea2646970667358221220e598b96505dc9f0d50dc27191f79a4b5d95d5e42a56debb8aa85e7a148a2dce764736f6c63430008180033",
+  "deployedBytecode": "0x6080604052600080fdfea2646970667358221220e598b96505dc9f0d50dc27191f79a4b5d95d5e42a56debb8aa85e7a148a2dce764736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

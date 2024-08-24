@@ -1,5 +1,8 @@
 "use client";
 
+import SplitCreatorJson from "@/contracts/SplitCreator.sol/SplitCreator.json";
+import {SPLIT_CREATOR_CONTRACT_ADDRESS} from "@/lib/constants";
+import {createTypedSignData} from "@/lib/metaTransaction";
 import {
   Box,
   Button,
@@ -13,18 +16,22 @@ import {
   Stack,
   Text,
   VStack,
-} from '@chakra-ui/react';
-import { useState } from 'react';
+} from "@chakra-ui/react";
+import {ethers} from "ethers";
+import {useState} from "react";
+import {toast} from "react-toastify";
+import {useAccount, useChainId, useSignTypedData} from "wagmi";
+import Toaster from "./Toaster";
 
 function SplitterCreation() {
   // 状態の追加：画面の表示状態を管理
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  const [splitName, setSplitName] = useState('');
+  const [splitName, setSplitName] = useState("");
   const [selectedRoles, setSelectedRoles] = useState({
-    food: { selected: true, multiplier: 2 },
-    cleaning: { selected: true, multiplier: 1 },
-    committee: { selected: false, multiplier: 1 },
+    food: {selected: true, multiplier: 2},
+    cleaning: {selected: true, multiplier: 1},
+    committee: {selected: false, multiplier: 1},
   });
   const [preview, setPreview] = useState({
     yu23ki14: 39,
@@ -33,11 +40,57 @@ function SplitterCreation() {
     halsk: 15,
   });
 
+  const {address} = useAccount();
+  const chainId = useChainId();
+  const {signTypedDataAsync} = useSignTypedData();
+
+  // MetaTransactionを送信するメソッド
+  const sendMetaTx = async () => {
+    let result: any;
+    // @todo リョーマさんに引数を準備してもらう。
+    const splitData = [
+      1,
+      1,
+      10,
+      ["0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"],
+    ];
+    // create typed sign data
+    const typedSignData: any = await createTypedSignData(
+      address,
+      chainId as any,
+      SPLIT_CREATOR_CONTRACT_ADDRESS,
+      SplitCreatorJson.abi,
+      "create",
+      [splitData]
+    );
+    // sign
+    const signature = await signTypedDataAsync(typedSignData);
+    console.log("signature", signature);
+    // send meta transaction
+    await fetch("api/requestRelayer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        typedSignData: typedSignData,
+        signature: signature,
+      }),
+    }).then(async (result) => {
+      // APIリクエストのリザルトをJSONとして解析
+      console.log("API response:", await result.json());
+      result = await result.json();
+    });
+    return result;
+  };
+
   const handleRoleChange = (role: any) => {
     setSelectedRoles({
       ...selectedRoles,
       [role]: {
+        // @ts-ignore
         ...selectedRoles[role],
+        // @ts-ignore
         selected: !selectedRoles[role].selected,
       },
     });
@@ -47,6 +100,7 @@ function SplitterCreation() {
     setSelectedRoles({
       ...selectedRoles,
       [role]: {
+        // @ts-ignore
         ...selectedRoles[role],
         multiplier: value,
       },
@@ -64,8 +118,59 @@ function SplitterCreation() {
     setIsConfirmed(true);
   };
 
-  const handleCreate = () => {
-    // スプリットを作成し、選択したチェーンにデプロイするロジック
+  /**
+   * splitを作成するメソッド
+   */
+  const handleCreate = async () => {
+    try {
+      // Spliteをガスレスで作成する。
+      const result = await sendMetaTx();
+      // @ts-ignore
+      const rpcUrl = RPC_URLS[chainId];
+
+      // provider
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
+      const txData = await provider.getTransactionReceipt(result.txHash);
+      console.log("txData:", txData);
+
+      // ENSのサブドメインとsplitのアドレスを紐づける。
+      await fetch("api/setAddr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          txData: txData,
+          addr: address, // splitのアドレスを渡す。
+        }),
+      }).then(async (result) => {
+        // APIリクエストのリザルトをJSONとして解析
+        console.log("API response:", await result.json());
+      });
+
+      toast.success("🦄 Success!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    } catch (err: any) {
+      console.error("error:", err);
+      toast.error("Failed....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    }
   };
 
   return (
@@ -102,13 +207,15 @@ function SplitterCreation() {
             <FormControl id="food-role">
               <Checkbox
                 isChecked={selectedRoles.food.selected}
-                onChange={() => handleRoleChange('food')}
+                onChange={() => handleRoleChange("food")}
               >
                 Food
               </Checkbox>
               <NumberInput
                 value={selectedRoles.food.multiplier}
-                onChange={(valueString) => handleMultiplierChange('food', parseInt(valueString))}
+                onChange={(valueString) =>
+                  handleMultiplierChange("food", parseInt(valueString))
+                }
                 min={1}
                 mt={2}
               >
@@ -121,13 +228,15 @@ function SplitterCreation() {
             <FormControl id="cleaning-role">
               <Checkbox
                 isChecked={selectedRoles.cleaning.selected}
-                onChange={() => handleRoleChange('cleaning')}
+                onChange={() => handleRoleChange("cleaning")}
               >
                 Cleaning
               </Checkbox>
               <NumberInput
                 value={selectedRoles.cleaning.multiplier}
-                onChange={(valueString) => handleMultiplierChange('cleaning', parseInt(valueString))}
+                onChange={(valueString) =>
+                  handleMultiplierChange("cleaning", parseInt(valueString))
+                }
                 min={1}
                 mt={2}
               >
@@ -140,13 +249,15 @@ function SplitterCreation() {
             <FormControl id="committee-role">
               <Checkbox
                 isChecked={selectedRoles.committee.selected}
-                onChange={() => handleRoleChange('committee')}
+                onChange={() => handleRoleChange("committee")}
               >
                 Committee
               </Checkbox>
               <NumberInput
                 value={selectedRoles.committee.multiplier}
-                onChange={(valueString) => handleMultiplierChange('committee', parseInt(valueString))}
+                onChange={(valueString) =>
+                  handleMultiplierChange("committee", parseInt(valueString))
+                }
                 min={1}
                 mt={2}
               >
@@ -160,6 +271,7 @@ function SplitterCreation() {
           </Button>
         </VStack>
       )}
+      <Toaster />
     </Box>
   );
 }

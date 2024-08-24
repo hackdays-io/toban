@@ -17,17 +17,28 @@ export const deploySplitsProtocol = async () => {
   );
   await PushSplitsFactory.waitForDeployment();
 
-  return {SplitsWarehouse, PullSplitsFactory, PushSplitsFactory};
+  const sampleForwarder = await ethers.getContractFactory("SampleForwarder");
+  const SampleForwarder = await sampleForwarder.deploy();
+  await SampleForwarder.waitForDeployment();
+
+  return {
+    SplitsWarehouse,
+    PullSplitsFactory,
+    PushSplitsFactory,
+    SampleForwarder,
+  };
 };
 
 export const deploySplitCreator = async (
   splitFactoryAddress: string,
-  fractionTokenAddress: string
+  fractionTokenAddress: string,
+  trustedForwarderAddress: string
 ) => {
   const splitCreatorFactory = await ethers.getContractFactory("SplitCreator");
   const SplitCreator = await splitCreatorFactory.deploy(
     splitFactoryAddress,
-    fractionTokenAddress
+    fractionTokenAddress,
+    trustedForwarderAddress
   );
 
   return {SplitCreator};

@@ -24,9 +24,10 @@
        NEXT_PUBLIC_ALCHEMY_ID=
        NEXT_PUBLIC_DEFENDER_API_KEY=
        NEXT_PUBLIC_DEFENDER_SECRET_KEY=
+       NEXT_PUBLIC_PINATA_JWT=
        ```
 
-  - **smartconract**
+  - **smartcontract**
 
     You must set some ENVs
 
@@ -68,4 +69,15 @@
 
   ```bash
   yarn contract getBalance --network sepolia
+
+- **compile smartcontract**
+
+  ```bash
+  yarn contract compile
+  ```
+
+- **test smartcontract**
+
+  ```bash
+  yarn contract test
   ```

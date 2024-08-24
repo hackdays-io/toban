@@ -228,13 +228,11 @@ function SplitterCreation() {
         // 画面2: スプリット分配率のプレビューとCreateボタン
         <VStack spacing={6} align="stretch">
           <Heading size="md" mb={4}>
-            2024 Q3 Rewards
+            ETH Tokyo
           </Heading>
           <Stack spacing={2}>
-            <Text>yu23ki14.eth: {preview.yu23ki14}%</Text>
-            <Text>0x123...xxx: {preview.ox123xxx}%</Text>
-            <Text>vitalik.eth: {preview.vitalik}%</Text>
-            <Text>halsk.eth: {preview.halsk}%</Text>
+            <Text>0x777E...9C556: 50%</Text>
+            <Text>0x60C7...6a56d: 50%</Text>
           </Stack>
           <Button colorScheme="blue" onClick={handleCreate}>
             Create
@@ -302,7 +300,49 @@ function SplitterCreation() {
                 isChecked={selectedRoles.committee.selected}
                 onChange={() => handleRoleChange("committee")}
               >
-                Committee
+                Food
+              </Checkbox>
+              <NumberInput
+                value={selectedRoles.committee.multiplier}
+                onChange={(valueString) =>
+                  handleMultiplierChange("committee", parseInt(valueString))
+                }
+                min={1}
+                mt={2}
+              >
+                <NumberInputField />
+              </NumberInput>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <FormControl id="committee-role">
+              <Checkbox
+                isChecked={selectedRoles.committee.selected}
+                onChange={() => handleRoleChange("committee")}
+              >
+                Photo
+              </Checkbox>
+              <NumberInput
+                value={selectedRoles.committee.multiplier}
+                onChange={(valueString) =>
+                  handleMultiplierChange("committee", parseInt(valueString))
+                }
+                min={1}
+                mt={2}
+              >
+                <NumberInputField />
+              </NumberInput>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <FormControl id="committee-role">
+              <Checkbox
+                isChecked={selectedRoles.committee.selected}
+                onChange={() => handleRoleChange("committee")}
+              >
+                Night Life
               </Checkbox>
               <NumberInput
                 value={selectedRoles.committee.multiplier}

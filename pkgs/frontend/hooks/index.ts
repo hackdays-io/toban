@@ -7,6 +7,7 @@ export {
 } from "./useHatContractWrite";
 export {default as useHatMakeImmutable} from "./useHatMakeImmutable";
 export {default as useHatMint} from "./useHatMint";
+export {useGetHat} from "./useHatRead";
 export {default as useIsAdmin} from "./useIsAdmin";
 export {default as useIsSameChain} from "./useIsSameChain";
 export {default as useModuleDetails} from "./useModuleDetails";

@@ -38,6 +38,8 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ## Demo Video
 
+[here - Youtube](https://www.youtube.com/watch?v=jFjxNSHiCBI)
+
 ## Related Contract Addresses
 
 ### Sepolia

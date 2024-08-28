@@ -33,8 +33,9 @@ function SplitterCreation() {
   const [splitName, setSplitName] = useState("");
   const [selectedRoles, setSelectedRoles] = useState({
     food: {selected: true, multiplier: 1},
-    cleaning: {selected: true, multiplier: 1},
-    committee: {selected: false, multiplier: 1},
+    cleaning: {selected: false, multiplier: 1},
+    photo: {selected: false, multiplier: 1},
+    nightlife: {selected: false, multiplier: 1},
   });
   const [preview, setPreview] = useState({
     yu23ki14: 39,
@@ -59,7 +60,7 @@ function SplitterCreation() {
     const splitData = [
       {
         hatId:
-          "13803493104969821108641795624824018123086259522856944229608942353776640",
+          "14180932358303652964031747155278457163093971878356409888899928862752768",
         multiplierBottom: 1,
         multiplierTop: 1,
         wearers: [
@@ -98,9 +99,9 @@ function SplitterCreation() {
     }).then(async (result) => {
       // APIリクエストのリザルトをJSONとして解析
       console.log("API response:", await result.json());
-      result = await result.json();
+      // result = await result.json();
     });
-    return result;
+    // return result;
   };
 
   const handleRoleChange = (role: any) => {
@@ -164,10 +165,10 @@ function SplitterCreation() {
   const handleCreate = async () => {
     try {
       // Spliteをガスレスで作成する。
-      const result = await sendMetaTx();
+      await sendMetaTx();
       // const result = await writeAsync();
       // @ts-ignore
-      const rpcUrl = RPC_URLS[chainId];
+      // const rpcUrl = RPC_URLS[chainId];
 
       // // provider
       // const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -250,7 +251,7 @@ function SplitterCreation() {
             />
           </FormControl>
 
-          {roleHats?.map((roleHat) => (
+          {/* {roleHats?.map((roleHat) => (
             <Box>
               <FormControl id="food-role">
                 <Checkbox
@@ -271,7 +272,7 @@ function SplitterCreation() {
                 </NumberInput>
               </FormControl>
             </Box>
-          ))}
+          ))} */}
 
           <Box>
             <FormControl id="cleaning-role">
@@ -297,15 +298,15 @@ function SplitterCreation() {
           <Box>
             <FormControl id="committee-role">
               <Checkbox
-                isChecked={selectedRoles.committee.selected}
-                onChange={() => handleRoleChange("committee")}
+                isChecked={selectedRoles.food.selected}
+                onChange={() => handleRoleChange("food")}
               >
                 Food
               </Checkbox>
               <NumberInput
-                value={selectedRoles.committee.multiplier}
+                value={selectedRoles.food.multiplier}
                 onChange={(valueString) =>
-                  handleMultiplierChange("committee", parseInt(valueString))
+                  handleMultiplierChange("food", parseInt(valueString))
                 }
                 min={1}
                 mt={2}
@@ -318,15 +319,15 @@ function SplitterCreation() {
           <Box>
             <FormControl id="committee-role">
               <Checkbox
-                isChecked={selectedRoles.committee.selected}
-                onChange={() => handleRoleChange("committee")}
+                isChecked={selectedRoles.photo.selected}
+                onChange={() => handleRoleChange("photo")}
               >
                 Photo
               </Checkbox>
               <NumberInput
-                value={selectedRoles.committee.multiplier}
+                value={selectedRoles.photo.multiplier}
                 onChange={(valueString) =>
-                  handleMultiplierChange("committee", parseInt(valueString))
+                  handleMultiplierChange("photo", parseInt(valueString))
                 }
                 min={1}
                 mt={2}
@@ -339,15 +340,15 @@ function SplitterCreation() {
           <Box>
             <FormControl id="committee-role">
               <Checkbox
-                isChecked={selectedRoles.committee.selected}
-                onChange={() => handleRoleChange("committee")}
+                isChecked={selectedRoles.nightlife.selected}
+                onChange={() => handleRoleChange("nightlife")}
               >
                 Night Life
               </Checkbox>
               <NumberInput
-                value={selectedRoles.committee.multiplier}
+                value={selectedRoles.nightlife.multiplier}
                 onChange={(valueString) =>
-                  handleMultiplierChange("committee", parseInt(valueString))
+                  handleMultiplierChange("nightlife", parseInt(valueString))
                 }
                 min={1}
                 mt={2}

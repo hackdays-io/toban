@@ -12,9 +12,6 @@ export default function IndividualRoleList() {
   // hatIdと詳細を取得する
   const {details, imageUri} = useGetHat(hatId as any);
 
-  console.log("details", details.data);
-  console.log("imageUri", imageUri);
-
   const handleNewButtonClick = () => {
     router.push("/app/SendToken/page");
   };
@@ -54,8 +51,8 @@ export default function IndividualRoleList() {
       <Box p={5}>
         <VStack spacing={5}>
           <RoleCard
-            name={details.data.name}
-            description={details.data.description}
+            name={details?.data.name || ""}
+            description={details?.data.description || ""}
             imageUri={imageUri as any}
           />
           {/* <ShareList /> */}

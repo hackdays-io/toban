@@ -6,6 +6,9 @@
   "repository": "https://github.com/hackdays-io/toban",
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
     "pkgs/*"
   ],

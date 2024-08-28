@@ -1,6 +1,8 @@
 "use client";
 
 import SplitCreatorJson from "@/contracts/SplitCreator.sol/SplitCreator.json";
+import {useGetHats} from "@/hooks/useHatRead";
+import useSplitCreatorWrite from "@/hooks/useSplitCreatorWrite";
 import useSplitsRead from "@/hooks/useSplitsRead";
 import {SPLIT_CREATOR_CONTRACT_ADDRESS} from "@/lib/constants";
 import {createTypedSignData} from "@/lib/metaTransaction";
@@ -19,6 +21,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import {ethers} from "ethers";
+import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {toast} from "react-toastify";
 import {useAccount, useChainId, useSignTypedData} from "wagmi";
@@ -29,9 +32,10 @@ function SplitterCreation() {
 
   const [splitName, setSplitName] = useState("");
   const [selectedRoles, setSelectedRoles] = useState({
-    food: {selected: true, multiplier: 2},
-    cleaning: {selected: true, multiplier: 1},
-    committee: {selected: false, multiplier: 1},
+    food: {selected: true, multiplier: 1},
+    cleaning: {selected: false, multiplier: 1},
+    photo: {selected: false, multiplier: 1},
+    nightlife: {selected: false, multiplier: 1},
   });
   const [preview, setPreview] = useState({
     yu23ki14: 39,
@@ -44,6 +48,9 @@ function SplitterCreation() {
   const chainId = useChainId();
   const {signTypedDataAsync} = useSignTypedData();
 
+  const {hatId} = useParams();
+  const {roleHats} = useGetHats(hatId.toString());
+
   const {getRelatedSplits, relatedSplits} = useSplitsRead();
 
   // MetaTransactionを送信するメソッド
@@ -51,11 +58,23 @@ function SplitterCreation() {
     let result: any;
     // @todo リョーマさんに引数を準備してもらう。
     const splitData = [
-      1,
-      1,
-      10,
-      ["0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"],
+      {
+        hatId:
+          "14180932358303652964031747155278457163093971878356409888899928862752768",
+        multiplierBottom: 1,
+        multiplierTop: 1,
+        wearers: [
+          "0x777EE5eeEd30c3712bEE6C83260D786857d9C556",
+          "0x60C7C2A24b5e86C38639Fd1586917a8FEF66a56d",
+        ],
+      },
     ];
+    // [
+    //   1,
+    //   1,
+    //   10,
+    //   ["0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"],
+    // ];
     // create typed sign data
     const typedSignData: any = await createTypedSignData(
       address,
@@ -67,9 +86,8 @@ function SplitterCreation() {
     );
     // sign
     const signature = await signTypedDataAsync(typedSignData);
-    console.log("signature", signature);
     // send meta transaction
-    await fetch("api/requestRelayer", {
+    await fetch("/api/requestRelayer", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -81,9 +99,9 @@ function SplitterCreation() {
     }).then(async (result) => {
       // APIリクエストのリザルトをJSONとして解析
       console.log("API response:", await result.json());
-      result = await result.json();
+      // result = await result.json();
     });
-    return result;
+    // return result;
   };
 
   const handleRoleChange = (role: any) => {
@@ -120,35 +138,57 @@ function SplitterCreation() {
     setIsConfirmed(true);
   };
 
+  // const {writeAsync, isLoading} = useSplitCreatorWrite({
+  //   functionName: "create",
+  //   args: [
+  //     [
+  //       {
+  //         hatId:
+  //           "13803493104969821108641795624824018123086259522856944229608942353776640",
+  //         multiplierBottom: 1,
+  //         multiplierTop: 1,
+  //         wearers: [
+  //           "0x777EE5eeEd30c3712bEE6C83260D786857d9C556",
+  //           "0x60C7C2A24b5e86C38639Fd1586917a8FEF66a56d",
+  //         ],
+  //       },
+  //     ],
+  //   ] as any,
+  //   chainId: chainId,
+  //   onErrorToastData: {title: "Failed to create split"},
+  //   enabled: true,
+  // });
+
   /**
    * splitを作成するメソッド
    */
   const handleCreate = async () => {
     try {
       // Spliteをガスレスで作成する。
-      const result = await sendMetaTx();
+      await sendMetaTx();
+      // const result = await writeAsync();
       // @ts-ignore
-      const rpcUrl = RPC_URLS[chainId];
+      // const rpcUrl = RPC_URLS[chainId];
 
-      // provider
-      const provider = new ethers.JsonRpcProvider(rpcUrl);
-      const txData = await provider.getTransactionReceipt(result.txHash);
-      console.log("txData:", txData);
+      // // provider
+      // const provider = new ethers.JsonRpcProvider(rpcUrl);
+      // const txData = await provider.getTransactionReceipt(result.txHash);
+      // console.log("txData:", txData);
 
       // ENSのサブドメインとsplitのアドレスを紐づける。
-      await fetch("api/setAddr", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          txData: txData,
-          addr: address, // splitのアドレスを渡す。
-        }),
-      }).then(async (result) => {
-        // APIリクエストのリザルトをJSONとして解析
-        console.log("API response:", await result.json());
-      });
+      // await fetch("/api/setAddr", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     txData: txData,
+      //     addr: address, // splitのアドレスを渡す。
+      //   }),
+      // }).then(async (result) => {
+      //   // APIリクエストのリザルトをJSONとして解析
+      //   console.log("API response:", await result.json());
+      // });
 
       toast.success("🦄 Success!", {
         position: "top-right",
@@ -189,13 +229,11 @@ function SplitterCreation() {
         // 画面2: スプリット分配率のプレビューとCreateボタン
         <VStack spacing={6} align="stretch">
           <Heading size="md" mb={4}>
-            2024 Q3 Rewards
+            ETH Tokyo
           </Heading>
           <Stack spacing={2}>
-            <Text>yu23ki14.eth: {preview.yu23ki14}%</Text>
-            <Text>0x123...xxx: {preview.ox123xxx}%</Text>
-            <Text>vitalik.eth: {preview.vitalik}%</Text>
-            <Text>halsk.eth: {preview.halsk}%</Text>
+            <Text>0x777E...9C556: 50%</Text>
+            <Text>0x60C7...6a56d: 50%</Text>
           </Stack>
           <Button colorScheme="blue" onClick={handleCreate}>
             Create
@@ -213,26 +251,28 @@ function SplitterCreation() {
             />
           </FormControl>
 
-          <Box>
-            <FormControl id="food-role">
-              <Checkbox
-                isChecked={selectedRoles.food.selected}
-                onChange={() => handleRoleChange("food")}
-              >
-                Food
-              </Checkbox>
-              <NumberInput
-                value={selectedRoles.food.multiplier}
-                onChange={(valueString) =>
-                  handleMultiplierChange("food", parseInt(valueString))
-                }
-                min={1}
-                mt={2}
-              >
-                <NumberInputField />
-              </NumberInput>
-            </FormControl>
-          </Box>
+          {/* {roleHats?.map((roleHat) => (
+            <Box>
+              <FormControl id="food-role">
+                <Checkbox
+                  isChecked={selectedRoles.food.selected}
+                  onChange={() => handleRoleChange(roleHat.id)}
+                >
+                  {roleHat.parsedData.parsedData.data?.name}
+                </Checkbox>
+                <NumberInput
+                  value={selectedRoles.food.multiplier}
+                  onChange={(valueString) =>
+                    handleMultiplierChange("food", parseInt(valueString))
+                  }
+                  min={1}
+                  mt={2}
+                >
+                  <NumberInputField />
+                </NumberInput>
+              </FormControl>
+            </Box>
+          ))} */}
 
           <Box>
             <FormControl id="cleaning-role">
@@ -258,15 +298,57 @@ function SplitterCreation() {
           <Box>
             <FormControl id="committee-role">
               <Checkbox
-                isChecked={selectedRoles.committee.selected}
-                onChange={() => handleRoleChange("committee")}
+                isChecked={selectedRoles.food.selected}
+                onChange={() => handleRoleChange("food")}
               >
-                Committee
+                Food
               </Checkbox>
               <NumberInput
-                value={selectedRoles.committee.multiplier}
+                value={selectedRoles.food.multiplier}
                 onChange={(valueString) =>
-                  handleMultiplierChange("committee", parseInt(valueString))
+                  handleMultiplierChange("food", parseInt(valueString))
+                }
+                min={1}
+                mt={2}
+              >
+                <NumberInputField />
+              </NumberInput>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <FormControl id="committee-role">
+              <Checkbox
+                isChecked={selectedRoles.photo.selected}
+                onChange={() => handleRoleChange("photo")}
+              >
+                Photo
+              </Checkbox>
+              <NumberInput
+                value={selectedRoles.photo.multiplier}
+                onChange={(valueString) =>
+                  handleMultiplierChange("photo", parseInt(valueString))
+                }
+                min={1}
+                mt={2}
+              >
+                <NumberInputField />
+              </NumberInput>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <FormControl id="committee-role">
+              <Checkbox
+                isChecked={selectedRoles.nightlife.selected}
+                onChange={() => handleRoleChange("nightlife")}
+              >
+                Night Life
+              </Checkbox>
+              <NumberInput
+                value={selectedRoles.nightlife.multiplier}
+                onChange={(valueString) =>
+                  handleMultiplierChange("nightlife", parseInt(valueString))
                 }
                 min={1}
                 mt={2}

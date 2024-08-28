@@ -202,7 +202,7 @@ export default function Home() {
         />
       </Box>
 
-      <Container textAlign="center" zIndex="2" mt="100px" pb="100px">
+      <Container textAlign="center" zIndex="2" mt="50px" pb="100px">
         <form onSubmit={handleSubmit(submit)}>
           <Stack spacing={4} width="full">
             <Box>
@@ -253,14 +253,20 @@ export default function Home() {
               />
             </Box>
 
-            <Button width="full" bg="yellow.400" size="lg" type="submit">
+            <Button
+              mt={10}
+              width="full"
+              bg="yellow.400"
+              size="lg"
+              type="submit"
+            >
               Create New Project
             </Button>
           </Stack>
         </form>
 
         {/* ページ遷移用のボタン */}
-        <Button
+        {/* <Button
           width="full"
           bg="black"
           color="white"
@@ -304,7 +310,7 @@ export default function Home() {
           onClick={() => navigateTo("/SplitterCreation")}
         >
           SplitterCreation
-        </Button>
+        </Button> */}
       </Container>
       <Toaster />
     </Box>

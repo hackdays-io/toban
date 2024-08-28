@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 import {ITimeFrameHatModule} from "./interfaces/ITimeFrameHatModule.sol";
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
+import {HatsModule} from "./HatsModule.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract TimeFrameHatModule is ERC2771Context, ITimeFrameHatModule {
+contract TimeFrameHatModule is ERC2771Context, HatsModule, ITimeFrameHatModule {
     IHats Hats;
 
     mapping(address => mapping(uint256 => uint256)) private woreTime;
@@ -17,7 +18,7 @@ contract TimeFrameHatModule is ERC2771Context, ITimeFrameHatModule {
     constructor(
         address _hatsAddress,
         address _trustedForwarder
-    ) ERC2771Context(_trustedForwarder) {
+    ) ERC2771Context(_trustedForwarder) HatsModule("0.0.0") {
         Hats = IHats(_hatsAddress);
     }
 

@@ -1,23 +1,22 @@
 "use client";
 
-import CreateRoleComponent from "@/components/CreateRole";
-import Header from "@/components/Header";
 import {Box, Button, Flex, Heading, Spacer} from "@chakra-ui/react";
 import {ConnectButton} from "@rainbow-me/rainbowkit";
-import Image from "next/image"; // next/imageのインポート
+import Image from "next/image";
 import {useRouter} from "next/navigation";
+import SplitterCreationComponent from "@/components/SplitterCreation";
+import Header from "@/components/Header";
 
-export default function CreateRole() {
+export default function SplitterCreation() {
   const router = useRouter();
 
   return (
     <>
-      {/* Header */}
       <Header />
 
       {/* Main Content */}
       <Box textAlign="center" mt="20">
-        <CreateRoleComponent />
+        <SplitterCreationComponent />
       </Box>
     </>
   );

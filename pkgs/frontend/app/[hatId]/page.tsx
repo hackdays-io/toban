@@ -64,7 +64,7 @@ export default function ProjectTop() {
           boxShadow="lg"
         >
           <ProjectInfo
-            members={15}
+            members={3}
             splitters={2}
             projectName={topHat?.data.name}
             projectDescription={topHat?.data.description}

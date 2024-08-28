@@ -5,9 +5,9 @@
       "options": {
         "printWidth": 80,
         "tabWidth": 4,
-        "useTabs": false,
+        "useTabs": true,
         "singleQuote": false,
-        "bracketSpacing": false,
+        "bracketSpacing": true,
         "explicitTypes": "preserve"
       }
     },
@@ -16,9 +16,9 @@
       "options": {
         "printWidth": 80,
         "tabWidth": 2,
-        "useTabs": false,
+        "useTabs": true,
         "singleQuote": false,
-        "bracketSpacing": false,
+        "bracketSpacing": true,
         "explicitTypes": "preserve"
       }
     },
@@ -27,9 +27,9 @@
       "options": {
         "printWidth": 80,
         "tabWidth": 2,
-        "useTabs": false,
+        "useTabs": true,
         "singleQuote": false,
-        "bracketSpacing": false,
+        "bracketSpacing": true,
         "explicitTypes": "preserve"
       }
     }

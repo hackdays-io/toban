@@ -1,29 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { ITimeFrameHatModule } from "./interfaces/ITimeFrameHatModule.sol";
-import { IHats } from "../hats/src/Interfaces/IHats.sol";
+import { IHatsTimeFrameModule } from "./interfaces/IHatsTimeFrameModule.sol";
 import { HatsModule } from "../hats/module/HatsModule.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract TimeFrameHatModule is ERC2771Context, HatsModule, ITimeFrameHatModule {
-	IHats Hats;
-
-	mapping(address => mapping(uint256 => uint256)) private woreTime;
+contract HatsTimeFrameModule is
+	ERC2771Context,
+	HatsModule,
+	IHatsTimeFrameModule
+{
+	mapping(uint256 => mapping(address => uint256)) private woreTime;
 
 	/**
 	 * @dev Constructor to initialize the trusted forwarder.
 	 * @param _trustedForwarder Address of the trusted forwarder contract.
 	 */
 	constructor(
-		address _hatsAddress,
-		address _trustedForwarder
-	) ERC2771Context(_trustedForwarder) HatsModule("0.0.0") {
-		Hats = IHats(_hatsAddress);
-	}
+		address _trustedForwarder,
+		string memory _version
+	) ERC2771Context(_trustedForwarder) HatsModule(_version) {}
 
 	function mintHat(uint256 hatId, address wearer) external {
-		Hats.mintHat(hatId, wearer);
+		HATS().mintHat(hatId, wearer);
 		_setWoreTime(wearer, hatId);
 	}
 
@@ -33,8 +32,8 @@ contract TimeFrameHatModule is ERC2771Context, HatsModule, ITimeFrameHatModule {
 	 * @param hatId The ID of the hat that was minted.
 	 */
 	function _setWoreTime(address wearer, uint256 hatId) internal {
-		require(woreTime[wearer][hatId] == 0, "Hat already minted");
-		woreTime[wearer][hatId] = block.timestamp;
+		require(woreTime[hatId][wearer] == 0, "Hat already minted");
+		woreTime[hatId][wearer] = block.timestamp;
 	}
 
 	/**
@@ -46,7 +45,7 @@ contract TimeFrameHatModule is ERC2771Context, HatsModule, ITimeFrameHatModule {
 		address wearer,
 		uint256 hatId
 	) external view returns (uint256) {
-		return woreTime[wearer][hatId];
+		return woreTime[hatId][wearer];
 	}
 
 	/**
@@ -59,7 +58,7 @@ contract TimeFrameHatModule is ERC2771Context, HatsModule, ITimeFrameHatModule {
 		address wearer,
 		uint256 hatId
 	) external view returns (uint256) {
-		uint256 mintTime = woreTime[wearer][hatId];
+		uint256 mintTime = woreTime[hatId][wearer];
 		require(
 			mintTime != 0,
 			"Hat has not been minted for this wearer and hatId"

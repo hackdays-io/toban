@@ -7,13 +7,7 @@ import {
 	Hats,
 	HatsModuleFactory,
 } from "../helpers/deploy/Hats";
-import {
-	Address,
-	decodeEventLog,
-	PublicClient,
-	WalletClient,
-	zeroAddress,
-} from "viem";
+import { decodeEventLog, PublicClient, WalletClient } from "viem";
 
 describe("Hats", () => {
 	let Hats: Hats;
@@ -115,8 +109,6 @@ describe("HatsModuleFactory", () => {
 
 	let address1: WalletClient;
 
-	let publicClient: PublicClient;
-
 	before(async () => {
 		const { Hats: _Hats } = await deployHatsProtocol();
 		Hats = _Hats;
@@ -126,8 +118,6 @@ describe("HatsModuleFactory", () => {
 		HatsModuleFactory = _HatsModuleFactory;
 
 		[address1] = await viem.getWalletClients();
-
-		publicClient = await viem.getPublicClient();
 	});
 
 	it("factory", async () => {
@@ -149,17 +139,13 @@ describe("HatsModuleFactory", () => {
 			"0x0000000100000000000000000000000000000000000000000000000000000000"
 		);
 
-		const txHash = await HatsModuleFactory.write.createHatsModule([
+		await HatsModuleFactory.write.createHatsModule([
 			HatsModuleImpl.address,
 			topHatId,
 			"0x",
 			"0x",
 			BigInt(0),
 		]);
-
-		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
-		});
 
 		expect(
 			await HatsModuleFactory.read.deployed([

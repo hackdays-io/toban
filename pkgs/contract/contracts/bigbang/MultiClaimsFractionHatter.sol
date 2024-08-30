@@ -3,50 +3,67 @@ pragma solidity ^0.8.24;
 
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {IFractionToken} from "../fraction/IFractionToken.sol";
-import {ITimeFrameHatModule} from "../timeframe/interfaces/ITimeFrameHatModule.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract MultiClaimsFractionHatter is ERC2771Context {
-    IHats public hatsContract;
-    IFractionToken public fractionTokenContract;
-    ITimeFrameHatModule public timeframeContract;
+    IHats public Hats;
+    address public wearer;
 
-    // Constructor to initialize the contracts and trusted forwarder
+    /**
+     * @dev Constructor to initialize the trusted forwarder.
+     * @param _trustedForwarder Address of the trusted forwarder contract.
+     * @param _hatsAddress Address of the hats protocol V1 contract.
+     * @param _timeframeHatModuleAddress Address of the timeframeHatModule contract.
+     */
     constructor(
+        address _trustedForwarder,
         address _hatsAddress,
-        address _fractionTokenAddress,
-        address _timeframeAddress,
-        address _trustedForwarder
+        address _timeframeHatModuleAddress
     ) ERC2771Context(_trustedForwarder) {
-        hatsContract = IHats(_hatsAddress);
-        fractionTokenContract = IFractionToken(_fractionTokenAddress);
-        timeframeContract = ITimeFrameHatModule(_timeframeAddress);
+        Hats = IHats(_hatsAddress);
+        wearer = _timeframeHatModuleAddress;
     }
 
-    // Function to create a hat, mint a fraction token, and set the wore time
+    /**
+     * @dev 
+     * @param _details  A description of the Hat. Should not be larger than 7000 bytes (enforced in changeHatDetails)
+     * @param _maxSupply The total instances of the Hat that can be worn at once
+     * @param _eligibility The address that can report on the Hat wearer's status
+     * @param _toggle The address that can deactivate the Hat
+     * @param _mutable Whether the hat's properties are changeable after creation
+     * @param _imageURI The image uri for this hat and the fallback for its downstream hats [optional]. Should not be larger than 7000 bytes (enforced in changeHatImageURI)
+     * @return topHatId The ID used for navigating to the ProjectTop page after project creation.
+     */
     function bigbang(
-        uint256 _admin,
         string calldata _details,
         uint32 _maxSupply,
         address _eligibility,
         address _toggle,
         bool _mutable,
-        string calldata _imageURI,
-        address _wearer
-    ) external {
-        // Step 1: Create the hat
-        uint256 newHatId = hatsContract.createHat(
-            _admin,
-            _details,
-            _maxSupply,
-            _eligibility,
-            _toggle,
-            _mutable,
-            _imageURI
+        string calldata _imageURI
+    ) external returns (uint256) {
+        uint256 topHatId = Hats.mintTopHat(
+          address(this),    // target: Tophat's wearer address. topHatのみがHatterHatを作成できるためTophatを指定する
+          _details,         
+          _imageURI        
         );
 
-        // Step 2: Mint the fraction token
-        fractionTokenContract.mint(string(abi.encodePacked(newHatId)), _wearer);
+        uint256 hatterHatId = Hats.createHat(
+            topHatId,       // _admin: The id of the Hat that will control who wears the newly created hat
+            _details,      
+            _maxSupply,    
+            _eligibility,  
+            _toggle,        
+            _mutable,        
+            _imageURI       
+        );
+
+        Hats.mintHat(
+          hatterHatId,      // _timeframeHatModuleAddressが以降のハットを作成できるようにHatterHat権限を付与する
+          wearer            // wearerは_timeframeHatModuleAddress
+        );
+
+        return topHatId;
     }
 
     // Override _msgSender to use the context from ERC2771Context.

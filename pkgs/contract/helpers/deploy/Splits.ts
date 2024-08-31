@@ -1,4 +1,5 @@
 import { viem } from "hardhat";
+import { Address } from "viem";
 
 export type SplitsWarehouse = Awaited<
 	ReturnType<typeof deploySplitsProtocol>
@@ -11,6 +12,10 @@ export type PullSplitsFactory = Awaited<
 export type PushSplitsFactory = Awaited<
 	ReturnType<typeof deploySplitsProtocol>
 >["PushSplitsFactory"];
+
+export type SplitsCreator = Awaited<
+	ReturnType<typeof deploySplitsCreator>
+>["SplitsCreator"];
 
 export const deploySplitsProtocol = async () => {
 	const SplitsWarehouse = await viem.deployContract("SplitsWarehouse", [
@@ -33,16 +38,16 @@ export const deploySplitsProtocol = async () => {
 	};
 };
 
-export const deploySplitCreator = async (
-	splitFactoryAddress: string,
-	fractionTokenAddress: string,
-	forwarderAddress: string
+export const deploySplitsCreator = async (
+	splitFactoryAddress: Address,
+	fractionTokenAddress: Address,
+	forwarderAddress: Address
 ) => {
-	const SplitCreator = await viem.deployContract("SplitCreator", [
+	const SplitsCreator = await viem.deployContract("SplitsCreator", [
 		splitFactoryAddress,
 		fractionTokenAddress,
 		forwarderAddress,
 	]);
 
-	return { SplitCreator };
+	return { SplitsCreator };
 };

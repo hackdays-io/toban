@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { IHatsTimeFrameModule } from "./interfaces/IHatsTimeFrameModule.sol";
+import { IHatsTimeFrameModule } from "./IHatsTimeFrameModule.sol";
 import { HatsModule } from "../hats/module/HatsModule.sol";
-import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import { ERC2771Context } from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract HatsTimeFrameModule is
 	ERC2771Context,

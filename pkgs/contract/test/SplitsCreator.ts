@@ -65,6 +65,7 @@ describe("CreateSplit", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
 			PullSplitsFactory.address,
 			FractionToken.address,
+			zeroAddress,
 			zeroAddress
 		);
 		SplitsCreator = _SplitsCreator;

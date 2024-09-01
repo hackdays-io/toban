@@ -41,11 +41,13 @@ export const deploySplitsProtocol = async () => {
 export const deploySplitsCreator = async (
 	splitFactoryAddress: Address,
 	fractionTokenAddress: Address,
+	hatsTimeFrameModuleAddress: Address,
 	forwarderAddress: Address
 ) => {
 	const SplitsCreator = await viem.deployContract("SplitsCreator", [
 		splitFactoryAddress,
 		fractionTokenAddress,
+		hatsTimeFrameModuleAddress,
 		forwarderAddress,
 	]);
 

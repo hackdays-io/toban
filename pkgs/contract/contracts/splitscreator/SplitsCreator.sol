@@ -6,6 +6,7 @@ import { ISplitsCreator } from "./ISplitsCreator.sol";
 import { ISplitFactoryV2 } from "../splits/interfaces/ISplitFactoryV2.sol";
 import { SplitV2Lib } from "../splits/libraries/SplitV2.sol";
 import { IFractionToken } from "../fractiontoken/IFractionToken.sol";
+import { IHatsTimeFrameModule } from "../timeframe/IHatsTimeFrameModule.sol";
 import { ERC2771Context } from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract SplitsCreator is ISplitsCreator, ERC2771Context {
@@ -13,13 +14,17 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 
 	IFractionToken fractionToken;
 
+	IHatsTimeFrameModule hatsTimeFrameModule;
+
 	constructor(
 		address _splitFactoryV2,
 		address _fractionToken,
+		address _hatsTimeFrameModule,
 		address _trustedForwarder
 	) ERC2771Context(_trustedForwarder) {
 		splitFactoryV2 = ISplitFactoryV2(_splitFactoryV2);
 		fractionToken = IFractionToken(_fractionToken);
+		hatsTimeFrameModule = IHatsTimeFrameModule(_hatsTimeFrameModule);
 	}
 
 	function create(
@@ -45,7 +50,10 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 		uint256[] memory hatIdsOfShareHolders = new uint256[](
 			numOfShareHolders
 		);
-		uint256[] memory multipliersOfShareHolders = new uint256[](
+		uint256[] memory roleMultipliersOfShareHolders = new uint256[](
+			numOfShareHolders
+		);
+		uint256[] memory hatsTimeFrameMultipliersOfShareHolders = new uint256[](
 			numOfShareHolders
 		);
 
@@ -58,15 +66,26 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 					_splitInfo.hatId,
 					_splitInfo.wearers[si]
 				);
-				uint256 multiplier = _splitInfo.multiplierTop /
+				uint256 roleMultiplier = _splitInfo.multiplierTop /
 					_splitInfo.multiplierBottom;
+				uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
+					_splitInfo.wearers[si],
+					_splitInfo.hatId
+				);
 
+				// ロール保持者に対する分配の計算
 				shareHolders[shareHolderIndex] = _splitInfo.wearers[si];
 				warers[shareHolderIndex] = _splitInfo.wearers[si];
 				hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
-				multipliersOfShareHolders[shareHolderIndex] = multiplier;
+				roleMultipliersOfShareHolders[
+					shareHolderIndex
+				] = roleMultiplier;
+				hatsTimeFrameMultipliersOfShareHolders[
+					shareHolderIndex
+				] = hatsTimeFrameMultiplier;
 				shareHolderIndex++;
 
+				// FractionTokenのホルダーに対する分配の計算
 				address[] memory recipients = fractionToken.getTokenRecipients(
 					tokenId
 				);
@@ -74,7 +93,12 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 					shareHolders[shareHolderIndex] = recipients[j];
 					warers[shareHolderIndex] = _splitInfo.wearers[si];
 					hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
-					multipliersOfShareHolders[shareHolderIndex] = multiplier;
+					roleMultipliersOfShareHolders[
+						shareHolderIndex
+					] = roleMultiplier;
+					hatsTimeFrameMultipliersOfShareHolders[
+						shareHolderIndex
+					] = hatsTimeFrameMultiplier;
 					shareHolderIndex++;
 				}
 			}
@@ -90,7 +114,7 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 		uint256[] memory allocations = new uint256[](shareHolderIndex);
 		for (uint i = 0; i < shareHolderIndex; i++) {
 			uint256 share = balanceOfShareHolders[i] *
-				multipliersOfShareHolders[i];
+				roleMultipliersOfShareHolders[i];
 			totalAllocation += share;
 			allocations[i] = share;
 		}
@@ -111,5 +135,28 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 		emit SplitsCreated(split);
 
 		return split;
+	}
+
+	function _getHatsTimeFrameMultiplier(
+		address _wearer,
+		uint256 _hatId
+	) internal view returns (uint256) {
+		if (address(hatsTimeFrameModule) == address(0)) return 1;
+		return
+			_sqrt(hatsTimeFrameModule.getWearingElapsedTime(_wearer, _hatId));
+	}
+
+	function _sqrt(uint256 y) internal pure returns (uint256 z) {
+		if (y > 3) {
+			z = y;
+			uint256 x = y / 2 + 1;
+			while (x < z) {
+				z = x;
+				x = (y / x + x) / 2;
+			}
+		} else if (y != 0) {
+			z = 1;
+		}
+		// else z = 0 (default value)
 	}
 }

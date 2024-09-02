@@ -2,6 +2,13 @@
   "name": "contract",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "test": "npx hardhat test",
+    "coverage": "SOLIDITY_COVERAGE=true npx hardhat coverage",
+    "compile": "npx hardhat compile",
+    "lint": "solhint 'contracts/**/*.sol' -- --fix",
+    "cp:contracts": "cp -r ./artifacts/contracts ../frontend"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",
     "@nomicfoundation/hardhat-ignition-viem": "^0.15.0",
@@ -21,5 +28,9 @@
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
     "viem": "^2.20.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "hardhat-gas-reporter": "^2.2.1"
   }
 }

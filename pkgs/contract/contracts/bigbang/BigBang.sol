@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
+import { HatsTimeFrameModule } from "../timeframe/HatsTimeFrameModule.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 contract BigBang is ERC2771Context {
@@ -12,15 +13,12 @@ contract BigBang is ERC2771Context {
      * @dev Constructor to initialize the trusted forwarder.
      * @param _trustedForwarder Address of the trusted forwarder contract.
      * @param _hatsAddress Address of the hats protocol V1 contract.
-     * @param _timeframeHatModuleAddress Address of the timeframeHatModule contract.
      */
     constructor(
         address _trustedForwarder,
-        address _hatsAddress,
-        address _timeframeHatModuleAddress
+        address _hatsAddress
     ) ERC2771Context(_trustedForwarder) {
         Hats = IHats(_hatsAddress);
-        wearer = _timeframeHatModuleAddress;
     }
 
     /**
@@ -31,6 +29,7 @@ contract BigBang is ERC2771Context {
      * @param _toggle The address that can deactivate the Hat
      * @param _mutable Whether the hat's properties are changeable after creation
      * @param _imageURI The image uri for this hat and the fallback for its downstream hats [optional]. Should not be larger than 7000 bytes (enforced in changeHatImageURI)
+     * @param _trustedForwarder Address of the trusted forwarder contract.
      * @return topHatId The ID used for navigating to the ProjectTop page after project creation.
      */
     function bigbang(
@@ -39,7 +38,8 @@ contract BigBang is ERC2771Context {
         address _eligibility,
         address _toggle,
         bool _mutable,
-        string calldata _imageURI
+        string calldata _imageURI,
+        address _trustedForwarder
     ) external returns (uint256) {
         uint256 topHatId = Hats.mintTopHat(
           address(this),    // target: Tophat's wearer address. topHatのみがHatterHatを作成できるためTophatを指定する
@@ -56,6 +56,15 @@ contract BigBang is ERC2771Context {
             _mutable,        
             _imageURI       
         );
+
+        // HatsTimeFrameModuleのデプロイ（HatsModuleFactory）
+        HatsTimeFrameModule timeframeModule = new HatsTimeFrameModule(
+            _trustedForwarder,
+            "0.0.0"
+        );
+
+        wearer = address(timeframeModule);
+
 
         Hats.mintHat(
           hatterHatId,      // _timeframeHatModuleAddressが以降のハットを作成できるようにHatterHat権限を付与する

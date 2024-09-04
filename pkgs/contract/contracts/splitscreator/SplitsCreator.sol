@@ -8,23 +8,28 @@ import { SplitV2Lib } from "../splits/libraries/SplitV2.sol";
 import { IFractionToken } from "../fractiontoken/IFractionToken.sol";
 import { IHatsTimeFrameModule } from "../timeframe/IHatsTimeFrameModule.sol";
 import { ERC2771Context } from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract SplitsCreator is ISplitsCreator, ERC2771Context {
-	ISplitFactoryV2 splitFactoryV2;
+contract SplitsCreator is ISplitsCreator, ERC2771Context, Initializable {
+	ISplitFactoryV2 public splitFactoryV2;
 
-	IFractionToken fractionToken;
+	IFractionToken public fractionToken;
 
-	IHatsTimeFrameModule hatsTimeFrameModule;
+	IHatsTimeFrameModule public hatsTimeFrameModule;
 
 	constructor(
 		address _splitFactoryV2,
-		address _fractionToken,
-		address _hatsTimeFrameModule,
 		address _trustedForwarder
 	) ERC2771Context(_trustedForwarder) {
 		splitFactoryV2 = ISplitFactoryV2(_splitFactoryV2);
-		fractionToken = IFractionToken(_fractionToken);
+	}
+
+	function initialize(
+		address _hatsTimeFrameModule,
+		address _fractionToken
+	) external initializer {
 		hatsTimeFrameModule = IHatsTimeFrameModule(_hatsTimeFrameModule);
+		fractionToken = IFractionToken(_fractionToken);
 	}
 
 	function create(

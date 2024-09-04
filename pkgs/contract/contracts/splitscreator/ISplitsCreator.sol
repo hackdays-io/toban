@@ -12,5 +12,10 @@ interface ISplitsCreator {
 
 	event SplitsCreated(address split);
 
+	function initialize(
+		address _hatsTimeFrameModule,
+		address _fractionToken
+	) external;
+
 	function create(SplitsInfo[] memory _splitInfos) external returns (address);
 }

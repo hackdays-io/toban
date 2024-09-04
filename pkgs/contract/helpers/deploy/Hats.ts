@@ -47,3 +47,15 @@ export const deployHatsTimeFrameModule = async (
 
 	return { HatsTimeFrameModule };
 };
+
+export const deployBigBang = async (
+	forwarderAddress: Address = zeroAddress,
+	hatsAddress: string = "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137" // Hats Protocol CA
+) => {
+	const BigBang = await viem.deployContract("BigBang", [
+		forwarderAddress,
+		hatsAddress,
+	]);
+
+	return { BigBang };
+};

@@ -33,6 +33,18 @@ contract FractionToken is ERC1155, ERC2771Context {
 		}
 	}
 
+	function burn(
+		address from,
+		address wearer,
+		uint256 hatId,
+		uint256 value
+	) public {
+		if (_msgSender() == from || _containsTokenId(getTokenId(hatId, _msgSender()))) {
+			uint256 tokenId = getTokenId(hatId, wearer);
+			_burn(from, tokenId, value);
+		}
+	}
+
 	function safeTransferFrom(
 		address from,
 		address to,

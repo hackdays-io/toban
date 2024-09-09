@@ -39,10 +39,10 @@ contract FractionToken is ERC1155, ERC2771Context {
 		uint256 hatId,
 		uint256 value
 	) public {
-		if (_msgSender() == from || _containsTokenId(getTokenId(hatId, _msgSender()))) {
-			uint256 tokenId = getTokenId(hatId, wearer);
-			_burn(from, tokenId, value);
-		}
+		require(_msgSender() == from || _containsTokenId(getTokenId(hatId, _msgSender())), "not authorized");
+		
+		uint256 tokenId = getTokenId(hatId, wearer);
+		_burn(from, tokenId, value);
 	}
 
 	function safeTransferFrom(

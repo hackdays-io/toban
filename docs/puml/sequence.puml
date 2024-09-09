@@ -1,0 +1,86 @@
+@startuml
+
+actor "address1" as address1
+actor "address2" as address2
+actor "address3" as address3
+participant "Hats" as Hats
+participant "HatsModuleFactory" as HatsModuleFactory
+participant "TimeFrameHatModule" as TimeFrameHatModule
+participant "FractionToken" as FractionToken
+participant "SplitsWarehouse" as SplitsWarehouse
+participant "SplitCreator" as SplitCreator
+participant "PullSplits\nFactory" as PullSplitsFactory
+participant "PullSplit" as PullSplit
+
+address1 -> Hats: TopHatをミントする
+
+address1 -> HatsModuleFactory: TimeFrameHatModule を作成する
+activate HatsModuleFactory
+HatsModuleFactory -> TimeFrameHatModule: TimeFrameHatModule を\nデプロイする
+deactivate HatsModuleFactory
+
+address1 -> Hats: Hatter Hat を作成する
+
+address1 -> Hats: Hatter Hat を TimeFrameHatModule にミントする
+
+address1 -> Hats: Hatter Hat の下に Role Hat 1 を作成する
+
+address1 -> Hats: Hatter Hat の下に Role Hat 2 を作成する
+
+address1 -> TimeFrameHatModule: Role Hat 1 を address1 にミントする
+activate TimeFrameHatModule
+TimeFrameHatModule -> Hats: Role Hat 1 を address1 にミントする
+activate Hats
+Hats -> TimeFrameHatModule: ミント完了
+deactivate Hats
+TimeFrameHatModule -> TimeFrameHatModule: Role Hat の着用日時を\n記録する
+deactivate TimeFrameHatModule
+
+address1 -> TimeFrameHatModule: Role Hat 2 を address2 にミントする（ Role Hat 1 と同様）
+
+address1 -> FractionToken: FractionToken を address1 に初期値の量ミントする\n（ tokenId は Role Hat 1 の ID と address1 のハッシュ値）
+
+address1 -> FractionToken: FractionToken を address2 に初期値の量ミントする\n（ tokenId は Role Hat 2 の ID と address2 のハッシュ値）
+
+address2 -> FractionToken: address2 の FractionToken を一部 address3 に送金する\n（ tokenId は Role Hat 2 の ID と address2 のハッシュ値）
+
+address1 -> SplitCreator: Split を作成する\n（ hatId 間の比率と各 hatId の着用者を送信する）
+activate SplitCreator
+
+SplitCreator -> FractionToken: FractionToken の残高などの情報を\nリクエストする
+FractionToken --> SplitCreator: FractionToken の情報を返す
+
+SplitCreator -> PullSplitsFactory: PullSplits コントラクトを作成する\n（ hatId 間の比率と Fraction Token の情報をもとに、\n分配情報を指定する）
+activate PullSplitsFactory
+PullSplitsFactory -> PullSplit: PullSplits コントラクトを作成する\n（分配情報のハッシュを保存する）
+activate PullSplit
+PullSplit -> PullSplitsFactory: 作成完了
+deactivate PullSplit
+PullSplitsFactory -> SplitCreator: 作成完了
+deactivate PullSplitsFactory
+deactivate SplitCreator
+
+address1 -> PullSplit: ETH または ERC20 を送金する
+
+address1 -> PullSplit: 分配情報を指定して\n分配する
+activate PullSplit
+PullSplit -> PullSplit: 分配情報のハッシュ値を\n保存しているものと比較検証する
+PullSplit -> SplitsWarehouse: 分配情報に基づき各アドレスと各数量で、\nSplitWarehouse （ERC6909X）の残高を更新する
+deactivate PullSplit
+
+address1 -> SplitsWarehouse: 引き出す
+activate SplitsWarehouse
+SplitsWarehouse -> SplitsWarehouse: 引き出す量の ERC6909X を\nユーザーの残高から burn する
+SplitsWarehouse -> address1: 引き出す量からリワード量を引いた ETH または ERC20 を送金する
+deactivate SplitsWarehouse
+
+address2 -> SplitsWarehouse: 引き出す（同様に）
+activate SplitsWarehouse
+SplitsWarehouse -> address2: ETH または ERC20 を送金する
+deactivate SplitsWarehouse
+
+address3 -> SplitsWarehouse: 引き出す（同様に）
+activate SplitsWarehouse
+SplitsWarehouse -> address3: ETH または ERC20 を送金する
+deactivate SplitsWarehouse
+@enduml

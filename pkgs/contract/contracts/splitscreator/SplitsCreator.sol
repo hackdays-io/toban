@@ -26,9 +26,9 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 		SplitsInfo[] memory _splitInfos
 	) external returns (address) {
 		uint256 numOfShareHolders = 0;
-		for (uint i = 0; i < _splitInfos.length; i++) {
+		for (uint256 i = 0; i < _splitInfos.length; i++) {
 			SplitsInfo memory _splitInfo = _splitInfos[i];
-			for (uint si = 0; si < _splitInfo.wearers.length; si++) {
+			for (uint256 si = 0; si < _splitInfo.wearers.length; si++) {
 				uint256 tokenId = fractionToken.getTokenId(
 					_splitInfo.hatId,
 					_splitInfo.wearers[si]
@@ -51,9 +51,9 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 
 		uint256 shareHolderIndex = 0;
 
-		for (uint i = 0; i < _splitInfos.length; i++) {
+		for (uint256 i = 0; i < _splitInfos.length; i++) {
 			SplitsInfo memory _splitInfo = _splitInfos[i];
-			for (uint si = 0; si < _splitInfo.wearers.length; si++) {
+			for (uint256 si = 0; si < _splitInfo.wearers.length; si++) {
 				uint256 tokenId = fractionToken.getTokenId(
 					_splitInfo.hatId,
 					_splitInfo.wearers[si]
@@ -70,7 +70,7 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 				address[] memory recipients = fractionToken.getTokenRecipients(
 					tokenId
 				);
-				for (uint j = 0; j < recipients.length; j++) {
+				for (uint256 j = 0; j < recipients.length; j++) {
 					shareHolders[shareHolderIndex] = recipients[j];
 					warers[shareHolderIndex] = _splitInfo.wearers[si];
 					hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
@@ -88,7 +88,7 @@ contract SplitsCreator is ISplitsCreator, ERC2771Context {
 
 		uint256 totalAllocation = 0;
 		uint256[] memory allocations = new uint256[](shareHolderIndex);
-		for (uint i = 0; i < shareHolderIndex; i++) {
+		for (uint256 i = 0; i < shareHolderIndex; i++) {
 			uint256 share = balanceOfShareHolders[i] *
 				multipliersOfShareHolders[i];
 			totalAllocation += share;

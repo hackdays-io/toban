@@ -1,6 +1,27 @@
-import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
+import * as dotenv from "dotenv";
+import fs from "fs";
+import type { HardhatUserConfig } from "hardhat/config";
+import path from "path";
+
+dotenv.config();
+
+const { PRIVATE_KEY, ETHERSCAN_API_KEY, ALCHEMY_API_KEY } = process.env;
+
+// タスクファイルを読み込むための設定
+const SKIP_LOAD = process.env.SKIP_LOAD === "true";
+if (!SKIP_LOAD) {
+	const taskPaths = ["", "utils"];
+	taskPaths.forEach((folder) => {
+		const tasksPath = path.join(__dirname, "tasks", folder);
+		fs.readdirSync(tasksPath)
+			.filter((_path) => _path.includes(".ts"))
+			.forEach((task) => {
+				require(`${tasksPath}/${task}`);
+			});
+	});
+}
 
 const config: HardhatUserConfig = {
 	solidity: {
@@ -16,6 +37,15 @@ const config: HardhatUserConfig = {
 	networks: {
 		hardhat: {
 			allowUnlimitedContractSize: true,
+		},
+		sepolia: {
+			url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+			accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+		},
+	},
+	etherscan: {
+		apiKey: {
+			sepolia: ETHERSCAN_API_KEY!,
 		},
 	},
 };

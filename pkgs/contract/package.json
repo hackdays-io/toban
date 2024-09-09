@@ -2,6 +2,15 @@
   "name": "contract",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "deploy:Lock": "npx hardhat ignition deploy ./ignition/modules/Lock.ts",
+    "local": "npx hardhat node",
+    "getBalance": "npx hardhat getBalance"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",
     "@nomicfoundation/hardhat-ignition-viem": "^0.15.0",
@@ -21,5 +30,8 @@
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
     "viem": "^2.20.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
   }
 }

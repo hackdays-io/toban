@@ -53,15 +53,8 @@ export const deploySplitsCreatorFactory = async (
 	return { SplitsCreatorFactory };
 };
 
-export const deploySplitsCreator = async (
-	splitFactoryAddress: Address,
-	fractionTokenAddress: Address,
-	forwarderAddress: Address
-) => {
-	const SplitsCreator = await viem.deployContract("SplitsCreator", [
-		splitFactoryAddress,
-		forwarderAddress,
-	]);
+export const deploySplitsCreator = async () => {
+	const SplitsCreator = await viem.deployContract("SplitsCreator");
 
 	return { SplitsCreator };
 };

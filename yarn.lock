@@ -4783,10 +4783,15 @@ slice-ansi@^4.0.0:
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
 
-solady@^0.0.123:
+"solady123@npm:solady@0.0.123":
   version "0.0.123"
   resolved "https://registry.yarnpkg.com/solady/-/solady-0.0.123.tgz#7ef95767c1570e3efde7550da2a8b439b2f413d2"
   integrity sha512-F/B8OMCplGsS4FrdPrnEG0xdg8HKede5PwC+Rum8soj/LWxfKckA0p+Uwnlbgey2iI82IHvmSOCNhsdbA+lUrw==
+
+solady@^0.0.201:
+  version "0.0.201"
+  resolved "https://registry.yarnpkg.com/solady/-/solady-0.0.201.tgz#278bcf859bc2bafe02c571c8fd4c4dededae836f"
+  integrity sha512-5K0abYDz4y/XwylslIZ1yEeh2xDsFfgmF3sPNhT8z4cQcX/ucz0ImyRfQHnc31J1j1MGuuQTdtSxz3Sfbz9FDQ==
 
 solc@0.8.26:
   version "0.8.26"

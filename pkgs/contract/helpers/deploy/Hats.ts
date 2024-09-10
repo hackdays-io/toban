@@ -15,6 +15,8 @@ export type HatsTimeFrameModule = Awaited<
 	ReturnType<typeof deployHatsTimeFrameModule>
 >["HatsTimeFrameModule"];
 
+export type BigBang = Awaited<ReturnType<typeof deployBigBang>>["BigBang"];
+
 export const deployHatsProtocol = async () => {
 	const Hats = await viem.deployContract("Hats", ["test", "https://test.com"]);
 
@@ -47,8 +49,6 @@ export const deployHatsTimeFrameModule = async (
 
 	return { HatsTimeFrameModule };
 };
-
-export type BigBang = Awaited<ReturnType<typeof deployBigBang>>[];
 
 export const deployBigBang = async (
 	forwarderAddress: Address = zeroAddress,

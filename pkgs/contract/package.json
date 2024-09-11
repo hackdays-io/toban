@@ -10,7 +10,8 @@
     "lint": "solhint --fix --noPrompt --save 'contracts/**/*.sol'",
     "deploy:Lock": "npx hardhat ignition deploy ./ignition/modules/Lock.ts",
     "local": "npx hardhat node",
-    "getBalance": "npx hardhat getBalance"
+    "getBalance": "npx hardhat getBalance",
+    "getChainInfo": "npx hardhat getChainInfo"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",

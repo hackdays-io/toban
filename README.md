@@ -110,10 +110,16 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   yarn contract setup --network sepolia
   ```
 
-- **get Balance of .env address**
+- **get Balance of address**
 
   ```bash
   yarn contract getBalance --network sepolia
+  ```
+
+- **get chaininfo**
+
+  ```bash
+  yarn contract getChainInfo --network sepolia
   ```
 
 - **deploy Sample Contract**

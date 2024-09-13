@@ -56,9 +56,9 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ## How to work
 
-- **setUp**
+- ### **setUp**
 
-  - **frontend**
+  - #### **frontend**
 
     You must set some ENVs
 
@@ -70,7 +70,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
        ```
 
-  - **smartconract**
+  - #### **smartconract**
 
     You must set some ENVs
 
@@ -86,44 +86,66 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
        COINMARKETCAP_API_KEY=""
        ```
 
-- **install**
+- ### **install**
 
   ```bash
   yarn
   ```
 
-- **build frontend**
+- #### frontend
 
-  ```bash
-  yarn frontend build
-  ```
+  - #### **build frontend**
 
-- **start frontend**
+    ```bash
+    yarn frontend build
+    ```
 
-  ```bash
-  yarn frontend dev
-  ```
+  - #### **start frontend**
 
-- **setup contract**
+    ```bash
+    yarn frontend dev
+    ```
 
-  ```bash
-  yarn contract setup --network sepolia
-  ```
+- ### contract
 
-- **get Balance of address**
+  - #### **compile**
 
-  ```bash
-  yarn contract getBalance --network sepolia
-  ```
+    ```bash
+    yarn contract compile
+    ```
 
-- **get chaininfo**
+  - #### **test**
 
-  ```bash
-  yarn contract getChainInfo --network sepolia
-  ```
+    ```bash
+    yarn contract test
+    ```
 
-- **deploy Sample Contract**
+  - #### **coverage**
 
-  ```bash
-  yarn contract deploy:Lock --network sepolia
-  ```
+    ```bash
+    yarn contract coverage
+    ```
+
+  - #### **clean**
+
+    ```bash
+    yarn contract clean
+    ```
+
+  - #### **get Balance of address**
+
+    ```bash
+    yarn contract getBalance --network sepolia
+    ```
+
+  - #### **get chaininfo**
+
+    ```bash
+    yarn contract getChainInfo --network sepolia
+    ```
+
+  - #### **deploy Sample Contract**
+
+    ```bash
+    yarn contract deploy:Lock --network sepolia
+    ```

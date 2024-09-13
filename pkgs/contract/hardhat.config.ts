@@ -2,12 +2,19 @@ import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
 import * as dotenv from "dotenv";
 import fs from "fs";
+import "hardhat-gas-reporter";
 import type { HardhatUserConfig } from "hardhat/config";
 import path from "path";
 
 dotenv.config();
 
-const { PRIVATE_KEY, ETHERSCAN_API_KEY, ALCHEMY_API_KEY } = process.env;
+const {
+	PRIVATE_KEY,
+	ETHERSCAN_API_KEY,
+	ALCHEMY_API_KEY,
+	COINMARKETCAP_API_KEY,
+	GAS_REPORT,
+} = process.env;
 
 // タスクファイルを読み込むための設定
 const SKIP_LOAD = process.env.SKIP_LOAD === "true";
@@ -47,6 +54,15 @@ const config: HardhatUserConfig = {
 		apiKey: {
 			sepolia: ETHERSCAN_API_KEY!,
 		},
+	},
+	gasReporter: {
+		enabled: GAS_REPORT ? true : false,
+		currency: "JPY",
+		gasPrice: 20,
+		token: "ETH",
+		coinmarketcap: COINMARKETCAP_API_KEY,
+		gasPriceApi:
+			"https://api.etherscan.io/api?module=proxy&action=eth_gasPrice",
 	},
 };
 

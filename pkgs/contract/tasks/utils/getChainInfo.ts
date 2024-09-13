@@ -2,6 +2,9 @@ import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { formatEther } from "viem";
 
+/**
+ * 【Task】	getChainInfo of connected chain
+ */
 task("getChainInfo", "getChainInfo of connected chain").setAction(
 	async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
 		console.log(

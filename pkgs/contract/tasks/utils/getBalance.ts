@@ -2,6 +2,9 @@ import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { formatEther } from "viem";
 
+/**
+ * 【Task】get the balance of the account
+ */
 task("getBalance", "getBalance").setAction(
 	async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
 		console.log(

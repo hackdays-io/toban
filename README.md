@@ -150,6 +150,12 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     yarn contract deploy:Lock --network sepolia
     ```
 
+  - #### **verify deployed contract**
+
+    ```bash
+    yarn contract deploy:Lock --verify --network sepolia
+    ```
+
   - #### **get deployed contract address**
 
     ```bash

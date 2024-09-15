@@ -11,7 +11,8 @@
     "deploy:Lock": "npx hardhat ignition deploy ./ignition/modules/Lock.ts",
     "local": "npx hardhat node",
     "getBalance": "npx hardhat getBalance",
-    "getChainInfo": "npx hardhat getChainInfo"
+    "getChainInfo": "npx hardhat getChainInfo",
+    "getContractAddress": "npx hardhat getContractAddress"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",

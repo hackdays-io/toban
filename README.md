@@ -86,13 +86,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
        COINMARKETCAP_API_KEY=""
        ```
 
-- ### **install**
+  - #### **install**
 
-  ```bash
-  yarn
-  ```
+    ```bash
+    yarn
+    ```
 
-- #### frontend
+- ### frontend
 
   - #### **build frontend**
 
@@ -148,4 +148,10 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
     ```bash
     yarn contract deploy:Lock --network sepolia
+    ```
+
+  - #### **get deployed contract address**
+
+    ```bash
+    yarn contract getContractAddress --contract Lock --network sepolia
     ```

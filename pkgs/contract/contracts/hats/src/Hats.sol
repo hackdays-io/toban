@@ -1392,33 +1392,33 @@ contract Hats is IHats, ERC1155, HatsIdUtilities {
 
         // split into two objects to avoid stack too deep error
         string memory idProperties = string.concat(
-            '"domain": "',
+            "'domain': '",
             Strings.toString(getTopHatDomain(_hatId)),
-            '", "id": "',
+            "', 'id': '",
             Strings.toString(_hatId),
-            '", "pretty id": "',
+            "', 'pretty id': '",
             Strings.toHexString(_hatId, 32),
-            '",'
+            "',"
         );
 
         string memory otherProperties = string.concat(
-            '"status": "',
+            "'status': '",
             (_isActive(hat, _hatId) ? "active" : "inactive"),
-            '", "current supply": "',
+            "', 'current supply': '",
             Strings.toString(hat.supply),
-            '", "supply cap": "',
+            "', 'supply cap': '",
             Strings.toString(hat.maxSupply),
-            '", "admin (id)": "',
+            "', 'admin (id)': '",
             Strings.toString(hatAdmin),
-            '", "admin (pretty id)": "',
+            "', 'admin (pretty id)': '",
             Strings.toHexString(hatAdmin, 32),
-            '", "eligibility module": "',
+            "', 'eligibility module': '",
             Strings.toHexString(hat.eligibility),
-            '", "toggle module": "',
+            "', 'toggle module': '",
             Strings.toHexString(hat.toggle),
-            '", "mutable": "',
+            "', 'mutable': '",
             _isMutable(hat) ? "true" : "false",
-            '"'
+            "'"
         );
 
         _uri = string(
@@ -1427,14 +1427,14 @@ contract Hats is IHats, ERC1155, HatsIdUtilities {
                 Base64.encode(
                     bytes(
                         string.concat(
-                            '{"name": "',
+                            "{'name': '",
                             "Hat",
-                            '", "description": "',
+                            "', 'description': '",
                             hat.details,
-                            '", "image": "',
+                            "', 'image': '",
                             getImageURIForHat(_hatId),
-                            '",',
-                            '"properties": ',
+                            "',",
+                            "'properties': ",
                             "{",
                             idProperties,
                             otherProperties,

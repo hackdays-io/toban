@@ -12,7 +12,8 @@
     "local": "npx hardhat node",
     "getBalance": "npx hardhat getBalance",
     "getChainInfo": "npx hardhat getChainInfo",
-    "getContractAddress": "npx hardhat getContractAddress"
+    "getContractAddress": "npx hardhat getContractAddress",
+    "registerSubdomain": "npx hardhat registerSubdomain"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",

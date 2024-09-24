@@ -113,7 +113,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
 		uint256 totalAllocation = 0;
 		uint256[] memory allocations = new uint256[](shareHolderIndex);
-		for (uint i = 0; i < shareHolderIndex; i++) {
+		for (uint256 i = 0; i < shareHolderIndex; i++) {
 			uint256 share = balanceOfShareHolders[i] *
 				roleMultipliersOfShareHolders[i] *
 				hatsTimeFrameMultipliersOfShareHolders[i];

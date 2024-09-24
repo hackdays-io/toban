@@ -1,0 +1,97 @@
+@startuml
+
+abstract ERC1155{
+  # _balanceOf
+  ---
+}
+
+abstract ERC2771Context {
+  - _trustedForwarder: address
+  ---
+}
+
+class HatsIdUtilities{
+  + linkedTreeAdmins: mapping
+  ---
+}
+
+class Hats {
+  + _hats: mapping
+  ---
+  + TopHat をミントする
+  + Hat を作成する
+  + Hat をミントする
+}
+
+struct Hat {
+  eligibility: address
+  maxSupply: uint32
+  supply: uint32
+  lastHatId: uint16
+  toggle: address
+  config: uint96
+  details: string
+  imageURI: string
+}
+
+class HatsModuleFactory {
+  ---
+  + モジュールをデプロイする
+}
+
+class HatsModule {
+
+}
+
+class HatsTimeFrameModule {
+  - woreTime: mapping
+  ---
+  + Hat をミントする
+  # Hat の woreTime を記録する
+}
+
+class FractionToken {
+  - tokenRecipients: mapping
+  - allTokenIds: uint256[]
+  ---
+  + ミントする
+  + トランスファーする
+  + tokenRecipients を取得する
+  + allTokenIds を取得する
+}
+
+class SplitWarehouse {
+  ---
+  + トランスファーする
+  + 残高を更新する
+  # バーンする
+  + 引き出す
+}
+
+class SplitCreator {
+  ---
+  + 分配を計算し、Splitを作成する
+}
+
+class SplitFactoryV2 {
+  ---
+  + Splitをデプロイする
+}
+
+class PullSplit {
+  ---
+  + 分配する
+}
+
+HatsModuleFactory --> HatsTimeFrameModule : モジュールを作成する
+HatsTimeFrameModule x--> Hats : Hat をミントする
+SplitCreator ..> Hats : hatId 間の比率を\n参照（引数）
+SplitCreator ..> HatsTimeFrameModule : hat の着用時間を\n参照（引数）
+SplitCreator ..> FractionToken : トークンの情報を取得する
+SplitCreator --> SplitFactoryV2 : 分配量を計算し、\nPullSplitのデプロイを\n依頼する
+SplitFactoryV2 --> PullSplit : デプロイする
+PullSplit x--> SplitWarehouse : 入金する
+PullSplit x--> SplitWarehouse : 残高を更新する
+
+remove @unlinked
+@enduml

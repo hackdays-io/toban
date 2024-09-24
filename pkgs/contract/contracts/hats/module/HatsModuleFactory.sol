@@ -6,7 +6,7 @@ import { HatsModule } from "./HatsModule.sol";
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { IHats } from "../src/Interfaces/IHats.sol";
 
-import "hardhat/console.sol";
+
 
 contract HatsModuleFactory {
 	/*//////////////////////////////////////////////////////////////

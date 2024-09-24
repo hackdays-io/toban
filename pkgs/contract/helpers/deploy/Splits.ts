@@ -13,6 +13,10 @@ export type PushSplitsFactory = Awaited<
 	ReturnType<typeof deploySplitsProtocol>
 >["PushSplitsFactory"];
 
+export type SplitsCreatorFactory = Awaited<
+	ReturnType<typeof deploySplitsCreatorFactory>
+>["SplitsCreatorFactory"];
+
 export type SplitsCreator = Awaited<
 	ReturnType<typeof deploySplitsCreator>
 >["SplitsCreator"];
@@ -38,16 +42,19 @@ export const deploySplitsProtocol = async () => {
 	};
 };
 
-export const deploySplitsCreator = async (
-	splitFactoryAddress: Address,
-	fractionTokenAddress: Address,
-	forwarderAddress: Address
+export const deploySplitsCreatorFactory = async (
+	splitsCreatorImpl: Address
 ) => {
-	const SplitsCreator = await viem.deployContract("SplitsCreator", [
-		splitFactoryAddress,
-		fractionTokenAddress,
-		forwarderAddress,
-	]);
+	const SplitsCreatorFactory = await viem.deployContract(
+		"SplitsCreatorFactory",
+		[splitsCreatorImpl]
+	);
+
+	return { SplitsCreatorFactory };
+};
+
+export const deploySplitsCreator = async () => {
+	const SplitsCreator = await viem.deployContract("SplitsCreator");
 
 	return { SplitsCreator };
 };

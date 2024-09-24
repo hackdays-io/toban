@@ -10,8 +10,6 @@ contract FractionToken is ERC1155, ERC2771Context {
 
 	mapping(uint256 => address[]) private tokenRecipients;
 
-	uint256[] private allTokenIds;
-
 	IHats private hatsContract;
 
 	constructor(
@@ -25,12 +23,30 @@ contract FractionToken is ERC1155, ERC2771Context {
 	}
 
 	function mint(uint256 hatId, address account) public {
+		require(_hasHatRole(account, hatId), "not authorized");
+
 		uint256 tokenId = getTokenId(hatId, account);
+
+		require(!_containsRecipient(tokenId, account), "already received");
+
 		_mint(account, tokenId, TOKEN_SUPPLY, "");
 
-		if (!_containsTokenId(tokenId)) {
-			allTokenIds.push(tokenId);
+		if (!_containsRecipient(tokenId, account)) {
+			tokenRecipients[tokenId].push(account);
 		}
+	}
+
+	function burn(
+		address from,
+		address wearer,
+		uint256 hatId,
+		uint256 value
+	) public {
+		uint256 tokenId = getTokenId(hatId, wearer);
+
+		require(_msgSender() == from || _containsRecipient(tokenId, _msgSender()), "not authorized");
+
+		_burn(from, tokenId, value);
 	}
 
 	function safeTransferFrom(
@@ -69,10 +85,6 @@ contract FractionToken is ERC1155, ERC2771Context {
 		return tokenRecipients[tokenId];
 	}
 
-	function getAllTokenIds() public view returns (uint256[] memory) {
-		return allTokenIds;
-	}
-
 	function getTokenId(
 		uint256 hatId,
 		address account
@@ -93,15 +105,6 @@ contract FractionToken is ERC1155, ERC2771Context {
 		return false;
 	}
 
-	function _containsTokenId(uint256 tokenId) private view returns (bool) {
-		for (uint256 i = 0; i < allTokenIds.length; i++) {
-			if (allTokenIds[i] == tokenId) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	function _hasHatRole(
 		address wearer,
 		uint256 hatId
@@ -115,19 +118,13 @@ contract FractionToken is ERC1155, ERC2771Context {
 		address wearer,
 		uint256 hatId
 	) public view returns (uint256) {
-		bool hasRole = _hasHatRole(account, hatId);
-
 		uint256 tokenId = getTokenId(hatId, wearer);
-		uint256 erc1155Balance = super.balanceOf(account, tokenId);
 
-		if (hasRole && erc1155Balance == 0) {
+		if (_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)) {
 			return TOKEN_SUPPLY;
 		}
 
-		if (hasRole && erc1155Balance > 0) {
-			return erc1155Balance;
-		}
-
+		uint256 erc1155Balance = super.balanceOf(account, tokenId);
 		return erc1155Balance;
 	}
 

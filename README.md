@@ -161,3 +161,9 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     ```bash
     yarn contract getContractAddress --contract Lock --network sepolia
     ```
+
+  - #### **resiger new subdomain to `toban.eth`**
+
+    ```bash
+    yarn contract registerSubdomain --label <your label> --network sepolia
+    ```

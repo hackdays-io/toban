@@ -1,0 +1,41 @@
+name: Test Contracts
+
+on:
+  # mainブランチにプッシュされたとき、またはプルリクエストが作成されたときに実行
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./toban/pkgs/contract
+
+      - name: Run Hardhat tests
+        run: npx hardhat test
+        working-directory: ./toban/pkgs/contract
+
+      # ガスレポートをアーティファクトとして保存
+      - name: Upload Gas Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: ./toban/pkgs/contract/gas-report.txt

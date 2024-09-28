@@ -12,7 +12,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, mainnet } from "viem/chains";
 
-export const signTx  = async (secretKey: `0x${string}`, to: `0x${string}`) => {
+export const sendEth  = async (secretKey: `0x${string}`, to: `0x${string}`) => {
     const account = privateKeyToAccount(secretKey);
 
     const client = createWalletClient({
@@ -28,4 +28,9 @@ export const signTx  = async (secretKey: `0x${string}`, to: `0x${string}`) => {
     });
 
     return hash;
+}
+
+export const getEthAddress = (secretKey: `0x${string}`) => {
+    const account = privateKeyToAccount(secretKey);
+    return account.address
 }

@@ -32,6 +32,8 @@ describe("Wallet Test", () => {
 
 	before(async () => {
 		[address0, address1] = await viem.getWalletClients();
+		console.log(address0.account?.address)
+		console.log(address1.account?.address)
 	});
 
 	it("should sign with viem", async () => {

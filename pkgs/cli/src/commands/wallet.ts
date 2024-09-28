@@ -3,6 +3,8 @@ import { getEthAddress, sendEth } from "../utils/viem";
 
 export const walletProgram = new Command();
 
+const { PRIVATE_KEY_0 } = process.env;
+
 // ###############################################################
 // CLI init setup
 // ###############################################################
@@ -30,9 +32,8 @@ walletProgram
 	.description("Send ETH")
 	.action(async () => {
 		console.log("Start getting the eth address");
-		const secretKey0 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-		const ethAddress = getEthAddress(secretKey0)
+		const ethAddress = getEthAddress(PRIVATE_KEY_0 as `0x${string}`)
 
 		console.log("EthAddress:", ethAddress)
 	});
@@ -45,10 +46,9 @@ walletProgram
 	.description("Send ETH")
 	.action(async () => {
 		console.log("Start send ETH");
-		const secretKey0 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 		const address1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
 
-		await sendEth(secretKey0, address1)
+		await sendEth(PRIVATE_KEY_0 as `0x${string}`, address1)
 
 		console.log("End send ETH")
 	});

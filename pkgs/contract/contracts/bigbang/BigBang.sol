@@ -16,7 +16,7 @@ contract BigBang is ERC2771Context {
 
 	address public HatsTimeFrameModule_IMPL;
 
-	event BigBang(
+	event Executed(
 		address indexed owner,
 		uint256 indexed topHatId,
 		address hatsTimeFrameModule,
@@ -27,6 +27,9 @@ contract BigBang is ERC2771Context {
 	 * @dev Constructor to initialize the trusted forwarder.
 	 * @param _trustedForwarder Address of the trusted forwarder contract.
 	 * @param _hatsAddress Address of the hats protocol V1 contract.
+	 * @param _hatsModuleFactory Address of the hats module factory contract.
+	 * @param _hatsTimeFrameModule_IMPL Address of the hats time frame module implementation contract.
+	 * @param _splitsCreatorFactory Address of the splits creator factory contract.
 	 */
 	constructor(
 		address _trustedForwarder,
@@ -109,7 +112,7 @@ contract BigBang is ERC2771Context {
 				keccak256(abi.encodePacked(topHatId))
 			);
 
-		emit BigBang(_owner, topHatId, hatsTimeFrameModule, splitCreator);
+		emit Executed(_owner, topHatId, hatsTimeFrameModule, splitCreator);
 
 		return topHatId;
 	}

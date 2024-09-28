@@ -47,8 +47,8 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 | ContractAddress                            | Name              | Memo |
 | ------------------------------------------ | ----------------- | ---- |
 | 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats              |      |
-|                                            | HatsModuleFactory |      |
-|                                            | PullSplitsFactory |      |
+| 0xfE661c01891172046feE16D3a57c3Cf456729efA | HatsModuleFactory |      |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory |      |
 
 ## How to work
 

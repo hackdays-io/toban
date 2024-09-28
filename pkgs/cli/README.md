@@ -51,3 +51,9 @@ Commands:
 ```bash
 yarn cli toban function show -t test
 ```
+
+ツリー ID を指定してそれに紐づく hats 一覧を取得する。
+
+```bash
+yarn cli toban hats list --treeId 163
+```

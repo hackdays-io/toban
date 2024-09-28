@@ -7,8 +7,8 @@ export const tobanProgram = new Command();
 // ###############################################################
 
 tobanProgram
-	.name("toban")
-	.description("This is a CLI tool for toban project")
+	.name("function")
+	.description("This is a CLI function for toban project")
 	.version("1.0.0");
 
 // ###############################################################

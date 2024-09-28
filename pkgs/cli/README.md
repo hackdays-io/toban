@@ -2,6 +2,8 @@
 
 ## setUp
 
+以下のコマンドをルートディレクトリから実行します。
+
 - **install**
 
   ```bash
@@ -25,7 +27,7 @@
 プロジェクトのルートディレクトリからは以下の方法で呼び出せます。
 
 ```bash
-yarn cli toban toban --help
+yarn cli toban function --help
 ```
 
 ```bash
@@ -47,5 +49,5 @@ Commands:
 例えば `show` コマンドを呼ぶ場合
 
 ```bash
-yarn cli toban toban show -t test
+yarn cli toban function show -t test
 ```

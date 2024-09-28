@@ -42,13 +42,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ## Related Contract Addresses
 
-### Base Sepolia
+### Holesky
 
-| ContractAddress | Name              | Memo |
-| --------------- | ----------------- | ---- |
-|                 | Hats              |      |
-|                 | HatsModuleFactory |      |
-|                 | PullSplitsFactory |      |
+| ContractAddress                            | Name              | Memo |
+| ------------------------------------------ | ----------------- | ---- |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats              |      |
+|                                            | HatsModuleFactory |      |
+|                                            | PullSplitsFactory |      |
 
 ## How to work
 

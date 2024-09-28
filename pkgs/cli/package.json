@@ -1,0 +1,22 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "bin": {
+    "toban": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "start": "npx tsc && npx ts-node ./dist/index.js"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/commander": "^2.12.2",
+    "@types/node": "^22.7.4"
+  }
+}

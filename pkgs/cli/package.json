@@ -1,11 +1,10 @@
 {
-  "name": "cli",
+  "name": "toban",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "main": "./dist/index.js",
   "bin": {
-    "toban": "npx tsc && npx ts-node ./dist/index.js"
+    "toban": "./dist/index.js"
   },
   "scripts": {
     "build": "npx tsc",

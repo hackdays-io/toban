@@ -2,9 +2,23 @@
 
 ## setUp
 
-```bash
-yarn
-```
+- **install**
+
+  ```bash
+  yarn
+  ```
+
+- **build**
+
+  ```bash
+  yarn cli build
+  ```
+
+- **global link**
+
+  ```bash
+  yarn cli link
+  ```
 
 ## How to use
 

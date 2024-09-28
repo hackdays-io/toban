@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "npx tsc",
-    "start": "npx tsc && npx ts-node dist/index.js"
+    "start": "npx tsc && npx ts-node ./dist/index.js"
   },
   "dependencies": {
     "commander": "^12.1.0",

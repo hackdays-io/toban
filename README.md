@@ -42,17 +42,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ## Related Contract Addresses
 
-### Sepolia
+### Holesky
 
-| Name               | Address                                    | Memo               |
-| ------------------ | ------------------------------------------ | ------------------ |
-| SplitCreator       | 0x8B262b2e81c2087c030cCCDe17F94C87a40bE75D |                    |
-| FractionToken      | 0xF03Cdf44e48621BA8F03A6a883137249Cbb4D544 |                    |
-| TimeFrameHatModule | 0xe3946ec13631B04CF9AB3630d1c7165AC719de13 |                    |
-| Forwarder          | 0xbE914D66aF1D6B7C46e1dfB641E4adCb6205cFc2 |                    |
-| Splits Factory     | 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | From Splits        |
-| Hats               | 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | From Hats Protocol |
-| NameWrapper        | 0x0635513f179D50A207757E05759CbD106d7dFcE8 | From ENS           |
+| ContractAddress                            | Name              | Memo |
+| ------------------------------------------ | ----------------- | ---- |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats              |      |
+| 0xfE661c01891172046feE16D3a57c3Cf456729efA | HatsModuleFactory |      |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory |      |
 
 ## How to work
 

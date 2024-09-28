@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "outDir": "./dist", // コンパイル後のファイル出力先
+    "rootDir": "./src", // ソースコードのルートディレクトリ
+    "strict": true, // 厳密な型チェック
+    "esModuleInterop": true, // ESモジュールのインポートサポート
+    "skipLibCheck": true // 型定義ファイルのチェックをスキップ,
+  },
+  "include": ["src/**/*"], // コンパイル対象のファイル
+  "exclude": ["node_modules"] // 除外するディレクトリ
+}

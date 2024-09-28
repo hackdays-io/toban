@@ -58,3 +58,33 @@ export const getWearersInfo = async (hatId: string) => {
 
 	return wearers;
 };
+
+/**
+ * 特定のウォレットアドレスが着用している全てのHats情報を取得するメソッド
+ */
+export const getWearerInfo = async (walletAddress: string) => {
+	// get the wearer of a given hat
+	const wearer = await hatsSubgraphClient.getWearer({
+		chainId: optimism.id,
+		wearerAddress: walletAddress as `0x${string}`,
+		props: {
+			currentHats: {
+				props: {
+					prettyId: true,
+					status: true,
+					createdAt: true,
+					details: true,
+					maxSupply: true,
+					eligibility: true,
+					toggle: true,
+					mutable: true,
+					imageUri: true,
+					levelAtLocalTree: true,
+					currentSupply: true,
+				},
+			},
+		},
+	});
+
+	return wearer;
+};

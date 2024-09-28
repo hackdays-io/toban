@@ -57,3 +57,15 @@ yarn cli toban function show -t test
 ```bash
 yarn cli toban hats list --treeId 163
 ```
+
+HatId に紐づく全ての着用者のウォレットアドレス一覧を取得する。
+
+```bash
+yarn cli toban hats wears --hatId 0x000000a300010002000100000000000000000000000000000000000000000000
+```
+
+特定のウォレットアドレスに紐づく全ての Hats の情報を取得する。
+
+```bash
+yarn cli toban hats wear --address 0xfedfa388151b6f8d5901f5482564988ed87b64f1
+```

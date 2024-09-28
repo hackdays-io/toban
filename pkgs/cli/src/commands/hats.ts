@@ -1,5 +1,9 @@
 import { Command } from "commander";
-import { getTreeInfo, getWearersInfo } from "../modules/hatsProtocol";
+import {
+	getTreeInfo,
+	getWearerInfo,
+	getWearersInfo,
+} from "../modules/hatsProtocol";
 
 export const hatsCommands = new Command();
 
@@ -42,4 +46,18 @@ hatsCommands
 		const wearers = await getWearersInfo(options.hatId);
 
 		console.log(wearers);
+	});
+
+/**
+ * ウォレットアドレスに紐づくhatの情報を取得するコマンド
+ */
+hatsCommands
+	.command("wear")
+	.description("Show all of the hat info that are associated with the hat ID")
+	.option("-addr, --address <address>", "Wallet Address")
+	.action(async (options) => {
+		// 特定のウォレットアドレスに紐づく情報を全て取得する。
+		const wearer = await getWearerInfo(options.address);
+
+		console.log(wearer);
 	});

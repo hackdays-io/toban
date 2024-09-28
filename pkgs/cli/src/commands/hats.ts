@@ -1,6 +1,5 @@
 import { Command } from "commander";
-import { optimism } from "viem/chains";
-import { hatsSubgraphClient } from "../modules/hatsProtocol";
+import { getTreeInfo, getWearersInfo } from "../modules/hatsProtocol";
 
 export const hatsCommands = new Command();
 
@@ -26,26 +25,21 @@ hatsCommands
 	.option("-id, --treeId <treeId>", "Tree ID")
 	.action(async (options) => {
 		// ツリー情報を全て取得する。
-		const tree = await hatsSubgraphClient.getTree({
-			chainId: optimism.id,
-			treeId: Number(options.treeId),
-			props: {
-				hats: {
-					props: {
-						prettyId: true,
-						status: true,
-						createdAt: true,
-						details: true,
-						maxSupply: true,
-						eligibility: true,
-						imageUri: true,
-						toggle: true,
-						levelAtLocalTree: true,
-						currentSupply: true,
-					},
-				},
-			},
-		});
+		const tree = await getTreeInfo(Number(options.treeId));
 
 		console.log(tree);
+	});
+
+/**
+ * HatIdに紐づく着用者の情報を表示するコマンド
+ */
+hatsCommands
+	.command("wears")
+	.description("Show all of the wears that are associated with the hat ID")
+	.option("-id, --hatId <hatId>", "Hat ID")
+	.action(async (options) => {
+		// ツリー情報を全て取得する。
+		const wearers = await getWearersInfo(options.hatId);
+
+		console.log(wearers);
 	});

@@ -14,3 +14,47 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
 		},
 	},
 });
+
+/**
+ * ツリー情報を取得するメソッド
+ */
+export const getTreeInfo = async (treeId: number) => {
+	const tree = await hatsSubgraphClient.getTree({
+		chainId: optimism.id,
+		treeId: treeId,
+		props: {
+			hats: {
+				props: {
+					prettyId: true,
+					status: true,
+					createdAt: true,
+					details: true,
+					maxSupply: true,
+					eligibility: true,
+					imageUri: true,
+					toggle: true,
+					levelAtLocalTree: true,
+					currentSupply: true,
+				},
+			},
+		},
+	});
+
+	return tree;
+};
+
+/**
+ * 帽子の着用者のウォレットアドレスを一覧を取得するメソッド
+ */
+export const getWearersInfo = async (hatId: string) => {
+	// get the first 10 wearers of a given hat
+	const wearers = await hatsSubgraphClient.getWearersOfHatPaginated({
+		chainId: optimism.id,
+		props: {},
+		hatId: BigInt(hatId),
+		page: 0,
+		perPage: 100,
+	});
+
+	return wearers;
+};

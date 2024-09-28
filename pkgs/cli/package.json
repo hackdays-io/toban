@@ -8,12 +8,17 @@
   },
   "scripts": {
     "build": "npx tsc",
-    "start": "npx tsc && npx ts-node ./dist/index.js"
+    "start": "npx tsc && npx ts-node ./dist/index.js",
+    "hat:sample": "npx ts-node ./scripts/hat.ts"
   },
   "dependencies": {
+    "@hatsprotocol/sdk-v1-core": "^0.10.0",
+    "@hatsprotocol/sdk-v1-subgraph": "^1.0.0",
     "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "viem": "^2.21.15"
   },
   "devDependencies": {
     "@types/commander": "^2.12.2",

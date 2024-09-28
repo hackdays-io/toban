@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import { program } from "commander";
-import { tobanProgram } from "./commands/function";
+import { functionCommands } from "./commands/function";
 import { walletProgram } from "./commands/wallet";
+import { hatsCommands } from "./commands/hats";
 
-program.addCommand(tobanProgram);
+program.addCommand(functionCommands);
+program.addCommand(hatsCommands);
 program.addCommand(walletProgram);
 
 program.parse(process.argv);

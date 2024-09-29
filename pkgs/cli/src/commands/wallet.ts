@@ -1,11 +1,14 @@
 import { Command } from "commander";
-import { getEthAddress, sendEth } from "../utils/viem";
+import * as donenv from "dotenv";
+import { getEthAddress, sendEth } from "../modules/viem";
 
-export const walletProgram = new Command();
+donenv.config();
+
+export const walletCommands = new Command();
 
 const { TOBAN_PRIVATE_KEY } = process.env;
 
-walletProgram
+walletCommands
 	.name("wallet")
 	.description("This is a CLI function for toban project")
 	.version("1.0.0");
@@ -13,9 +16,9 @@ walletProgram
 /**
  * ETHアドレスを取得
  */
-walletProgram
+walletCommands
 	.command("getEthAddress")
-	.description("Send ETH")
+	.description("show wallet address")
 	.action(async () => {
 		console.log("Start getting the eth address");
 
@@ -27,7 +30,7 @@ walletProgram
 /**
  * ETHを送信
  */
-walletProgram
+walletCommands
 	.command("sendEth")
 	.description("Send ETH")
 	.action(async () => {

@@ -1,5 +1,8 @@
 import { Command } from "commander";
 import { getEthAddress, sendEth } from "../utils/viem";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const walletProgram = new Command();
 
@@ -33,9 +36,9 @@ walletProgram
 	.action(async () => {
 		console.log("Start getting the eth address");
 
-		const ethAddress = getEthAddress(PRIVATE_KEY_0 as `0x${string}`)
+		const ethAddress = getEthAddress(PRIVATE_KEY_0 as `0x${string}`);
 
-		console.log("EthAddress:", ethAddress)
+		console.log("EthAddress:", ethAddress);
 	});
 
 /**
@@ -48,9 +51,9 @@ walletProgram
 		console.log("Start send ETH");
 		const address1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
 
-		await sendEth(PRIVATE_KEY_0 as `0x${string}`, address1)
+		await sendEth(PRIVATE_KEY_0 as `0x${string}`, address1);
 
-		console.log("End send ETH")
+		console.log("End send ETH");
 	});
 
 /**

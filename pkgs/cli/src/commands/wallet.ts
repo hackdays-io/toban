@@ -1,8 +1,6 @@
 import { Command } from "commander";
-import * as donenv from "dotenv";
 import { getEthAddress, sendEth } from "../modules/viem";
-
-donenv.config();
+import { listProfiles, saveProfile } from "../services/wallet";
 
 export const walletCommands = new Command();
 
@@ -14,17 +12,25 @@ walletCommands
 	.version("1.0.0");
 
 /**
- * ETHアドレスを取得
+ * ウォレット一覧
  */
 walletCommands
-	.command("getEthAddress")
-	.description("show wallet address")
+	.command("list")
+	.description("show wallets")
 	.action(async () => {
-		console.log("Start getting the eth address");
+		listProfiles();
+	});
 
-		const ethAddress = getEthAddress(TOBAN_PRIVATE_KEY as `0x${string}`);
-
-		console.log("EthAddress:", ethAddress);
+/**
+ * 新しいウォレットを追加
+ */
+walletCommands
+	.command("add")
+	.description("add a new wallet")
+	.requiredOption("--privateKey <privateKey>", "Private key to be saved")
+	.requiredOption("--name <name>", "Wallet name")
+	.action(({ name, privateKey }) => {
+		saveProfile({ name, privateKey });
 	});
 
 /**

@@ -56,9 +56,12 @@ const config: HardhatUserConfig = {
 		},
 	},
 	gasReporter: {
-		enabled: GAS_REPORT ? true : false,
-		currency: "JPY",
-		gasPrice: 20,
+		enabled: true,
+		//		currency: "JPY",
+		currency: "USD",
+		outputFile: "gas-report.txt", // 結果をファイルに保存
+		noColors: true, // ファイル出力用に色を無効化
+		//		gasPrice: 20,
 		token: "ETH",
 		coinmarketcap: COINMARKETCAP_API_KEY,
 		gasPriceApi:

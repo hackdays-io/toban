@@ -1,5 +1,5 @@
 import { HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
-import { optimism, sepolia } from "viem/chains";
+import { base, optimism, sepolia } from "viem/chains";
 
 // Subgraph用のインスタンスを生成
 export const hatsSubgraphClient = new HatsSubgraphClient({
@@ -11,6 +11,10 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
 		[optimism.id]: {
 			endpoint:
 				"https://api.studio.thegraph.com/query/55784/hats-v1-optimism/version/latest",
+		},
+		[base.id]: {
+			endpoint:
+				"https://api.studio.thegraph.com/query/55784/hats-v1-base/version/latest",
 		},
 	},
 });

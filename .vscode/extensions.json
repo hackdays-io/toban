@@ -2,6 +2,7 @@
   "recommendations": [
     "esbenp.prettier-vscode",
     "NomicFoundation.hardhat-solidity",
-    "tintinweb.solidity-visual-auditor"
+    "tintinweb.solidity-visual-auditor",
+    "jebbs.plantuml"
   ]
 }

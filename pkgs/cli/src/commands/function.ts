@@ -1,12 +1,12 @@
 import { Command } from "commander";
 
-export const tobanProgram = new Command();
+export const functionCommands = new Command();
 
 // ###############################################################
 // CLI init setup
 // ###############################################################
 
-tobanProgram
+functionCommands
 	.name("function")
 	.description("This is a CLI function for toban project")
 	.version("1.0.0");
@@ -24,7 +24,7 @@ let shifts = [
 /**
  * シフトを一覧表示するコマンド
  */
-tobanProgram
+functionCommands
 	.command("list")
 	.description("List all shifts")
 	.action(() => {
@@ -37,7 +37,7 @@ tobanProgram
 /**
  * 新しいシフトを追加するコマンド
  */
-tobanProgram
+functionCommands
 	.command("add <date> <person>")
 	.description("Add a new shift")
 	.action((date, person) => {
@@ -48,7 +48,7 @@ tobanProgram
 /**
  * ランダムで担当者を選ぶコマンド
  */
-tobanProgram
+functionCommands
 	.command("random")
 	.description("Pick a random person for the shift")
 	.action(() => {
@@ -61,7 +61,7 @@ tobanProgram
 /**
  * 引数を表示するだけのコマンド
  */
-tobanProgram
+functionCommands
 	.command("show")
 	.description("Show the arguments")
 	.option("-t, --text <text>", "Show all arguments")

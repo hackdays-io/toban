@@ -16,8 +16,5 @@
     "frontend": "yarn workspace frontend",
     "contract": "yarn workspace contract",
     "cli": "yarn workspace cli"
-  },
-  "devDependencies": {
-    "hardhat-gas-reporter": "^1.0.10"
   }
 }

@@ -17,9 +17,9 @@ export const getProfiles = () => {
 	return JSON.parse(data) as Profile[];
 };
 
-export const getWalletByName = (name: string) => {
+export const getWallet = (name?: string) => {
 	const profiles = getProfiles();
-	const profile = profiles.find((p) => p.name === name);
+	const profile = profiles.find((p) => p.name === name) || profiles[0];
 
 	if (!profile) throw "Profile not found.";
 

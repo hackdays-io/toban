@@ -49,6 +49,18 @@ export const saveProfile = (params: Profile) => {
 	console.log(`Profile ${params.name} with private key has been saved.`);
 };
 
+export const deleteProfile = (params: { name: string }) => {
+	const profiles = getProfiles();
+	const index = profiles.findIndex((p) => p.name === params.name);
+
+	if (index === -1) throw "Profile not found.";
+
+	profiles.splice(index, 1);
+
+	writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
+	console.log(`Profile "${params.name}" with private key has been deleted.`);
+}
+
 export const listProfiles = () => {
 	const profiles = getProfiles();
 	for (const profile of profiles) {

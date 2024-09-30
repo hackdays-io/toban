@@ -12,6 +12,12 @@ contract HatsTimeFrameModule is
 {
 	mapping(uint256 => mapping(address => uint256)) private woreTime;
 
+	mapping(uint256 => mapping(address => uint256)) private deactivatedTime;
+
+	mapping(uint256 => mapping(address => uint256)) private totalActiveTime;
+
+	mapping(uint256 => mapping(address => bool)) private isActive;
+
 	/**
 	 * @dev Constructor to initialize the trusted forwarder.
 	 * @param _trustedForwarder Address of the trusted forwarder contract.
@@ -24,7 +30,34 @@ contract HatsTimeFrameModule is
 	function mintHat(uint256 hatId, address wearer) external {
 		HATS().mintHat(hatId, wearer);
 		_setWoreTime(wearer, hatId);
+		isActive[hatId][wearer] = true;
 	}
+
+	/**
+	 * @dev Deactivate the hat, pausing the contribution time.
+	 * Calculate the contribution time up to deactivation.
+	 * @param wearer The address of the person who received the hat.
+	 * @param hatId The ID of the hat that was minted.
+	 */
+	function deactivate(uint256 hatId, address wearer) external {
+		require(isActive[hatId][wearer], "Hat is already inactive");
+		isActive[hatId][wearer] = false;
+		deactivatedTime[hatId][wearer] = block.timestamp;
+		totalActiveTime[hatId][wearer] += block.timestamp - woreTime[hatId][wearer];
+	}
+
+	/**
+	 * @dev Reactivate the hat, resuming the contribution time.
+	 * Reset woreTime for new active period.
+	 * @param wearer The address of the person who received the hat.
+	 * @param hatId The ID of the hat that was minted.
+	 */
+	function reactivate(uint256 hatId, address wearer) external {
+		require(!isActive[hatId][wearer], "Hat is already active");
+		isActive[hatId][wearer] = true;
+		uint256 pausedTime = block.timestamp - deactivatedTime[hatId][wearer]; // Time the hat was paused
+		woreTime[hatId][wearer] += pausedTime; // Add paused time to keep the total time balanced
+	} 
 
 	/**
 	 * @dev Sets the timestamp when a specific hat was minted for a specific address.
@@ -50,6 +83,8 @@ contract HatsTimeFrameModule is
 
 	/**
 	 * @dev Gets the elapsed time in seconds since the specific hat was minted for a specific address.
+	 * If the hat is currently active, include the current active period.
+	 * If the hat is inactive, count the active time up to the last deactivation.
 	 * @param wearer The address of the person who received the hat.
 	 * @param hatId The ID of the hat that was minted.
 	 * @return The elapsed time in seconds.
@@ -58,12 +93,13 @@ contract HatsTimeFrameModule is
 		address wearer,
 		uint256 hatId
 	) external view returns (uint256) {
-		uint256 mintTime = woreTime[hatId][wearer];
-		require(
-			mintTime != 0,
-			"Hat has not been minted for this wearer and hatId"
-		);
-		return block.timestamp - mintTime;
+		uint256 activeTime = totalActiveTime[hatId][wearer];
+		if (isActive[hatId][wearer]) {
+			activeTime += block.timestamp - woreTime[hatId][wearer];
+		} else {
+			activeTime += deactivatedTime[hatId][wearer] - woreTime[hatId][wearer];
+		}
+		return activeTime;
 	}
 
 	/**

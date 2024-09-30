@@ -134,6 +134,7 @@ describe("HatsTimeFrameModule", () => {
 			}
 		}
 
+		// アドレス1にRole hatをミント
 		await HatsTimeFrameModule.write.mintHat([
 			roleHatId,
 			address1.account?.address!,
@@ -158,5 +159,48 @@ describe("HatsTimeFrameModule", () => {
 				roleHatId,
 			])
 		).equal(BigInt(100));
+		
+		// Fast forward time and check elapsed time while active
+		await time.increase(100);
+
+		let elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
+			address1.account?.address!,
+			roleHatId
+		]);
+		expect(
+			elapsedTime
+		).to.equal(BigInt(100));
+
+		// Deactivate and verify that time stops accumulating
+		await HatsTimeFrameModule.write.deactivate([
+			roleHatId,
+			address1.account?.address!
+		]);
+
+		await time.increase(50);
+
+		elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
+			address1.account?.address!,
+			roleHatId
+		]);
+		expect(
+			elapsedTime
+		).to.equal(BigInt(100)); // Time should not increase
+
+		// Reactivate and ensure time starts accumulating again
+		await HatsTimeFrameModule.write.reactivate([
+			roleHatId,
+			address1.account?.address!
+		]);
+
+		await time.increase(100);
+
+		elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
+			address1.account?.address!,
+			roleHatId
+		]);
+		expect(
+			elapsedTime
+		).to.equal(BigInt(200)); // Total time should now be 200
 	});
 });

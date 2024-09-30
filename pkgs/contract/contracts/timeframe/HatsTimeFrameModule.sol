@@ -55,9 +55,8 @@ contract HatsTimeFrameModule is
 	function reactivate(uint256 hatId, address wearer) external {
 		require(!isActive[hatId][wearer], "Hat is already active");
 		isActive[hatId][wearer] = true;
-		uint256 pausedTime = block.timestamp - deactivatedTime[hatId][wearer]; // Time the hat was paused
-		woreTime[hatId][wearer] += pausedTime; // Add paused time to keep the total time balanced
-	} 
+		woreTime[hatId][wearer] += block.timestamp - deactivatedTime[hatId][wearer];
+	}
 
 	/**
 	 * @dev Sets the timestamp when a specific hat was minted for a specific address.
@@ -83,8 +82,8 @@ contract HatsTimeFrameModule is
 
 	/**
 	 * @dev Gets the elapsed time in seconds since the specific hat was minted for a specific address.
-	 * If the hat is currently active, include the current active period.
-	 * If the hat is inactive, count the active time up to the last deactivation.
+	 * If the hat is active, calculate time from the last wear time to the current time.
+	 * If the hat is inactive, calculate time up to the deactivation.
 	 * @param wearer The address of the person who received the hat.
 	 * @param hatId The ID of the hat that was minted.
 	 * @return The elapsed time in seconds.
@@ -93,7 +92,7 @@ contract HatsTimeFrameModule is
 		address wearer,
 		uint256 hatId
 	) external view returns (uint256) {
-		uint256 activeTime = totalActiveTime[hatId][wearer];
+    	uint256 activeTime = totalActiveTime[hatId][wearer];
 		if (isActive[hatId][wearer]) {
 			activeTime += block.timestamp - woreTime[hatId][wearer];
 		} else {

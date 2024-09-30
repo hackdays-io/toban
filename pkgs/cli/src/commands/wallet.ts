@@ -1,6 +1,11 @@
 import { Command } from "commander";
 import { getEthAddress, sendEth } from "../modules/viem";
-import { getWallet, listProfiles, saveProfile } from "../services/wallet";
+import {
+	getWallet,
+	listProfiles,
+	saveProfile,
+	deleteProfile,
+} from "../services/wallet";
 
 export const walletCommands = new Command();
 
@@ -29,6 +34,17 @@ walletCommands
 	.requiredOption("--name <name>", "Wallet name")
 	.action(({ name, privateKey }) => {
 		saveProfile({ name, privateKey });
+	});
+
+/**
+ * ウォレットを削除
+ */
+walletCommands
+	.command("remove")
+	.description("remove a wallet")
+	.requiredOption("--name <name>", "Wallet name")
+	.action(({ name }) => {
+		deleteProfile({ name });
 	});
 
 /**

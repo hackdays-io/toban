@@ -9,6 +9,8 @@ export const deployBigBang = async (params: {
 	hatsModuleFacotryAddress: Address;
 	hatsTimeFrameModule_impl: Address;
 	splitsCreatorFactoryAddress: Address;
+	splitsFactoryV2Address: Address;
+	fractionTokenAddress: Address;
 }) => {
 	const BigBang = await viem.deployContract("BigBang", [
 		params.trustedForwarder,
@@ -16,6 +18,8 @@ export const deployBigBang = async (params: {
 		params.hatsModuleFacotryAddress,
 		params.hatsTimeFrameModule_impl,
 		params.splitsCreatorFactoryAddress,
+		params.splitsFactoryV2Address,
+		params.fractionTokenAddress,
 	]);
 
 	return { BigBang };

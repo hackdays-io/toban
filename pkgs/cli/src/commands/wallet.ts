@@ -57,7 +57,7 @@ walletCommands
 	.requiredOption("--receiver <receiver>", "Receiver address")
 	.requiredOption("--amount <amount>", "Amount")
 	.option("--chainId <chainId>", "chainId")
-	.action(async ({ name, receiver, amount, chainId }) => {
-		const account = getWallet(name);
-		await sendEth(account, receiver, amount, chainId);
+	.action(async ({ name, receiver, amount }) => {
+		const wallet = await getWallet(name);
+		await sendEth(wallet, receiver, amount);
 	});

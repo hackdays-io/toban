@@ -4,6 +4,7 @@ import {
 	http,
 	parseEther,
 	PrivateKeyAccount,
+	WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia, holesky } from "viem/chains";
@@ -22,40 +23,44 @@ function getChainById(chainId: number | string): Chain {
 	return chain;
 }
 
-export const setClient = async (
+export const setWallet = async (
 	account: PrivateKeyAccount,
 	chainId?: number | undefined
 ) => {
 	const chain = chainId ? getChainById(chainId) : holesky;
 
-	const client = createWalletClient({
+	const wallet = createWalletClient({
 		account,
 		chain,
 		transport: http(),
 	});
 
-	return client;
+	return wallet;
 };
 
 export const sendEth = async (
-	account: PrivateKeyAccount,
+	wallet: WalletClient,
 	to: `0x${string}`,
-	amount: string,
-	chainId?: number
+	amount: string
 ) => {
-	const client = await setClient(account, chainId);
+	const account = wallet.account;
 
-	const hash = await client.sendTransaction({
+	if (!account) {
+		throw new Error("Client account is not defined");
+	}
+
+	const hash = await wallet.sendTransaction({
 		account,
-		to: to,
+		to,
 		value: parseEther(amount),
+		chain: wallet.chain,
 	});
 
 	console.log(`Transaction sent: ${hash}`);
 	console.log(`From: ${account.address}`);
 	console.log(`To: ${to}`);
 	console.log(`Amount: ${amount} ETH`);
-	console.log(`Chain ID: ${client.chain.id}`);
+	console.log(`Chain ID: ${wallet.chain?.id}`);
 
 	return hash;
 };

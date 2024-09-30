@@ -37,22 +37,22 @@ jobs:
         env:
           PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
-      - name: Generate Gas Report
-        run: |
-          npx hardhat test --network hardhat > ./gas-report.txt
-          echo "\n### Gas Report" >> ./comments
-          echo "\`\`\`\n$(cat ./gas-report.txt)" >> ./comments
-        working-directory: ./pkgs/contract
+      # - name: Generate Gas Report
+      #   run: |
+      #     npx hardhat test --network hardhat > ./gas-report.txt
+      #     echo "\n### Gas Report" >> ./comments
+      #     echo "\`\`\`\n$(cat ./gas-report.txt)" >> ./comments
+      #   working-directory: ./pkgs/contract
 
-      - name: Upload Gas Report as Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: gas-report
-          path: ./pkgs/contract/gas-report.txt
+      # - name: Upload Gas Report as Artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: gas-report
+      #     path: ./pkgs/contract/gas-report.txt
 
-      # GitHub PRにテスト結果とガスレポートをコメントとして投稿
-      - name: Post comments
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr comment -F ./comments "${URL}"
+      # # GitHub PRにテスト結果とガスレポートをコメントとして投稿
+      # - name: Post comments
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     URL: ${{ github.event.pull_request.html_url }}
+      #   run: gh pr comment -F ./comments "${URL}"

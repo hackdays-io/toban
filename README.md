@@ -44,11 +44,14 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ### Holesky
 
-| ContractAddress                            | Name              | Memo |
-| ------------------------------------------ | ----------------- | ---- |
-| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats              |      |
-| 0xfE661c01891172046feE16D3a57c3Cf456729efA | HatsModuleFactory |      |
-| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory |      |
+| ContractAddress                            | Name                 | Memo |
+| ------------------------------------------ | -------------------- | ---- |
+| 0xa55410b75578c8941a76249c18c72167459253c7 | BigBang              |      |
+| 0x143a4605b682ec096274cef9fde5b3c077498942 | FractionToken        |      |
+| 0xea4ee24c8411a71a7ce2cd676e1f17ebe18c2a98 | SplitsCreatorFactory |      |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                 |      |
+| 0xfE661c01891172046feE16D3a57c3Cf456729efA | HatsModuleFactory    |      |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory    |      |
 
 ## How to work
 

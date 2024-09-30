@@ -90,6 +90,8 @@ describe("BigBang", () => {
 			hatsModuleFacotryAddress: HatsModuleFactory.address,
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
 			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
+			splitsFactoryV2Address: PullSplitsFactory.address,
+			fractionTokenAddress: FractionToken.address,
 		});
 
 		expect(_BigBang.address).to.not.be.undefined;
@@ -106,8 +108,6 @@ describe("BigBang", () => {
 				"hatterhatDetails",
 				"hatterhatURI",
 				address1.account?.address!,
-				PullSplitsFactory.address,
-				FractionToken.address,
 			],
 			{ account: address1.account }
 		);

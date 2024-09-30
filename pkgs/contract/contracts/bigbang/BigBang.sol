@@ -16,6 +16,10 @@ contract BigBang is ERC2771Context {
 
 	address public HatsTimeFrameModule_IMPL;
 
+	address public splitFactoryV2;
+
+	address public fractionToken;
+
 	event Executed(
 		address indexed owner,
 		uint256 indexed topHatId,
@@ -30,18 +34,24 @@ contract BigBang is ERC2771Context {
 	 * @param _hatsModuleFactory Address of the hats module factory contract.
 	 * @param _hatsTimeFrameModule_IMPL Address of the hats time frame module implementation contract.
 	 * @param _splitsCreatorFactory Address of the splits creator factory contract.
+	 * @param _splitFactoryV2 Address of the split factory V2 contract.
+	 * @param _fractionToken Address of the fraction token contract.
 	 */
 	constructor(
 		address _trustedForwarder,
 		address _hatsAddress,
 		address _hatsModuleFactory,
 		address _hatsTimeFrameModule_IMPL,
-		address _splitsCreatorFactory
+		address _splitsCreatorFactory,
+		address _splitFactoryV2,
+		address _fractionToken
 	) ERC2771Context(_trustedForwarder) {
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
 		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
+		splitFactoryV2 = _splitFactoryV2;
+		fractionToken = _fractionToken;
 	}
 
 	/**
@@ -52,8 +62,6 @@ contract BigBang is ERC2771Context {
 	 * @param _hatterHatDetails The details of the hatterHat.
 	 * @param _hatterHatImageURI The image URI of the hatterHat.
 	 * @param _trustedForwarder The address of the trusted forwarder.
-	 * @param _splitFactoryV2 The address of the splitFactoryV2 contract.
-	 * @param _fractionToken The address of the fractionToken contract.
 	 * @return topHatId The ID used for navigating to the ProjectTop page after project creation.
 	 */
 	function bigbang(
@@ -62,9 +70,7 @@ contract BigBang is ERC2771Context {
 		string calldata _topHatImageURI,
 		string calldata _hatterHatDetails,
 		string calldata _hatterHatImageURI,
-		address _trustedForwarder,
-		address _splitFactoryV2,
-		address _fractionToken
+		address _trustedForwarder
 	) external returns (uint256) {
 		// 1. TopHatのMint
 
@@ -106,9 +112,9 @@ contract BigBang is ERC2771Context {
 			.createSplitCreatorDeterministic(
 				topHatId,
 				_trustedForwarder,
-				_splitFactoryV2,
+				splitFactoryV2,
 				hatsTimeFrameModule,
-				_fractionToken,
+				fractionToken,
 				keccak256(abi.encodePacked(topHatId))
 			);
 

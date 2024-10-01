@@ -4,6 +4,7 @@ import {
 	getWearerInfo,
 	getWearersInfo,
 } from "../modules/hatsProtocol";
+import { HatsDetailsClient } from "@hatsprotocol/details-sdk";
 
 export const hatsCommands = new Command();
 
@@ -61,3 +62,20 @@ hatsCommands
 
 		console.log(wearer);
 	});
+
+/**
+ * Hatのメタデータをipfs上にアップロードするコマンド
+ */
+hatsCommands
+	.command("upload")
+	.description("Upload the hat metadata on ipfs.")
+	.option("--metadata <metadata>", "Hat Metadata")
+	.action(({ metadata }) => {
+		const hatsDetailsClient = new HatsDetailsClient({
+			provider: "pinata",
+			pinata: {
+				pinningKey: process.env.PINATA_JWT as string
+			}
+		});
+		console.log(hatsDetailsClient);
+	})

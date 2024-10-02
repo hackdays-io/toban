@@ -10,7 +10,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia, holesky } from "viem/chains";
 
-const chains = [hardhat, sepolia, holesky];
+const chains = [hardhat, holesky, sepolia];
 
 export const getChainById = (chainId: number | string): Chain => {
 	const numericChainId = Number(chainId);
@@ -27,7 +27,7 @@ export const getChainById = (chainId: number | string): Chain => {
 export const getChainOrDefault = (
 	chainId: number | string | undefined
 ): Chain => {
-	return chainId ? getChainById(chainId) : holesky;
+	return chainId ? getChainById(chainId) : sepolia;
 };
 
 export const getPublicClient = async (chainId?: number | undefined) => {

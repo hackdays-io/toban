@@ -1,7 +1,13 @@
 import { HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
-import { Address, PublicClient, WalletClient } from "viem";
+import { Address, getContract, PublicClient, WalletClient } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
+import { HATS_ABI } from "../abi/hats";
 import { HATS_TIME_FRAME_MODULE_ABI } from "../abi/hatsTimeFrameModule";
+import { simulateContract } from "viem/_types/actions/public/simulateContract";
+
+// ###############################################################
+// Read with subgraph
+// ###############################################################
 
 // Subgraph用のインスタンスを生成
 export const hatsSubgraphClient = new HatsSubgraphClient({
@@ -95,9 +101,51 @@ export const getWearerInfo = async (walletAddress: string) => {
 	return wearer;
 };
 
+// ###############################################################
+// Write with viem
+// ###############################################################
+
+const hatsContractBaseConfig = {
+	address: "0x0000000000000000000000000000000000004a75" as Address,
+	abi: HATS_ABI,
+};
+
 const hatsTimeFrameContractBaseConfig = {
 	address: "0x0000000000000000000000000000000000004a75" as Address,
 	abi: HATS_TIME_FRAME_MODULE_ABI,
+};
+
+/**
+ * 新規Hat作成
+ */
+export const createHat = async (
+	publicClient: PublicClient,
+	walletClient: WalletClient,
+	args: {
+		parentHatId: bigint;
+		details?: string;
+		maxSupply?: number;
+		eligibility?: Address;
+		toggle?: Address;
+		mutable?: boolean;
+		imageURI: string;
+	}
+) => {
+	const { request } = await publicClient.simulateContract({
+		...hatsContractBaseConfig,
+		account: walletClient.account,
+		functionName: "createHat",
+		args: [
+			args.parentHatId,
+			args.details || "",
+			args.maxSupply || 5,
+			args.eligibility || "0x0000000000000000000000000000000000004a75",
+			args.toggle || "0x0000000000000000000000000000000000004a75",
+			args.mutable || true,
+			args.imageURI,
+		],
+	});
+	walletClient.writeContract(request);
 };
 
 /**

@@ -1,5 +1,6 @@
 import {
 	Chain,
+	createPublicClient,
 	createWalletClient,
 	http,
 	parseEther,
@@ -11,7 +12,7 @@ import { hardhat, sepolia, holesky } from "viem/chains";
 
 const chains = [hardhat, sepolia, holesky];
 
-function getChainById(chainId: number | string): Chain {
+export const getChainById = (chainId: number | string): Chain => {
 	const numericChainId = Number(chainId);
 
 	const chain = chains.find((c) => c.id === numericChainId);
@@ -21,13 +22,30 @@ function getChainById(chainId: number | string): Chain {
 	}
 
 	return chain;
-}
+};
+
+export const getChainOrDefault = (
+	chainId: number | string | undefined
+): Chain => {
+	return chainId ? getChainById(chainId) : holesky;
+};
+
+export const getPublicClient = async (chainId?: number | undefined) => {
+	const chain = getChainOrDefault(chainId);
+
+	const publicClient = createPublicClient({
+		chain,
+		transport: http(),
+	});
+
+	return publicClient;
+};
 
 export const setWallet = async (
 	account: PrivateKeyAccount,
 	chainId?: number | undefined
 ) => {
-	const chain = chainId ? getChainById(chainId) : holesky;
+	const chain = getChainOrDefault(chainId);
 
 	const wallet = createWalletClient({
 		account,

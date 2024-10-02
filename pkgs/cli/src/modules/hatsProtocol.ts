@@ -1,5 +1,7 @@
 import { HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
+import { Address, PublicClient, WalletClient } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
+import { HATS_TIME_FRAME_MODULE_ABI } from "../abi/hatsTimeFrameModule";
 
 // Subgraph用のインスタンスを生成
 export const hatsSubgraphClient = new HatsSubgraphClient({
@@ -91,4 +93,29 @@ export const getWearerInfo = async (walletAddress: string) => {
 	});
 
 	return wearer;
+};
+
+const hatsTimeFrameContractBaseConfig = {
+	address: "0x0000000000000000000000000000000000004a75" as Address,
+	abi: HATS_TIME_FRAME_MODULE_ABI,
+};
+
+/**
+ * ロール付与
+ */
+export const mintHat = async (
+	publicClient: PublicClient,
+	walletClient: WalletClient,
+	args: {
+		hatId: bigint;
+		wearer: Address;
+	}
+) => {
+	const { request } = await publicClient.simulateContract({
+		...hatsTimeFrameContractBaseConfig,
+		account: walletClient.account,
+		functionName: "mintHat",
+		args: [args.hatId, args.wearer],
+	});
+	walletClient.writeContract(request);
 };

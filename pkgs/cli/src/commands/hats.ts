@@ -4,7 +4,10 @@ import {
 	getWearerInfo,
 	getWearersInfo,
 } from "../modules/hatsProtocol";
-import { HatsDetailsClient } from "@hatsprotocol/details-sdk";
+import { PinataSDK } from "pinata-web3";
+import { config } from "dotenv";
+
+config();
 
 export const hatsCommands = new Command();
 
@@ -66,16 +69,76 @@ hatsCommands
 /**
  * Hatのメタデータをipfs上にアップロードするコマンド
  */
+interface Responsibility {
+	label: string;
+	description?: string;
+	link?: string;
+}
+interface Eligibility {
+	manual: boolean;
+	criteria: string[];
+}
+interface Toggle {
+	manual: boolean;
+	criteria: string[];
+}
 hatsCommands
 	.command("upload")
 	.description("Upload the hat metadata on ipfs.")
-	.option("--metadata <metadata>", "Hat Metadata")
-	.action(({ metadata }) => {
-		const hatsDetailsClient = new HatsDetailsClient({
-			provider: "pinata",
-			pinata: {
-				pinningKey: process.env.PINATA_JWT as string
+	.requiredOption("-n, --name <name>", "Hat Name")
+	.option("-d, --description <description>", "Hat Details")
+	.option(
+		"-r, --responsibility <label>,<description>,<link>",
+		"Responsibility (may be specified multiple times to define multiple responsibilities)",
+		(value, previous: Responsibility[]) => {
+			const [label, description, link] = value.split(",");
+			return previous ? previous.concat([{ label, description, link }]) : [{ label, description, link }];
+		},
+		[]
+	)
+	.option(
+		"-a, --authority <authority>",
+		"Authority (may be specified multiple times to define multiple authorities)",
+		(value, previous: string[]) => previous ? previous.concat([value]) : [value],
+		[]
+	)
+	.option(
+		"-e, --eligibility <manual>,<criteria...>",
+		"Eligibility (<manual> is a boolean value, <criteria... > can be specified multiple times, separated by commas, to define multiple criteria.)",
+		(value) => {
+			const [manual, ...criteria] = value.split(",");
+			return { manual: manual === "true", criteria } satisfies Eligibility;
+		}
+	)
+	.option(
+		"-t, --toggle <manual> <criteria...>",
+		"Toggle (<manual> is a boolean value, <criteria... > can be specified multiple times, separated by spaces, to define multiple criteria.)",
+		(value) => {
+			const [manual, ...criteria] = value.split(",");
+			return { manual: manual === "true", criteria } satisfies Toggle;
+		}
+	)
+	.action(async ({
+		name,
+		description,
+		responsibility,
+		authority,
+		eligibility,
+		toggle,
+	}) => {
+		const pinata = new PinataSDK({ pinataJwt: process.env.PINATA_JWT });
+
+		const upload = await pinata.upload.json({
+			"type": "1.0",
+			"data": {
+				name,
+				description,
+				responsibilities: responsibility,
+				authorities: authority,
+				eligibility,
+				toggle
 			}
 		});
-		console.log(hatsDetailsClient);
-	})
+
+		console.log("CID:", upload.IpfsHash);
+	});

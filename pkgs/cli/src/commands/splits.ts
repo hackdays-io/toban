@@ -54,11 +54,11 @@ splitsCommands
 	.requiredOption(
 		"-w, --wearers <wearers>",
 		"Wearers (comma-separated addresses)",
-		(value: string, previous: Address[]) => {
+		(value: string, previous: Address[][]) => {
 			const addresses = value
 				.split(",")
-				.map((addr: string) => addr.trim()) as Address[];
-			return previous ? previous.concat(addresses) : addresses;
+				.map((addr: string) => addr.trim() as Address);
+			return previous ? [...previous, addresses] : [addresses];
 		},
 		[]
 	)
@@ -74,10 +74,12 @@ splitsCommands
 				hatId: BigInt(id),
 				multiplierBottom: BigInt(multiplierBottom[index]),
 				multiplierTop: BigInt(multiplierTop[index]),
-				wearers: wearers,
+				wearers: wearers[index],
 			}));
 
-			const hash = await create(splitsAddress as Address, splitsData);
+			console.log(splitsData);
+
+			const hash = await create(splitsAddress, splitsData);
 			console.log("Transaction sent. Hash:", hash);
 		}
 	);

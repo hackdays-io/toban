@@ -30,13 +30,38 @@ splitsCommands
 		"--splitsAddress <splitsAddress>",
 		"Splits Address"
 	)
-	.requiredOption("-hid --hatId <hatId>", "Hat ID")
+	.requiredOption(
+		"-hid --hatId <hatId>",
+		"Hat ID",
+		(value, previous: string[]) =>
+			previous ? previous.concat([value]) : [value],
+		[]
+	)
 	.requiredOption(
 		"-mb --multiplierBottom <multiplierBottom>",
-		"Multiplier Bottom"
+		"Multiplier Bottom",
+		(value, previous: string[]) =>
+			previous ? previous.concat([value]) : [value],
+		[]
 	)
-	.requiredOption("-mt --multiplierTop <multiplierTop>", "Multiplier Top")
-	.requiredOption("-w --wearers <wearers>", "Wearers")
+	.requiredOption(
+		"-mt --multiplierTop <multiplierTop>",
+		"Multiplier Top",
+		(value, previous: string[]) =>
+			previous ? previous.concat([value]) : [value],
+		[]
+	)
+	.requiredOption(
+		"-w, --wearers <wearers>",
+		"Wearers (comma-separated addresses)",
+		(value: string, previous: Address[]) => {
+			const addresses = value
+				.split(",")
+				.map((addr: string) => addr.trim()) as Address[];
+			return previous ? previous.concat(addresses) : addresses;
+		},
+		[]
+	)
 	.action(
 		async ({
 			splitsAddress,
@@ -45,14 +70,14 @@ splitsCommands
 			multiplierTop,
 			wearers,
 		}) => {
-			const hash = await create(splitsAddress, [
-				{
-					hatId: BigInt(hatId),
-					multiplierBottom: BigInt(multiplierBottom),
-					multiplierTop: BigInt(multiplierTop),
-					wearers: [wearers] as Address[],
-				},
-			]);
+			const splitsData = hatId.map((id: string, index: number) => ({
+				hatId: BigInt(id),
+				multiplierBottom: BigInt(multiplierBottom[index]),
+				multiplierTop: BigInt(multiplierTop[index]),
+				wearers: wearers,
+			}));
+
+			const hash = await create(splitsAddress as Address, splitsData);
 			console.log("Transaction sent. Hash:", hash);
 		}
 	);

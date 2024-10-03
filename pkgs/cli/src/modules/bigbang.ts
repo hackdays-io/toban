@@ -6,6 +6,7 @@ import { Address, decodeEventLog } from "viem";
 import { publicClient, walletClient } from "..";
 import { bigbangContractBaseConfig } from "../config";
 import { startLoading } from "../services/loading";
+import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 
 /**
  * プロジェクト作成
@@ -53,13 +54,20 @@ export const bigbang = async (params: {
 
 	stop();
 
-	console.log(
-		decodeEventLog({
+	if (log) {
+		const decodedLog = decodeEventLog({
 			abi: bigbangContractBaseConfig.abi,
 			data: log.data,
 			topics: log.topics,
-		})
-	);
+		});
+		console.log(decodedLog);
+		console.log(
+			"Tree Link:",
+			`https://app.hatsprotocol.xyz/trees/${String(
+				publicClient.chain?.id
+			)}/${hatIdToTreeId(BigInt(decodedLog.args.topHatId))}`
+		);
+	}
 
 	return transactionHash;
 };

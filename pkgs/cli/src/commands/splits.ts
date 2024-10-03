@@ -74,6 +74,6 @@ splitsCommands
 			}));
 
 			const hash = await create(splitsAddress, splitsData);
-			console.log("Transaction sent. Hash:", hash);
+			console.log("Transaction Hash:", hash);
 		}
 	);

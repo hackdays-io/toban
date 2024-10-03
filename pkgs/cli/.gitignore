@@ -1,0 +1,5 @@
+dist/
+.env
+
+profiles.json
+/**/profiles.json

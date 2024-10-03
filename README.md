@@ -44,15 +44,27 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ### Sepolia
 
-| Name               | Address                                    | Memo               |
-| ------------------ | ------------------------------------------ | ------------------ |
-| SplitCreator       | 0x8B262b2e81c2087c030cCCDe17F94C87a40bE75D |                    |
-| FractionToken      | 0xF03Cdf44e48621BA8F03A6a883137249Cbb4D544 |                    |
-| TimeFrameHatModule | 0xe3946ec13631B04CF9AB3630d1c7165AC719de13 |                    |
-| Forwarder          | 0xbE914D66aF1D6B7C46e1dfB641E4adCb6205cFc2 |                    |
-| Splits Factory     | 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | From Splits        |
-| Hats               | 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | From Hats Protocol |
-| NameWrapper        | 0x0635513f179D50A207757E05759CbD106d7dFcE8 | From ENS           |
+| ContractAddress                            | Name                    | Memo |
+| ------------------------------------------ | ----------------------- | ---- |
+| 0x5d7a64Cc808294C516076d371685ed4E6aDd6337 | BigBang                 |      |
+| 0xb8f7ca7a5b1e457b8735884419e114f90d53e1d5 | FractionToken           |      |
+| 0x8da1c0864962c5e26c99cf839b0dc48e39104568 | SplitsCreatorFactory    |      |
+| 0xda9fbab4436e4124cd6ee6864d4b46d0dd412414 | SplitsCreatorIMPL       |      |
+| 0xd4a66507ea8c8382fa8474ed6cae4163676a434a | HatsTimeFrameModuleIMPL |      |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                    |      |
+| 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory       |      |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory       |      |
+
+### Holesky
+
+| ContractAddress                            | Name                 | Memo |
+| ------------------------------------------ | -------------------- | ---- |
+| 0xa55410b75578c8941a76249c18c72167459253c7 | BigBang              |      |
+| 0x143a4605b682ec096274cef9fde5b3c077498942 | FractionToken        |      |
+| 0xea4ee24c8411a71a7ce2cd676e1f17ebe18c2a98 | SplitsCreatorFactory |      |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                 |      |
+| 0xfE661c01891172046feE16D3a57c3Cf456729efA | HatsModuleFactory    |      |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory    |      |
 
 ## How to work
 

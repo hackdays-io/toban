@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { hatsCommands } from "./commands/hats";
 import { walletCommands } from "./commands/wallet";
+import { splitsCommands } from "./commands/splits";
 import { PublicClient, WalletClient } from "viem";
 import { getPublicClient } from "./modules/viem";
 import { getWalletClient } from "./services/wallet";
@@ -33,5 +34,6 @@ rootProgram
 rootProgram.addCommand(bigbangCommands);
 rootProgram.addCommand(hatsCommands);
 rootProgram.addCommand(walletCommands);
+rootProgram.addCommand(splitsCommands);
 
 rootProgram.parse(process.argv);

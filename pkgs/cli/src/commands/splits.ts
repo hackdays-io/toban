@@ -77,8 +77,6 @@ splitsCommands
 				wearers: wearers[index],
 			}));
 
-			console.log(splitsData);
-
 			const hash = await create(splitsAddress, splitsData);
 			console.log("Transaction sent. Hash:", hash);
 		}

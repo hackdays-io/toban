@@ -5,6 +5,7 @@ import {
 	hatsContractBaseConfig,
 	hatsTimeFrameContractBaseConfig,
 } from "../config";
+import { publicClient, walletClient } from "..";
 
 // ###############################################################
 // Read with subgraph
@@ -31,9 +32,9 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
 /**
  * ツリー情報を取得するメソッド
  */
-export const getTreeInfo = async (treeId: number) => {
+export const getTreeInfo = async (treeId: number, chainId: number) => {
 	const tree = await hatsSubgraphClient.getTree({
-		chainId: optimism.id,
+		chainId,
 		treeId: treeId,
 		props: {
 			hats: {
@@ -59,10 +60,10 @@ export const getTreeInfo = async (treeId: number) => {
 /**
  * 帽子の着用者のウォレットアドレスを一覧を取得するメソッド
  */
-export const getWearersInfo = async (hatId: string) => {
+export const getWearersInfo = async (hatId: string, chainId: number) => {
 	// get the first 10 wearers of a given hat
 	const wearers = await hatsSubgraphClient.getWearersOfHatPaginated({
-		chainId: optimism.id,
+		chainId,
 		props: {},
 		hatId: BigInt(hatId),
 		page: 0,
@@ -75,10 +76,10 @@ export const getWearersInfo = async (hatId: string) => {
 /**
  * 特定のウォレットアドレスが着用している全てのHats情報を取得するメソッド
  */
-export const getWearerInfo = async (walletAddress: string) => {
+export const getWearerInfo = async (walletAddress: string, chainId: number) => {
 	// get the wearer of a given hat
 	const wearer = await hatsSubgraphClient.getWearer({
-		chainId: optimism.id,
+		chainId,
 		wearerAddress: walletAddress as `0x${string}`,
 		props: {
 			currentHats: {
@@ -142,14 +143,7 @@ export const createHat = async (
 /**
  * ロール付与
  */
-export const mintHat = async (
-	publicClient: PublicClient,
-	walletClient: WalletClient,
-	args: {
-		hatId: bigint;
-		wearer: Address;
-	}
-) => {
+export const mintHat = async (args: { hatId: bigint; wearer: Address }) => {
 	const { request } = await publicClient.simulateContract({
 		...hatsTimeFrameContractBaseConfig,
 		account: walletClient.account,

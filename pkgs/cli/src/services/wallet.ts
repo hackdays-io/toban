@@ -22,12 +22,16 @@ export const getAccount = (name?: string) => {
 	const profiles = getProfiles();
 	const profile = profiles.find((p) => p.name === name) || profiles[0];
 
-	if (!profile) throw "Profile not found.";
+	if (!profile)
+		throw "Profile not found. Please add a profile with wallet add command.";
 
 	return privateKeyToAccount(profile.privateKey);
 };
 
-export const getWallet = (name?: string, chainId?: number | undefined) => {
+export const getWalletClient = (
+	name?: string,
+	chainId?: number | undefined
+) => {
 	const account = getAccount(name);
 
 	return setWallet(account, chainId);

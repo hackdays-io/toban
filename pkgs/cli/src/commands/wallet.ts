@@ -1,12 +1,7 @@
 import { Command } from "commander";
-import { getPublicClient, sendEth } from "../modules/viem";
-import {
-	getWallet,
-	listProfiles,
-	saveProfile,
-	deleteProfile,
-} from "../services/wallet";
-import { mintHat } from "../modules/hatsProtocol";
+import { sendEth } from "../modules/viem";
+import { listProfiles, saveProfile, deleteProfile } from "../services/wallet";
+import { walletClient } from "..";
 
 export const walletCommands = new Command();
 
@@ -54,27 +49,8 @@ walletCommands
 walletCommands
 	.command("sendEth")
 	.description("Send ETH")
-	.requiredOption("--name <name>", "Wallet name")
 	.requiredOption("--receiver <receiver>", "Receiver address")
 	.requiredOption("--amount <amount>", "Amount")
-	.option("--chainId <chainId>", "chainId")
-	.action(async ({ name, receiver, amount, chainId }) => {
-		const wallet = await getWallet(name, chainId);
-		await sendEth(wallet, receiver, amount);
-	});
-
-/**
- * ロールを付与
- */
-walletCommands
-	.command("mintHat")
-	.description("Mint Hat")
-	.requiredOption("--name <name>", "Wallet name")
-	.requiredOption("--hatId <hatId>", "Hat ID")
-	.requiredOption("--wearer <wearer>", "Wearer address")
-	.option("--chainId <chainId>", "chainId")
-	.action(async ({ name, hatId, wearer, chainId }) => {
-		const publicClient = await getPublicClient(chainId);
-		const wallet = await getWallet(name, chainId);
-		await mintHat(publicClient, wallet, { hatId, wearer });
+	.action(async ({ receiver, amount }) => {
+		await sendEth(walletClient, receiver, amount);
 	});

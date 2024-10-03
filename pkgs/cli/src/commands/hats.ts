@@ -6,6 +6,7 @@ import {
 	createHat,
 	mintHat,
 } from "../modules/hatsProtocol";
+import { PinataSDK } from "pinata-web3";
 import { getAccount } from "../services/wallet";
 import { publicClient, rootProgram, walletClient } from "..";
 import { Address } from "viem";

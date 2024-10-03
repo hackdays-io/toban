@@ -7,6 +7,7 @@ import { PublicClient, WalletClient } from "viem";
 import { getPublicClient } from "./modules/viem";
 import { getWalletClient } from "./services/wallet";
 import { skipPreActionCommands } from "./config";
+import { bigbangCommands } from "./commands/bigbang";
 
 export const rootProgram = new Command();
 
@@ -29,6 +30,7 @@ rootProgram
 		}
 	});
 
+rootProgram.addCommand(bigbangCommands);
 rootProgram.addCommand(hatsCommands);
 rootProgram.addCommand(walletCommands);
 

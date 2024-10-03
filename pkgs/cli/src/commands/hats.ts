@@ -79,7 +79,7 @@ hatsCommands
 	.command("createHat")
 	.description("Create Hat")
 	.requiredOption("-phid, --parentHatId <parentHatId>", "Parent Hat ID")
-	.requiredOption("-img, --imageURI <imageURI>", "Image URI")
+	.option("-img, --imageURI <imageURI>", "Image URI")
 	.option("-det , --details <details>", "Details")
 	.option("-max, --maxSupply <maxSupply>", "Max Supply")
 	.option("-el, --eligibility <eligibility>", "Eligibility Address")

@@ -1,5 +1,5 @@
 import { HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
-import { Address } from "viem";
+import { Address, decodeEventLog } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import {
 	hatsContractBaseConfig,
@@ -7,6 +7,7 @@ import {
 } from "../config";
 import { publicClient, walletClient } from "..";
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { startLoading } from "../services/loading";
 
 // ###############################################################
 // Read with subgraph
@@ -138,8 +139,10 @@ export const createHat = async (args: {
 	eligibility?: Address;
 	toggle?: Address;
 	mutable?: boolean;
-	imageURI: string;
+	imageURI?: string;
 }) => {
+	const stop = startLoading();
+
 	const { request } = await publicClient.simulateContract({
 		...hatsContractBaseConfig,
 		account: walletClient.account,
@@ -151,10 +154,36 @@ export const createHat = async (args: {
 			args.eligibility || "0x0000000000000000000000000000000000004a75",
 			args.toggle || "0x0000000000000000000000000000000000004a75",
 			args.mutable || true,
-			args.imageURI,
+			args.imageURI || "",
 		],
 	});
-	const transactionHash = walletClient.writeContract(request);
+	const transactionHash = await walletClient.writeContract(request);
+
+	const receipt = await publicClient.waitForTransactionReceipt({
+		hash: transactionHash,
+	});
+
+	const log = receipt.logs.find((log) => {
+		try {
+			const decodedLog = decodeEventLog({
+				abi: hatsContractBaseConfig.abi,
+				data: log.data,
+				topics: log.topics,
+			});
+			return decodedLog.eventName === "HatCreated";
+		} catch (error) {}
+	});
+
+	stop();
+
+	if (log) {
+		const decodedLog = decodeEventLog({
+			abi: hatsContractBaseConfig.abi,
+			data: log.data,
+			topics: log.topics,
+		});
+		console.log(decodedLog);
+	}
 
 	return transactionHash;
 };

@@ -6,7 +6,6 @@ import { Address, decodeEventLog } from "viem";
 import { publicClient, walletClient } from "..";
 import { bigbangContractBaseConfig } from "../config";
 import { startLoading } from "../services/loading";
-import { BIGBANG_ABI } from "../abi/bigbang";
 
 /**
  * プロジェクト作成
@@ -44,17 +43,23 @@ export const bigbang = async (params: {
 	const log = receipt.logs.find((log) => {
 		try {
 			const decodedLog = decodeEventLog({
-				abi: BIGBANG_ABI,
+				abi: bigbangContractBaseConfig.abi,
 				data: log.data,
 				topics: log.topics,
 			});
 			return decodedLog.eventName === "Executed";
 		} catch (error) {}
-	});
+	})!;
 
 	stop();
 
-	console.log(log);
+	console.log(
+		decodeEventLog({
+			abi: bigbangContractBaseConfig.abi,
+			data: log.data,
+			topics: log.topics,
+		})
+	);
 
 	return transactionHash;
 };

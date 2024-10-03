@@ -25,27 +25,23 @@ splitsCommands
 splitsCommands
 	.command("create")
 	.description("Create Splits")
+	.requiredOption("-splits, --splitsAddress <splitsAddress>", "Splits Address")
 	.requiredOption(
-		"-splits",
-		"--splitsAddress <splitsAddress>",
-		"Splits Address"
-	)
-	.requiredOption(
-		"-hid --hatId <hatId>",
+		"-hid, --hatId <hatId>",
 		"Hat ID",
 		(value, previous: string[]) =>
 			previous ? previous.concat([value]) : [value],
 		[]
 	)
 	.requiredOption(
-		"-mb --multiplierBottom <multiplierBottom>",
+		"-mb, --multiplierBottom <multiplierBottom>",
 		"Multiplier Bottom",
 		(value, previous: string[]) =>
 			previous ? previous.concat([value]) : [value],
 		[]
 	)
 	.requiredOption(
-		"-mt --multiplierTop <multiplierTop>",
+		"-mt, --multiplierTop <multiplierTop>",
 		"Multiplier Top",
 		(value, previous: string[]) =>
 			previous ? previous.concat([value]) : [value],

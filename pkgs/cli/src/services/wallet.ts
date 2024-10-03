@@ -2,13 +2,14 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { Hex } from "viem";
 import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
-const profilesPath = path.join(__dirname, "profiles.json");
 import { setWallet } from "../modules/viem";
 
 export interface Profile {
 	name: string;
 	privateKey: Hex;
 }
+
+const profilesPath = path.join(__dirname, "profiles.json");
 
 export const getProfiles = () => {
 	if (!existsSync(profilesPath)) {

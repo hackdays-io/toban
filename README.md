@@ -46,7 +46,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 | ContractAddress                            | Name                    | Memo |
 | ------------------------------------------ | ----------------------- | ---- |
-| 0xf1af43dfca3fde2e73379d8f9da29513c1da8d87 | BigBang                 |      |
+| 0x5d7a64Cc808294C516076d371685ed4E6aDd6337 | BigBang                 |      |
 | 0xb8f7ca7a5b1e457b8735884419e114f90d53e1d5 | FractionToken           |      |
 | 0x8da1c0864962c5e26c99cf839b0dc48e39104568 | SplitsCreatorFactory    |      |
 | 0xda9fbab4436e4124cd6ee6864d4b46d0dd412414 | SplitsCreatorIMPL       |      |

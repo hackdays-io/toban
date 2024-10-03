@@ -1,6 +1,8 @@
 import { Command } from "commander";
 import { getJwt, setJwt } from "../services/pinata";
 import { PinataSDK } from "pinata-web3";
+import path from "path";
+import fs from "fs";
 
 export const pinataCommands = new Command();
 
@@ -109,3 +111,22 @@ pinataCommands
 			console.log("URI:", `ipfs://${upload.IpfsHash}`);
 		}
 	);
+
+/**
+ * 画像をipfsにアップロードするコマンド
+ */
+pinataCommands
+    .command("uploadImage")
+    .description("Upload image on ipfs")
+    .requiredOption("--imagePath <path>", "Path to image")
+    .action(async ({ imagePath }) => {
+		const { jwt } = getJwt();
+
+        const pinata = new PinataSDK({ pinataJwt: jwt });
+		const currentDir = process.cwd();
+        const absPath = path.join(currentDir, imagePath);
+        const stream = fs.createReadStream(absPath);
+        const upload = await pinata.upload.stream(stream);
+
+        console.log("CID:", upload.IpfsHash);
+    });

@@ -5,9 +5,7 @@ import {
 	getWearersInfo,
 } from "../modules/hatsProtocol";
 import { PinataSDK } from "pinata-web3";
-import { config } from "dotenv";
-
-config();
+import { getJwt, setJwt } from "../services/hats";
 
 export const hatsCommands = new Command();
 
@@ -64,6 +62,17 @@ hatsCommands
 		const wearer = await getWearerInfo(options.address);
 
 		console.log(wearer);
+	});
+
+/**
+ * PinataのJWTを設定するコマンド
+ */
+hatsCommands
+	.command("pinata")
+	.description("Set a jwt of Pinata")
+	.requiredOption("--jwt <JWT>")
+	.action(({ jwt }) => {
+		setJwt(jwt);
 	});
 
 /**
@@ -126,7 +135,9 @@ hatsCommands
 		eligibility,
 		toggle,
 	}) => {
-		const pinata = new PinataSDK({ pinataJwt: process.env.PINATA_JWT });
+		const { jwt } = getJwt();
+	
+		const pinata = new PinataSDK({ pinataJwt: jwt });
 
 		const upload = await pinata.upload.json({
 			"type": "1.0",

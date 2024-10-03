@@ -1,10 +1,9 @@
 import { Command } from "commander";
-import { getEthAddress, sendEth } from "../modules/viem";
+import { sendEth } from "../modules/viem";
 import { listProfiles, saveProfile, deleteProfile } from "../services/wallet";
+import { walletClient } from "..";
 
 export const walletCommands = new Command();
-
-const { TOBAN_PRIVATE_KEY } = process.env;
 
 walletCommands
 	.name("wallet")
@@ -50,11 +49,8 @@ walletCommands
 walletCommands
 	.command("sendEth")
 	.description("Send ETH")
-	.action(async () => {
-		console.log("Start send ETH");
-		const address1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-
-		await sendEth(TOBAN_PRIVATE_KEY as `0x${string}`, address1);
-
-		console.log("End send ETH");
+	.requiredOption("--receiver <receiver>", "Receiver address")
+	.requiredOption("--amount <amount>", "Amount")
+	.action(async ({ receiver, amount }) => {
+		await sendEth(walletClient, receiver, amount);
 	});

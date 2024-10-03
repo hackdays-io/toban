@@ -1,27 +1,84 @@
-import { createWalletClient, http, parseEther } from "viem";
+import {
+	Chain,
+	createPublicClient,
+	createWalletClient,
+	http,
+	parseEther,
+	PrivateKeyAccount,
+	WalletClient,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { hardhat } from "viem/chains";
+import { hardhat, sepolia, holesky } from "viem/chains";
 
-/**
- * ETHを送金するためのメソッド
- * @param secretKey
- * @param to
- * @returns
- */
-export const sendEth = async (secretKey: `0x${string}`, to: `0x${string}`) => {
-	const account = privateKeyToAccount(secretKey);
+const chains = [hardhat, holesky, sepolia];
 
-	const client = createWalletClient({
-		account,
-		chain: hardhat,
+export const getChainById = (chainId: number | string): Chain => {
+	const numericChainId = Number(chainId);
+
+	const chain = chains.find((c) => c.id === numericChainId);
+
+	if (!chain) {
+		throw new Error(`Chain with id ${numericChainId} not found`);
+	}
+
+	return chain;
+};
+
+export const getChainOrDefault = (
+	chainId: number | string | undefined
+): Chain => {
+	return chainId ? getChainById(chainId) : sepolia;
+};
+
+export const getPublicClient = async (chainId?: number | undefined) => {
+	const chain = getChainOrDefault(chainId);
+
+	const publicClient = createPublicClient({
+		chain,
 		transport: http(),
 	});
 
-	const hash = await client.sendTransaction({
+	return publicClient;
+};
+
+export const setWallet = async (
+	account: PrivateKeyAccount,
+	chainId?: number | undefined
+) => {
+	const chain = getChainOrDefault(chainId);
+
+	const wallet = createWalletClient({
 		account,
-		to: to,
-		value: parseEther("0.001"),
+		chain,
+		transport: http(),
 	});
+
+	return wallet;
+};
+
+export const sendEth = async (
+	wallet: WalletClient,
+	to: `0x${string}`,
+	amount: string
+) => {
+	const account = wallet.account;
+
+	if (!account) {
+		throw new Error("Client account is not defined");
+	}
+
+	const hash = await wallet.sendTransaction({
+		account,
+		to,
+		value: parseEther(amount),
+		chain: wallet.chain,
+	});
+
+	console.log(`Transaction sent: ${hash}`);
+	console.log(`From: ${account.address}`);
+	console.log(`To: ${to}`);
+	console.log(`Amount: ${amount} ETH`);
+	console.log(`Chain ID: ${wallet.chain?.id}`);
 
 	return hash;
 };

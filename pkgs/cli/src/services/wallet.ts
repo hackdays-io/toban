@@ -2,12 +2,14 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { Hex } from "viem";
 import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
-const profilesPath = path.join(__dirname, "profiles.json");
+import { setWallet } from "../modules/viem";
 
 export interface Profile {
 	name: string;
 	privateKey: Hex;
 }
+
+const profilesPath = path.join(__dirname, "profiles.json");
 
 export const getProfiles = () => {
 	if (!existsSync(profilesPath)) {
@@ -17,13 +19,23 @@ export const getProfiles = () => {
 	return JSON.parse(data) as Profile[];
 };
 
-export const getWallet = (name?: string) => {
+export const getAccount = (name?: string) => {
 	const profiles = getProfiles();
 	const profile = profiles.find((p) => p.name === name) || profiles[0];
 
-	if (!profile) throw "Profile not found.";
+	if (!profile)
+		throw "Profile not found. Please add a profile with wallet add command.";
 
 	return privateKeyToAccount(profile.privateKey);
+};
+
+export const getWalletClient = (
+	name?: string,
+	chainId?: number | undefined
+) => {
+	const account = getAccount(name);
+
+	return setWallet(account, chainId);
 };
 
 export const saveProfile = (params: Profile) => {
@@ -59,7 +71,7 @@ export const deleteProfile = (params: { name: string }) => {
 
 	writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
 	console.log(`Profile "${params.name}" with private key has been deleted.`);
-}
+};
 
 export const listProfiles = () => {
 	const profiles = getProfiles();

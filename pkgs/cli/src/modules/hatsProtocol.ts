@@ -1,5 +1,16 @@
 import { HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
+import { Address } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
+import {
+	hatsContractBaseConfig,
+	hatsTimeFrameContractBaseConfig,
+} from "../config";
+import { publicClient, walletClient } from "..";
+import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+
+// ###############################################################
+// Read with subgraph
+// ###############################################################
 
 // Subgraph用のインスタンスを生成
 export const hatsSubgraphClient = new HatsSubgraphClient({
@@ -22,9 +33,9 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
 /**
  * ツリー情報を取得するメソッド
  */
-export const getTreeInfo = async (treeId: number) => {
+export const getTreeInfo = async (treeId: number, chainId: number) => {
 	const tree = await hatsSubgraphClient.getTree({
-		chainId: optimism.id,
+		chainId,
 		treeId: treeId,
 		props: {
 			hats: {
@@ -50,10 +61,10 @@ export const getTreeInfo = async (treeId: number) => {
 /**
  * 帽子の着用者のウォレットアドレスを一覧を取得するメソッド
  */
-export const getWearersInfo = async (hatId: string) => {
+export const getWearersInfo = async (hatId: string, chainId: number) => {
 	// get the first 10 wearers of a given hat
 	const wearers = await hatsSubgraphClient.getWearersOfHatPaginated({
-		chainId: optimism.id,
+		chainId,
 		props: {},
 		hatId: BigInt(hatId),
 		page: 0,
@@ -66,10 +77,10 @@ export const getWearersInfo = async (hatId: string) => {
 /**
  * 特定のウォレットアドレスが着用している全てのHats情報を取得するメソッド
  */
-export const getWearerInfo = async (walletAddress: string) => {
+export const getWearerInfo = async (walletAddress: string, chainId: number) => {
 	// get the wearer of a given hat
 	const wearer = await hatsSubgraphClient.getWearer({
-		chainId: optimism.id,
+		chainId,
 		wearerAddress: walletAddress as `0x${string}`,
 		props: {
 			currentHats: {
@@ -91,4 +102,78 @@ export const getWearerInfo = async (walletAddress: string) => {
 	});
 
 	return wearer;
+};
+
+export const getHatsTimeframeModuleAddress = async (
+	hatId: string,
+	chainId: number
+) => {
+	const treeId = hatIdToTreeId(BigInt(hatId));
+	const { hats } = await getTreeInfo(treeId, chainId);
+	const hatterHat = hats?.find((hat) => hat.levelAtLocalTree === 1);
+	if (!hatterHat) {
+		throw new Error("Hatter hat not found");
+	}
+
+	const wearers = await getWearersInfo(hatterHat.id, chainId);
+
+	if (wearers.length === 0) {
+		throw new Error("No wearers found for hatter hat");
+	}
+
+	return wearers[0].id;
+};
+
+// ###############################################################
+// Write with viem
+// ###############################################################
+
+/**
+ * 新規Hat作成
+ */
+export const createHat = async (args: {
+	parentHatId: bigint;
+	details?: string;
+	maxSupply?: number;
+	eligibility?: Address;
+	toggle?: Address;
+	mutable?: boolean;
+	imageURI: string;
+}) => {
+	const { request } = await publicClient.simulateContract({
+		...hatsContractBaseConfig,
+		account: walletClient.account,
+		functionName: "createHat",
+		args: [
+			args.parentHatId,
+			args.details || "",
+			args.maxSupply || 5,
+			args.eligibility || "0x0000000000000000000000000000000000004a75",
+			args.toggle || "0x0000000000000000000000000000000000004a75",
+			args.mutable || true,
+			args.imageURI,
+		],
+	});
+	const transactionHash = walletClient.writeContract(request);
+
+	return transactionHash;
+};
+
+/**
+ * ロール付与
+ */
+export const mintHat = async (args: { hatId: bigint; wearer: Address }) => {
+	const { request } = await publicClient.simulateContract({
+		...hatsTimeFrameContractBaseConfig,
+		address: await getHatsTimeframeModuleAddress(
+			args.hatId.toString(),
+			Number(publicClient.chain?.id)
+		),
+		account: walletClient.account,
+		functionName: "mintHat",
+		args: [args.hatId, args.wearer],
+	});
+	const transactionHash = await walletClient.writeContract(request);
+
+	return transactionHash;
 };

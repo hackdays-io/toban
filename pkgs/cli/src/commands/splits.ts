@@ -43,17 +43,14 @@ splitsCommands
 			hatId,
 			multiplierBottom,
 			multiplierTop,
-			wearer,
+			wearers,
 		}) => {
 			const hash = await create(splitsAddress, [
 				{
-					hatId: hatId,
-					multiplierBottom: multiplierBottom,
-					multiplierTop: multiplierTop,
-					wearers: [
-						"0x777ee5eeed30c3712bee6c83260d786857d9c556" as Address,
-						// "0xEef377Bdf67A227a744e386231fB3f264C158CDF",
-					],
+					hatId: BigInt(hatId),
+					multiplierBottom: BigInt(multiplierBottom),
+					multiplierTop: BigInt(multiplierTop),
+					wearers: [wearers] as Address[],
 				},
 			]);
 			console.log("Transaction sent. Hash:", hash);

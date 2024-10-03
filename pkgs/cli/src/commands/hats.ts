@@ -3,7 +3,10 @@ import {
 	getTreeInfo,
 	getWearerInfo,
 	getWearersInfo,
+	mintHat,
 } from "../modules/hatsProtocol";
+import { getAccount } from "../services/wallet";
+import { publicClient, rootProgram, walletClient } from "..";
 
 export const hatsCommands = new Command();
 
@@ -29,7 +32,7 @@ hatsCommands
 	.option("-id, --treeId <treeId>", "Tree ID")
 	.action(async (options) => {
 		// ツリー情報を全て取得する。
-		const tree = await getTreeInfo(Number(options.treeId));
+		const tree = await getTreeInfo(Number(options.treeId), options.chainId);
 
 		console.log(tree);
 	});
@@ -43,7 +46,7 @@ hatsCommands
 	.option("-id, --hatId <hatId>", "Hat ID")
 	.action(async (options) => {
 		// ツリー情報を全て取得する。
-		const wearers = await getWearersInfo(options.hatId);
+		const wearers = await getWearersInfo(options.hatId, options.chainId);
 
 		console.log(wearers);
 	});
@@ -57,7 +60,21 @@ hatsCommands
 	.option("-addr, --address <address>", "Wallet Address")
 	.action(async (options) => {
 		// 特定のウォレットアドレスに紐づく情報を全て取得する。
-		const wearer = await getWearerInfo(options.address);
+		const address =
+			options.address || getAccount(rootProgram.opts().profile).address;
+		const wearer = await getWearerInfo(address, rootProgram.opts().chain);
 
 		console.log(wearer);
+	});
+
+/**
+ * ロールを付与
+ */
+hatsCommands
+	.command("mintHat")
+	.description("Mint Hat")
+	.requiredOption("--hatId <hatId>", "Hat ID")
+	.requiredOption("--wearer <wearer>", "Wearer address")
+	.action(async ({ hatId, wearer }) => {
+		await mintHat({ hatId, wearer });
 	});

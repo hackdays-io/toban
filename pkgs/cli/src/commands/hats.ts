@@ -3,10 +3,12 @@ import {
 	getTreeInfo,
 	getWearerInfo,
 	getWearersInfo,
+	createHat,
 	mintHat,
 } from "../modules/hatsProtocol";
 import { getAccount } from "../services/wallet";
 import { publicClient, rootProgram, walletClient } from "..";
+import { Address } from "viem";
 
 export const hatsCommands = new Command();
 
@@ -68,12 +70,47 @@ hatsCommands
 	});
 
 /**
+ * ロールを作成
+ */
+hatsCommands
+	.command("createHat")
+	.description("Create Hat")
+	.requiredOption("-hid", "--hatId <hatId>", "Hat ID")
+	.requiredOption("-img", "--imageUri <imageURI>", "Image URI")
+	.option("-det", "--details <details>", "Details")
+	.option("-max", "--maxSupply <maxSupply>", "Max Supply")
+	.option("-el", "--eligibility <eligibility>", "Eligibility Address")
+	.option("-tgl", "--toggle <toggle>", "Toggle")
+	.option("-mut", "--mutable <mutable>", "Mutable")
+	.action(
+		async ({
+			hatId,
+			details,
+			maxSupply,
+			eligibility,
+			toggle,
+			mutable,
+			imageURI,
+		}) => {
+			await createHat({
+				parentHatId: BigInt(hatId),
+				details,
+				maxSupply,
+				eligibility: eligibility as Address,
+				toggle: toggle as Address,
+				mutable: mutable,
+				imageURI,
+			});
+		}
+	);
+
+/**
  * ロールを付与
  */
 hatsCommands
 	.command("mintHat")
 	.description("Mint Hat")
-	.requiredOption("--hatId <hatId>", "Hat ID")
+	.requiredOption("-hid", "--hatId <hatId>", "Hat ID")
 	.requiredOption("--wearer <wearer>", "Wearer address")
 	.action(async ({ hatId, wearer }) => {
 		await mintHat({ hatId, wearer });

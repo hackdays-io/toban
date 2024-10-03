@@ -33,8 +33,9 @@ hatsCommands
 	.description("Show all of the Hats that are associated with the tree ID")
 	.option("-id, --treeId <treeId>", "Tree ID")
 	.action(async (options) => {
+		const { chain } = rootProgram.opts();
 		// ツリー情報を全て取得する。
-		const tree = await getTreeInfo(Number(options.treeId), options.chainId);
+		const tree = await getTreeInfo(Number(options.treeId), chain);
 
 		console.log(tree);
 	});
@@ -47,8 +48,9 @@ hatsCommands
 	.description("Show all of the wears that are associated with the hat ID")
 	.option("-id, --hatId <hatId>", "Hat ID")
 	.action(async (options) => {
+		const { chain } = rootProgram.opts();
 		// ツリー情報を全て取得する。
-		const wearers = await getWearersInfo(options.hatId, options.chainId);
+		const wearers = await getWearersInfo(options.hatId, chain);
 
 		console.log(wearers);
 	});
@@ -75,16 +77,16 @@ hatsCommands
 hatsCommands
 	.command("createHat")
 	.description("Create Hat")
-	.requiredOption("-hid", "--hatId <hatId>", "Hat ID")
-	.requiredOption("-img", "--imageUri <imageURI>", "Image URI")
-	.option("-det", "--details <details>", "Details")
-	.option("-max", "--maxSupply <maxSupply>", "Max Supply")
-	.option("-el", "--eligibility <eligibility>", "Eligibility Address")
-	.option("-tgl", "--toggle <toggle>", "Toggle")
-	.option("-mut", "--mutable <mutable>", "Mutable")
+	.requiredOption("-phid, --parentHatId <parentHatId>", "Parent Hat ID")
+	.requiredOption("-img, --imageURI <imageURI>", "Image URI")
+	.option("-det , --details <details>", "Details")
+	.option("-max, --maxSupply <maxSupply>", "Max Supply")
+	.option("-el, --eligibility <eligibility>", "Eligibility Address")
+	.option("-tgl, --toggle <toggle>", "Toggle")
+	.option("-mut, --mutable <mutable>", "Mutable")
 	.action(
 		async ({
-			hatId,
+			parentHatId,
 			details,
 			maxSupply,
 			eligibility,
@@ -92,15 +94,17 @@ hatsCommands
 			mutable,
 			imageURI,
 		}) => {
-			await createHat({
-				parentHatId: BigInt(hatId),
+			const transactionHash = await createHat({
+				parentHatId: BigInt(parentHatId),
 				details,
 				maxSupply,
 				eligibility: eligibility as Address,
 				toggle: toggle as Address,
-				mutable: mutable,
+				mutable: mutable == "true",
 				imageURI,
 			});
+
+			console.log("Transaction hash: ", transactionHash);
 		}
 	);
 
@@ -110,8 +114,10 @@ hatsCommands
 hatsCommands
 	.command("mintHat")
 	.description("Mint Hat")
-	.requiredOption("-hid", "--hatId <hatId>", "Hat ID")
+	.requiredOption("-hid, --hatId <hatId>", "Hat ID")
 	.requiredOption("--wearer <wearer>", "Wearer address")
 	.action(async ({ hatId, wearer }) => {
-		await mintHat({ hatId, wearer });
+		const transactionHash = await mintHat({ hatId, wearer });
+
+		console.log("Transaction hash: ", transactionHash);
 	});

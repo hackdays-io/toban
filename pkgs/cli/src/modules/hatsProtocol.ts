@@ -6,6 +6,7 @@ import {
 	hatsTimeFrameContractBaseConfig,
 } from "../config";
 import { publicClient, walletClient } from "..";
+import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 
 // ###############################################################
 // Read with subgraph
@@ -103,6 +104,26 @@ export const getWearerInfo = async (walletAddress: string, chainId: number) => {
 	return wearer;
 };
 
+export const getHatsTimeframeModuleAddress = async (
+	hatId: string,
+	chainId: number
+) => {
+	const treeId = hatIdToTreeId(BigInt(hatId));
+	const { hats } = await getTreeInfo(treeId, chainId);
+	const hatterHat = hats?.find((hat) => hat.levelAtLocalTree === 1);
+	if (!hatterHat) {
+		throw new Error("Hatter hat not found");
+	}
+
+	const wearers = await getWearersInfo(hatterHat.id, chainId);
+
+	if (wearers.length === 0) {
+		throw new Error("No wearers found for hatter hat");
+	}
+
+	return wearers[0].id;
+};
+
 // ###############################################################
 // Write with viem
 // ###############################################################
@@ -133,7 +154,9 @@ export const createHat = async (args: {
 			args.imageURI,
 		],
 	});
-	walletClient.writeContract(request);
+	const transactionHash = walletClient.writeContract(request);
+
+	return transactionHash;
 };
 
 /**
@@ -142,9 +165,15 @@ export const createHat = async (args: {
 export const mintHat = async (args: { hatId: bigint; wearer: Address }) => {
 	const { request } = await publicClient.simulateContract({
 		...hatsTimeFrameContractBaseConfig,
+		address: await getHatsTimeframeModuleAddress(
+			args.hatId.toString(),
+			Number(publicClient.chain?.id)
+		),
 		account: walletClient.account,
 		functionName: "mintHat",
 		args: [args.hatId, args.wearer],
 	});
-	walletClient.writeContract(request);
+	const transactionHash = await walletClient.writeContract(request);
+
+	return transactionHash;
 };

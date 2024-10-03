@@ -9,6 +9,7 @@ import { getWalletClient } from "./services/wallet";
 import { skipPreActionCommands } from "./config";
 import { bigbangCommands } from "./commands/bigbang";
 import { pinataCommands } from "./commands/pinata";
+import { fractionTokenCommands } from "./commands/fractionToken";
 
 export const rootProgram = new Command();
 
@@ -35,5 +36,6 @@ rootProgram.addCommand(bigbangCommands);
 rootProgram.addCommand(hatsCommands);
 rootProgram.addCommand(walletCommands);
 rootProgram.addCommand(pinataCommands);
+rootProgram.addCommand(fractionTokenCommands);
 
 rootProgram.parse(process.argv);

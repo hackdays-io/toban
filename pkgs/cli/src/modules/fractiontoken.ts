@@ -56,7 +56,13 @@ export const sendFractionToken = async (
 
 	stop();
 
-	console.log(log);
+	console.log(
+		decodeEventLog({
+			abi: fractionTokenBaseConfig.abi,
+			data: log!.data,
+			topics: log!.topics,
+		})
+	);
 
 	return transactionHash;
 };

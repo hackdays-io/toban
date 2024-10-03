@@ -55,7 +55,7 @@ contract HatsTimeFrameModule is
 	function reactivate(uint256 hatId, address wearer) external {
 		require(!isActive[hatId][wearer], "Hat is already active");
 		isActive[hatId][wearer] = true;
-		woreTime[hatId][wearer] += block.timestamp - deactivatedTime[hatId][wearer];
+		woreTime[hatId][wearer] = block.timestamp;
 	}
 
 	/**
@@ -92,15 +92,15 @@ contract HatsTimeFrameModule is
 		address wearer,
 		uint256 hatId
 	) external view returns (uint256) {
-    	uint256 activeTime = totalActiveTime[hatId][wearer];
+		uint256 activeTime = totalActiveTime[hatId][wearer];
+		
 		if (isActive[hatId][wearer]) {
+			// If active, calculate time from the last woreTime to the current time
 			activeTime += block.timestamp - woreTime[hatId][wearer];
-		} else {
-			activeTime += deactivatedTime[hatId][wearer] - woreTime[hatId][wearer];
 		}
+		
 		return activeTime;
 	}
-
 	/**
 	 * @dev Override _msgSender to use the context from ERC2771Context.
 	 * @return The message sender address.

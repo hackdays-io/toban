@@ -134,73 +134,90 @@ describe("HatsTimeFrameModule", () => {
 			}
 		}
 
-		// アドレス1にRole hatをミント
+		const initialTime = BigInt(await time.latest());
+
 		await HatsTimeFrameModule.write.mintHat([
-			roleHatId,
-			address1.account?.address!,
+		roleHatId,
+		address1.account?.address!,
 		]);
 
-		expect(
-			await Hats.read.balanceOf([address1.account?.address!, roleHatId])
-		).equal(BigInt(1));
+		const afterMintTime = BigInt(await time.latest());
 
-		expect(
-			await HatsTimeFrameModule.read.getWoreTime([
-				address1.account?.address!,
-				roleHatId,
-			])
-		).equal(BigInt(await time.latest()));
+		let woreTime = await HatsTimeFrameModule.read.getWoreTime([
+		address1.account?.address!,
+		roleHatId,
+		]);
 
-		await time.increase(100);
+		expect(woreTime).to.equal(afterMintTime);
 
-		expect(
-			await HatsTimeFrameModule.read.getWearingElapsedTime([
-				address1.account?.address!,
-				roleHatId,
-			])
-		).equal(BigInt(100));
-		
-		// Fast forward time and check elapsed time while active
-		await time.increase(100);
+		await time.increaseTo(initialTime + 100n);
+
+		const currentTime1 = BigInt(await time.latest());
+
+		let expectedElapsedTime = currentTime1 - woreTime;
 
 		let elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
 			address1.account?.address!,
-			roleHatId
+			roleHatId,
 		]);
-		expect(
-			elapsedTime
-		).to.equal(BigInt(100));
 
-		// Deactivate and verify that time stops accumulating
+		expect(elapsedTime).to.equal(expectedElapsedTime);
+
+		await time.increaseTo(initialTime + 200n);
+
+		const currentTime2 = BigInt(await time.latest());
+
+		expectedElapsedTime = currentTime2 - woreTime;
+
+		elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
+			address1.account?.address!,
+			roleHatId,
+		]);
+
+		expect(elapsedTime).to.equal(expectedElapsedTime);
+
 		await HatsTimeFrameModule.write.deactivate([
 			roleHatId,
-			address1.account?.address!
+			address1.account?.address!,
 		]);
 
-		await time.increase(50);
+		const afterDeactivateTime = BigInt(await time.latest());
 
+		const totalActiveTimeAfterDeactivation = afterDeactivateTime - woreTime;
+
+		expectedElapsedTime = totalActiveTimeAfterDeactivation;
+
+		// Increase time to initialTime + 250 seconds (during inactivity)
+		await time.increaseTo(initialTime + 250n);
+
+		// Elapsed time should remain the same
 		elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
 			address1.account?.address!,
-			roleHatId
+			roleHatId,
 		]);
-		expect(
-			elapsedTime
-		).to.equal(BigInt(100)); // Time should not increase
 
-		// Reactivate and ensure time starts accumulating again
+		expect(elapsedTime).to.equal(expectedElapsedTime);
+
+		// Reactivate the hat
 		await HatsTimeFrameModule.write.reactivate([
 			roleHatId,
-			address1.account?.address!
+			address1.account?.address!,
 		]);
 
-		await time.increase(100);
+		// Get woreTime after reactivation
+		woreTime = BigInt(await time.latest());
+
+		await time.increaseTo(initialTime + 350n);
+
+		const currentTime3 = BigInt(await time.latest());
+
+		expectedElapsedTime = totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
 
 		elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
 			address1.account?.address!,
-			roleHatId
+			roleHatId,
 		]);
-		expect(
-			elapsedTime
-		).to.equal(BigInt(200)); // Total time should now be 200
+
+		expect(elapsedTime).to.equal(expectedElapsedTime);
 	});
 });

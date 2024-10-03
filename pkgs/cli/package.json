@@ -16,9 +16,11 @@
     "@hatsprotocol/sdk-v1-subgraph": "^1.0.0",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
+    "pinata-web3": "^0.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2",
-    "viem": "^2.21.15"
+    "viem": "^2.21.15",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/commander": "^2.12.2",

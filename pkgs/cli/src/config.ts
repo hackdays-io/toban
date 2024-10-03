@@ -11,7 +11,6 @@ export const hatsContractBaseConfig = {
 };
 
 export const hatsTimeFrameContractBaseConfig = {
-	address: "0xd4a66507ea8c8382fa8474ed6cae4163676a434a" as Address,
 	abi: HATS_TIME_FRAME_MODULE_ABI,
 };
 

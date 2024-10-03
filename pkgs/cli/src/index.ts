@@ -9,6 +9,7 @@ import { getPublicClient } from "./modules/viem";
 import { getWalletClient } from "./services/wallet";
 import { skipPreActionCommands } from "./config";
 import { bigbangCommands } from "./commands/bigbang";
+import { pinataCommands } from "./commands/pinata";
 
 export const rootProgram = new Command();
 
@@ -35,5 +36,6 @@ rootProgram.addCommand(bigbangCommands);
 rootProgram.addCommand(hatsCommands);
 rootProgram.addCommand(walletCommands);
 rootProgram.addCommand(splitsCommands);
+rootProgram.addCommand(pinataCommands);
 
 rootProgram.parse(process.argv);

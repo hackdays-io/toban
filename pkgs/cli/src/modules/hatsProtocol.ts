@@ -1,5 +1,5 @@
 import { HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
-import { Address, PublicClient, WalletClient } from "viem";
+import { Address } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import {
 	hatsContractBaseConfig,
@@ -110,19 +110,15 @@ export const getWearerInfo = async (walletAddress: string, chainId: number) => {
 /**
  * 新規Hat作成
  */
-export const createHat = async (
-	publicClient: PublicClient,
-	walletClient: WalletClient,
-	args: {
-		parentHatId: bigint;
-		details?: string;
-		maxSupply?: number;
-		eligibility?: Address;
-		toggle?: Address;
-		mutable?: boolean;
-		imageURI: string;
-	}
-) => {
+export const createHat = async (args: {
+	parentHatId: bigint;
+	details?: string;
+	maxSupply?: number;
+	eligibility?: Address;
+	toggle?: Address;
+	mutable?: boolean;
+	imageURI: string;
+}) => {
 	const { request } = await publicClient.simulateContract({
 		...hatsContractBaseConfig,
 		account: walletClient.account,

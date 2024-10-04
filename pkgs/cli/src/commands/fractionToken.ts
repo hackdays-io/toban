@@ -11,7 +11,7 @@ fractionTokenCommands
 fractionTokenCommands
 	.command("mint")
 	.description("Mint fraction token")
-	.requiredOption("-h, --hatId <hatId>", "Hat ID")
+	.requiredOption("-hid, --hatId <hatId>", "Hat ID")
 	.requiredOption("-a, --account <account>", "Account")
 	.action(async (options) => {
 		const transactionHash = await mintFractionToken(
@@ -26,7 +26,7 @@ fractionTokenCommands
 	.command("send")
 	.description("Send fraction token")
 	.requiredOption("-t, --to <to>", "To")
-	.requiredOption("-h, --hatId <hatId>", "Hat ID")
+	.requiredOption("-hid, --hatId <hatId>", "Hat ID")
 	.requiredOption("-a, --amount <amount>", "Amount")
 	.action(async (options) => {
 		const transactionHash = await sendFractionToken(

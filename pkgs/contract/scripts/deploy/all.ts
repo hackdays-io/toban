@@ -2,23 +2,35 @@ import * as dotenv from "dotenv";
 import { network } from "hardhat";
 import { Address, zeroAddress } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
-import { writeContractAddress } from "../../helpers/deploy/contractsJsonHelper";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import { deployHatsTimeFrameModule } from "../../helpers/deploy/Hats";
 import {
 	deploySplitsCreator,
 	deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
+import {
+	loadDeployedContractAddresses,
+	writeContractAddress,
+} from "../../helpers/deploy/contractsJsonHelper";
 
 dotenv.config();
 
 const deployAll = async () => {
+	console.log(
+		"##################################### [Deploy START] #####################################"
+	);
+
+	// Hats HatsModuleFactory PullSplitsFactoryコントラクトの各アドレスをjsonファイルから取得してくる。
+	const {
+		contracts: { Hats, HatsModuleFactory, PullSplitsFactory },
+	} = loadDeployedContractAddresses(network.name);
+
 	const { HatsTimeFrameModule } = await deployHatsTimeFrameModule();
 
 	const { FractionToken } = await deployFractionToken(
 		"",
 		10000n,
-		process.env.HATS_ADDRESS as Address,
+		Hats as Address,
 		zeroAddress
 	);
 
@@ -30,12 +42,11 @@ const deployAll = async () => {
 
 	const { BigBang } = await deployBigBang({
 		trustedForwarder: zeroAddress,
-		hatsContractAddress: process.env.HATS_ADDRESS as Address,
-		hatsModuleFacotryAddress: process.env
-			.HATS_MODULE_FACTORY_ADDRESS as Address,
+		hatsContractAddress: Hats as Address,
+		hatsModuleFacotryAddress: HatsModuleFactory as Address,
 		hatsTimeFrameModule_impl: HatsTimeFrameModule.address,
 		splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
-		splitsFactoryV2Address: process.env.PULL_SPLITS_FACTORY_ADDRESS as Address,
+		splitsFactoryV2Address: PullSplitsFactory as Address,
 		fractionTokenAddress: FractionToken.address,
 	});
 
@@ -76,6 +87,10 @@ const deployAll = async () => {
 		value: HatsTimeFrameModule.address,
 		network: network.name,
 	});
+
+	console.log(
+		"##################################### [Deploy END] #####################################"
+	);
 
 	return;
 };

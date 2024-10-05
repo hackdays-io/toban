@@ -15,7 +15,8 @@
     "getBalance": "npx hardhat getBalance",
     "getChainInfo": "npx hardhat getChainInfo",
     "getContractAddress": "npx hardhat getContractAddress",
-    "registerSubdomain": "npx hardhat registerSubdomain"
+    "registerSubdomain": "npx hardhat registerSubdomain",
+    "createSplit": "npx hardhat run scripts/createSplit.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",

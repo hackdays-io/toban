@@ -1,11 +1,16 @@
+import * as dotenv from "dotenv";
+import { network } from "hardhat";
 import { Address, zeroAddress } from "viem";
+import { deployBigBang } from "../../helpers/deploy/BigBang";
+import { writeContractAddress } from "../../helpers/deploy/contractsJsonHelper";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import { deployHatsTimeFrameModule } from "../../helpers/deploy/Hats";
 import {
 	deploySplitsCreator,
 	deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
-import { deployBigBang } from "../../helpers/deploy/BigBang";
+
+dotenv.config();
 
 const deployAll = async () => {
 	const { HatsTimeFrameModule } = await deployHatsTimeFrameModule();
@@ -39,6 +44,38 @@ const deployAll = async () => {
 	console.log("SplitsCreatorFactory deployed at", SplitsCreatorFactory.address);
 	console.log("SplitsCreator deployed at", SplitsCreator.address);
 	console.log("HatsTimeFrameModule deployed at", HatsTimeFrameModule.address);
+
+	// デプロイしたアドレスをjsonファイルに保存する。
+	writeContractAddress({
+		group: "contracts",
+		name: "BigBang",
+		value: BigBang.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "FractionToken",
+		value: FractionToken.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "SplitsCreatorFactory",
+		value: SplitsCreatorFactory.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "SplitsCreator",
+		value: SplitsCreator.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "HatsTimeFrameModule",
+		value: HatsTimeFrameModule.address,
+		network: network.name,
+	});
 
 	return;
 };

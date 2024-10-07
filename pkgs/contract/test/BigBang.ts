@@ -124,7 +124,9 @@ describe("BigBang", () => {
 					topics: log.topics,
 				});
 				if (decodedLog.eventName == "Executed") {
-					expect(decodedLog.args.owner).to.be.equal(address1.account?.address!);
+					expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
+						address1.account?.address!
+					);
 				}
 			} catch (error) {}
 		}

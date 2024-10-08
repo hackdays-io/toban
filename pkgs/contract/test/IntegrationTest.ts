@@ -33,7 +33,7 @@ import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import { expect } from "chai";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
-describe("BigBang", () => {
+describe("IntegrationTest", () => {
 	let Hats: Hats;
 	let HatsModuleFactory: HatsModuleFactory;
 	let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
@@ -212,7 +212,10 @@ describe("BigBang", () => {
 	});
 
 	it("should mint hat1 to address1 and address2", async () => {
-		await Hats.write.mintHat([hat1_id, address1.account?.address!]);
+		await HatsTimeFrameModuleByBigBang.write.mintHat([
+			hat1_id,
+			address1.account?.address!,
+		]);
 
 		expect(
 			await Hats.read.balanceOf([address1.account?.address!, hat1_id])
@@ -225,7 +228,10 @@ describe("BigBang", () => {
 		// 	])
 		// ).equal(BigInt(await time.latest()));
 
-		await Hats.write.mintHat([hat1_id, address2.account?.address!]);
+		await HatsTimeFrameModuleByBigBang.write.mintHat([
+			hat1_id,
+			address2.account?.address!,
+		]);
 
 		expect(
 			await Hats.read.balanceOf([address2.account?.address!, hat1_id])
@@ -311,39 +317,60 @@ describe("BigBang", () => {
 
 	it("should create PullSplits contract", async () => {
 		// address1とaddress2に50%ずつ配分するSplitを作成
-		const txHash = await PullSplitsFactory.write.createSplit([
-			{
-				recipients: [address1.account?.address!, address2.account?.address!],
-				allocations: [50n, 50n],
-				totalAllocation: 100n,
-				distributionIncentive: 0,
-			},
-			address1.account?.address!,
-			address1.account?.address!,
+		const txHash = await SplitsCreatorByBigBang.write.create([
+			[
+				{
+					hatId: hat1_id,
+					wearers: [address1.account?.address!, address2.account?.address!],
+					multiplierBottom: 1n,
+					multiplierTop: 1n,
+				},
+			],
 		]);
+		// const txHash = await PullSplitsFactory.write.createSplit([
+		// 	{
+		// 		recipients: [address1.account?.address!, address2.account?.address!],
+		// 		allocations: [50n, 50n],
+		// 		totalAllocation: 100n,
+		// 		distributionIncentive: 0,
+		// 	},
+		// 	address1.account?.address!,
+		// 	address1.account?.address!,
+		// ]);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
 			hash: txHash,
 		});
 
 		let splitAddress!: Address;
+		let shareHolders!: readonly Address[];
+		let allocations!: readonly bigint[];
+		let totalAllocation!: bigint;
 
 		for (const log of receipt.logs) {
 			try {
 				const decodedLog = decodeEventLog({
-					abi: PullSplitsFactory.abi,
+					abi: SplitsCreatorByBigBang.abi,
 					data: log.data,
 					topics: log.topics,
 				});
-				if (decodedLog.eventName == "SplitCreated")
+				if (decodedLog.eventName == "SplitsCreated")
 					splitAddress = decodedLog.args.split;
-			} catch (error) {}
+				shareHolders = decodedLog.args.shareHolders;
+				allocations = decodedLog.args.allocations;
+				totalAllocation = decodedLog.args.totalAllocation;
+			} catch (error) {
+				shareHolders = [];
+				allocations = [];
+				totalAllocation = 0n;
+			}
 		}
 
-		DeployedPullSplit = await viem.getContractAt("PullSplit", splitAddress);
-	});
+		expect(shareHolders.length).to.equal(3);
+		expect(allocations.length).to.equal(3);
 
-	it("Should destribute", async () => {
+		DeployedPullSplit = await viem.getContractAt("PullSplit", splitAddress);
+
 		// Splitコントラクトに1ETH送金
 		await deployer.sendTransaction({
 			account: deployer.account!,
@@ -364,12 +391,22 @@ describe("BigBang", () => {
 			address: address3.account?.address!,
 		});
 
+		expect(Number(beforeAddress1Balance))
+			.gt(Number(parseEther("9999")))
+			.lt(Number(parseEther("10001")));
+		expect(Number(beforeAddress2Balance))
+			.gt(Number(parseEther("9999")))
+			.lt(Number(parseEther("10001")));
+		expect(Number(beforeAddress3Balance))
+			.gt(Number(parseEther("9999")))
+			.lt(Number(parseEther("10001")));
+
 		await DeployedPullSplit.write.distribute(
 			[
 				{
-					recipients: [address1.account?.address!, address2.account?.address!],
-					allocations: [50n, 50n],
-					totalAllocation: 100n,
+					recipients: shareHolders,
+					allocations: allocations,
+					totalAllocation: totalAllocation,
 					distributionIncentive: 0,
 				},
 				"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
@@ -401,6 +438,16 @@ describe("BigBang", () => {
 			}
 		);
 
+		await SplitsWarehouse.write.withdraw(
+			[
+				address3.account?.address as `0x${string}`,
+				"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+			],
+			{
+				account: address3.account,
+			}
+		);
+
 		const afterAddress1Balance = await publicClient.getBalance({
 			address: address1.account?.address!,
 		});
@@ -413,19 +460,19 @@ describe("BigBang", () => {
 			address: address3.account?.address!,
 		});
 
-		// withdrawのガス代を引いて大体0.5ETH増えているはず
+		// withdrawのガス代を引いて大体0.45ETH増えているはず
 		expect(Number(afterAddress1Balance) - Number(beforeAddress1Balance))
-			.gt(499900000000000000)
-			.lt(500100000000000000);
+			.gt(449900000000000000)
+			.lt(450100000000000000);
 
 		// withdrawのガス代を引いて大体0.5ETH増えているはず
 		expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance))
 			.gt(499900000000000000)
 			.lt(500100000000000000);
 
-		// 0.1ETH増えているはず
+		// 0.05ETH増えているはず
 		expect(Number(afterAddress3Balance) - Number(beforeAddress3Balance))
-			.gt(99900000000000000)
-			.lt(100100000000000000);
+			.gt(49900000000000000)
+			.lt(50100000000000000);
 	});
 });

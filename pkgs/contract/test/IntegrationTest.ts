@@ -221,13 +221,6 @@ describe("IntegrationTest", () => {
 			await Hats.read.balanceOf([address1.account?.address!, hat1_id])
 		).equal(BigInt(1));
 
-		// expect(
-		// 	await HatsTimeFrameModuleByBigBang.read.getWoreTime([
-		// 		address1.account?.address!,
-		// 		hat1_id,
-		// 	])
-		// ).equal(BigInt(await time.latest()));
-
 		await HatsTimeFrameModuleByBigBang.write.mintHat([
 			hat1_id,
 			address2.account?.address!,
@@ -327,16 +320,6 @@ describe("IntegrationTest", () => {
 				},
 			],
 		]);
-		// const txHash = await PullSplitsFactory.write.createSplit([
-		// 	{
-		// 		recipients: [address1.account?.address!, address2.account?.address!],
-		// 		allocations: [50n, 50n],
-		// 		totalAllocation: 100n,
-		// 		distributionIncentive: 0,
-		// 	},
-		// 	address1.account?.address!,
-		// 	address1.account?.address!,
-		// ]);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
 			hash: txHash,

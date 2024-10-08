@@ -46,15 +46,13 @@ contract SplitsCreator is ISplitsCreator, Clone {
 				);
 				address[] memory recepients = FRACTION_TOKEN()
 					.getTokenRecipients(tokenId);
-				numOfShareHolders += recepients.length + 1;
+				numOfShareHolders += recepients.length;
 			}
 		}
 
 		address[] memory shareHolders = new address[](numOfShareHolders);
-		address[] memory warers = new address[](numOfShareHolders);
-		uint256[] memory hatIdsOfShareHolders = new uint256[](
-			numOfShareHolders
-		);
+		address[] memory wearers = new address[](numOfShareHolders);
+		uint256[] memory hatIdsOfShareHolders = new uint256[](numOfShareHolders);
 		uint256[] memory roleMultipliersOfShareHolders = new uint256[](
 			numOfShareHolders
 		);
@@ -66,36 +64,24 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
 		for (uint i = 0; i < _splitsInfo.length; i++) {
 			SplitsInfo memory _splitInfo = _splitsInfo[i];
+			uint256 roleMultiplier = _splitInfo.multiplierTop /
+				_splitInfo.multiplierBottom;
 			for (uint si = 0; si < _splitInfo.wearers.length; si++) {
 				uint256 tokenId = FRACTION_TOKEN().getTokenId(
 					_splitInfo.hatId,
 					_splitInfo.wearers[si]
 				);
-				uint256 roleMultiplier = _splitInfo.multiplierTop /
-					_splitInfo.multiplierBottom;
 				uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
 					_splitInfo.wearers[si],
 					_splitInfo.hatId
 				);
-
-				// ロール保持者に対する分配の計算
-				shareHolders[shareHolderIndex] = _splitInfo.wearers[si];
-				warers[shareHolderIndex] = _splitInfo.wearers[si];
-				hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
-				roleMultipliersOfShareHolders[
-					shareHolderIndex
-				] = roleMultiplier;
-				hatsTimeFrameMultipliersOfShareHolders[
-					shareHolderIndex
-				] = hatsTimeFrameMultiplier;
-				shareHolderIndex++;
 
 				// FractionTokenのホルダーに対する分配の計算
 				address[] memory recipients = FRACTION_TOKEN()
 					.getTokenRecipients(tokenId);
 				for (uint j = 0; j < recipients.length; j++) {
 					shareHolders[shareHolderIndex] = recipients[j];
-					warers[shareHolderIndex] = _splitInfo.wearers[si];
+					wearers[shareHolderIndex] = _splitInfo.wearers[si];
 					hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
 					roleMultipliersOfShareHolders[
 						shareHolderIndex
@@ -109,7 +95,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 		}
 
 		uint256[] memory balanceOfShareHolders = FRACTION_TOKEN()
-			.balanceOfBatch(shareHolders, warers, hatIdsOfShareHolders);
+			.balanceOfBatch(shareHolders, wearers, hatIdsOfShareHolders);
 
 		uint256 totalAllocation = 0;
 		uint256[] memory allocations = new uint256[](shareHolderIndex);
@@ -135,7 +121,12 @@ contract SplitsCreator is ISplitsCreator, Clone {
 			_generateSalt(_splitsInfo)
 		);
 
-		emit SplitsCreated(split);
+		emit SplitsCreated(
+			split,
+			shareHolders,
+			allocations,
+			totalAllocation
+		);
 
 		return split;
 	}

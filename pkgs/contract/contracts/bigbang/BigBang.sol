@@ -23,6 +23,7 @@ contract BigBang is ERC2771Context {
 	event Executed(
 		address indexed owner,
 		uint256 indexed topHatId,
+		uint256 indexed hatterHatId,
 		address hatsTimeFrameModule,
 		address splitCreator
 	);
@@ -118,7 +119,7 @@ contract BigBang is ERC2771Context {
 				keccak256(abi.encodePacked(topHatId))
 			);
 
-		emit Executed(_owner, topHatId, hatsTimeFrameModule, splitCreator);
+		emit Executed(_owner, topHatId, hatterHatId, hatsTimeFrameModule, splitCreator);
 
 		return topHatId;
 	}

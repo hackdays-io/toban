@@ -91,7 +91,7 @@ describe("BigBang", () => {
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
 			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
 			splitsFactoryV2Address: PullSplitsFactory.address,
-			fractionTokenAddress: FractionToken.address,
+			fractionTokenAddress: FractionToken.target as `0x${string}`,
 		});
 
 		expect(_BigBang.target).to.not.be.undefined;
@@ -109,8 +109,6 @@ describe("BigBang", () => {
 			address1.account?.address!,
 			{ account: address1.account }
 		);
-
-		console.log("txHash", tx);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
 			hash: tx.hash,

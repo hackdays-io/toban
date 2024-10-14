@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { getContractAddress } from "../../helpers/util/contractJsonHelper";
+import { getContractAddress } from "../../helpers/deploy/contractJsonIgnitionHelper";
 
 /**
  * 【Task】	get deployed contract address

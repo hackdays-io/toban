@@ -1,12 +1,16 @@
 import { Address, zeroAddress } from "viem";
+import { deployBigBang } from "../../helpers/deploy/BigBang";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import { deployHatsTimeFrameModule } from "../../helpers/deploy/Hats";
 import {
 	deploySplitsCreator,
 	deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
-import { deployBigBang } from "../../helpers/deploy/BigBang";
 
+/**
+ * Deploy all contracts
+ * @returns
+ */
 const deployAll = async () => {
 	const { HatsTimeFrameModule } = await deployHatsTimeFrameModule();
 

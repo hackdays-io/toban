@@ -1,7 +1,9 @@
+import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "chai";
+import { viem } from "hardhat";
 import {
 	Address,
 	decodeEventLog,
-	formatEther,
 	keccak256,
 	parseEther,
 	PublicClient,
@@ -30,9 +32,6 @@ import {
 	SplitsCreatorFactory,
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
-import { viem } from "hardhat";
-import { expect } from "chai";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("SplitsCreator Factory", () => {
 	let Hats: Hats;
@@ -131,7 +130,7 @@ describe("SplitsCreator Factory", () => {
 				zeroAddress,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
-				FractionToken.address,
+				FractionToken.target as `0x${string}`,
 				keccak256("0x1234"),
 			])
 		).to.be.a("string");
@@ -144,7 +143,7 @@ describe("SplitsCreator Factory", () => {
 				address1.account?.address!,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
-				FractionToken.address,
+				FractionToken.target as `0x${string}`,
 				keccak256("0x1234"),
 			]);
 
@@ -153,7 +152,7 @@ describe("SplitsCreator Factory", () => {
 			address1.account?.address!,
 			PullSplitsFactory.address,
 			HatsTimeFrameModule.address,
-			FractionToken.address,
+			FractionToken.target as `0x${string}`,
 			keccak256("0x1234"),
 		]);
 
@@ -163,7 +162,7 @@ describe("SplitsCreator Factory", () => {
 			(await SplitsCreator.read.HATS_TIME_FRAME_MODULE()).toLowerCase()
 		).equal(HatsTimeFrameModule.address.toLowerCase());
 		expect((await SplitsCreator.read.FRACTION_TOKEN()).toLowerCase()).equal(
-			FractionToken.address.toLowerCase()
+			(FractionToken.target as `0x${string}`).toLowerCase()
 		);
 	});
 });
@@ -271,7 +270,7 @@ describe("CreateSplit", () => {
 				address1.account?.address!,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
-				FractionToken.address,
+				FractionToken.target as `0x${string}`,
 				keccak256("0x1234"),
 			]);
 

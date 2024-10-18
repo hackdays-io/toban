@@ -1,5 +1,7 @@
+import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
+import "@openzeppelin/hardhat-upgrades";
 import * as dotenv from "dotenv";
 import fs from "fs";
 import "hardhat-gas-reporter";

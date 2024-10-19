@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { Signer } from "ethers";
-import { viem } from "hardhat";
+import { ethers, viem } from "hardhat";
 import { decodeEventLog, PublicClient, WalletClient, zeroAddress } from "viem";
 import {
 	deployFractionToken,

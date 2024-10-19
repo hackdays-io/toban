@@ -32,9 +32,6 @@ import {
 	SplitsCreatorFactory,
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
-import { viem } from "hardhat";
-import { expect } from "chai";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { sqrt } from "../helpers/util/sqrt";
 
 describe("SplitsCreator Factory", () => {
@@ -416,33 +413,27 @@ describe("CreateSplit", () => {
 			})
 			.then((block) => block.timestamp);
 
-		await FractionToken.write.mint([hat1_id, address1.account?.address!]);
-		await FractionToken.write.mint([hat1_id, address2.account?.address!]);
-		await FractionToken.write.mint([hat2_id, address3.account?.address!]);
+		await FractionToken.mint(hat1_id, address1.account?.address!);
+		await FractionToken.mint(hat1_id, address2.account?.address!);
+		await FractionToken.mint(hat2_id, address3.account?.address!);
 
 		// let balance: bigint;
 
-		const address1Balance = await FractionToken.read.balanceOf([
-			address1.account?.address!,
-			address1.account?.address!,
-			hat1_id,
-		]);
+		const address1Balance = await FractionToken[
+			"balanceOf(address,address,uint256)"
+		](address1.account?.address!, address1.account?.address!, hat1_id);
 		expect(address1Balance).to.equal(10000n);
 
 		// address2のbalance
-		const address2Balance = await FractionToken.read.balanceOf([
-			address2.account?.address!,
-			address2.account?.address!,
-			hat1_id,
-		]);
+		const address2Balance = await FractionToken[
+			"balanceOf(address,address,uint256)"
+		](address2.account?.address!, address2.account?.address!, hat1_id);
 		expect(address2Balance).to.equal(10000n);
 
 		// address3のbalance
-		const address3Balance = await FractionToken.read.balanceOf([
-			address3.account?.address!,
-			address3.account?.address!,
-			hat2_id,
-		]);
+		const address3Balance = await FractionToken[
+			"balanceOf(address,address,uint256)"
+		](address3.account?.address!, address3.account?.address!, hat2_id);
 		expect(address3Balance).to.equal(10000n);
 	});
 
@@ -508,27 +499,21 @@ describe("CreateSplit", () => {
 		const sqrtAddress2Time = sqrt(address2Time);
 		const sqrtAddress3Time = sqrt(address3Time);
 
-		const address1Balance = await FractionToken.read.balanceOf([
-			address1.account?.address!,
-			address1.account?.address!,
-			hat1_id,
-		]);
+		const address1Balance = await FractionToken[
+			"balanceOf(address,address,uint256)"
+		](address1.account?.address!, address1.account?.address!, hat1_id);
 		expect(address1Balance).to.equal(10000n);
 
 		// address2のbalance
-		const address2Balance = await FractionToken.read.balanceOf([
-			address2.account?.address!,
-			address2.account?.address!,
-			hat1_id,
-		]);
+		const address2Balance = await FractionToken[
+			"balanceOf(address,address,uint256)"
+		](address2.account?.address!, address2.account?.address!, hat1_id);
 		expect(address2Balance).to.equal(10000n);
 
 		// address3のbalance
-		const address3Balance = await FractionToken.read.balanceOf([
-			address3.account?.address!,
-			address3.account?.address!,
-			hat2_id,
-		]);
+		const address3Balance = await FractionToken[
+			"balanceOf(address,address,uint256)"
+		](address3.account?.address!, address3.account?.address!, hat2_id);
 		expect(address3Balance).to.equal(10000n);
 
 		expect(allocations.length).to.equal(3);

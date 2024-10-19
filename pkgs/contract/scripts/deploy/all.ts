@@ -51,7 +51,7 @@ const deployAll = async () => {
 		hatsTimeFrameModule_impl: HatsTimeFrameModule.address,
 		splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
 		splitsFactoryV2Address: PullSplitsFactory as Address,
-		fractionTokenAddress: FractionToken.address,
+		fractionTokenAddress: FractionToken.target as `0x${string}`,
 	});
 
 	console.log("BigBang deployed at", BigBang.address);
@@ -64,13 +64,13 @@ const deployAll = async () => {
 	writeContractAddress({
 		group: "contracts",
 		name: "BigBang",
-		value: BigBang.address,
+		value: BigBang.target as `0x${string}`,
 		network: network.name,
 	});
 	writeContractAddress({
 		group: "contracts",
 		name: "FractionToken",
-		value: FractionToken.address,
+		value: FractionToken.target as `0x${string}`,
 		network: network.name,
 	});
 	writeContractAddress({

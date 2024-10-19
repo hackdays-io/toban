@@ -168,6 +168,12 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     yarn contract deploy:Lock --verify --network sepolia
     ```
 
+  - #### **deploy all contract**
+
+    ```bash
+    yarn contract deploy:all --network sepolia
+    ```
+
   - #### **get deployed contract address**
 
     ```bash

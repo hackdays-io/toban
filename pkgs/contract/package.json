@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "setup": "npx hardhat resetContractAddressesJson",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
     "coverage": "SOLIDITY_COVERAGE=true npx hardhat coverage",
     "lint": "solhint --fix --noPrompt --save 'contracts/**/*.sol'",
     "deploy:Lock": "npx hardhat ignition deploy ./ignition/modules/Lock.ts",
+    "deploy:all": "npx hardhat run scripts/deploy/all.ts",
     "local": "npx hardhat node",
     "getBalance": "npx hardhat getBalance",
     "getChainInfo": "npx hardhat getChainInfo",
     "getContractAddress": "npx hardhat getContractAddress",
-    "registerSubdomain": "npx hardhat registerSubdomain"
+    "registerSubdomain": "npx hardhat registerSubdomain",
+    "createSplit": "npx hardhat run scripts/createSplit.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",

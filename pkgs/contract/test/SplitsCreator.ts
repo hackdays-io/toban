@@ -32,6 +32,10 @@ import {
 	SplitsCreatorFactory,
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
+import { viem } from "hardhat";
+import { expect } from "chai";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { sqrt } from "../helpers/util/sqrt";
 
 describe("SplitsCreator Factory", () => {
 	let Hats: Hats;
@@ -188,6 +192,11 @@ describe("CreateSplit", () => {
 	let hatterHatId: bigint;
 	let hat1_id: bigint;
 	let hat2_id: bigint;
+
+	let address1WoreTime: bigint;
+	let address2WoreTime: bigint;
+	let address3WoreTime: bigint;
+	let address1_additional_woreTime: number = 500000;
 
 	let publicClient: PublicClient;
 
@@ -377,16 +386,64 @@ describe("CreateSplit", () => {
 			address1.account?.address!,
 		]);
 
-		await time.increase(500000);
+		address1WoreTime = await publicClient
+			.getBlock({
+				blockTag: "latest",
+			})
+			.then((block) => block.timestamp);
+
+		await time.increase(address1_additional_woreTime);
 
 		await HatsTimeFrameModule.write.mintHat([
 			hat1_id,
 			address2.account?.address!,
 		]);
+
+		address2WoreTime = await publicClient
+			.getBlock({
+				blockTag: "latest",
+			})
+			.then((block) => block.timestamp);
+
 		await HatsTimeFrameModule.write.mintHat([
 			hat2_id,
 			address3.account?.address!,
 		]);
+
+		address3WoreTime = await publicClient
+			.getBlock({
+				blockTag: "latest",
+			})
+			.then((block) => block.timestamp);
+
+		await FractionToken.write.mint([hat1_id, address1.account?.address!]);
+		await FractionToken.write.mint([hat1_id, address2.account?.address!]);
+		await FractionToken.write.mint([hat2_id, address3.account?.address!]);
+
+		// let balance: bigint;
+
+		const address1Balance = await FractionToken.read.balanceOf([
+			address1.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
+		expect(address1Balance).to.equal(10000n);
+
+		// address2のbalance
+		const address2Balance = await FractionToken.read.balanceOf([
+			address2.account?.address!,
+			address2.account?.address!,
+			hat1_id,
+		]);
+		expect(address2Balance).to.equal(10000n);
+
+		// address3のbalance
+		const address3Balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address3.account?.address!,
+			hat2_id,
+		]);
+		expect(address3Balance).to.equal(10000n);
 	});
 
 	it("should create a split", async () => {
@@ -407,11 +464,20 @@ describe("CreateSplit", () => {
 			],
 		]);
 
+		const endWoreTime = await publicClient
+			.getBlock({
+				blockTag: "latest",
+			})
+			.then((block) => block.timestamp);
+
 		const receipt = await publicClient.waitForTransactionReceipt({
 			hash: txHash,
 		});
 
 		let splitAddress!: Address;
+		let shareHolders!: readonly Address[];
+		let allocations!: readonly bigint[];
+		let totalAllocation!: bigint;
 
 		for (const log of receipt.logs) {
 			try {
@@ -422,8 +488,53 @@ describe("CreateSplit", () => {
 				});
 				if (decodedLog.eventName == "SplitsCreated")
 					splitAddress = decodedLog.args.split;
-			} catch (error) {}
+				shareHolders = decodedLog.args.shareHolders;
+				allocations = decodedLog.args.allocations;
+				totalAllocation = decodedLog.args.totalAllocation;
+			} catch (error) {
+				shareHolders = [];
+				allocations = [];
+				totalAllocation = 0n;
+			}
 		}
+
+		expect(shareHolders.length).to.equal(3);
+
+		const address1Time = endWoreTime - address1WoreTime;
+		const address2Time = endWoreTime - address2WoreTime;
+		const address3Time = endWoreTime - address3WoreTime;
+
+		const sqrtAddress1Time = sqrt(address1Time);
+		const sqrtAddress2Time = sqrt(address2Time);
+		const sqrtAddress3Time = sqrt(address3Time);
+
+		const address1Balance = await FractionToken.read.balanceOf([
+			address1.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
+		expect(address1Balance).to.equal(10000n);
+
+		// address2のbalance
+		const address2Balance = await FractionToken.read.balanceOf([
+			address2.account?.address!,
+			address2.account?.address!,
+			hat1_id,
+		]);
+		expect(address2Balance).to.equal(10000n);
+
+		// address3のbalance
+		const address3Balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address3.account?.address!,
+			hat2_id,
+		]);
+		expect(address3Balance).to.equal(10000n);
+
+		expect(allocations.length).to.equal(3);
+		expect(allocations[0]).to.equal(address1Balance * 1n * sqrtAddress1Time);
+		expect(allocations[1]).to.equal(address2Balance * 1n * sqrtAddress2Time);
+		expect(allocations[2]).to.equal(address3Balance * 2n * sqrtAddress3Time);
 
 		await address1.sendTransaction({
 			account: address1.account!,
@@ -445,13 +556,9 @@ describe("CreateSplit", () => {
 		const Split = await viem.getContractAt("PullSplit", splitAddress);
 		await Split.write.distribute([
 			{
-				recipients: [
-					address1.account?.address!,
-					address2.account?.address!,
-					address3.account?.address!,
-				],
-				allocations: [7070000, 10000, 20000],
-				totalAllocation: 7100000,
+				recipients: shareHolders,
+				allocations: allocations,
+				totalAllocation: totalAllocation,
 				distributionIncentive: 0,
 			},
 			"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",

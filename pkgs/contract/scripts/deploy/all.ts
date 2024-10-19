@@ -1,3 +1,5 @@
+import * as dotenv from "dotenv";
+import { network } from "hardhat";
 import { Address, zeroAddress } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
@@ -6,18 +8,33 @@ import {
 	deploySplitsCreator,
 	deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
+import {
+	loadDeployedContractAddresses,
+	writeContractAddress,
+} from "../../helpers/deploy/contractsJsonHelper";
+
+dotenv.config();
 
 /**
  * Deploy all contracts
  * @returns
  */
 const deployAll = async () => {
+	console.log(
+		"##################################### [Deploy START] #####################################"
+	);
+
+	// Hats HatsModuleFactory PullSplitsFactoryコントラクトの各アドレスをjsonファイルから取得してくる。
+	const {
+		contracts: { Hats, HatsModuleFactory, PullSplitsFactory },
+	} = loadDeployedContractAddresses(network.name);
+
 	const { HatsTimeFrameModule } = await deployHatsTimeFrameModule();
 
 	const { FractionToken } = await deployFractionToken(
 		"",
 		10000n,
-		process.env.HATS_ADDRESS as Address,
+		Hats as Address,
 		zeroAddress
 	);
 
@@ -29,12 +46,11 @@ const deployAll = async () => {
 
 	const { BigBang } = await deployBigBang({
 		trustedForwarder: zeroAddress,
-		hatsContractAddress: process.env.HATS_ADDRESS as Address,
-		hatsModuleFacotryAddress: process.env
-			.HATS_MODULE_FACTORY_ADDRESS as Address,
+		hatsContractAddress: Hats as Address,
+		hatsModuleFacotryAddress: HatsModuleFactory as Address,
 		hatsTimeFrameModule_impl: HatsTimeFrameModule.address,
 		splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
-		splitsFactoryV2Address: process.env.PULL_SPLITS_FACTORY_ADDRESS as Address,
+		splitsFactoryV2Address: PullSplitsFactory as Address,
 		fractionTokenAddress: FractionToken.address,
 	});
 
@@ -43,6 +59,42 @@ const deployAll = async () => {
 	console.log("SplitsCreatorFactory deployed at", SplitsCreatorFactory.address);
 	console.log("SplitsCreator deployed at", SplitsCreator.address);
 	console.log("HatsTimeFrameModule deployed at", HatsTimeFrameModule.address);
+
+	// デプロイしたアドレスをjsonファイルに保存する。
+	writeContractAddress({
+		group: "contracts",
+		name: "BigBang",
+		value: BigBang.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "FractionToken",
+		value: FractionToken.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "SplitsCreatorFactory",
+		value: SplitsCreatorFactory.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "SplitsCreator",
+		value: SplitsCreator.address,
+		network: network.name,
+	});
+	writeContractAddress({
+		group: "contracts",
+		name: "HatsTimeFrameModule",
+		value: HatsTimeFrameModule.address,
+		network: network.name,
+	});
+
+	console.log(
+		"##################################### [Deploy END] #####################################"
+	);
 
 	return;
 };

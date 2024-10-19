@@ -10,7 +10,12 @@ interface ISplitsCreator {
 		address[] wearers;
 	}
 
-	event SplitsCreated(address split);
+	event SplitsCreated(
+		address split,
+		address[] shareHolders,
+		uint256[] allocations,
+		uint256 totalAllocation
+	);
 
 	function create(SplitsInfo[] memory _splitInfos) external returns (address);
 }

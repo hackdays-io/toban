@@ -1,0 +1,12 @@
+{
+  "contracts": {
+    "Hats": "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137",
+    "HatsModuleFactory": "0x0a3f85fa597B6a967271286aA0724811acDF5CD9",
+    "PullSplitsFactory": "0x80f1B766817D04870f115fEBbcCADF8DBF75E017",
+    "BigBang": "0x2af1fa1e786d548fc6059b3049c7a80cc65334f3",
+    "FractionToken": "0xc92468bbecca9525dd94b724426c12747babd961",
+    "SplitsCreatorFactory": "0xa3fb6bdaed02f22c5488e744a471c18784393881",
+    "SplitsCreator": "0xe22bc08e92d884ff14fe49e628a0a4e868366ee4",
+    "HatsTimeFrameModule": "0x72de517b21725dea9ae8b0c7911ef3c71578b29d"
+  }
+}

@@ -9,6 +9,7 @@ import {
 	WalletClient,
 	zeroAddress,
 } from "viem";
+import BigBangJson from "../artifacts/contracts/bigbang/BigBang.sol/BigBang.json";
 import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
 	deployFractionToken,
@@ -128,7 +129,7 @@ describe("IntegrationTest", () => {
 	});
 
 	it("should execute bigbang", async () => {
-		const txHash = await BigBang.bigbang(
+		const tx = await BigBang.bigbang(
 			deployer.account?.address!,
 			"tophatDetails",
 			"tophatURI",
@@ -139,16 +140,17 @@ describe("IntegrationTest", () => {
 		);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
+			hash: tx.hash,
 		});
 
 		for (const log of receipt.logs) {
 			try {
 				const decodedLog: any = decodeEventLog({
-					abi: BigBang.abi as any,
+					abi: BigBangJson.abi,
 					data: log.data,
 					topics: log.topics,
 				});
+
 				if (decodedLog.eventName == "Executed") {
 					expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
 						deployer.account?.address!
@@ -271,16 +273,15 @@ describe("IntegrationTest", () => {
 		);
 
 		// address2のtokenの半分をaddress3に移動
-		await FractionToken.safeTransferFrom(
-			address1.account?.address!,
-			address3.account?.address!,
-			tokenId,
-			1000n,
-			"0x",
-			{
-				account: address1.account!,
-			}
-		);
+		await (FractionToken as any)
+			.connect(signer2)
+			.safeTransferFrom(
+				address1.account?.address!,
+				address3.account?.address!,
+				tokenId,
+				1000n,
+				"0x"
+			);
 
 		let balance: bigint;
 
@@ -311,19 +312,15 @@ describe("IntegrationTest", () => {
 
 	it("should create PullSplits contract", async () => {
 		// address1とaddress2に50%ずつ配分するSplitを作成
-		const txHash = await SplitsCreatorByBigBang.write.create([
-			[
-				{
-					hatId: hat1_id,
-					wearers: [address1.account?.address!, address2.account?.address!],
-					multiplierBottom: 1n,
-					multiplierTop: 1n,
-				},
-			],
-		]);
+		const tx = await (SplitsCreatorByBigBang as any).create({
+			hatId: hat1_id,
+			wearers: [address1.account?.address!, address2.account?.address!],
+			multiplierBottom: 1n,
+			multiplierTop: 1n,
+		});
 
 		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
+			hash: tx.hash,
 		});
 
 		let splitAddress!: Address;

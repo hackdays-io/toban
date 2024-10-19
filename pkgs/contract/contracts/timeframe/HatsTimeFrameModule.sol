@@ -10,12 +10,16 @@ contract HatsTimeFrameModule is
 	HatsModule,
 	IHatsTimeFrameModule
 {
+	// hatId => wearer => wore timestamp
 	mapping(uint256 => mapping(address => uint256)) private woreTime;
 
+	// hatId => wearer => last deactivation timestamp
 	mapping(uint256 => mapping(address => uint256)) private deactivatedTime;
 
+	// hatId => wearer => total active time
 	mapping(uint256 => mapping(address => uint256)) private totalActiveTime;
 
+	// hatId => wearer => isActive
 	mapping(uint256 => mapping(address => bool)) private isActive;
 
 	/**
@@ -28,9 +32,9 @@ contract HatsTimeFrameModule is
 	) ERC2771Context(_trustedForwarder) HatsModule(_version) {}
 
 	function mintHat(uint256 hatId, address wearer) external {
-		HATS().mintHat(hatId, wearer);
 		_setWoreTime(wearer, hatId);
 		isActive[hatId][wearer] = true;
+		HATS().mintHat(hatId, wearer);
 	}
 
 	/**
@@ -40,10 +44,13 @@ contract HatsTimeFrameModule is
 	 * @param hatId The ID of the hat that was minted.
 	 */
 	function deactivate(uint256 hatId, address wearer) external {
+		// msg.sender should be the owner of the hat or parent hat owner
 		require(isActive[hatId][wearer], "Hat is already inactive");
 		isActive[hatId][wearer] = false;
 		deactivatedTime[hatId][wearer] = block.timestamp;
-		totalActiveTime[hatId][wearer] += block.timestamp - woreTime[hatId][wearer];
+		totalActiveTime[hatId][wearer] +=
+			block.timestamp -
+			woreTime[hatId][wearer];
 	}
 
 	/**
@@ -93,14 +100,15 @@ contract HatsTimeFrameModule is
 		uint256 hatId
 	) external view returns (uint256) {
 		uint256 activeTime = totalActiveTime[hatId][wearer];
-		
+
 		if (isActive[hatId][wearer]) {
 			// If active, calculate time from the last woreTime to the current time
 			activeTime += block.timestamp - woreTime[hatId][wearer];
 		}
-		
+
 		return activeTime;
 	}
+
 	/**
 	 * @dev Override _msgSender to use the context from ERC2771Context.
 	 * @return The message sender address.

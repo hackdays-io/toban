@@ -131,7 +131,7 @@ describe("SplitsCreator Factory", () => {
 				zeroAddress,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
-				FractionToken.target as `0x${string}`,
+				FractionToken.address,
 				keccak256("0x1234"),
 			])
 		).to.be.a("string");
@@ -144,7 +144,7 @@ describe("SplitsCreator Factory", () => {
 				address1.account?.address!,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
-				FractionToken.target as `0x${string}`,
+				FractionToken.address,
 				keccak256("0x1234"),
 			]);
 
@@ -153,7 +153,7 @@ describe("SplitsCreator Factory", () => {
 			address1.account?.address!,
 			PullSplitsFactory.address,
 			HatsTimeFrameModule.address,
-			FractionToken.target as `0x${string}`,
+			FractionToken.address,
 			keccak256("0x1234"),
 		]);
 
@@ -163,7 +163,7 @@ describe("SplitsCreator Factory", () => {
 			(await SplitsCreator.read.HATS_TIME_FRAME_MODULE()).toLowerCase()
 		).equal(HatsTimeFrameModule.address.toLowerCase());
 		expect((await SplitsCreator.read.FRACTION_TOKEN()).toLowerCase()).equal(
-			(FractionToken.target as `0x${string}`).toLowerCase()
+			FractionToken.address.toLowerCase()
 		);
 	});
 });
@@ -276,7 +276,7 @@ describe("CreateSplit", () => {
 				address1.account?.address!,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
-				FractionToken.target as `0x${string}`,
+				FractionToken.address,
 				keccak256("0x1234"),
 			]);
 
@@ -413,27 +413,33 @@ describe("CreateSplit", () => {
 			})
 			.then((block) => block.timestamp);
 
-		await FractionToken.mint(hat1_id, address1.account?.address!);
-		await FractionToken.mint(hat1_id, address2.account?.address!);
-		await FractionToken.mint(hat2_id, address3.account?.address!);
+		await FractionToken.write.mint([hat1_id, address1.account?.address!]);
+		await FractionToken.write.mint([hat1_id, address2.account?.address!]);
+		await FractionToken.write.mint([hat2_id, address3.account?.address!]);
 
 		// let balance: bigint;
 
-		const address1Balance = await FractionToken[
-			"balanceOf(address,address,uint256)"
-		](address1.account?.address!, address1.account?.address!, hat1_id);
+		const address1Balance = await FractionToken.read.balanceOf([
+			address1.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
 		expect(address1Balance).to.equal(10000n);
 
 		// address2のbalance
-		const address2Balance = await FractionToken[
-			"balanceOf(address,address,uint256)"
-		](address2.account?.address!, address2.account?.address!, hat1_id);
+		const address2Balance = await FractionToken.read.balanceOf([
+			address2.account?.address!,
+			address2.account?.address!,
+			hat1_id,
+		]);
 		expect(address2Balance).to.equal(10000n);
 
 		// address3のbalance
-		const address3Balance = await FractionToken[
-			"balanceOf(address,address,uint256)"
-		](address3.account?.address!, address3.account?.address!, hat2_id);
+		const address3Balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address3.account?.address!,
+			hat2_id,
+		]);
 		expect(address3Balance).to.equal(10000n);
 	});
 
@@ -499,21 +505,27 @@ describe("CreateSplit", () => {
 		const sqrtAddress2Time = sqrt(address2Time);
 		const sqrtAddress3Time = sqrt(address3Time);
 
-		const address1Balance = await FractionToken[
-			"balanceOf(address,address,uint256)"
-		](address1.account?.address!, address1.account?.address!, hat1_id);
+		const address1Balance = await FractionToken.read.balanceOf([
+			address1.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
 		expect(address1Balance).to.equal(10000n);
 
 		// address2のbalance
-		const address2Balance = await FractionToken[
-			"balanceOf(address,address,uint256)"
-		](address2.account?.address!, address2.account?.address!, hat1_id);
+		const address2Balance = await FractionToken.read.balanceOf([
+			address2.account?.address!,
+			address2.account?.address!,
+			hat1_id,
+		]);
 		expect(address2Balance).to.equal(10000n);
 
 		// address3のbalance
-		const address3Balance = await FractionToken[
-			"balanceOf(address,address,uint256)"
-		](address3.account?.address!, address3.account?.address!, hat2_id);
+		const address3Balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address3.account?.address!,
+			hat2_id,
+		]);
 		expect(address3Balance).to.equal(10000n);
 
 		expect(allocations.length).to.equal(3);

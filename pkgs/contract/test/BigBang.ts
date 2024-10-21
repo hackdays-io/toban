@@ -91,27 +91,29 @@ describe("BigBang", () => {
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
 			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
 			splitsFactoryV2Address: PullSplitsFactory.address,
-			fractionTokenAddress: FractionToken.target as `0x${string}`,
+			fractionTokenAddress: FractionToken.address,
 		});
 
-		expect(_BigBang.target).to.not.be.undefined;
+		expect(_BigBang.address).to.not.be.undefined;
 
 		BigBang = _BigBang;
 	});
 
 	it("should execute bigbang", async () => {
-		const tx = await BigBang.bigbang(
-			address1.account?.address!,
-			"tophatDetails",
-			"tophatURI",
-			"hatterhatDetails",
-			"hatterhatURI",
-			address1.account?.address!,
+		const txHash = await BigBang.write.bigbang(
+			[
+				address1.account?.address!,
+				"tophatDetails",
+				"tophatURI",
+				"hatterhatDetails",
+				"hatterhatURI",
+				address1.account?.address!,
+			],
 			{ account: address1.account }
 		);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: tx.hash,
+			hash: txHash,
 		});
 
 		for (const log of receipt.logs) {

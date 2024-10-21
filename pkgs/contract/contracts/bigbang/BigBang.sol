@@ -5,9 +5,9 @@ import { IHats } from "../hats/src/Interfaces/IHats.sol";
 import { IHatsModuleFactory } from "./IHatsModuleFactory.sol";
 import { ISplitsCreatorFactory } from "../splitscreator/ISplitsCreatorFactory.sol";
 import { HatsTimeFrameModule } from "../timeframe/HatsTimeFrameModule.sol";
-import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import "./../ERC2771ContextUpgradeable.sol";
 
-contract BigBang is ERC2771Context {
+contract BigBang is ERC2771ContextUpgradeable {
 	IHats public Hats;
 
 	IHatsModuleFactory public HatsModuleFactory;
@@ -28,7 +28,7 @@ contract BigBang is ERC2771Context {
 		address splitCreator
 	);
 
-	/**
+	/*
 	 * @dev Constructor to initialize the trusted forwarder.
 	 * @param _trustedForwarder Address of the trusted forwarder contract.
 	 * @param _hatsAddress Address of the hats protocol V1 contract.
@@ -38,7 +38,7 @@ contract BigBang is ERC2771Context {
 	 * @param _splitFactoryV2 Address of the split factory V2 contract.
 	 * @param _fractionToken Address of the fraction token contract.
 	 */
-	constructor(
+	function initialize (
 		address _trustedForwarder,
 		address _hatsAddress,
 		address _hatsModuleFactory,
@@ -46,7 +46,8 @@ contract BigBang is ERC2771Context {
 		address _splitsCreatorFactory,
 		address _splitFactoryV2,
 		address _fractionToken
-	) ERC2771Context(_trustedForwarder) {
+	) initializer public {
+		__ERC2771Context_init(address(_trustedForwarder));
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
@@ -122,25 +123,5 @@ contract BigBang is ERC2771Context {
 		emit Executed(_owner, topHatId, hatterHatId, hatsTimeFrameModule, splitCreator);
 
 		return topHatId;
-	}
-
-	// Override _msgSender to use the context from ERC2771Context.
-	function _msgSender()
-		internal
-		view
-		override(ERC2771Context)
-		returns (address)
-	{
-		return ERC2771Context._msgSender();
-	}
-
-	// Override _msgData to use the context from ERC2771Context.
-	function _msgData()
-		internal
-		view
-		override(ERC2771Context)
-		returns (bytes calldata)
-	{
-		return ERC2771Context._msgData();
 	}
 }

@@ -1,5 +1,7 @@
+import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
+import "@openzeppelin/hardhat-upgrades";
 import * as dotenv from "dotenv";
 import fs from "fs";
 import "hardhat-gas-reporter";
@@ -37,6 +39,9 @@ const config: HardhatUserConfig = {
 				version: "0.8.24",
 				settings: {
 					viaIR: true,
+					optimizer: {
+						runs: 200,
+					},
 				},
 			},
 		],

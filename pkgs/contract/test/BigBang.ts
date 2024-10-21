@@ -1,4 +1,7 @@
+import { expect } from "chai";
+import { viem } from "hardhat";
 import { decodeEventLog, PublicClient, WalletClient, zeroAddress } from "viem";
+import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
 	deployFractionToken,
 	FractionToken,
@@ -21,9 +24,6 @@ import {
 	SplitsCreatorFactory,
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
-import { viem } from "hardhat";
-import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
-import { expect } from "chai";
 
 describe("BigBang", () => {
 	let Hats: Hats;
@@ -91,35 +91,33 @@ describe("BigBang", () => {
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
 			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
 			splitsFactoryV2Address: PullSplitsFactory.address,
-			fractionTokenAddress: FractionToken.address,
+			fractionTokenAddress: FractionToken.target as `0x${string}`,
 		});
 
-		expect(_BigBang.address).to.not.be.undefined;
+		expect(_BigBang.target).to.not.be.undefined;
 
 		BigBang = _BigBang;
 	});
 
 	it("should execute bigbang", async () => {
-		const txHash = await BigBang.write.bigbang(
-			[
-				address1.account?.address!,
-				"tophatDetails",
-				"tophatURI",
-				"hatterhatDetails",
-				"hatterhatURI",
-				address1.account?.address!,
-			],
+		const tx = await BigBang.bigbang(
+			address1.account?.address!,
+			"tophatDetails",
+			"tophatURI",
+			"hatterhatDetails",
+			"hatterhatURI",
+			address1.account?.address!,
 			{ account: address1.account }
 		);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
+			hash: tx.hash,
 		});
 
 		for (const log of receipt.logs) {
 			try {
-				const decodedLog = decodeEventLog({
-					abi: BigBang.abi,
+				const decodedLog: any = decodeEventLog({
+					abi: BigBang.abi as any,
 					data: log.data,
 					topics: log.topics,
 				});

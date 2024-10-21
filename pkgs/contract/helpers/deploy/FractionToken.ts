@@ -1,4 +1,4 @@
-import { viem } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { Address } from "viem";
 
 export type FractionToken = Awaited<
@@ -11,12 +11,17 @@ export const deployFractionToken = async (
 	hatsContractAddress: Address,
 	forwarderAddress: Address
 ) => {
-	const FractionToken = await viem.deployContract("FractionToken", [
-		uri,
-		tokenSupply,
-		hatsContractAddress,
-		forwarderAddress,
-	]);
+	const fractionToken = await ethers.getContractFactory("FractionToken");
+	const FractionToken = await upgrades.deployProxy(
+		fractionToken,
+		[uri, tokenSupply, hatsContractAddress, forwarderAddress],
+		{
+			initializer: "initialize",
+		}
+	);
+
+	const tx = await FractionToken.deploymentTransaction();
+	await tx?.wait();
 
 	return { FractionToken };
 };

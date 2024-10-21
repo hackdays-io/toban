@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { IHats } from "../hats/src/Interfaces/IHats.sol";
-import { ERC2771Context, Context } from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import "./../ERC2771ContextUpgradeable.sol";
 
-contract FractionToken is ERC1155, ERC2771Context {
-	uint256 public immutable TOKEN_SUPPLY;
+contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
+	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
 
 	IHats private hatsContract;
 
-	constructor(
+	function initialize(
 		string memory _uri,
 		uint256 _tokenSupply,
 		address _hatsAddress,
 		address _trustedForwarderAddress
-	) ERC1155(_uri) ERC2771Context(_trustedForwarderAddress) {
+	) initializer public {
+		__ERC1155_init(_uri);
+		__ERC2771Context_init(address(_trustedForwarderAddress));
 		hatsContract = IHats(_hatsAddress);
 		TOKEN_SUPPLY = _tokenSupply;
 	}
@@ -144,35 +147,35 @@ contract FractionToken is ERC1155, ERC2771Context {
 
 	function uri(
 		uint256 tokenId
-	) public view override(ERC1155) returns (string memory) {
+	) public view override(ERC1155Upgradeable) returns (string memory) {
 		return super.uri(tokenId);
 	}
 
 	function _msgSender()
 		internal
 		view
-		override(ERC2771Context, Context)
+		override(ERC2771ContextUpgradeable, ContextUpgradeable)
 		returns (address sender)
 	{
-		return ERC2771Context._msgSender();
+		return super._msgSender();
 	}
 
 	function _msgData()
 		internal
 		view
-		override(ERC2771Context, Context)
+		override(ERC2771ContextUpgradeable, ContextUpgradeable)
 		returns (bytes calldata)
 	{
-		return ERC2771Context._msgData();
+		return super._msgData();
 	}
 
 	function _contextSuffixLength()
 		internal
 		view
 		virtual
-		override(ERC2771Context, Context)
+		override(ContextUpgradeable)
 		returns (uint256)
 	{
-		return ERC2771Context._contextSuffixLength();
+		return super._contextSuffixLength();
 	}
 }

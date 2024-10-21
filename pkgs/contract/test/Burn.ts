@@ -1,11 +1,12 @@
+import { expect } from "chai";
+import { Signer } from "ethers";
+import { ethers, viem } from "hardhat";
 import { decodeEventLog, PublicClient, WalletClient, zeroAddress } from "viem";
 import {
 	deployFractionToken,
 	FractionToken,
 } from "../helpers/deploy/FractionToken";
 import { deployHatsProtocol, Hats } from "../helpers/deploy/Hats";
-import { viem } from "hardhat";
-import { expect } from "chai";
 
 describe("Burn", () => {
 	let Hats: Hats;
@@ -14,6 +15,10 @@ describe("Burn", () => {
 	let address1: WalletClient;
 	let address2: WalletClient;
 	let address3: WalletClient;
+
+	let signer1: Signer;
+	let signer2: Signer;
+	let signer3: Signer;
 
 	let hatId: bigint;
 
@@ -32,6 +37,8 @@ describe("Burn", () => {
 		FractionToken = _FractionToken;
 
 		[address1, address2, address3] = await viem.getWalletClients();
+
+		[signer1, signer2, signer3] = await ethers.getSigners();
 
 		publicClient = await viem.getPublicClient();
 
@@ -73,50 +80,55 @@ describe("Burn", () => {
 		await Hats.write.mintHat([hatId, address2.account?.address!]);
 
 		// address1とaddress2にFractionTokenをmint
-		await FractionToken.write.mint([hatId, address1.account?.address!]);
-		await FractionToken.write.mint([hatId, address2.account?.address!]);
+		await FractionToken.mint(hatId, address1.account?.address!);
+		await FractionToken.mint(hatId, address2.account?.address!);
 
-		const tokenId = await FractionToken.read.getTokenId([
+		const tokenId = await FractionToken.getTokenId(
 			hatId,
-			address2.account?.address!,
-		]);
+			address2.account?.address!
+		);
 
 		// address2のtokenの半分をaddress3に移動
-		await FractionToken.write.safeTransferFrom(
-			[
+		await (FractionToken as any)
+			.connect(signer2)
+			.safeTransferFrom(
 				address2.account?.address!,
 				address3.account?.address!,
 				tokenId,
 				5000n,
-				"0x",
-			],
-			{
-				account: address2.account!,
-			}
-		);
+				"0x"
+			);
 	});
 
 	it("should burn tokens", async () => {
 		// address1のtokenを自身で半分burnする
-		await FractionToken.write.burn(
-			[address1.account?.address!, address1.account?.address!, hatId, 5000n],
+		await FractionToken.burn(
+			address1.account?.address!,
+			address1.account?.address!,
+			hatId,
+			5000n,
 			{
 				account: address1.account!,
 			}
 		);
 
 		// address3のtokenをaddress2によってすべてburnする
-		await FractionToken.write.burn(
-			[address3.account?.address!, address2.account?.address!, hatId, 5000n],
-			{
-				account: address2.account!,
-			}
-		);
+		await (FractionToken as any)
+			.connect(signer3)
+			.burn(
+				address3.account?.address!,
+				address2.account?.address!,
+				hatId,
+				5000n
+			);
 
 		// address3のtokenをaddress1によってすべてburnするとRevertする
 		await expect(
-			FractionToken.write.burn(
-				[address3.account?.address!, address2.account?.address!, hatId, 5000n],
+			FractionToken.burn(
+				address3.account?.address!,
+				address2.account?.address!,
+				hatId,
+				5000n,
 				{
 					account: address1.account!,
 				}
@@ -126,27 +138,27 @@ describe("Burn", () => {
 		let balance: bigint;
 
 		// address1のbalance
-		balance = await FractionToken.read.balanceOf([
+		balance = await FractionToken["balanceOf(address,address,uint256)"](
 			address1.account?.address!,
 			address1.account?.address!,
-			hatId,
-		]);
+			hatId
+		);
 		expect(balance).to.equal(5000n);
 
 		// address2のbalance
-		balance = await FractionToken.read.balanceOf([
+		balance = await FractionToken["balanceOf(address,address,uint256)"](
 			address2.account?.address!,
 			address2.account?.address!,
-			hatId,
-		]);
+			hatId
+		);
 		expect(balance).to.equal(5000n);
 
 		// address3のbalance
-		balance = await FractionToken.read.balanceOf([
+		balance = await FractionToken["balanceOf(address,address,uint256)"](
 			address3.account?.address!,
 			address2.account?.address!,
-			hatId,
-		]);
+			hatId
+		);
 		expect(balance).to.equal(0n);
 	});
 });

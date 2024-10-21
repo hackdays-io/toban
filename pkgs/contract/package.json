@@ -19,6 +19,7 @@
     "createSplit": "npx hardhat run scripts/createSplit.ts"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-ignition": "^0.15.5",
     "@nomicfoundation/hardhat-ignition-viem": "^0.15.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
@@ -27,17 +28,19 @@
     "@nomicfoundation/hardhat-viem": "^2.0.3",
     "@nomicfoundation/ignition-core": "^0.15.5",
     "@openzeppelin/contracts": "^5.0.2",
+    "@openzeppelin/contracts-upgradeable": "5.0.2",
+    "@openzeppelin/hardhat-upgrades": "^3.5.0",
     "@types/chai": "^4.2.0",
     "@types/chai-as-promised": "^7.1.6",
     "@types/mocha": ">=9.1.0",
     "chai": "^4.2.0",
+    "dotenv": "^16.4.5",
     "hardhat": "^2.22.9",
     "hardhat-gas-reporter": "^1.0.8",
     "solady": "^0.0.201",
+    "solhint": "^5.0.3",
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
-    "viem": "^2.20.1",
-    "dotenv": "^16.4.5",
-    "solhint": "^5.0.3"
+    "viem": "^2.20.1"
   }
 }

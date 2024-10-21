@@ -312,15 +312,19 @@ describe("IntegrationTest", () => {
 
 	it("should create PullSplits contract", async () => {
 		// address1とaddress2に50%ずつ配分するSplitを作成
-		const tx = await (SplitsCreatorByBigBang as any).create({
-			hatId: hat1_id,
-			wearers: [address1.account?.address!, address2.account?.address!],
-			multiplierBottom: 1n,
-			multiplierTop: 1n,
-		});
+		const tx = await SplitsCreatorByBigBang.write.create([
+			[
+				{
+					hatId: hat1_id,
+					wearers: [address1.account?.address!, address2.account?.address!],
+					multiplierBottom: 1n,
+					multiplierTop: 1n,
+				},
+			],
+		]);
 
 		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: tx.hash,
+			hash: tx,
 		});
 
 		let splitAddress!: Address;

@@ -6,8 +6,9 @@ import { IHatsModuleFactory } from "./IHatsModuleFactory.sol";
 import { ISplitsCreatorFactory } from "../splitscreator/ISplitsCreatorFactory.sol";
 import { HatsTimeFrameModule } from "../timeframe/HatsTimeFrameModule.sol";
 import "./../ERC2771ContextUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract BigBang is ERC2771ContextUpgradeable {
+contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 	IHats public Hats;
 
 	IHatsModuleFactory public HatsModuleFactory;
@@ -48,6 +49,7 @@ contract BigBang is ERC2771ContextUpgradeable {
 		address _fractionToken
 	) initializer public {
 		__ERC2771Context_init(address(_trustedForwarder));
+		__Ownable_init(_msgSender());
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
@@ -123,5 +125,37 @@ contract BigBang is ERC2771ContextUpgradeable {
 		emit Executed(_owner, topHatId, hatterHatId, hatsTimeFrameModule, splitCreator);
 
 		return topHatId;
+	}
+
+	function setHats(address _hats) external {
+		Hats = IHats(_hats);
+	}
+
+	function setHatsModuleFactory(address _hatsModuleFactory) external onlyOwner {
+		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
+	}
+
+	function setSplitsCreatorFactory(address _splitsCreatorFactory) external onlyOwner {
+		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
+	}
+
+	function setHatsTimeFrameModuleImpl(address _hatsTimeFrameModuleImpl) external onlyOwner {
+		HatsTimeFrameModule_IMPL = _hatsTimeFrameModuleImpl;
+	}
+
+	function setSplitsFactoryV2(address _splitsFactoryV2) external onlyOwner {
+		SplitsFactoryV2 = _splitsFactoryV2;
+	}
+
+	function setFractionToken(address _fractionToken) external onlyOwner {
+		FractionToken = _fractionToken;
+	}
+
+	function _msgSender() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable ) returns (address sender) {
+		return super._msgSender();
+	}
+
+	function _msgData() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable) returns (bytes calldata) {
+		return super._msgData();
 	}
 }

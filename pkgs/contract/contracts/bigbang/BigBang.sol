@@ -16,9 +16,9 @@ contract BigBang is ERC2771ContextUpgradeable {
 
 	address public HatsTimeFrameModule_IMPL;
 
-	address public splitFactoryV2;
+	address public SplitsFactoryV2;
 
-	address public fractionToken;
+	address public FractionToken;
 
 	event Executed(
 		address indexed owner,
@@ -52,8 +52,8 @@ contract BigBang is ERC2771ContextUpgradeable {
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
 		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
-		splitFactoryV2 = _splitFactoryV2;
-		fractionToken = _fractionToken;
+		SplitsFactoryV2 = _splitFactoryV2;
+		FractionToken = _fractionToken;
 	}
 
 	/**
@@ -114,9 +114,9 @@ contract BigBang is ERC2771ContextUpgradeable {
 			.createSplitCreatorDeterministic(
 				topHatId,
 				_trustedForwarder,
-				splitFactoryV2,
+				SplitsFactoryV2,
 				hatsTimeFrameModule,
-				fractionToken,
+				FractionToken,
 				keccak256(abi.encodePacked(topHatId))
 			);
 

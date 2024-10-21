@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, viem } from "hardhat";
 import { Address } from "viem";
 
 export type BigBang = Awaited<ReturnType<typeof deployBigBang>>["BigBang"];
@@ -25,7 +25,7 @@ export const deployBigBang = async (params: {
 	*/
 
 	const bigBang = await ethers.getContractFactory("BigBang");
-	const BigBang = await upgrades.deployProxy(
+	const _BigBang = await upgrades.deployProxy(
 		bigBang,
 		[
 			params.trustedForwarder,
@@ -41,11 +41,11 @@ export const deployBigBang = async (params: {
 		}
 	);
 
-	const tx = await BigBang.deploymentTransaction();
-	await tx?.wait();
+	await _BigBang.waitForDeployment();
+	const address = await _BigBang.getAddress();
 
-	// console.log("BigBang deployed at", tx);
-	// console.log("BigBang deployed at", BigBang.target);
+	// create a new instance of the contract
+	const BigBang = await viem.getContractAt("BigBang", address as Address);
 
 	return { BigBang };
 };

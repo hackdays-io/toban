@@ -5,7 +5,11 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 interface IFractionToken is IERC1155 {
-    function mint(string memory hatId, address account) external;
+    function mintInitialSupply(
+        string memory hatId,
+        address account,
+        uint256 amount
+    ) external;
 
     function burn(
         address from,

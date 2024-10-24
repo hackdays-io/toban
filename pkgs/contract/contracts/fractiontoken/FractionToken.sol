@@ -33,7 +33,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 		require(
 			amount <= TOKEN_SUPPLY,
 			"Amount exceeds token supply"
-		)
+		);
 
 		require(
 			_hasHatAuthority(hatId),

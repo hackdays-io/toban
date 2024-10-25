@@ -5,10 +5,11 @@ pragma solidity ^0.8.24;
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { SplitsCreator } from "./SplitsCreator.sol";
 import { ISplitsCreator } from "./ISplitsCreator.sol";
+import "./../ERC2771ContextUpgradeable.sol";
 
 import "hardhat/console.sol";
 
-contract SplitsCreatorFactory {
+contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 	event SplitCreatorCreated(
 		address indexed creator,
 		address indexed splitCreator,
@@ -19,9 +20,13 @@ contract SplitsCreatorFactory {
 		address fractionToken
 	);
 
-	address public immutable SPLITS_CREATOR_IMPLEMENTATION;
+	address public SPLITS_CREATOR_IMPLEMENTATION;
 
-	constructor(address _splitsCreatorImplementation) {
+	function initialize (
+		address _trustedForwarderAddress,
+		address _splitsCreatorImplementation
+	) initializer public {
+		__ERC2771Context_init(_trustedForwarderAddress);
 		SPLITS_CREATOR_IMPLEMENTATION = _splitsCreatorImplementation;
 	}
 

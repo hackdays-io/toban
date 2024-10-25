@@ -413,9 +413,9 @@ describe("CreateSplit", () => {
 			})
 			.then((block) => block.timestamp);
 
-		await FractionToken.write.mint([hat1_id, address1.account?.address!]);
-		await FractionToken.write.mint([hat1_id, address2.account?.address!]);
-		await FractionToken.write.mint([hat2_id, address3.account?.address!]);
+		await FractionToken.write.mintInitialSupply([hat1_id, address1.account?.address!, 10000n]);
+		await FractionToken.write.mintInitialSupply([hat1_id, address2.account?.address!, 10000n]);
+		await FractionToken.write.mintInitialSupply([hat2_id, address3.account?.address!, 10000n]);
 
 		// let balance: bigint;
 

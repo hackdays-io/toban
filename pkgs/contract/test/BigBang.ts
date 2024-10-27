@@ -24,7 +24,7 @@ import {
 	SplitsCreatorFactory,
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
-import { upgradeBigBang } from "../helpers/upgrade.ts/bigbang";
+import { upgradeBigBang } from "../helpers/upgrade/bigbang";
 
 describe("BigBang", () => {
 	let Hats: Hats;

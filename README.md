@@ -178,6 +178,18 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     yarn contract deploy:all --network sepolia
     ```
 
+  - #### **upgrade BigBang contract**
+
+    ```bash
+    yarn contract upgrade:BigBang --network sepolia
+    ```
+
+  - #### **upgrade FractionToken Contract**
+
+    ```bash
+    yarn contract upgrade:FractionToken --network sepolia
+    ```
+
   - #### **get deployed contract address**
 
     ```bash

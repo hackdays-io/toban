@@ -6,7 +6,7 @@ import {
 	FractionToken,
 } from "../helpers/deploy/FractionToken";
 import { deployHatsProtocol, Hats } from "../helpers/deploy/Hats";
-import { upgradeFractionToken } from "../helpers/upgrade.ts/fractionToken";
+import { upgradeFractionToken } from "../helpers/upgrade/fractionToken";
 
 describe("FractionToken", () => {
 	let Hats: Hats;

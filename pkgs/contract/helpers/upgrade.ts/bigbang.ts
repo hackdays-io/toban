@@ -23,7 +23,7 @@ export const upgradeBigBang = async (
 
 	const address = _BigBang.target;
 
-	console.log("upgraded address:", address);
+	//console.log("upgraded address:", address);
 
 	// create a new instance of the contract
 	const newBigBang = await viem.getContractAt(contractName, address as Address);

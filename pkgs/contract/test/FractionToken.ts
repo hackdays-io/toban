@@ -87,6 +87,33 @@ describe("FractionToken", () => {
 			address2.account?.address!,
 		]);
 
+		// transfer と burn前の残高情報を取得する
+		let balance: bigint;
+
+		// 処理前のaddress1のbalance
+		balance = await FractionToken.read.balanceOf([
+			address1.account?.address!,
+			address1.account?.address!,
+			hatId,
+		]);
+		expect(balance).to.equal(10000n);
+
+		// 処理前のaddress2のbalance
+		balance = await FractionToken.read.balanceOf([
+			address2.account?.address!,
+			address2.account?.address!,
+			hatId,
+		]);
+		expect(balance).to.equal(10000n);
+
+		// 処理前のaddress3のbalance
+		balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address2.account?.address!,
+			hatId,
+		]);
+		expect(balance).to.equal(0n);
+
 		// address2のtokenの半分をaddress3に移動
 		await FractionToken.write.safeTransferFrom(
 			[
@@ -117,9 +144,7 @@ describe("FractionToken", () => {
 			}
 		);
 
-		let balance: bigint;
-
-		// address1のbalance
+		// 処理後のaddress1のbalance
 		balance = await FractionToken.read.balanceOf([
 			address1.account?.address!,
 			address1.account?.address!,
@@ -127,7 +152,7 @@ describe("FractionToken", () => {
 		]);
 		expect(balance).to.equal(5000n);
 
-		// address2のbalance
+		// 処理後のaddress2のbalance
 		balance = await FractionToken.read.balanceOf([
 			address2.account?.address!,
 			address2.account?.address!,
@@ -135,7 +160,7 @@ describe("FractionToken", () => {
 		]);
 		expect(balance).to.equal(5000n);
 
-		// address3のbalance
+		// 処理後のaddress3のbalance
 		balance = await FractionToken.read.balanceOf([
 			address3.account?.address!,
 			address2.account?.address!,

@@ -6,6 +6,7 @@ import {
 	FractionToken,
 } from "../helpers/deploy/FractionToken";
 import { deployHatsProtocol, Hats } from "../helpers/deploy/Hats";
+import { upgradeFractionToken } from "../helpers/upgrade.ts/fractionToken";
 
 describe("FractionToken", () => {
 	let Hats: Hats;
@@ -21,9 +22,11 @@ describe("FractionToken", () => {
 	let publicClient: PublicClient;
 
 	before(async () => {
+		// Hatsコントラクトをデプロイする。
 		const { Hats: _Hats } = await deployHatsProtocol();
 		Hats = _Hats;
 
+		// FractionTokenをデプロイする。
 		const { FractionToken: _FractionToken } = await deployFractionToken(
 			"",
 			10000n,
@@ -169,5 +172,110 @@ describe("FractionToken", () => {
 			.catch((error: any) => {
 				expect(error.message).to.include("not authorized");
 			});
+	});
+
+	/**
+	 * 以降は、Upgradeのテストコードになる。
+	 * Upgrade後に再度機能をテストする。
+	 */
+	describe("Upgrade Test", () => {
+		it("upgrde", async () => {
+			// FractionTokenをアップグレード
+			const newFractionToken = await upgradeFractionToken(
+				FractionToken.address,
+				"FractionToken_Mock_v2",
+				["", 10000n, Hats.address, zeroAddress]
+			);
+
+			// upgrade後にしかないメソッドを実行
+			const result = await newFractionToken.read.testUpgradeFunction();
+			expect(result).to.equal("testUpgradeFunction");
+		});
+
+		it("should mint, transfer and burn tokens after upgrade", async () => {
+			// FractionTokenをアップグレード
+			const newFractionToken = await upgradeFractionToken(
+				FractionToken.address,
+				"FractionToken_Mock_v2",
+				["", 10000n, Hats.address, zeroAddress]
+			);
+
+			// get token id
+			const tokenId = await newFractionToken.read.getTokenId([
+				hatId,
+				address2.account?.address!,
+			]);
+
+			// address2のtokenの半分をaddress3に移動
+			await FractionToken.write.safeTransferFrom(
+				[
+					address2.account?.address!,
+					address3.account?.address!,
+					tokenId as bigint,
+					5000n,
+					"0x",
+				],
+				{
+					account: address2.account!,
+				}
+			);
+
+			let balance;
+
+			// address1のbalance
+			balance = await newFractionToken.read.balanceOf([
+				address1.account?.address!,
+				address1.account?.address!,
+				hatId,
+			]);
+			expect(balance as bigint).to.equal(0n);
+
+			// address3のtokenをaddress2によって半分burnする
+			await newFractionToken.write.burn(
+				[address3.account?.address!, address2.account?.address!, hatId, 2500n],
+				{
+					account: address2.account!,
+				}
+			);
+
+			// address2のbalance
+			balance = await newFractionToken.read.balanceOf([
+				address2.account?.address!,
+				address2.account?.address!,
+				hatId,
+			]);
+			expect(balance as bigint).to.equal(0n);
+
+			// address3のbalance
+			balance = await newFractionToken.read.balanceOf([
+				address3.account?.address!,
+				address2.account?.address!,
+				hatId,
+			]);
+			expect(balance as bigint).to.equal(5000n);
+		});
+
+		it("should fail to mint a token after upgrade", async () => {
+			// FractionTokenをアップグレード
+			const newFractionToken = await upgradeFractionToken(
+				FractionToken.address,
+				"FractionToken_Mock_v2",
+				["", 10000n, Hats.address, zeroAddress]
+			);
+
+			// roleのない人にtokenはmintできない
+			await newFractionToken.write
+				.mint([hatId, address3.account?.address!])
+				.catch((error: any) => {
+					expect(error.message).to.include("not authorized");
+				});
+
+			// tokenは二度mintできない
+			await newFractionToken.write
+				.mint([hatId, address1.account?.address!])
+				.catch((error: any) => {
+					expect(error.message).to.include("already received");
+				});
+		});
 	});
 });

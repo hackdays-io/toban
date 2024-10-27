@@ -11,7 +11,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 
 	mapping(uint256 => address[]) private tokenRecipients;
 
-	IHats private hatsContract;
+	IHats public hatsContract;
 
 	function initialize(
 		string memory _uri,

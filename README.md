@@ -201,3 +201,11 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     ```bash
     yarn contract registerSubdomain --label <your label> --network sepolia
     ```
+
+  - #### **call bigbang task**
+
+    Please set params when you execute.
+
+    ```bash
+    yarn contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    ```

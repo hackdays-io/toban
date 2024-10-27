@@ -21,7 +21,7 @@ const {
 // タスクファイルを読み込むための設定
 const SKIP_LOAD = process.env.SKIP_LOAD === "true";
 if (!SKIP_LOAD) {
-	const taskPaths = ["", "utils", "ens"];
+	const taskPaths = ["", "utils", "ens", "BigBang"];
 	taskPaths.forEach((folder) => {
 		const tasksPath = path.join(__dirname, "tasks", folder);
 		fs.readdirSync(tasksPath)

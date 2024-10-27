@@ -18,7 +18,8 @@
     "registerSubdomain": "npx hardhat registerSubdomain",
     "createSplit": "npx hardhat run scripts/createSplit.ts",
     "upgrade:FractionToken": "npx hardhat run scripts/upgrade/FractionToken.ts",
-    "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts"
+    "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts",
+    "bigbang": "npx hardhat bigbang"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",

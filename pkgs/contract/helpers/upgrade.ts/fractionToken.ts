@@ -24,6 +24,8 @@ export const upgradeFractionToken = async (
 
 	const address = _FractionToken.target;
 
+	console.log("upgraded address:", address);
+
 	// create a new instance of the contract
 	const newFractionToken = await viem.getContractAt(
 		contractName,

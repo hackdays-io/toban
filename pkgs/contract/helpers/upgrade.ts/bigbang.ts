@@ -18,17 +18,10 @@ export const upgradeBigBang = async (
 	// アップグレードを実行
 	const _BigBang = (await upgrades.upgradeProxy(
 		contractAddress,
-		BigBang_Mock_v2,
-		params && {
-			call: {
-				fn: "initialize",
-				args: params,
-			},
-		}
+		BigBang_Mock_v2
 	)) as any;
 
-	await _BigBang.deployed();
-	const address = await _BigBang.getAddress();
+	const address = _BigBang.target;
 
 	console.log("upgraded address:", address);
 

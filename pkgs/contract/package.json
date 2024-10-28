@@ -16,7 +16,12 @@
     "getChainInfo": "npx hardhat getChainInfo",
     "getContractAddress": "npx hardhat getContractAddress",
     "registerSubdomain": "npx hardhat registerSubdomain",
-    "createSplit": "npx hardhat run scripts/createSplit.ts"
+    "createSplit": "npx hardhat run scripts/createSplit.ts",
+    "upgrade:FractionToken": "npx hardhat run scripts/upgrade/FractionToken.ts",
+    "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts",
+    "bigbang": "npx hardhat bigbang",
+    "getWoreTime": "npx hardhat getWoreTime",
+    "mintHat": "npx hardhat mintHat"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",

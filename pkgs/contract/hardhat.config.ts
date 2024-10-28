@@ -21,7 +21,7 @@ const {
 // タスクファイルを読み込むための設定
 const SKIP_LOAD = process.env.SKIP_LOAD === "true";
 if (!SKIP_LOAD) {
-	const taskPaths = ["", "utils", "ens"];
+	const taskPaths = ["", "utils", "ens", "BigBang", "HatsTimeFrameModule"];
 	taskPaths.forEach((folder) => {
 		const tasksPath = path.join(__dirname, "tasks", folder);
 		fs.readdirSync(tasksPath)
@@ -67,11 +67,7 @@ const config: HardhatUserConfig = {
 	},
 	gasReporter: {
 		enabled: true,
-		//		currency: "JPY",
 		currency: "USD",
-		outputFile: "gas-report.txt", // 結果をファイルに保存
-		noColors: true, // ファイル出力用に色を無効化
-		//		gasPrice: 20,
 		token: "ETH",
 		coinmarketcap: COINMARKETCAP_API_KEY,
 		gasPriceApi:

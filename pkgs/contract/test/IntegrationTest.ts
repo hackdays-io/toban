@@ -98,7 +98,7 @@ describe("IntegrationTest", () => {
 		SplitsCreator_IMPL = _SplitsCreator;
 
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+			await deploySplitsCreatorFactory(zeroAddress, SplitsCreator_IMPL.address);
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 

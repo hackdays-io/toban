@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { IHats } from "../hats/src/Interfaces/IHats.sol";
-import { IHatsModuleFactory } from "./IHatsModuleFactory.sol";
-import { ISplitsCreatorFactory } from "../splitscreator/ISplitsCreatorFactory.sol";
-import { HatsTimeFrameModule } from "../timeframe/HatsTimeFrameModule.sol";
-import "./../ERC2771ContextUpgradeable.sol";
+import { IHats } from "../../hats/src/Interfaces/IHats.sol";
+import { IHatsModuleFactory } from "./../IHatsModuleFactory.sol";
+import { ISplitsCreatorFactory } from "../../splitscreator/ISplitsCreatorFactory.sol";
+import { HatsTimeFrameModule } from "../../timeframe/HatsTimeFrameModule.sol";
+import "./../../ERC2771ContextUpgradeable.sol";
 
-contract BigBang is ERC2771ContextUpgradeable {
+/**
+ * Upgradableになっている確認するための検証用BigBangコントラクト
+ */
+contract BigBang_Mock_v2 is ERC2771ContextUpgradeable {
 	IHats public Hats;
 
 	IHatsModuleFactory public HatsModuleFactory;
@@ -28,7 +31,7 @@ contract BigBang is ERC2771ContextUpgradeable {
 		address splitCreator
 	);
 
-	/**
+	/*
 	 * @dev Constructor to initialize the trusted forwarder.
 	 * @param _trustedForwarder Address of the trusted forwarder contract.
 	 * @param _hatsAddress Address of the hats protocol V1 contract.
@@ -124,4 +127,11 @@ contract BigBang is ERC2771ContextUpgradeable {
 
 		return topHatId;
 	}
+
+  /**
+   * 検証用に追加した関数
+   */
+  function testUpgradeFunction() external pure returns (string memory) {
+    return "testUpgradeFunction";
+  }
 }

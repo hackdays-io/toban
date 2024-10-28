@@ -1,62 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { ERC1155Upgradeable, ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import { IHats } from "../hats/src/Interfaces/IHats.sol";
-import { ERC2771ContextUpgradeable } from "./../ERC2771ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import { IHats } from "../../hats/src/Interfaces/IHats.sol";
+import "./../../ERC2771ContextUpgradeable.sol";
 
-contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
-	uint256 public TOKEN_SUPPLY;
+
+contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable {
+uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
 
-	IHats private hatsContract;
+	IHats public hatsContract;
 
 	function initialize(
 		string memory _uri,
 		uint256 _tokenSupply,
 		address _hatsAddress,
 		address _trustedForwarderAddress
-	) public initializer {
+	) initializer public {
 		__ERC1155_init(_uri);
 		__ERC2771Context_init(address(_trustedForwarderAddress));
 		hatsContract = IHats(_hatsAddress);
 		TOKEN_SUPPLY = _tokenSupply;
 	}
 
-	function mintInitialSupply(
-		uint256 hatId,
-		address account
-	) public {
-		require(
-			_hasHatAuthority(hatId),
-			"Not authorized"
-		);
+	function mint(uint256 hatId, address account) public {
+		require(_hasHatRole(account, hatId), "not authorized");
 
 		uint256 tokenId = getTokenId(hatId, account);
 
-		require(
-			!_containsRecipient(tokenId, account),
-			"This account has already received"
-		);
+		require(!_containsRecipient(tokenId, account), "already received");
 
 		_mint(account, tokenId, TOKEN_SUPPLY, "");
 
 		if (!_containsRecipient(tokenId, account)) {
 			tokenRecipients[tokenId].push(account);
 		}
-	}
-
-	function mint(
-		uint256 hatId,
-		address account,
-		uint256 amount
-	) public {
-		uint256 tokenId = getTokenId(hatId, account);
-		
-		require(_msgSender() == tokenRecipients[tokenId][0], "Only the first recipient can additionally mint");
-
-		_mint(account, tokenId, amount, "");
 	}
 
 	function burn(
@@ -67,10 +48,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 	) public {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
-		require(
-			_msgSender() == from || _hasHatAuthority(hatId),
-			"Not authorized"
-		);
+		require(_msgSender() == from || _containsRecipient(tokenId, _msgSender()), "not authorized");
 
 		_burn(from, tokenId, value);
 	}
@@ -139,20 +117,6 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		return balance > 0;
 	}
 
-	function _hasHatAuthority(
-		uint256 hatId
-	) private view returns (bool) {
-		uint32 hatLevel = hatsContract.getHatLevel(hatId);
-
-		uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);
-		if (_hasHatRole(_msgSender(), parentHatId)) return true;
-
-		uint256 topHatId = hatsContract.getAdminAtLevel(hatId, 0);
-		if (_hasHatRole(_msgSender(), topHatId)) return true;
-
-		return false;
-	}
-
 	function balanceOf(
 		address account,
 		address wearer,
@@ -160,9 +124,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 	) public view returns (uint256) {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
-		if (
-			_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)
-		) {
+		if (_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)) {
 			return TOKEN_SUPPLY;
 		}
 
@@ -217,4 +179,11 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 	{
 		return super._contextSuffixLength();
 	}
+
+	/**
+   * 検証用に追加した関数
+   */
+  function testUpgradeFunction() external pure returns (string memory) {
+    return "testUpgradeFunction";
+  }
 }

@@ -188,7 +188,7 @@ describe("BigBang", () => {
 		const newSplitsCreatorFactoryAddress = address1.account?.address!;
 		const ownerAccount = address1.account;
 
-		expect((await BigBang.read.SplitsCreatorFactory()).toLowerCase()).equal(
+		expect(await BigBang.read.SplitsCreatorFactory()).equal(
 			oldSplitsCreatorFactoryAddress
 		);
 
@@ -210,7 +210,7 @@ describe("BigBang", () => {
 			}
 		);
 
-		expect((await BigBang.read.SplitsCreatorFactory()).toLowerCase()).equal(
+		expect(await BigBang.read.SplitsCreatorFactory()).equal(
 			oldSplitsCreatorFactoryAddress
 		);
 	});

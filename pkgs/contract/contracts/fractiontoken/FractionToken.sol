@@ -27,14 +27,8 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 
 	function mintInitialSupply(
 		uint256 hatId,
-		address account,
-		uint256 amount
+		address account
 	) public {
-		require(
-			amount <= TOKEN_SUPPLY,
-			"Amount exceeds token supply"
-		);
-
 		require(
 			_hasHatAuthority(hatId),
 			"Not authorized"
@@ -47,11 +41,23 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 			"This account has already received"
 		);
 
-		_mint(account, tokenId, amount, "");
+		_mint(account, tokenId, TOKEN_SUPPLY, "");
 
 		if (!_containsRecipient(tokenId, account)) {
 			tokenRecipients[tokenId].push(account);
 		}
+	}
+
+	function mint(
+		uint256 hatId,
+		address account,
+		uint256 amount
+	) public {
+		uint256 tokenId = getTokenId(hatId, account);
+		
+		require(_msgSender() == tokenRecipients[tokenId][0], "Only the first recipient can additionally mint");
+
+		_mint(account, tokenId, amount, "");
 	}
 
 	function burn(

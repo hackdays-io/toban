@@ -93,24 +93,18 @@ describe("FractionToken", () => {
 	it("should mint, transfer and burn tokens", async () => {
 		// address1がaddress2,address3にtokenをmint
 		await FractionToken.write.mintInitialSupply(
-			[
-				hatId,
-				address2.account?.address!,
-				10000n,
-			],
-			{
-				account: address1.account!,
-			}
+			[hatId, address2.account?.address!],
+			{ account: address1.account! }
 		);
 		await FractionToken.write.mintInitialSupply(
-			[
-				hatId,
-				address3.account?.address!,
-				10000n,
-			],
-			{
-				account: address1.account!,
-			}
+			[hatId, address3.account?.address!],
+			{ account: address1.account! }
+		);
+
+		// address3が自分自身にtokenを追加でmint
+		await FractionToken.write.mint(
+			[hatId, address3.account?.address!, 5000n],
+			{ account: address3.account! }
 		);
 
 		const tokenId = await FractionToken.read.getTokenId([
@@ -127,9 +121,7 @@ describe("FractionToken", () => {
 				5000n,
 				"0x",
 			],
-			{
-				account: address2.account!,
-			}
+			{ account: address2.account! }
 		);
 
 		// address2のtokenをaddress1が半分burnする
@@ -140,9 +132,7 @@ describe("FractionToken", () => {
 				hatId,
 				2500n
 			],
-			{
-				account: address1.account!,
-			}
+			{ account: address1.account! }
 		);
 
 		let balance: bigint;
@@ -161,7 +151,7 @@ describe("FractionToken", () => {
 			address3.account?.address!,
 			hatId,
 		]);
-		expect(balance).to.equal(10000n);
+		expect(balance).to.equal(15000n);
 
 		// address4のbalance
 		balance = await FractionToken.read.balanceOf([
@@ -175,16 +165,26 @@ describe("FractionToken", () => {
 	it("should fail to mint a token", async () => {
 		// 権限のない人にtokenはmintできない
 		await FractionToken.write
-			.mintInitialSupply([hatId, address4.account?.address!, 10000n])
+			.mintInitialSupply([hatId, address4.account?.address!])
 			.catch((error: any) => {
 				expect(error.message).to.include("Not authorized");
 			});
 
 		// tokenは二度mintできない
 		await FractionToken.write
-			.mintInitialSupply([hatId, address2.account?.address!, 10000n])
+			.mintInitialSupply([hatId, address2.account?.address!])
 			.catch((error: any) => {
 				expect(error.message).to.include("This account has already received");
+			});
+
+		// tokenの最初の受け取り手以外は追加でmintできない
+		await FractionToken.write
+			.mint(
+				[hatId, address2.account?.address!, 5000n],
+				{ account: address4.account! }
+			)
+			.catch((error: any) => {
+				expect(error.message).to.include("Only the first recipient can additionally mint");
 			});
 	});
 

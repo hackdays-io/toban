@@ -24,6 +24,7 @@ import {
 	SplitsCreatorFactory,
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
+import { upgradeBigBang } from "../helpers/upgrade/bigbang";
 
 describe("BigBang", () => {
 	let Hats: Hats;
@@ -292,5 +293,64 @@ describe("BigBang", () => {
 		});
 
 		expect(await BigBang.read.FractionToken()).equal(oldFractionTokenAddress);
+	});
+
+	/**
+	 * 以降は、Upgradeのテストコードになる。
+	 * Upgrade後に再度機能をテストする。
+	 */
+	describe("Upgrade Test", () => {
+		it("upgrde", async () => {
+			// BigBangをアップグレード
+			const newBigBang = await upgradeBigBang(
+				BigBang.address,
+				"BigBang_Mock_v2",
+				["", 10000n, Hats.address, zeroAddress]
+			);
+
+			// upgrade後にしかないメソッドを実行
+			const result = await newBigBang.read.testUpgradeFunction();
+			expect(result).to.equal("testUpgradeFunction");
+		});
+
+		it("should execute bigbang after upgrade", async () => {
+			// BigBangをアップグレード
+			const newBigBang = await upgradeBigBang(
+				BigBang.address,
+				"BigBang_Mock_v2",
+				["", 10000n, Hats.address, zeroAddress]
+			);
+
+			const txHash = await newBigBang.write.bigbang(
+				[
+					address1.account?.address!,
+					"tophatDetails",
+					"tophatURI",
+					"hatterhatDetails",
+					"hatterhatURI",
+					address1.account?.address!,
+				],
+				{ account: address1.account }
+			);
+
+			const receipt = await publicClient.waitForTransactionReceipt({
+				hash: txHash,
+			});
+
+			for (const log of receipt.logs) {
+				try {
+					const decodedLog: any = decodeEventLog({
+						abi: newBigBang.abi as any,
+						data: log.data,
+						topics: log.topics,
+					});
+					if (decodedLog.eventName == "Executed") {
+						expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
+							address1.account?.address!
+						);
+					}
+				} catch (error) {}
+			}
+		});
 	});
 });

@@ -178,6 +178,18 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     yarn contract deploy:all --network sepolia
     ```
 
+  - #### **upgrade BigBang contract**
+
+    ```bash
+    yarn contract upgrade:BigBang --network sepolia
+    ```
+
+  - #### **upgrade FractionToken Contract**
+
+    ```bash
+    yarn contract upgrade:FractionToken --network sepolia
+    ```
+
   - #### **get deployed contract address**
 
     ```bash
@@ -188,4 +200,24 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
     ```bash
     yarn contract registerSubdomain --label <your label> --network sepolia
+    ```
+
+  - #### **call bigbang task**
+
+    Please set params when you execute.
+
+    ```bash
+    yarn contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    ```
+
+  - #### **call getWoreTime task**
+
+    ```bash
+    yarn contract getWoreTime --wearer 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    ```
+
+  - #### **call mintHat task**
+
+    ```bash
+    yarn contract mintHat --hatid 17011726346972053710434886519909386955065038130623101235576378067255296 --wearer 0x1295BDc0C102EB105dC0198fdC193588fe66A1e4 --network sepolia
     ```

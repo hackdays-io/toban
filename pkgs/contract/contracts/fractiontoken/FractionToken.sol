@@ -66,7 +66,8 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		
 		require(
 			_msgSender() == tokenRecipients[tokenId][0],
-			"Only the first recipient can additionally mint");
+			"Only the first recipient can additionally mint"
+		);
 
 		_mint(account, tokenId, amount, "");
 	}

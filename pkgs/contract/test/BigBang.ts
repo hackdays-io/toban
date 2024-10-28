@@ -38,7 +38,7 @@ describe("BigBang", () => {
 	let BigBang: BigBang;
 
 	let address1: WalletClient;
-
+	let relayer: WalletClient;
 	let publicClient: PublicClient;
 
 	before(async () => {
@@ -79,13 +79,13 @@ describe("BigBang", () => {
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
-		[address1] = await viem.getWalletClients();
+		[address1, relayer] = await viem.getWalletClients();
 		publicClient = await viem.getPublicClient();
 	});
 
 	it("should deploy BigBang", async () => {
 		const { BigBang: _BigBang } = await deployBigBang({
-			trustedForwarder: address1.account?.address!,
+			trustedForwarder: relayer.account?.address!,
 			hatsContractAddress: Hats.address,
 			hatsModuleFacotryAddress: HatsModuleFactory.address,
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
@@ -97,6 +97,19 @@ describe("BigBang", () => {
 		expect(_BigBang.address).to.not.be.undefined;
 
 		BigBang = _BigBang;
+
+		const owner = await BigBang.read.owner();
+		console.log("owner of BigBang", owner);
+		console.log("address1", address1.account?.address);
+		console.log("relayer", relayer.account?.address);
+		console.log("Hats", Hats.address);
+		console.log("HatsModuleFactory", HatsModuleFactory.address);
+		console.log("HatsTimeFrameModule_IMPL", HatsTimeFrameModule_IMPL.address);
+		console.log("SplitsCreatorFactory", SplitsCreatorFactory.address);
+		console.log("PullSplitsFactory", PullSplitsFactory.address);
+		console.log("FractionToken", FractionToken.address);
+
+		expect(owner.toLowerCase()).to.equal(address1.account?.address);
 	});
 
 	it("should execute bigbang", async () => {
@@ -107,7 +120,7 @@ describe("BigBang", () => {
 				"tophatURI",
 				"hatterhatDetails",
 				"hatterhatURI",
-				address1.account?.address!,
+				relayer.account?.address!,
 			],
 			{ account: address1.account }
 		);
@@ -130,5 +143,163 @@ describe("BigBang", () => {
 				}
 			} catch (error) {}
 		}
+	});
+
+	it("should set new hats address", async () => {
+		const oldHatsAddress = Hats.address;
+		const newHatsAddress = address1.account?.address!;
+		const ownerAccount = address1.account;
+
+		expect((await BigBang.read.Hats()).toLowerCase()).equal(oldHatsAddress);
+
+		await BigBang.write.setHats([newHatsAddress], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.Hats()).toLowerCase()).equal(newHatsAddress);
+
+		await BigBang.write.setHats([oldHatsAddress], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.Hats()).toLowerCase()).equal(oldHatsAddress);
+	});
+
+	it("should set new hats module factory address", async () => {
+		const oldHatsModuleFactoryAddress = HatsModuleFactory.address;
+		const newHatsModuleFactoryAddress = address1.account?.address!;
+		const ownerAccount = address1.account;
+
+		expect((await BigBang.read.HatsModuleFactory()).toLowerCase()).equal(
+			oldHatsModuleFactoryAddress
+		);
+
+		await BigBang.write.setHatsModuleFactory([newHatsModuleFactoryAddress], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.HatsModuleFactory()).toLowerCase()).equal(
+			newHatsModuleFactoryAddress
+		);
+
+		await BigBang.write.setHatsModuleFactory([oldHatsModuleFactoryAddress], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.HatsModuleFactory()).toLowerCase()).equal(
+			oldHatsModuleFactoryAddress
+		);
+	});
+
+	it("should set new splits creator factory address", async () => {
+		const oldSplitsCreatorFactoryAddress = SplitsCreatorFactory.address;
+		const newSplitsCreatorFactoryAddress = address1.account?.address!;
+		const ownerAccount = address1.account;
+
+		expect((await BigBang.read.SplitsCreatorFactory()).toLowerCase()).equal(
+			oldSplitsCreatorFactoryAddress
+		);
+
+		await BigBang.write.setSplitsCreatorFactory(
+			[newSplitsCreatorFactoryAddress],
+			{
+				account: ownerAccount,
+			}
+		);
+
+		expect((await BigBang.read.SplitsCreatorFactory()).toLowerCase()).equal(
+			newSplitsCreatorFactoryAddress
+		);
+
+		await BigBang.write.setSplitsCreatorFactory(
+			[oldSplitsCreatorFactoryAddress],
+			{
+				account: ownerAccount,
+			}
+		);
+
+		expect((await BigBang.read.SplitsCreatorFactory()).toLowerCase()).equal(
+			oldSplitsCreatorFactoryAddress
+		);
+	});
+
+	it("should set new hats time frame module address", async () => {
+		const oldHatsTimeFrameModuleAddress = HatsTimeFrameModule_IMPL.address;
+		const newHatsTimeFrameModuleAddress = address1.account?.address!;
+		const ownerAccount = address1.account;
+
+		expect((await BigBang.read.HatsTimeFrameModule_IMPL()).toLowerCase()).equal(
+			oldHatsTimeFrameModuleAddress
+		);
+
+		await BigBang.write.setHatsTimeFrameModuleImpl(
+			[newHatsTimeFrameModuleAddress],
+			{
+				account: ownerAccount,
+			}
+		);
+
+		expect((await BigBang.read.HatsTimeFrameModule_IMPL()).toLowerCase()).equal(
+			newHatsTimeFrameModuleAddress
+		);
+
+		await BigBang.write.setHatsTimeFrameModuleImpl(
+			[oldHatsTimeFrameModuleAddress],
+			{
+				account: ownerAccount,
+			}
+		);
+
+		expect((await BigBang.read.HatsTimeFrameModule_IMPL()).toLowerCase()).equal(
+			oldHatsTimeFrameModuleAddress
+		);
+	});
+
+	it("should set new splits factory v2 address", async () => {
+		const oldSplitsFactoryV2Address = PullSplitsFactory.address;
+		const newSplitsFactoryV2Address = address1.account?.address!;
+		const ownerAccount = address1.account;
+
+		expect((await BigBang.read.SplitsFactoryV2()).toLowerCase()).equal(
+			oldSplitsFactoryV2Address
+		);
+
+		await BigBang.write.setSplitsFactoryV2([newSplitsFactoryV2Address], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.SplitsFactoryV2()).toLowerCase()).equal(
+			newSplitsFactoryV2Address
+		);
+
+		await BigBang.write.setSplitsFactoryV2([oldSplitsFactoryV2Address], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.SplitsFactoryV2()).toLowerCase()).equal(
+			oldSplitsFactoryV2Address
+		);
+	});
+
+	it("should set new fraction token address", async () => {
+		const oldFractionTokenAddress = FractionToken.address;
+		const newFractionTokenAddress = address1.account?.address!;
+		const ownerAccount = address1.account;
+
+		expect(await BigBang.read.FractionToken()).equal(oldFractionTokenAddress);
+
+		await BigBang.write.setFractionToken([newFractionTokenAddress], {
+			account: ownerAccount,
+		});
+
+		expect((await BigBang.read.FractionToken()).toLowerCase()).equal(
+			newFractionTokenAddress
+		);
+
+		await BigBang.write.setFractionToken([oldFractionTokenAddress], {
+			account: ownerAccount,
+		});
+
+		expect(await BigBang.read.FractionToken()).equal(oldFractionTokenAddress);
 	});
 });

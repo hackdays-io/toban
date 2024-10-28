@@ -8,6 +8,8 @@ import { HatsTimeFrameModule } from "../timeframe/HatsTimeFrameModule.sol";
 import "./../ERC2771ContextUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import "hardhat/console.sol";
+
 contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 	IHats public Hats;
 
@@ -48,8 +50,12 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		address _splitFactoryV2,
 		address _fractionToken
 	) initializer public {
+		console.log("msgSender", _msgSender());
+		console.log("trustedForwarder", address(_trustedForwarder));
 		__ERC2771Context_init(address(_trustedForwarder));
 		__Ownable_init(_msgSender());
+		console.log("msgSender", _msgSender());
+		console.log("msgSender", _msgSender());
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
@@ -127,7 +133,7 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		return topHatId;
 	}
 
-	function setHats(address _hats) external {
+	function setHats(address _hats) external onlyOwner {
 		Hats = IHats(_hats);
 	}
 
@@ -151,11 +157,15 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		FractionToken = _fractionToken;
 	}
 
-	function _msgSender() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable ) returns (address sender) {
+	function _msgSender() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable) returns (address sender) {
 		return super._msgSender();
 	}
 
 	function _msgData() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable) returns (bytes calldata) {
 		return super._msgData();
+	}
+
+	function _contextSuffixLength() internal view virtual override(ERC2771ContextUpgradeable, ContextUpgradeable) returns (uint256) {
+		return super._contextSuffixLength();
 	}
 }

@@ -29,8 +29,13 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		address account
 	) public {
 		require(
+			_hasHatRole(account, hatId),
+			"This account does not have the role"
+		);
+
+		require(
 			_hasHatAuthority(hatId),
-			"Not authorized"
+			"This msg.sender does not have the authority"
 		);
 
 		uint256 tokenId = getTokenId(hatId, account);
@@ -53,8 +58,15 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		uint256 amount
 	) public {
 		uint256 tokenId = getTokenId(hatId, account);
+
+		require(
+			tokenRecipients[tokenId].length > 0,
+			"This account has not received the initial supply"
+		);
 		
-		require(_msgSender() == tokenRecipients[tokenId][0], "Only the first recipient can additionally mint");
+		require(
+			_msgSender() == tokenRecipients[tokenId][0],
+			"Only the first recipient can additionally mint");
 
 		_mint(account, tokenId, amount, "");
 	}

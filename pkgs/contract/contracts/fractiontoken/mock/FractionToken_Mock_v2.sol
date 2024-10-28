@@ -8,36 +8,69 @@ import "./../../ERC2771ContextUpgradeable.sol";
 
 
 contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable {
-uint256 public TOKEN_SUPPLY;
+	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
 
-	IHats public hatsContract;
+	IHats private hatsContract;
 
 	function initialize(
 		string memory _uri,
 		uint256 _tokenSupply,
 		address _hatsAddress,
 		address _trustedForwarderAddress
-	) initializer public {
+	) public initializer {
 		__ERC1155_init(_uri);
 		__ERC2771Context_init(address(_trustedForwarderAddress));
 		hatsContract = IHats(_hatsAddress);
 		TOKEN_SUPPLY = _tokenSupply;
 	}
 
-	function mint(uint256 hatId, address account) public {
-		require(_hasHatRole(account, hatId), "not authorized");
+	function mintInitialSupply(
+		uint256 hatId,
+		address account
+	) public {
+		require(
+			_hasHatRole(account, hatId),
+			"This account does not have the role"
+		);
+
+		require(
+			_hasHatAuthority(hatId),
+			"This msg.sender does not have the authority"
+		);
 
 		uint256 tokenId = getTokenId(hatId, account);
 
-		require(!_containsRecipient(tokenId, account), "already received");
+		require(
+			!_containsRecipient(tokenId, account),
+			"This account has already received"
+		);
 
 		_mint(account, tokenId, TOKEN_SUPPLY, "");
 
 		if (!_containsRecipient(tokenId, account)) {
 			tokenRecipients[tokenId].push(account);
 		}
+	}
+
+	function mint(
+		uint256 hatId,
+		address account,
+		uint256 amount
+	) public {
+		uint256 tokenId = getTokenId(hatId, account);
+
+		require(
+			tokenRecipients[tokenId].length > 0,
+			"This account has not received the initial supply"
+		);
+		
+		require(
+			_msgSender() == tokenRecipients[tokenId][0],
+			"Only the first recipient can additionally mint");
+
+		_mint(account, tokenId, amount, "");
 	}
 
 	function burn(
@@ -48,7 +81,10 @@ uint256 public TOKEN_SUPPLY;
 	) public {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
-		require(_msgSender() == from || _containsRecipient(tokenId, _msgSender()), "not authorized");
+		require(
+			_msgSender() == from || _hasHatAuthority(hatId),
+			"Not authorized"
+		);
 
 		_burn(from, tokenId, value);
 	}
@@ -117,6 +153,20 @@ uint256 public TOKEN_SUPPLY;
 		return balance > 0;
 	}
 
+	function _hasHatAuthority(
+		uint256 hatId
+	) private view returns (bool) {
+		uint32 hatLevel = hatsContract.getHatLevel(hatId);
+
+		uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);
+		if (_hasHatRole(_msgSender(), parentHatId)) return true;
+
+		uint256 topHatId = hatsContract.getAdminAtLevel(hatId, 0);
+		if (_hasHatRole(_msgSender(), topHatId)) return true;
+
+		return false;
+	}
+
 	function balanceOf(
 		address account,
 		address wearer,
@@ -124,7 +174,9 @@ uint256 public TOKEN_SUPPLY;
 	) public view returns (uint256) {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
-		if (_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)) {
+		if (
+			_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)
+		) {
 			return TOKEN_SUPPLY;
 		}
 
@@ -181,9 +233,9 @@ uint256 public TOKEN_SUPPLY;
 	}
 
 	/**
-   * 検証用に追加した関数
-   */
-  function testUpgradeFunction() external pure returns (string memory) {
-    return "testUpgradeFunction";
-  }
+	 * 検証用に追加した関数
+	 */
+	function testUpgradeFunction() external pure returns (string memory) {
+		return "testUpgradeFunction";
+	}
 }

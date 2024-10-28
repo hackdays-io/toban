@@ -1,4 +1,4 @@
-import { viem } from "hardhat";
+import { ethers, upgrades, viem } from "hardhat";
 import { Address } from "viem";
 
 export type SplitsWarehouse = Awaited<
@@ -43,11 +43,29 @@ export const deploySplitsProtocol = async () => {
 };
 
 export const deploySplitsCreatorFactory = async (
+	forwarderAddress: Address,
 	splitsCreatorImpl: Address
 ) => {
-	const SplitsCreatorFactory = await viem.deployContract(
+	const splitsCreatorFactory = await ethers.getContractFactory("SplitsCreatorFactory");
+
+	const _SplitsCreatorFactory = await upgrades.deployProxy(
+		splitsCreatorFactory,
+		[
+			forwarderAddress,
+			splitsCreatorImpl
+		],
+		{
+			initializer: "initialize",
+		}
+	);
+
+	await _SplitsCreatorFactory.waitForDeployment();
+	const address = await _SplitsCreatorFactory.getAddress();
+
+	// create a new instance of the contract
+	const SplitsCreatorFactory = await viem.getContractAt(
 		"SplitsCreatorFactory",
-		[splitsCreatorImpl]
+		address as Address
 	);
 
 	return { SplitsCreatorFactory };

@@ -120,7 +120,7 @@ describe("SplitsCreator Factory", () => {
 
 	it("Should deploy SplitsCreatorFactory", async () => {
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+			await deploySplitsCreatorFactory(zeroAddress, SplitsCreator_IMPL.address);
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
@@ -266,7 +266,7 @@ describe("CreateSplit", () => {
 		);
 
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+			await deploySplitsCreatorFactory(zeroAddress, SplitsCreator_IMPL.address);
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 

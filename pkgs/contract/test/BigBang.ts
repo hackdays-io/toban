@@ -85,7 +85,7 @@ describe("BigBang", () => {
 
 	it("should deploy BigBang", async () => {
 		const { BigBang: _BigBang } = await deployBigBang({
-			trustedForwarder: relayer.account?.address!,
+			trustedForwarder: zeroAddress,
 			hatsContractAddress: Hats.address,
 			hatsModuleFacotryAddress: HatsModuleFactory.address,
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
@@ -98,18 +98,9 @@ describe("BigBang", () => {
 
 		BigBang = _BigBang;
 
-		const owner = await BigBang.read.owner();
-		console.log("owner of BigBang", owner);
-		console.log("address1", address1.account?.address);
-		console.log("relayer", relayer.account?.address);
-		console.log("Hats", Hats.address);
-		console.log("HatsModuleFactory", HatsModuleFactory.address);
-		console.log("HatsTimeFrameModule_IMPL", HatsTimeFrameModule_IMPL.address);
-		console.log("SplitsCreatorFactory", SplitsCreatorFactory.address);
-		console.log("PullSplitsFactory", PullSplitsFactory.address);
-		console.log("FractionToken", FractionToken.address);
-
-		expect(owner.toLowerCase()).to.equal(address1.account?.address);
+		expect((await BigBang.read.owner()).toLowerCase()).to.equal(
+			address1.account?.address
+		);
 	});
 
 	it("should execute bigbang", async () => {

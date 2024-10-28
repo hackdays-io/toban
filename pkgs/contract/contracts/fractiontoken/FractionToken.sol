@@ -168,14 +168,4 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 	{
 		return super._msgData();
 	}
-
-	function _contextSuffixLength()
-		internal
-		view
-		virtual
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (uint256)
-	{
-		return super._contextSuffixLength();
-	}
 }

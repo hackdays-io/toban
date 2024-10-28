@@ -29,7 +29,7 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		address splitCreator
 	);
 
-	/*
+	/**
 	 * @dev Constructor to initialize the trusted forwarder.
 	 * @param _trustedForwarder Address of the trusted forwarder contract.
 	 * @param _hatsAddress Address of the hats protocol V1 contract.

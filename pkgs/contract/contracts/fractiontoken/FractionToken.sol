@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import { ERC1155Upgradeable, ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IHats } from "../hats/src/Interfaces/IHats.sol";
-import "./../ERC2771ContextUpgradeable.sol";
+import { ERC2771ContextUpgradeable } from "./../ERC2771ContextUpgradeable.sol";
 
-contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
+contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
@@ -18,7 +17,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 		uint256 _tokenSupply,
 		address _hatsAddress,
 		address _trustedForwarderAddress
-	) initializer public {
+	) public initializer {
 		__ERC1155_init(_uri);
 		__ERC2771Context_init(address(_trustedForwarderAddress));
 		hatsContract = IHats(_hatsAddress);
@@ -47,7 +46,10 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 	) public {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
-		require(_msgSender() == from || _containsRecipient(tokenId, _msgSender()), "not authorized");
+		require(
+			_msgSender() == from || _containsRecipient(tokenId, _msgSender()),
+			"not authorized"
+		);
 
 		_burn(from, tokenId, value);
 	}
@@ -123,7 +125,9 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable{
 	) public view returns (uint256) {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
-		if (_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)) {
+		if (
+			_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)
+		) {
 			return TOKEN_SUPPLY;
 		}
 

@@ -3,6 +3,7 @@
     "esbenp.prettier-vscode",
     "NomicFoundation.hardhat-solidity",
     "tintinweb.solidity-visual-auditor",
-    "jebbs.plantuml"
+    "jebbs.plantuml",
+    "bradlc.vscode-tailwindcss"
   ]
 }

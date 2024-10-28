@@ -5,9 +5,7 @@ pragma solidity ^0.8.24;
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { SplitsCreator } from "./SplitsCreator.sol";
 import { ISplitsCreator } from "./ISplitsCreator.sol";
-import "./../ERC2771ContextUpgradeable.sol";
-
-import "hardhat/console.sol";
+import { ERC2771ContextUpgradeable } from "./../ERC2771ContextUpgradeable.sol";
 
 contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 	event SplitCreatorCreated(
@@ -22,10 +20,10 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 
 	address public SPLITS_CREATOR_IMPLEMENTATION;
 
-	function initialize (
+	function initialize(
 		address _trustedForwarderAddress,
 		address _splitsCreatorImplementation
-	) initializer public {
+	) public initializer {
 		__ERC2771Context_init(_trustedForwarderAddress);
 		SPLITS_CREATOR_IMPLEMENTATION = _splitsCreatorImplementation;
 	}
@@ -57,7 +55,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 		);
 
 		emit SplitCreatorCreated(
-			msg.sender,
+			_msgSender(),
 			splitCreator,
 			_topHatId,
 			_trustedForwarder,
@@ -115,5 +113,23 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 					_salt
 				)
 			);
+	}
+
+	function _msgSender()
+		internal
+		view
+		override(ERC2771ContextUpgradeable)
+		returns (address sender)
+	{
+		return super._msgSender();
+	}
+
+	function _msgData()
+		internal
+		view
+		override(ERC2771ContextUpgradeable)
+		returns (bytes calldata)
+	{
+		return super._msgData();
 	}
 }

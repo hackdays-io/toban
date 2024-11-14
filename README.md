@@ -108,6 +108,20 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     yarn
     ```
 
+- ### whitepaper(Docusaurus)
+
+  - #### build
+
+    ```bash
+    yarn whitepaper build
+    ```
+
+  - #### start
+
+    ```bash
+    yarn whitepaper start
+    ```
+
 - ### frontend
 
   - #### **build frontend**

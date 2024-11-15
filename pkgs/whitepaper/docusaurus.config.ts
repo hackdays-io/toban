@@ -50,15 +50,15 @@ const config: Config = {
 
 	themeConfig: {
 		// Replace with your project's social card
-		image: "img/docusaurus-social-card.jpg",
+		image: "img/logo.png",
 		navbar: {
 			title: "Toban",
 			logo: {
 				alt: "Toban Logo",
-				src: "img/logo.svg",
+				src: "img/logo.png",
 			},
 			items: [
-				{ to: "/blog", label: "Blog", position: "left" },
+				{ to: "/docs", label: "Docs", position: "left" },
 				{
 					href: "https://github.com/hackdays-io/toban",
 					label: "GitHub",
@@ -71,7 +71,12 @@ const config: Config = {
 			links: [
 				{
 					title: "Docs",
-					items: [],
+					items: [
+						{
+							label: "Docs",
+							to: "/docs",
+						},
+					],
 				},
 				{
 					title: "Community",

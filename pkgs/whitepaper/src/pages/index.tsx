@@ -10,7 +10,7 @@ export default function Home(): JSX.Element {
 	return (
 		<Layout
 			title={`${siteConfig.title} Whitepaper`}
-			description="Description will go into a meta tag in <head />"
+			description="This is a Toban Whitepaper"
 		>
 			<main>
 				<img src="/img/banner.png" />

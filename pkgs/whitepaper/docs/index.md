@@ -2,9 +2,11 @@
 title: About Toban
 ---
 
-# About Toban
+# Concept
 
 Toban is a simplest way to record contribution and distribute rewards.
+
+![](./../static/img/banner.png)
 
 Projects that involve a diverse people, such as open source development, collaborative works by multiple creators, and volunteer activities, and in which the people involved change one after another, can be very exciting, but they also have their own unique difficulties.
 

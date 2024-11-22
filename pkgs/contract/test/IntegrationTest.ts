@@ -235,8 +235,8 @@ describe("IntegrationTest", () => {
 
 	it("should mint FractionToken", async () => {
 		// address1,address2にtokenをmint
-		await FractionToken.write.mint([hat1_id, address1.account?.address!]);
-		await FractionToken.write.mint([hat1_id, address2.account?.address!]);
+		await FractionToken.write.mintInitialSupply([hat1_id, address1.account?.address!]);
+		await FractionToken.write.mintInitialSupply([hat1_id, address2.account?.address!]);
 
 		// Check balance for address1
 		let balance1 = await FractionToken.read.balanceOf([

@@ -24,10 +24,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		TOKEN_SUPPLY = _tokenSupply;
 	}
 
-	function mintInitialSupply(
-		uint256 hatId,
-		address account
-	) public {
+	function mintInitialSupply(uint256 hatId, address account) public {
 		require(
 			_hasHatRole(account, hatId),
 			"This account does not have the role"
@@ -47,23 +44,17 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 
 		_mint(account, tokenId, TOKEN_SUPPLY, "");
 
-		if (!_containsRecipient(tokenId, account)) {
-			tokenRecipients[tokenId].push(account);
-		}
+		tokenRecipients[tokenId].push(account);
 	}
 
-	function mint(
-		uint256 hatId,
-		address account,
-		uint256 amount
-	) public {
+	function mint(uint256 hatId, address account, uint256 amount) public {
 		uint256 tokenId = getTokenId(hatId, account);
 
 		require(
 			tokenRecipients[tokenId].length > 0,
 			"This account has not received the initial supply"
 		);
-		
+
 		require(
 			_msgSender() == tokenRecipients[tokenId][0],
 			"Only the first recipient can additionally mint"
@@ -152,9 +143,7 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		return balance > 0;
 	}
 
-	function _hasHatAuthority(
-		uint256 hatId
-	) private view returns (bool) {
+	function _hasHatAuthority(uint256 hatId) private view returns (bool) {
 		uint32 hatLevel = hatsContract.getHatLevel(hatId);
 
 		uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);

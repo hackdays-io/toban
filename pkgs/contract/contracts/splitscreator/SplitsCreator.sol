@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.24;
 
+import { IHats } from "../hats/src/Interfaces/IHats.sol";
 import { ISplitsCreator } from "./ISplitsCreator.sol";
 import { ISplitFactoryV2 } from "../splits/interfaces/ISplitFactoryV2.sol";
 import { SplitV2Lib } from "../splits/libraries/SplitV2.sol";
@@ -17,8 +18,12 @@ contract SplitsCreator is ISplitsCreator, Clone {
 		return _getArgAddress(12);
 	}
 
+	function HATS() public pure returns (IHats) {
+		return IHats(_getArgAddress(44));
+	}
+
 	function SPLIT_FACTORY_V2() public pure returns (ISplitFactoryV2) {
-		return ISplitFactoryV2(_getArgAddress(44));
+		return ISplitFactoryV2(_getArgAddress(76));
 	}
 
 	function HATS_TIME_FRAME_MODULE()
@@ -26,11 +31,11 @@ contract SplitsCreator is ISplitsCreator, Clone {
 		pure
 		returns (IHatsTimeFrameModule)
 	{
-		return IHatsTimeFrameModule(_getArgAddress(76));
+		return IHatsTimeFrameModule(_getArgAddress(108));
 	}
 
 	function FRACTION_TOKEN() public pure returns (IFractionToken) {
-		return IFractionToken(_getArgAddress(108));
+		return IFractionToken(_getArgAddress(140));
 	}
 
 	function create(
@@ -52,7 +57,9 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
 		address[] memory shareHolders = new address[](numOfShareHolders);
 		address[] memory wearers = new address[](numOfShareHolders);
-		uint256[] memory hatIdsOfShareHolders = new uint256[](numOfShareHolders);
+		uint256[] memory hatIdsOfShareHolders = new uint256[](
+			numOfShareHolders
+		);
 		uint256[] memory roleMultipliersOfShareHolders = new uint256[](
 			numOfShareHolders
 		);
@@ -67,12 +74,19 @@ contract SplitsCreator is ISplitsCreator, Clone {
 			uint256 roleMultiplier = _splitInfo.multiplierTop /
 				_splitInfo.multiplierBottom;
 			for (uint si = 0; si < _splitInfo.wearers.length; si++) {
+				address wearer = _splitInfo.wearers[si];
+
+				require(
+					HATS().balanceOf(wearer, _splitInfo.hatId) > 0,
+					"Invalid wearer"
+				);
+
 				uint256 tokenId = FRACTION_TOKEN().getTokenId(
 					_splitInfo.hatId,
-					_splitInfo.wearers[si]
+					wearer
 				);
 				uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
-					_splitInfo.wearers[si],
+					wearer,
 					_splitInfo.hatId
 				);
 
@@ -81,7 +95,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 					.getTokenRecipients(tokenId);
 				for (uint j = 0; j < recipients.length; j++) {
 					shareHolders[shareHolderIndex] = recipients[j];
-					wearers[shareHolderIndex] = _splitInfo.wearers[si];
+					wearers[shareHolderIndex] = wearer;
 					hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
 					roleMultipliersOfShareHolders[
 						shareHolderIndex
@@ -121,12 +135,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 			_generateSalt(_splitsInfo)
 		);
 
-		emit SplitsCreated(
-			split,
-			shareHolders,
-			allocations,
-			totalAllocation
-		);
+		emit SplitsCreated(split, shareHolders, allocations, totalAllocation);
 
 		return split;
 	}

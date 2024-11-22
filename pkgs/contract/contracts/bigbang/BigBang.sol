@@ -39,7 +39,7 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 	 * @param _splitFactoryV2 Address of the split factory V2 contract.
 	 * @param _fractionToken Address of the fraction token contract.
 	 */
-	function initialize (
+	function initialize(
 		address _trustedForwarder,
 		address _hatsAddress,
 		address _hatsModuleFactory,
@@ -47,7 +47,7 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		address _splitsCreatorFactory,
 		address _splitFactoryV2,
 		address _fractionToken
-	) initializer public {
+	) public initializer {
 		__Ownable_init(_msgSender());
 		__ERC2771Context_init(address(_trustedForwarder));
 		Hats = IHats(_hatsAddress);
@@ -116,13 +116,20 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 			.createSplitCreatorDeterministic(
 				topHatId,
 				_trustedForwarder,
+				address(Hats),
 				SplitsFactoryV2,
 				hatsTimeFrameModule,
 				FractionToken,
 				keccak256(abi.encodePacked(topHatId))
 			);
 
-		emit Executed(_owner, topHatId, hatterHatId, hatsTimeFrameModule, splitCreator);
+		emit Executed(
+			_owner,
+			topHatId,
+			hatterHatId,
+			hatsTimeFrameModule,
+			splitCreator
+		);
 
 		return topHatId;
 	}
@@ -131,15 +138,21 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		Hats = IHats(_hats);
 	}
 
-	function setHatsModuleFactory(address _hatsModuleFactory) external onlyOwner {
+	function setHatsModuleFactory(
+		address _hatsModuleFactory
+	) external onlyOwner {
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 	}
 
-	function setSplitsCreatorFactory(address _splitsCreatorFactory) external onlyOwner {
+	function setSplitsCreatorFactory(
+		address _splitsCreatorFactory
+	) external onlyOwner {
 		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
 	}
 
-	function setHatsTimeFrameModuleImpl(address _hatsTimeFrameModuleImpl) external onlyOwner {
+	function setHatsTimeFrameModuleImpl(
+		address _hatsTimeFrameModuleImpl
+	) external onlyOwner {
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModuleImpl;
 	}
 
@@ -151,11 +164,21 @@ contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		FractionToken = _fractionToken;
 	}
 
-	function _msgSender() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable) returns (address sender) {
+	function _msgSender()
+		internal
+		view
+		override(ERC2771ContextUpgradeable, ContextUpgradeable)
+		returns (address sender)
+	{
 		return super._msgSender();
 	}
 
-	function _msgData() internal view override(ERC2771ContextUpgradeable, ContextUpgradeable) returns (bytes calldata) {
+	function _msgData()
+		internal
+		view
+		override(ERC2771ContextUpgradeable, ContextUpgradeable)
+		returns (bytes calldata)
+	{
 		return super._msgData();
 	}
 }

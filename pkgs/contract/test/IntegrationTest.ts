@@ -109,7 +109,7 @@ describe("IntegrationTest", () => {
 
 	it("should deploy BigBang", async () => {
 		const { BigBang: _BigBang } = await deployBigBang({
-			trustedForwarder: deployer.account?.address!,
+			trustedForwarder: zeroAddress,
 			hatsContractAddress: Hats.address,
 			hatsModuleFacotryAddress: HatsModuleFactory.address,
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,

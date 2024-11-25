@@ -15,6 +15,7 @@ import type { MetaFunction } from "@remix-run/node";
 import { ColorModeToggle } from "../components/color-mode-toggle";
 import { Input } from "~/components/Input";
 import { TextArea } from "~/components/TextArea";
+import { CommonButton } from "~/components/CommonButton";
 
 export const meta: MetaFunction = () => {
 	return [

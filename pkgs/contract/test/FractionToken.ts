@@ -18,6 +18,7 @@ describe("FractionToken", () => {
 	let address4: WalletClient;
 
 	let hatId: bigint;
+	let topHatId: bigint;
 
 	let publicClient: PublicClient;
 
@@ -39,13 +40,28 @@ describe("FractionToken", () => {
 
 		publicClient = await viem.getPublicClient();
 
-		await Hats.write.mintTopHat([
+		let tx1 = await Hats.write.mintTopHat([
 			address1.account?.address!,
 			"Description",
 			"https://test.com/tophat.png",
 		]);
 
-		let txHash = await Hats.write.createHat([
+		let receipt1 = await publicClient.waitForTransactionReceipt({
+			hash: tx1,
+		});
+
+		for (const log of receipt1.logs) {
+			try {
+				const decodedLog = decodeEventLog({
+					abi: Hats.abi,
+					data: log.data,
+					topics: log.topics,
+				});
+				if (decodedLog.eventName === "HatCreated") topHatId = decodedLog.args.id;
+			} catch (error) {}
+		}
+
+		let tx2 = await Hats.write.createHat([
 			BigInt(
 				"0x0000000100000000000000000000000000000000000000000000000000000000"
 			),
@@ -57,11 +73,11 @@ describe("FractionToken", () => {
 			"https://test.com/hat_image.png",
 		]);
 
-		let receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
+		let receipt2 = await publicClient.waitForTransactionReceipt({
+			hash: tx2,
 		});
 
-		for (const log of receipt.logs) {
+		for (const log of receipt2.logs) {
 			try {
 				const decodedLog = decodeEventLog({
 					abi: Hats.abi,
@@ -72,31 +88,24 @@ describe("FractionToken", () => {
 			} catch (error) {}
 		}
 
-		// address1,address2,address4にHatをmint
-		await Hats.write.mintHat([hatId, address1.account?.address!]);
+		// address2,address3にHatをmint
 		await Hats.write.mintHat([hatId, address2.account?.address!]);
+		await Hats.write.mintHat([hatId, address3.account?.address!]);
 	});
 
 	it("should mint, transfer and burn tokens", async () => {
-		// address1,address2にtokenをmint
-		await FractionToken.write.mint([hatId, address1.account?.address!]);
-		await FractionToken.write.mint([hatId, address2.account?.address!]);
-
-		const tokenId = await FractionToken.read.getTokenId([
-			hatId,
-			address2.account?.address!,
-		]);
+		// address1がaddress2,address3にtokenをmint
+		await FractionToken.write.mintInitialSupply(
+			[hatId, address2.account?.address!],
+			{ account: address1.account! }
+		);
+		await FractionToken.write.mintInitialSupply(
+			[hatId, address3.account?.address!],
+			{ account: address1.account! }
+		);
 
 		// transfer と burn前の残高情報を取得する
 		let balance: bigint;
-
-		// 処理前のaddress1のbalance
-		balance = await FractionToken.read.balanceOf([
-			address1.account?.address!,
-			address1.account?.address!,
-			hatId,
-		]);
-		expect(balance).to.equal(10000n);
 
 		// 処理前のaddress2のbalance
 		balance = await FractionToken.read.balanceOf([
@@ -109,48 +118,52 @@ describe("FractionToken", () => {
 		// 処理前のaddress3のbalance
 		balance = await FractionToken.read.balanceOf([
 			address3.account?.address!,
+			address3.account?.address!,
+			hatId,
+		]);
+		expect(balance).to.equal(10000n);
+
+		// 処理前のaddress4のbalance
+		balance = await FractionToken.read.balanceOf([
+			address4.account?.address!,
 			address2.account?.address!,
 			hatId,
 		]);
 		expect(balance).to.equal(0n);
 
-		// address2のtokenの半分をaddress3に移動
+		// address3が自分自身にtokenを追加でmint
+		await FractionToken.write.mint(
+			[hatId, address3.account?.address!, 5000n],
+			{ account: address3.account! }
+		);
+
+		const tokenId = await FractionToken.read.getTokenId([
+			hatId,
+			address2.account?.address!,
+		]);
+
+		// address2のtokenの半分をaddress4に移動
 		await FractionToken.write.safeTransferFrom(
 			[
 				address2.account?.address!,
-				address3.account?.address!,
+				address4.account?.address!,
 				tokenId,
 				5000n,
 				"0x",
 			],
-			{
-				account: address2.account!,
-			}
+			{ account: address2.account! }
 		);
 
-		// address1のtokenを自ら半分burnする
+		// address2のtokenをaddress1が半分burnする
 		await FractionToken.write.burn(
-			[address1.account?.address!, address1.account?.address!, hatId, 5000n],
-			{
-				account: address1.account!,
-			}
+			[
+				address2.account?.address!,
+				address2.account?.address!,
+				hatId,
+				2500n
+			],
+			{ account: address1.account! }
 		);
-
-		// address3のtokenをaddress2によって半分burnする
-		await FractionToken.write.burn(
-			[address3.account?.address!, address2.account?.address!, hatId, 2500n],
-			{
-				account: address2.account!,
-			}
-		);
-
-		// 処理後のaddress1のbalance
-		balance = await FractionToken.read.balanceOf([
-			address1.account?.address!,
-			address1.account?.address!,
-			hatId,
-		]);
-		expect(balance).to.equal(5000n);
 
 		// 処理後のaddress2のbalance
 		balance = await FractionToken.read.balanceOf([
@@ -158,44 +171,88 @@ describe("FractionToken", () => {
 			address2.account?.address!,
 			hatId,
 		]);
-		expect(balance).to.equal(5000n);
+		expect(balance).to.equal(2500n);
 
 		// 処理後のaddress3のbalance
 		balance = await FractionToken.read.balanceOf([
 			address3.account?.address!,
+			address3.account?.address!,
+			hatId,
+		]);
+		expect(balance).to.equal(15000n);
+
+		// 処理後のaddress4のbalance
+		balance = await FractionToken.read.balanceOf([
+			address4.account?.address!,
 			address2.account?.address!,
 			hatId,
 		]);
-		expect(balance).to.equal(2500n);
+		expect(balance).to.equal(5000n);
 	});
 
 	it("should fail to mint a token", async () => {
 		// roleのない人にtokenはmintできない
 		await FractionToken.write
-			.mint([hatId, address3.account?.address!])
+			.mintInitialSupply(
+				[hatId, address4.account?.address!],
+				{ account: address1.account! }
+			)
 			.catch((error: any) => {
-				expect(error.message).to.include("not authorized");
+				expect(error.message).to.include("This account does not have the role");
+			});
+
+		// 権限のない人はtokenをmintできない
+		await FractionToken.write
+			.mintInitialSupply(
+				[hatId, address2.account?.address!],
+				{ account: address2.account! }
+			)
+			.catch((error: any) => {
+				expect(error.message).to.include("This msg.sender does not have the authority");
 			});
 
 		// tokenは二度mintできない
 		await FractionToken.write
-			.mint([hatId, address1.account?.address!])
+			.mintInitialSupply([hatId, address2.account?.address!])
 			.catch((error: any) => {
-				expect(error.message).to.include("already received");
+				expect(error.message).to.include("This account has already received");
+			});
+
+		// initial supplyを受けていない場合は追加のmintはできない
+		await FractionToken.write
+			.mint(
+				[hatId, address4.account?.address!, 5000n],
+				{ account: address4.account! }
+			)
+			.catch((error: any) => {
+				expect(error.message).to.include("This account has not received the initial supply");
+			});
+
+		// tokenの最初の受け取り手以外は追加でmintできない
+		await FractionToken.write
+			.mint(
+				[hatId, address2.account?.address!, 5000n],
+				{ account: address4.account! }
+			)
+			.catch((error: any) => {
+				expect(error.message).to.include("Only the first recipient can additionally mint");
 			});
 	});
 
 	it("should fail to burn a token", async () => {
-		// address1のtokenはaddress2によってburnできない
+		// address2のtokenはaddress3によってburnできない
 		await FractionToken.write
-			.burn([
-				address1.account?.address!,
-				address1.account?.address!,
-				hatId,
-				5000n,
-			])
+			.burn(
+				[
+					address2.account?.address!,
+					address2.account?.address!,
+					hatId,
+					5000n,
+				],
+				{ account: address3.account! }
+			)
 			.catch((error: any) => {
-				expect(error.message).to.include("not authorized");
+				expect(error.message).to.include("Not authorized");
 			});
 	});
 
@@ -204,7 +261,7 @@ describe("FractionToken", () => {
 	 * Upgrade後に再度機能をテストする。
 	 */
 	describe("Upgrade Test", () => {
-		it("upgrde", async () => {
+		it("upgrade", async () => {
 			// FractionTokenをアップグレード
 			const newFractionToken = await upgradeFractionToken(
 				FractionToken.address,
@@ -231,37 +288,27 @@ describe("FractionToken", () => {
 				address2.account?.address!,
 			]);
 
-			// address2のtokenの半分をaddress3に移動
+			// 現時点 address2: 2500n, address3: 15000n, address4: 5000n
+
+			// address2のtokenの半分をaddress4に移動
 			await FractionToken.write.safeTransferFrom(
 				[
 					address2.account?.address!,
-					address3.account?.address!,
+					address4.account?.address!,
 					tokenId as bigint,
-					5000n,
+					1250n,
 					"0x",
 				],
-				{
-					account: address2.account!,
-				}
+				{ account: address2.account! }
+			);
+
+			// address2のtokenをaddress1によって半分burnする
+			await newFractionToken.write.burn(
+				[address2.account?.address!, address2.account?.address!, hatId, 625n],
+				{ account: address1.account! }
 			);
 
 			let balance;
-
-			// address1のbalance
-			balance = await newFractionToken.read.balanceOf([
-				address1.account?.address!,
-				address1.account?.address!,
-				hatId,
-			]);
-			expect(balance as bigint).to.equal(0n);
-
-			// address3のtokenをaddress2によって半分burnする
-			await newFractionToken.write.burn(
-				[address3.account?.address!, address2.account?.address!, hatId, 2500n],
-				{
-					account: address2.account!,
-				}
-			);
 
 			// address2のbalance
 			balance = await newFractionToken.read.balanceOf([
@@ -269,15 +316,24 @@ describe("FractionToken", () => {
 				address2.account?.address!,
 				hatId,
 			]);
-			expect(balance as bigint).to.equal(0n);
+			expect(balance as bigint).to.equal(625n);
 
 			// address3のbalance
 			balance = await newFractionToken.read.balanceOf([
 				address3.account?.address!,
+				address3.account?.address!,
+				hatId,
+			]);
+			expect(balance as bigint).to.equal(15000n);
+
+			// address4のbalance
+			balance = await newFractionToken.read.balanceOf([
+				address4.account?.address!,
 				address2.account?.address!,
 				hatId,
 			]);
-			expect(balance as bigint).to.equal(5000n);
+			
+			expect(balance as bigint).to.equal(6250n);
 		});
 
 		it("should fail to mint a token after upgrade", async () => {
@@ -288,18 +344,24 @@ describe("FractionToken", () => {
 				["", 10000n, Hats.address, zeroAddress]
 			);
 
-			// roleのない人にtokenはmintできない
+			// 権限のない人にtokenはmintできない
 			await newFractionToken.write
-				.mint([hatId, address3.account?.address!])
+				.mintInitialSupply(
+					[hatId, address4.account?.address!],
+					{ account: address1.account! }
+				)
 				.catch((error: any) => {
-					expect(error.message).to.include("not authorized");
+					expect(error.message).to.include("This account does not have the role");
 				});
 
 			// tokenは二度mintできない
 			await newFractionToken.write
-				.mint([hatId, address1.account?.address!])
+				.mintInitialSupply(
+					[hatId, address2.account?.address!],
+					{ account: address1.account! }
+				)
 				.catch((error: any) => {
-					expect(error.message).to.include("already received");
+					expect(error.message).to.include("This account has already received");
 				});
 		});
 	});

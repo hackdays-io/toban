@@ -31,6 +31,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 	function createSplitCreatorDeterministic(
 		uint256 _topHatId,
 		address _trustedForwarder,
+		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
 		address _fractionToken,
@@ -40,6 +41,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 			SPLITS_CREATOR_IMPLEMENTATION,
 			abi.encode(
 				_trustedForwarder,
+				_hats,
 				_splitFactoryV2,
 				_hatsTimeFrameModule,
 				_fractionToken
@@ -47,6 +49,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 			_getSalt(
 				_topHatId,
 				_trustedForwarder,
+				_hats,
 				_splitFactoryV2,
 				_hatsTimeFrameModule,
 				_fractionToken,
@@ -68,6 +71,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 	function predictDeterministicAddress(
 		uint256 _topHatId,
 		address _trustedForwarder,
+		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
 		address _fractionToken,
@@ -78,6 +82,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 				SPLITS_CREATOR_IMPLEMENTATION,
 				abi.encode(
 					_trustedForwarder,
+					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
 					_fractionToken
@@ -85,6 +90,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 				_getSalt(
 					_topHatId,
 					_trustedForwarder,
+					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
 					_fractionToken,
@@ -97,6 +103,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 	function _getSalt(
 		uint256 _topHatId,
 		address _trustedForwarder,
+		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
 		address _fractionToken,
@@ -107,6 +114,7 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 				abi.encodePacked(
 					_topHatId,
 					_trustedForwarder,
+					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
 					_fractionToken,

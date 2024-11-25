@@ -11,16 +11,16 @@ contract HatsTimeFrameModule is
 	IHatsTimeFrameModule
 {
 	// hatId => wearer => wore timestamp
-	mapping(uint256 => mapping(address => uint256)) private woreTime;
+	mapping(uint256 => mapping(address => uint256)) public woreTime;
 
 	// hatId => wearer => last deactivation timestamp
-	mapping(uint256 => mapping(address => uint256)) private deactivatedTime;
+	mapping(uint256 => mapping(address => uint256)) public deactivatedTime;
 
 	// hatId => wearer => total active time
-	mapping(uint256 => mapping(address => uint256)) private totalActiveTime;
+	mapping(uint256 => mapping(address => uint256)) public totalActiveTime;
 
 	// hatId => wearer => isActive
-	mapping(uint256 => mapping(address => bool)) private isActive;
+	mapping(uint256 => mapping(address => bool)) public isActive;
 
 	/**
 	 * @dev Constructor to initialize the trusted forwarder.

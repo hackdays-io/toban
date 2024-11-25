@@ -23,4 +23,24 @@ interface IHatsTimeFrameModule {
 		address wearer,
 		uint256 hatId
 	) external view returns (uint256);
+
+	function woreTime(
+		uint256 hatId,
+		address wearer
+	) external view returns (uint256);
+
+	function deactivatedTime(
+		uint256 hatId,
+		address wearer
+	) external view returns (uint256);
+
+	function totalActiveTime(
+		uint256 hatId,
+		address wearer
+	) external view returns (uint256);
+
+	function isActive(
+		uint256 hatId,
+		address wearer
+	) external view returns (bool);
 }

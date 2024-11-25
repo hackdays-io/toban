@@ -129,6 +129,7 @@ describe("SplitsCreator Factory", () => {
 			await SplitsCreatorFactory.read.predictDeterministicAddress([
 				topHatId,
 				zeroAddress,
+				Hats.address,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
 				FractionToken.address,
@@ -142,6 +143,7 @@ describe("SplitsCreator Factory", () => {
 			await SplitsCreatorFactory.read.predictDeterministicAddress([
 				topHatId,
 				address1.account?.address!,
+				Hats.address,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
 				FractionToken.address,
@@ -151,6 +153,7 @@ describe("SplitsCreator Factory", () => {
 		await SplitsCreatorFactory.write.createSplitCreatorDeterministic([
 			topHatId,
 			address1.account?.address!,
+			Hats.address,
 			PullSplitsFactory.address,
 			HatsTimeFrameModule.address,
 			FractionToken.address,
@@ -274,6 +277,7 @@ describe("CreateSplit", () => {
 			await SplitsCreatorFactory.write.createSplitCreatorDeterministic([
 				topHatId,
 				address1.account?.address!,
+				Hats.address,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
 				FractionToken.address,
@@ -413,9 +417,18 @@ describe("CreateSplit", () => {
 			})
 			.then((block) => block.timestamp);
 
-		await FractionToken.write.mint([hat1_id, address1.account?.address!]);
-		await FractionToken.write.mint([hat1_id, address2.account?.address!]);
-		await FractionToken.write.mint([hat2_id, address3.account?.address!]);
+		await FractionToken.write.mintInitialSupply([
+			hat1_id,
+			address1.account?.address!,
+		]);
+		await FractionToken.write.mintInitialSupply([
+			hat1_id,
+			address2.account?.address!,
+		]);
+		await FractionToken.write.mintInitialSupply([
+			hat2_id,
+			address3.account?.address!,
+		]);
 
 		// let balance: bigint;
 

@@ -6,8 +6,9 @@ import { IHatsModuleFactory } from "./IHatsModuleFactory.sol";
 import { ISplitsCreatorFactory } from "../splitscreator/ISplitsCreatorFactory.sol";
 import { HatsTimeFrameModule } from "../timeframe/HatsTimeFrameModule.sol";
 import "./../ERC2771ContextUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract BigBang is ERC2771ContextUpgradeable {
+contract BigBang is ERC2771ContextUpgradeable, OwnableUpgradeable {
 	IHats public Hats;
 
 	IHatsModuleFactory public HatsModuleFactory;
@@ -16,9 +17,9 @@ contract BigBang is ERC2771ContextUpgradeable {
 
 	address public HatsTimeFrameModule_IMPL;
 
-	address public splitFactoryV2;
+	address public SplitsFactoryV2;
 
-	address public fractionToken;
+	address public FractionToken;
 
 	event Executed(
 		address indexed owner,
@@ -38,7 +39,7 @@ contract BigBang is ERC2771ContextUpgradeable {
 	 * @param _splitFactoryV2 Address of the split factory V2 contract.
 	 * @param _fractionToken Address of the fraction token contract.
 	 */
-	function initialize (
+	function initialize(
 		address _trustedForwarder,
 		address _hatsAddress,
 		address _hatsModuleFactory,
@@ -46,14 +47,15 @@ contract BigBang is ERC2771ContextUpgradeable {
 		address _splitsCreatorFactory,
 		address _splitFactoryV2,
 		address _fractionToken
-	) initializer public {
+	) public initializer {
+		__Ownable_init(_msgSender());
 		__ERC2771Context_init(address(_trustedForwarder));
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
 		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
-		splitFactoryV2 = _splitFactoryV2;
-		fractionToken = _fractionToken;
+		SplitsFactoryV2 = _splitFactoryV2;
+		FractionToken = _fractionToken;
 	}
 
 	/**
@@ -114,14 +116,69 @@ contract BigBang is ERC2771ContextUpgradeable {
 			.createSplitCreatorDeterministic(
 				topHatId,
 				_trustedForwarder,
-				splitFactoryV2,
+				address(Hats),
+				SplitsFactoryV2,
 				hatsTimeFrameModule,
-				fractionToken,
+				FractionToken,
 				keccak256(abi.encodePacked(topHatId))
 			);
 
-		emit Executed(_owner, topHatId, hatterHatId, hatsTimeFrameModule, splitCreator);
+		emit Executed(
+			_owner,
+			topHatId,
+			hatterHatId,
+			hatsTimeFrameModule,
+			splitCreator
+		);
 
 		return topHatId;
+	}
+
+	function setHats(address _hats) external onlyOwner {
+		Hats = IHats(_hats);
+	}
+
+	function setHatsModuleFactory(
+		address _hatsModuleFactory
+	) external onlyOwner {
+		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
+	}
+
+	function setSplitsCreatorFactory(
+		address _splitsCreatorFactory
+	) external onlyOwner {
+		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
+	}
+
+	function setHatsTimeFrameModuleImpl(
+		address _hatsTimeFrameModuleImpl
+	) external onlyOwner {
+		HatsTimeFrameModule_IMPL = _hatsTimeFrameModuleImpl;
+	}
+
+	function setSplitsFactoryV2(address _splitsFactoryV2) external onlyOwner {
+		SplitsFactoryV2 = _splitsFactoryV2;
+	}
+
+	function setFractionToken(address _fractionToken) external onlyOwner {
+		FractionToken = _fractionToken;
+	}
+
+	function _msgSender()
+		internal
+		view
+		override(ERC2771ContextUpgradeable, ContextUpgradeable)
+		returns (address sender)
+	{
+		return super._msgSender();
+	}
+
+	function _msgData()
+		internal
+		view
+		override(ERC2771ContextUpgradeable, ContextUpgradeable)
+		returns (bytes calldata)
+	{
+		return super._msgData();
 	}
 }

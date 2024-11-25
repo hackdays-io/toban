@@ -24,18 +24,43 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		TOKEN_SUPPLY = _tokenSupply;
 	}
 
-	function mint(uint256 hatId, address account) public {
-		require(_hasHatRole(account, hatId), "not authorized");
+	function mintInitialSupply(uint256 hatId, address account) public {
+		require(
+			_hasHatRole(account, hatId),
+			"This account does not have the role"
+		);
+
+		require(
+			_hasHatAuthority(hatId),
+			"This msg.sender does not have the authority"
+		);
 
 		uint256 tokenId = getTokenId(hatId, account);
 
-		require(!_containsRecipient(tokenId, account), "already received");
+		require(
+			!_containsRecipient(tokenId, account),
+			"This account has already received"
+		);
 
 		_mint(account, tokenId, TOKEN_SUPPLY, "");
 
-		if (!_containsRecipient(tokenId, account)) {
-			tokenRecipients[tokenId].push(account);
-		}
+		tokenRecipients[tokenId].push(account);
+	}
+
+	function mint(uint256 hatId, address account, uint256 amount) public {
+		uint256 tokenId = getTokenId(hatId, account);
+
+		require(
+			tokenRecipients[tokenId].length > 0,
+			"This account has not received the initial supply"
+		);
+
+		require(
+			_msgSender() == tokenRecipients[tokenId][0],
+			"Only the first recipient can additionally mint"
+		);
+
+		_mint(account, tokenId, amount, "");
 	}
 
 	function burn(
@@ -47,8 +72,8 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		uint256 tokenId = getTokenId(hatId, wearer);
 
 		require(
-			_msgSender() == from || _containsRecipient(tokenId, _msgSender()),
-			"not authorized"
+			_msgSender() == from || _hasHatAuthority(hatId),
+			"Not authorized"
 		);
 
 		_burn(from, tokenId, value);
@@ -118,6 +143,18 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		return balance > 0;
 	}
 
+	function _hasHatAuthority(uint256 hatId) private view returns (bool) {
+		uint32 hatLevel = hatsContract.getHatLevel(hatId);
+
+		uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);
+		if (_hasHatRole(_msgSender(), parentHatId)) return true;
+
+		uint256 topHatId = hatsContract.getAdminAtLevel(hatId, 0);
+		if (_hasHatRole(_msgSender(), topHatId)) return true;
+
+		return false;
+	}
+
 	function balanceOf(
 		address account,
 		address wearer,
@@ -171,15 +208,5 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		returns (bytes calldata)
 	{
 		return super._msgData();
-	}
-
-	function _contextSuffixLength()
-		internal
-		view
-		virtual
-		override(ContextUpgradeable)
-		returns (uint256)
-	{
-		return super._contextSuffixLength();
 	}
 }

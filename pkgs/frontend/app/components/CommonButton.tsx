@@ -1,9 +1,6 @@
-import {
-	Button as ChakraButton,
-	ButtonProps as ChakraButtonProps,
-} from "@chakra-ui/react";
+import { Button, ButtonProps } from "@chakra-ui/react";
 
-interface ButtonProps extends Omit<ChakraButtonProps, "width"> {
+interface CommonButtonProps extends Omit<ButtonProps, "width"> {
 	children: React.ReactNode;
 	width?: "full" | number;
 	size?: "sm" | "md" | "lg";
@@ -11,16 +8,16 @@ interface ButtonProps extends Omit<ChakraButtonProps, "width"> {
 	color?: string;
 }
 
-export const Button = ({
+export const CommonButton = ({
 	children,
 	width = "full",
 	size = "md",
 	backgroundColor,
 	color,
 	...props
-}: ButtonProps) => {
+}: CommonButtonProps) => {
 	return (
-		<ChakraButton
+		<Button
 			w={width === "full" ? "100%" : width}
 			size={size}
 			backgroundColor={backgroundColor}
@@ -28,8 +25,8 @@ export const Button = ({
 			{...props}
 		>
 			{children}
-		</ChakraButton>
+		</Button>
 	);
 };
 
-export default Button;
+export default CommonButton;

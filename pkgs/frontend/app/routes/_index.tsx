@@ -1,5 +1,6 @@
 import {
 	Box,
+	Button,
 	Checkbox,
 	ClientOnly,
 	HStack,
@@ -11,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 import type { MetaFunction } from "@remix-run/node";
 import { ColorModeToggle } from "../components/color-mode-toggle";
-import { Button } from "~/components/button";
+import { CommonButton } from "~/components/CommonButton";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -23,9 +24,9 @@ export const meta: MetaFunction = () => {
 export default function Index() {
 	return (
 		<Box textAlign="center" fontSize="xl" pt="30vh">
-			<Button width="full" backgroundColor="red" size="lg" color="blue">
+			<CommonButton width="full" backgroundColor="red" size="lg" color="blue">
 				<>Click me</>
-			</Button>
+			</CommonButton>
 			<VStack gap="8">
 				<img alt="chakra logo" src="/static/logo.svg" width="80" height="80" />
 				<Heading size="2xl" letterSpacing="tight">

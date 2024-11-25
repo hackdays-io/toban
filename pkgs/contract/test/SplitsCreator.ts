@@ -624,4 +624,96 @@ describe("CreateSplit", () => {
 			249
 		);
 	});
+
+	it("should preview allocations correctly", async () => {
+		const splitsInfo = [
+			{
+				hatId: hat1_id,
+				wearers: [address1.account?.address!, address2.account?.address!],
+				multiplierBottom: 1n,
+				multiplierTop: 1n,
+			},
+			{
+				hatId: hat2_id,
+				wearers: [address3.account?.address!],
+				multiplierBottom: 1n,
+				multiplierTop: 2n,
+			},
+		];
+
+		const previewResult = await SplitsCreator.read.preview([splitsInfo]);
+
+		const shareHolders = previewResult[0];
+		const percentages = previewResult[1];
+
+		const endWoreTime = await publicClient
+			.getBlock({
+				blockTag: "latest",
+			})
+			.then((block) => block.timestamp);
+
+		const address1Time = BigInt(endWoreTime - address1WoreTime);
+		const address2Time = BigInt(endWoreTime - address2WoreTime);
+		const address3Time = BigInt(endWoreTime - address3WoreTime);
+
+		const sqrtAddress1Time = sqrt(address1Time);
+		const sqrtAddress2Time = sqrt(address2Time);
+		const sqrtAddress3Time = sqrt(address3Time);
+
+		const address1Balance = await FractionToken.read.balanceOf([
+			address1.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
+
+		const address2Balance = await FractionToken.read.balanceOf([
+			address2.account?.address!,
+			address2.account?.address!,
+			hat1_id,
+		]);
+
+		const address3Balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address3.account?.address!,
+			hat2_id,
+		]);
+
+		const allocation0 = address1Balance * 1n * sqrtAddress1Time;
+		const allocation1 = address2Balance * 1n * sqrtAddress2Time;
+		const allocation2 = address3Balance * 2n * sqrtAddress3Time;
+
+		const expectedAllocations = [allocation0, allocation1, allocation2];
+
+		const totalAllocation = allocation0 + allocation1 + allocation2;
+
+		const expectedPercentages = expectedAllocations.map(
+			(allocation) =>
+				(allocation * 1_000_000_000_000_000_000n) / totalAllocation
+		);
+
+		expect(shareHolders.length).to.equal(3);
+
+		const expectedShareHolders = [
+			address1.account?.address!,
+			address2.account?.address!,
+			address3.account?.address!,
+		];
+
+		// Convert addresses to lowercase before comparing
+		expect(shareHolders[0].toLowerCase()).to.equal(
+			expectedShareHolders[0].toLowerCase()
+		);
+		expect(shareHolders[1].toLowerCase()).to.equal(
+			expectedShareHolders[1].toLowerCase()
+		);
+		expect(shareHolders[2].toLowerCase()).to.equal(
+			expectedShareHolders[2].toLowerCase()
+		);
+
+		expect(percentages.length).to.equal(3);
+
+		expect(percentages[0]).to.equal(expectedPercentages[0]);
+		expect(percentages[1]).to.equal(expectedPercentages[1]);
+		expect(percentages[2]).to.equal(expectedPercentages[2]);
+	});
 });

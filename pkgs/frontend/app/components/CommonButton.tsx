@@ -1,4 +1,4 @@
-import { Button, ButtonProps } from "@chakra-ui/react";
+import { Button, ButtonProps } from "~/components/ui/button";
 
 interface CommonButtonProps extends Omit<ButtonProps, "width"> {
 	children: React.ReactNode;

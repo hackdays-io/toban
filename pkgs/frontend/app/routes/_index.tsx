@@ -10,8 +10,17 @@ import {
 	Skeleton,
 	VStack,
 } from "@chakra-ui/react";
+import {
+	DialogActionTrigger,
+	DialogBody,
+	DialogCloseTrigger,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "~/components/ui/dialog";
 import type { MetaFunction } from "@remix-run/node";
 import { ColorModeToggle } from "../components/color-mode-toggle";
+import { CommonDialog } from "~/components/CommonDialog";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -19,6 +28,8 @@ export const meta: MetaFunction = () => {
 		{ name: "description", content: "Welcome to Remix!" },
 	];
 };
+
+const dialogTriggerReactNode = <Button variant="outline">Open</Button>;
 
 export default function Index() {
 	return (
@@ -28,6 +39,25 @@ export default function Index() {
 				<Heading size="2xl" letterSpacing="tight">
 					Welcome to Chakra UI v3 + Remix
 				</Heading>
+
+				<CommonDialog dialogTriggerReactNode={dialogTriggerReactNode}>
+					<DialogHeader>
+						<DialogTitle>Dialog Title</DialogTitle>
+					</DialogHeader>
+					<DialogBody>
+						<p>
+							Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+							eiusmod tempor incididunt ut labore et dolore magna aliqua.
+						</p>
+					</DialogBody>
+					<DialogFooter>
+						<DialogActionTrigger asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogActionTrigger>
+						<Button>Save</Button>
+					</DialogFooter>
+					<DialogCloseTrigger />
+				</CommonDialog>
 
 				<HStack gap="10">
 					<Checkbox.Root defaultChecked>

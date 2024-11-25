@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
 	Box,
 	Button,
@@ -13,9 +12,6 @@ import {
 } from "@chakra-ui/react";
 import type { MetaFunction } from "@remix-run/node";
 import { ColorModeToggle } from "../components/color-mode-toggle";
-import { Input } from "~/components/Input";
-import { TextArea } from "~/components/TextArea";
-import { CommonButton } from "~/components/CommonButton";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -25,20 +21,9 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-	const [inputValue, setInputValue] = useState("Hello");
-	const [textareaValue, setTextareaValue] = useState("World");
-
 	return (
 		<Box textAlign="center" fontSize="xl" pt="30vh">
 			<VStack gap="8">
-				<Input
-					value={inputValue}
-					onChange={(e) => setInputValue(e.target.value)}
-				/>
-				<TextArea
-					value={textareaValue}
-					onChange={(e) => setTextareaValue(e.target.value)}
-				/>
 				<img alt="chakra logo" src="/static/logo.svg" width="80" height="80" />
 				<Heading size="2xl" letterSpacing="tight">
 					Welcome to Chakra UI v3 + Remix

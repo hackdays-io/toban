@@ -1,79 +1,93 @@
+import { useState } from "react";
 import {
-  Box,
-  Button,
-  Checkbox,
-  ClientOnly,
-  HStack,
-  Heading,
-  Progress,
-  RadioGroup,
-  Skeleton,
-  VStack,
-} from "@chakra-ui/react"
-import type { MetaFunction } from "@remix-run/node"
-import { ColorModeToggle } from "../components/color-mode-toggle"
+	Box,
+	Button,
+	Checkbox,
+	ClientOnly,
+	HStack,
+	Heading,
+	Progress,
+	RadioGroup,
+	Skeleton,
+	VStack,
+} from "@chakra-ui/react";
+import type { MetaFunction } from "@remix-run/node";
+import { ColorModeToggle } from "../components/color-mode-toggle";
+import { Input } from "~/components/Input";
+import { TextArea } from "~/components/TextArea";
 
 export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ]
-}
+	return [
+		{ title: "New Remix App" },
+		{ name: "description", content: "Welcome to Remix!" },
+	];
+};
 
 export default function Index() {
-  return (
-    <Box textAlign="center" fontSize="xl" pt="30vh">
-      <VStack gap="8">
-        <img alt="chakra logo" src="/static/logo.svg" width="80" height="80" />
-        <Heading size="2xl" letterSpacing="tight">
-          Welcome to Chakra UI v3 + Remix
-        </Heading>
+	const [inputValue, setInputValue] = useState("Hello");
+	const [textareaValue, setTextareaValue] = useState("World");
 
-        <HStack gap="10">
-          <Checkbox.Root defaultChecked>
-            <Checkbox.HiddenInput />
-            <Checkbox.Control>
-              <Checkbox.Indicator />
-            </Checkbox.Control>
-            <Checkbox.Label>Checkbox</Checkbox.Label>
-          </Checkbox.Root>
+	return (
+		<Box textAlign="center" fontSize="xl" pt="30vh">
+			<VStack gap="8">
+				<Input
+					value={inputValue}
+					onChange={(e) => setInputValue(e.target.value)}
+				/>
+				<TextArea
+					value={textareaValue}
+					onChange={(e) => setTextareaValue(e.target.value)}
+				/>
+				<img alt="chakra logo" src="/static/logo.svg" width="80" height="80" />
+				<Heading size="2xl" letterSpacing="tight">
+					Welcome to Chakra UI v3 + Remix
+				</Heading>
 
-          <RadioGroup.Root display="inline-flex" defaultValue="1">
-            <RadioGroup.Item value="1" mr="2">
-              <RadioGroup.ItemHiddenInput />
-              <RadioGroup.ItemControl>
-                <RadioGroup.ItemIndicator />
-              </RadioGroup.ItemControl>
-              <RadioGroup.ItemText lineHeight="1">Radio</RadioGroup.ItemText>
-            </RadioGroup.Item>
+				<HStack gap="10">
+					<Checkbox.Root defaultChecked>
+						<Checkbox.HiddenInput />
+						<Checkbox.Control>
+							<Checkbox.Indicator />
+						</Checkbox.Control>
+						<Checkbox.Label>Checkbox</Checkbox.Label>
+					</Checkbox.Root>
 
-            <RadioGroup.Item value="2">
-              <RadioGroup.ItemHiddenInput />
-              <RadioGroup.ItemControl>
-                <RadioGroup.ItemIndicator />
-              </RadioGroup.ItemControl>
-              <RadioGroup.ItemText lineHeight="1">Radio</RadioGroup.ItemText>
-            </RadioGroup.Item>
-          </RadioGroup.Root>
-        </HStack>
+					<RadioGroup.Root display="inline-flex" defaultValue="1">
+						<RadioGroup.Item value="1" mr="2">
+							<RadioGroup.ItemHiddenInput />
+							<RadioGroup.ItemControl>
+								<RadioGroup.ItemIndicator />
+							</RadioGroup.ItemControl>
+							<RadioGroup.ItemText lineHeight="1">Radio</RadioGroup.ItemText>
+						</RadioGroup.Item>
 
-        <Progress.Root width="300px" value={65} striped animated>
-          <Progress.Track>
-            <Progress.Range />
-          </Progress.Track>
-        </Progress.Root>
+						<RadioGroup.Item value="2">
+							<RadioGroup.ItemHiddenInput />
+							<RadioGroup.ItemControl>
+								<RadioGroup.ItemIndicator />
+							</RadioGroup.ItemControl>
+							<RadioGroup.ItemText lineHeight="1">Radio</RadioGroup.ItemText>
+						</RadioGroup.Item>
+					</RadioGroup.Root>
+				</HStack>
 
-        <HStack>
-          <Button>Lets go</Button>
-          <Button variant="outline">bun install @chakra-ui/react</Button>
-        </HStack>
-      </VStack>
+				<Progress.Root width="300px" value={65} striped animated>
+					<Progress.Track>
+						<Progress.Range />
+					</Progress.Track>
+				</Progress.Root>
 
-      <Box pos="absolute" top="4" right="4">
-        <ClientOnly fallback={<Skeleton w="10" h="10" rounded="md" />}>
-          <ColorModeToggle />
-        </ClientOnly>
-      </Box>
-    </Box>
-  )
+				<HStack>
+					<Button>Lets go</Button>
+					<Button variant="outline">bun install @chakra-ui/react</Button>
+				</HStack>
+			</VStack>
+
+			<Box pos="absolute" top="4" right="4">
+				<ClientOnly fallback={<Skeleton w="10" h="10" rounded="md" />}>
+					<ColorModeToggle />
+				</ClientOnly>
+			</Box>
+		</Box>
+	);
 }

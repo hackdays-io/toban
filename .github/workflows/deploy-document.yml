@@ -1,4 +1,4 @@
-name: Deploy Whitepaper to GitHub Pages
+name: Deploy document to GitHub Pages
 
 on:
   push:
@@ -20,13 +20,13 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build Whitepaper
-        run: yarn whitepaper build
+      - name: Build Document
+        run: yarn document build
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: pkgs/whitepaper/build
+          path: pkgs/document/build
   # deploy job
   deploy:
     name: Deploy to GitHub Pages
@@ -39,7 +39,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Whitepaper
+      - name: Deploy Document
         id: deployment
         uses: actions/deploy-pages@v4
 

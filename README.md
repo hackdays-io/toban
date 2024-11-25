@@ -113,13 +113,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### build
 
     ```bash
-    yarn whitepaper build
+    yarn document build
     ```
 
   - #### start
 
     ```bash
-    yarn whitepaper start
+    yarn document start
     ```
 
 - ### frontend

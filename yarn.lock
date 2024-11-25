@@ -494,7 +494,7 @@
   dependencies:
     "@chainsafe/is-ip" "^2.0.1"
 
-"@chakra-ui/react@workspace:*":
+"@chakra-ui/react@^3.2.0":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@chakra-ui/react/-/react-3.2.0.tgz#0ee8d0d3969fe70c79ec6868aa94261ab3b744c5"
   integrity sha512-j87BakG4UYECd5B7FEjHLkSXJmr0vyffp7Noc2/3voHBb+YF94SFIB7CIKLTPQgKuIf+fKZM6MapPDmsMHk3Kg==
@@ -531,7 +531,7 @@
     source-map "^0.5.7"
     stylis "4.2.0"
 
-"@emotion/cache@^11.13.1", "@emotion/cache@^11.13.5":
+"@emotion/cache@^11.13.5":
   version "11.13.5"
   resolved "https://registry.yarnpkg.com/@emotion/cache/-/cache-11.13.5.tgz#e78dad0489e1ed7572507ba8ed9d2130529e4266"
   integrity sha512-Z3xbtJ+UcK76eWkagZ1onvn/wAVb1GOMuR15s30Fm2wrMgC7jzpnO2JZXr4eujTTqoQFUrZIw/rT0c6Zzjca1g==
@@ -559,7 +559,7 @@
   resolved "https://registry.yarnpkg.com/@emotion/memoize/-/memoize-0.9.0.tgz#745969d649977776b43fc7648c556aaa462b4102"
   integrity sha512-30FAj7/EoJ5mwVPOWhAyCX+FPfMDrVecJAM+Iw9NRoSl4BBAQeqj4cApHHUXOVvIPgLVDsCFoz/hGD+5QQD1GQ==
 
-"@emotion/react@^11.13.3":
+"@emotion/react@^11.13.5":
   version "11.13.5"
   resolved "https://registry.yarnpkg.com/@emotion/react/-/react-11.13.5.tgz#fc818ff5b13424f86501ba4d0740f343ae20b8d9"
   integrity sha512-6zeCUxUH+EPF1s+YF/2hPVODeV/7V07YU5x+2tfuRL8MdW6rv5vb2+CBEGTGwBdux0OIERcOS+RzxeK80k2DsQ==
@@ -2075,7 +2075,7 @@
     "@pnpm/network.ca-file" "^1.0.1"
     config-chain "^1.1.11"
 
-"@remix-run/dev@^2.10.0":
+"@remix-run/dev@^2.15.0":
   version "2.15.0"
   resolved "https://registry.yarnpkg.com/@remix-run/dev/-/dev-2.15.0.tgz#abe016190868adbf8bf1fd245650ebb2171d3c63"
   integrity sha512-iXV6u9PBwFc7KriDpVcjqLGJzZZd6ZOrxewen7hoH0OBzGwjkhtm46BTQEJrZ/e/dzlU1IU/0ylH29tN9BZoyg==
@@ -2143,7 +2143,7 @@
   dependencies:
     "@remix-run/node" "2.15.0"
 
-"@remix-run/node@2.15.0", "@remix-run/node@^2.10.0":
+"@remix-run/node@2.15.0", "@remix-run/node@^2.15.0":
   version "2.15.0"
   resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-2.15.0.tgz#e64e2b14ca5ce4628021b7384d45992df118218f"
   integrity sha512-tWbR7pQ6gwj+MkGf6WVIYnjgfGfpdU8EOIa6xsCIRlrm0p3BtMz4jA3GvBWEpOuEnN5MV7CarVzhduaRzkZ0SQ==
@@ -2156,7 +2156,7 @@
     stream-slice "^0.1.2"
     undici "^6.11.1"
 
-"@remix-run/react@^2.10.0":
+"@remix-run/react@^2.15.0":
   version "2.15.0"
   resolved "https://registry.yarnpkg.com/@remix-run/react/-/react-2.15.0.tgz#69081d5fbcd792326306bffe41c8736eb94dfe6a"
   integrity sha512-puqDbi9N/WfaUhzDnw2pACXtCB7ukrtFJ9ILwpEuhlaTBpjefifJ89igokW+tt1ePphIFMivAm/YspcbZdCQsA==
@@ -2172,7 +2172,7 @@
   resolved "https://registry.yarnpkg.com/@remix-run/router/-/router-1.21.0.tgz#c65ae4262bdcfe415dbd4f64ec87676e4a56e2b5"
   integrity sha512-xfSkCAchbdG5PnbrKqFWwia4Bi61nH+wm8wLEqfHDyp7Y3dZzgqS2itV8i4gAq9pC2HsTpwyBC6Ds8VHZ96JlA==
 
-"@remix-run/serve@^2.10.0":
+"@remix-run/serve@^2.15.0":
   version "2.15.0"
   resolved "https://registry.yarnpkg.com/@remix-run/serve/-/serve-2.15.0.tgz#a038e57d19346d98230bd8802b53d1c95cf7ba92"
   integrity sha512-Me78FMVKtBRUi6i2PKfP6t7coHHEjDl5IIV7loMm3HCMzc1iP35bRjv3F7nKcTknaiK/Zhsic1lrKt9jevAb/A==

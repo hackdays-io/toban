@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^3.2.0",
-    "@emotion/cache": "^11.13.1",
-    "@emotion/react": "^11.13.3",
+    "@emotion/cache": "^11.13.5",
+    "@emotion/react": "^11.13.5",
     "@emotion/server": "^11.11.0",
     "@remix-run/node": "^2.15.0",
     "@remix-run/react": "^2.15.0",

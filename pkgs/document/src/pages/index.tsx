@@ -13,7 +13,7 @@ export default function Home(): JSX.Element {
 			description="This is a Toban Whitepaper"
 		>
 			<main>
-				<img src="/img/banner.png" />
+				<img src="img/banner.png" />
 			</main>
 		</Layout>
 	);

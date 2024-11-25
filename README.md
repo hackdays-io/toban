@@ -36,6 +36,10 @@ Core features are
 
 These solutions were combined with ideas from [Hats Protocol](https://www.hatsprotocol.xyz/), [Splits](https://splits.org), and [Protocol Guild](https://protocol-guild.readthedocs.io/en/latest/).
 
+## Document
+
+[GitHub Pages Toban](https://hackdays-io.github.io/toban/)
+
 ## Slide
 
 [Canva - Toban](https://www.canva.com/design/DAGOcvbwfFk/yKhJwHvZ9sC69AFEb0vnRg/view?utm_content=DAGOcvbwfFk&utm_campaign=designshare&utm_medium=link&utm_source=editor)

@@ -2,6 +2,8 @@
 
 [![Test Contracts](https://github.com/hackdays-io/toban/actions/workflows/test-contract.yml/badge.svg)](https://github.com/hackdays-io/toban/actions/workflows/test-contract.yml)
 
+[![Deploy document to GitHub Pages](https://github.com/hackdays-io/toban/actions/workflows/deploy-document.yml/badge.svg)](https://github.com/hackdays-io/toban/actions/workflows/deploy-document.yml)
+
 ![](./docs/img/header.png)
 
 ## About This Project
@@ -35,6 +37,10 @@ Core features are
 4. Distribute rewards quickly to a large number of people
 
 These solutions were combined with ideas from [Hats Protocol](https://www.hatsprotocol.xyz/), [Splits](https://splits.org), and [Protocol Guild](https://protocol-guild.readthedocs.io/en/latest/).
+
+## Document
+
+[GitHub Pages Toban](https://hackdays-io.github.io/toban/)
 
 ## Slide
 
@@ -106,6 +112,20 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
     ```bash
     yarn
+    ```
+
+- ### whitepaper(Docusaurus)
+
+  - #### build
+
+    ```bash
+    yarn document build
+    ```
+
+  - #### start
+
+    ```bash
+    yarn document start
     ```
 
 - ### frontend

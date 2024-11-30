@@ -1,6 +1,5 @@
 import { withEmotionCache } from "@emotion/react";
 import {
-	json,
 	Links,
 	Meta,
 	Outlet,
@@ -11,7 +10,6 @@ import { ThemeProvider } from "next-themes";
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { sepolia } from "viem/chains";
 
 interface LayoutProps extends React.PropsWithChildren {}
 

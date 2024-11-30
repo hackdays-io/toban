@@ -1,21 +1,21 @@
-import { withEmotionCache } from "@emotion/react"
+import { withEmotionCache } from "@emotion/react";
 import {
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "@remix-run/react"
-import { ThemeProvider } from "next-themes"
-import { ChakraProvider } from "./components/chakra-provider"
-import { useInjectStyles } from "./emotion/emotion-client"
+} from "@remix-run/react";
+import { ThemeProvider } from "next-themes";
+import { ChakraProvider } from "./components/chakra-provider";
+import { useInjectStyles } from "./emotion/emotion-client";
 
 interface LayoutProps extends React.PropsWithChildren {}
 
 export const Layout = withEmotionCache((props: LayoutProps, cache) => {
-  const { children } = props
+  const { children } = props;
 
-  useInjectStyles(cache)
+  useInjectStyles(cache);
 
   return (
     <html lang="en">
@@ -35,8 +35,8 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
         <Scripts />
       </body>
     </html>
-  )
-})
+  );
+});
 
 export default function App() {
   return (
@@ -45,5 +45,5 @@ export default function App() {
         <Outlet />
       </ThemeProvider>
     </ChakraProvider>
-  )
+  );
 }

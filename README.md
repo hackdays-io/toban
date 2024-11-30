@@ -89,7 +89,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     2. set below values
 
        ```txt
+        VITE_CHAIN_ID=11155111
 
+        VITE_PRIVY_APP_ID=
+
+        VITE_BIGBANG_ADDRESS=0x5d7a64Cc808294C516076d371685ed4E6aDd6337
+
+        VITE_PIMLICO_API_KEY=
        ```
 
   - #### **smartconract**
@@ -101,11 +107,14 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     2. set below values
 
        ```txt
-       PRIVATE_KEY=""
-       ETHERSCAN_API_KEY=""
-       ALCHEMY_API_KEY=""
-       GAS_REPORT=
-       COINMARKETCAP_API_KEY=""
+        PRIVATE_KEY=""
+        ETHERSCAN_API_KEY=""
+        ALCHEMY_API_KEY=""
+        GAS_REPORT=
+        COINMARKETCAP_API_KEY=""
+        HATS_ADDRESS=""
+        HATS_MODULE_FACTORY_ADDRESS=""
+        PULL_SPLITS_FACTORY_ADDRESS=""
        ```
 
   - #### **install**

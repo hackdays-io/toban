@@ -13878,6 +13878,11 @@ multipipe@^1.0.2:
     duplexer2 "^0.1.2"
     object-assign "^4.1.0"
 
+namestone-sdk@^0.2.11:
+  version "0.2.11"
+  resolved "https://registry.yarnpkg.com/namestone-sdk/-/namestone-sdk-0.2.11.tgz#a124c69b4a1cf87a4d3485c0b82f931d6c3411f9"
+  integrity sha512-18WFxic1Q2ATbdNBUAtN2MDC+/WuUB05CPKssbQvlVHKMor9zlgvIfq0S/jmblMa27JpDLdGm7mHE2QoMVAPoQ==
+
 nanoid@^3.3.7:
   version "3.3.8"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.8.tgz#b1be3030bee36aaff18bacb375e5cce521684baf"

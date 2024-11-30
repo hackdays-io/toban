@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Box,
   Button,
@@ -11,11 +10,17 @@ import {
   Skeleton,
   VStack,
 } from "@chakra-ui/react";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import type { MetaFunction } from "@remix-run/node";
 import { ColorModeToggle } from "../components/color-mode-toggle";
-import { Input } from "~/components/Input";
-import { TextArea } from "~/components/TextArea";
-import { CommonButton } from "~/components/CommonButton";
+import { CommonDialog } from "~/components/CommonDialog";
 
 export const meta: MetaFunction = () => {
   return [
@@ -24,25 +29,35 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export default function Index() {
-  const [inputValue, setInputValue] = useState("Hello");
-  const [textareaValue, setTextareaValue] = useState("World");
+const dialogTriggerReactNode = <Button variant="outline">Open</Button>;
 
+export default function Index() {
   return (
     <Box textAlign="center" fontSize="xl" pt="30vh">
       <VStack gap="8">
-        <Input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-        />
-        <TextArea
-          value={textareaValue}
-          onChange={(e) => setTextareaValue(e.target.value)}
-        />
         <img alt="chakra logo" src="/static/logo.svg" width="80" height="80" />
         <Heading size="2xl" letterSpacing="tight">
           Welcome to Chakra UI v3 + Remix
         </Heading>
+
+        <CommonDialog dialogTriggerReactNode={dialogTriggerReactNode}>
+          <DialogHeader>
+            <DialogTitle>Dialog Title</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <DialogActionTrigger asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogActionTrigger>
+            <Button>Save</Button>
+          </DialogFooter>
+          <DialogCloseTrigger />
+        </CommonDialog>
 
         <HStack gap="10">
           <Checkbox.Root defaultChecked>

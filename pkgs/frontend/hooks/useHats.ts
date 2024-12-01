@@ -171,11 +171,13 @@ export const useHats = () => {
       try {
         const treeId = hatIdToTreeId(BigInt(params.hatId));
         // get TreeInfo
-        const { hats } = await getTreeInfo({
+        const tree = await getTreeInfo({
           chainId: params.chainId,
           treeId,
         });
-        const hatterHat = hats?.find((hat: Hat) => hat.levelAtLocalTree === 1);
+        const hatterHat = tree?.hats?.find(
+          (hat: Hat) => hat.levelAtLocalTree === 1
+        );
         if (!hatterHat) {
           throw new Error("Hatter hat not found");
         }

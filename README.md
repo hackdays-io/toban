@@ -2,6 +2,8 @@
 
 [![Test Contracts](https://github.com/hackdays-io/toban/actions/workflows/test-contract.yml/badge.svg)](https://github.com/hackdays-io/toban/actions/workflows/test-contract.yml)
 
+[![Build Frontend(Vite + Remix)](https://github.com/hackdays-io/toban/actions/workflows/build-frontend.yml/badge.svg)](https://github.com/hackdays-io/toban/actions/workflows/build-frontend.yml)
+
 [![Deploy document to GitHub Pages](https://github.com/hackdays-io/toban/actions/workflows/deploy-document.yml/badge.svg)](https://github.com/hackdays-io/toban/actions/workflows/deploy-document.yml)
 
 ![](./docs/img/header.png)

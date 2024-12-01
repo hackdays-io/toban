@@ -1,8 +1,6 @@
-import { SPLITS_ABI } from "abi/splits";
+import { SPLITS_CREATOR_ABI } from "abi/splits";
 import { useCallback, useState } from "react";
-import { SplitsInfo } from "utils/types";
-import { Address, encodeFunctionData } from "viem";
-import { SPLITS_CREATOR_ADDRESS } from "./useContracts";
+import { AbiItemArgs, Address, encodeFunctionData } from "viem";
 import { useSmartAccountClient } from "./useSmartWallet";
 import { publicClient } from "./useViem";
 
@@ -18,7 +16,10 @@ export const useSplitsCreator = () => {
    * Splitsを作成するコールバック関数
    */
   const createSplits = useCallback(
-    async (params: { splitsAddress: Address; args: SplitsInfo[] }) => {
+    async (params: {
+      splitsCreatorAddress: Address;
+      args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "create">[0];
+    }) => {
       if (!smartAccountClient) return;
 
       setIsLoading(true);
@@ -27,9 +28,9 @@ export const useSplitsCreator = () => {
         const txHash = await smartAccountClient.sendTransaction({
           calls: [
             {
-              to: SPLITS_CREATOR_ADDRESS,
+              to: params.splitsCreatorAddress,
               data: encodeFunctionData({
-                abi: SPLITS_ABI,
+                abi: SPLITS_CREATOR_ABI,
                 functionName: "create",
                 args: [params.args],
               }),

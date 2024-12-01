@@ -95,6 +95,7 @@ export const useFractionToken = () => {
           });
           console.log({ decodedLog });
         }
+        return txHash;
       } finally {
         setIsLoading(false);
       }
@@ -167,6 +168,7 @@ export const useFractionToken = () => {
           });
           console.log({ decodedLog });
         }
+        return txHash;
       } finally {
         setIsLoading(false);
       }

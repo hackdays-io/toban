@@ -99,6 +99,8 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
         VITE_FRACTION_TOKEN_ADDRESS=0xb8f7ca7a5b1e457b8735884419e114f90d53e1d5
 
+        VITE_SPLITS_CREATOR_ADDRESS=0x9c3648df4bb82fdf067a9b083900a986f9b27e9a
+
         VITE_PIMLICO_API_KEY=
        ```
 

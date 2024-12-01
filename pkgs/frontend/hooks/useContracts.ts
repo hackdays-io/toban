@@ -7,6 +7,8 @@ export const BIGBANG_ADDRESS = import.meta.env.VITE_BIGBANG_ADDRESS;
 export const HATS_ADDRESS = import.meta.env.VITE_HATS_ADDRESS;
 export const FRACTION_TOKEN_ADDRESS = import.meta.env
   .VITE_FRACTION_TOKEN_ADDRESS;
+export const SPLITS_CREATOR_ADDRESS = import.meta.env
+  .VITE_SPLITS_CREATOR_ADDRESS;
 
 export const hatsContractBaseConfig = {
   address: HATS_ADDRESS as Address,

@@ -95,6 +95,10 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
         VITE_BIGBANG_ADDRESS=0x5d7a64Cc808294C516076d371685ed4E6aDd6337
 
+        VITE_HATS_ADDRESS=0x3bc1A0Ad72417f2d411118085256fC53CBdDd137
+
+        VITE_FRACTION_TOKEN_ADDRESS=0xb8f7ca7a5b1e457b8735884419e114f90d53e1d5
+
         VITE_PIMLICO_API_KEY=
        ```
 

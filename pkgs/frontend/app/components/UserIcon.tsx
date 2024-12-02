@@ -1,5 +1,5 @@
 import { FaCircleUser } from "react-icons/fa6";
-import { CommonIcon } from "./CommonIcon";
+import { CommonIcon } from "./common/CommonIcon";
 
 interface UserIconProps {
   userImageUrl: string | undefined;

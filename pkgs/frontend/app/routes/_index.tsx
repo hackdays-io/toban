@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import type { MetaFunction } from "@remix-run/node";
-import { CommonButton } from "~/components/CommonButton";
+import { CommonButton } from "~/components/common/CommonButton";
 import { useBigBang } from "hooks/useBigBang";
 
 export const meta: MetaFunction = () => {

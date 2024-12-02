@@ -27,7 +27,7 @@ export default function Index() {
   };
 
   return (
-    <Box textAlign="center" fontSize="xl" py="30vh">
+    <Box textAlign="center" fontSize="xl" pt="30vh">
       <CommonButton loading={isLoading} onClick={handleBigBang}>
         BigBang
       </CommonButton>

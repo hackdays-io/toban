@@ -33,7 +33,7 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
       </head>
       <body>
         <Box bg="gray.50" minHeight="100vh" overflow="auto">
-          <Container bg="white" maxW="sm" minH="100vh" px={4}>
+          <Container bg="white" maxW="430px" minH="100vh" px={5} py={4}>
             <Header />
             {children}
           </Container>

@@ -1,12 +1,17 @@
 import { PinataSDK } from "pinata-web3";
 
-const validateEnvVariables = () => {
-  if (!import.meta.env.VITE_PINATA_JWT) {
+const getPinataConfig = () => {
+  const pinataJwt = import.meta.env.VITE_PINATA_JWT;
+  const pinataGateway = import.meta.env.VITE_PINATA_GATEWAY;
+
+  if (!pinataJwt) {
     throw new Error("VITE_PINATA_JWT is not defined");
   }
-  if (!import.meta.env.VITE_PINATA_GATEWAY) {
+  if (!pinataGateway) {
     throw new Error("VITE_PINATA_GATEWAY is not defined");
   }
+
+  return { pinataJwt, pinataGateway };
 };
 
 let ipfsClient: PinataSDK | null = null;
@@ -14,10 +19,10 @@ let ipfsClient: PinataSDK | null = null;
 export const createIpfsClient = () => {
   if (ipfsClient) return ipfsClient;
 
-  validateEnvVariables();
+  const { pinataJwt, pinataGateway } = getPinataConfig();
   ipfsClient = new PinataSDK({
-    pinataJwt: import.meta.env.VITE_PINATA_JWT as string,
-    pinataGateway: import.meta.env.VITE_PINATA_GATEWAY as string,
+    pinataJwt,
+    pinataGateway,
   });
 
   return ipfsClient;

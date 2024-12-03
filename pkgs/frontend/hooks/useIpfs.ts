@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { PinataSDK } from "pinata-web3";
-import { Readable } from "stream";
+import { ipfsUploadJson, ipfsUploadFile } from "utils/ipfs";
 
 export const useUploadMetadataToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const uploadMetadataToIpfs = async ({
     name,
@@ -19,13 +19,12 @@ export const useUploadMetadataToIpfs = () => {
     authorities: string;
     eligibility: boolean;
     toggle: boolean;
-  }) => {
+  }): Promise<{ ipfsCid: string; ipfsUri: string } | null> => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      const pinata = new PinataSDK({ pinataJwt: process.env.VITE_PINATA_JWT });
-
-      const upload = await pinata.upload.json({
+      const upload = await ipfsUploadJson({
         type: "1.0",
         data: {
           name,
@@ -37,45 +36,64 @@ export const useUploadMetadataToIpfs = () => {
         },
       });
 
-      console.log("CID:", upload.IpfsHash);
-      console.log("URI:", `ipfs://${upload.IpfsHash}`);
-    } catch (error) {
-      console.error(error);
+      const ipfsCid = upload.IpfsHash;
+      const ipfsUri = `ipfs://${ipfsCid}`;
+
+      console.log("Successfully uploaded metadata to IPFS");
+      console.log("IPFS CID:", ipfsCid);
+      console.log("IPFS URI:", ipfsUri);
+
+      return { ipfsCid, ipfsUri };
+    } catch (err) {
+      setError(
+        err instanceof Error ? err : new Error("Unknown error occurred")
+      );
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { uploadMetadataToIpfs, isLoading };
+  return { uploadMetadataToIpfs, isLoading, error };
 };
 
-export const useUploadImageToIpfs = () => {
+export const useUploadImageFileToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
-  const uploadImageToIpfs = async () => {
-    if (!imageFile) return;
+  const uploadImageFileToIpfs = async (): Promise<{
+    ipfsCid: string;
+    ipfsUri: string;
+  } | null> => {
+    if (!imageFile || !imageFile.type.startsWith("image/")) {
+      setError(new Error("Invalid or no image file selected"));
+      return null;
+    }
 
     setIsLoading(true);
+    setError(null);
 
     try {
-      const pinata = new PinataSDK({ pinataJwt: process.env.VITE_PINATA_JWT });
+      const upload = await ipfsUploadFile(imageFile);
 
-      const buffer = await imageFile.arrayBuffer();
-      const stream = Readable.from(Buffer.from(buffer));
+      const ipfsCid = upload.IpfsHash;
+      const ipfsUri = `ipfs://${ipfsCid}`;
 
-      const upload = await pinata.upload.stream(stream, {
-        metadata: { name: `TobanFrontend_${new Date().getTime()}` },
-      });
+      console.log("Successfully uploaded image file to IPFS");
+      console.log("IPFS CID:", ipfsCid);
+      console.log("IPFS URI:", ipfsUri);
 
-      console.log("CID:", upload.IpfsHash);
-      console.log("URI:", `ipfs://${upload.IpfsHash}`);
-    } catch (error) {
-      console.error(error);
+      return { ipfsCid, ipfsUri };
+    } catch (err) {
+      setError(
+        err instanceof Error ? err : new Error("Unknown error occurred")
+      );
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { uploadImageToIpfs, setImageFile, isLoading };
+  return { uploadImageFileToIpfs, imageFile, setImageFile, isLoading, error };
 };

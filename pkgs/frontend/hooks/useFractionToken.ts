@@ -5,7 +5,7 @@ import {
   FRACTION_TOKEN_ADDRESS,
   fractionTokenBaseConfig,
 } from "./useContracts";
-import { useSmartAccountClient } from "./useSmartWallet";
+import { useSmartAccountClient } from "./useWallet";
 import { publicClient } from "./useViem";
 
 /**

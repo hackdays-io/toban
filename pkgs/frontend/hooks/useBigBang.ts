@@ -3,7 +3,7 @@ import { BIGBANG_ABI } from "abi/bigbang";
 import { useCallback, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import { BIGBANG_ADDRESS } from "./useContracts";
-import { useSmartAccountClient } from "./useSmartWallet";
+import { useSmartAccountClient } from "./useWallet";
 import { publicClient } from "./useViem";
 
 /**

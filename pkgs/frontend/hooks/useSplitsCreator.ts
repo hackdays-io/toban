@@ -1,7 +1,7 @@
 import { SPLITS_CREATOR_ABI } from "abi/splits";
 import { useCallback, useState } from "react";
 import { AbiItemArgs, Address, encodeFunctionData } from "viem";
-import { useSmartAccountClient } from "./useSmartWallet";
+import { useSmartAccountClient } from "./useWallet";
 import { publicClient } from "./useViem";
 
 /**

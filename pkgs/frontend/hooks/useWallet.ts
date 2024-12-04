@@ -2,7 +2,7 @@ import { useWallets } from "@privy-io/react-auth";
 import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { http } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
@@ -69,4 +69,20 @@ export const useSmartAccountClient = () => {
   }, [wallets]);
 
   return client;
+};
+
+export const useActiveWallet = () => {
+  const { wallets } = useWallets();
+
+  const smartWallet = useSmartAccountClient();
+
+  const wallet = useMemo(() => {
+    return wallets[0];
+  }, [wallets]);
+
+  const isSmartWallet = useMemo(() => {
+    return smartWallet ? true : false;
+  }, [smartWallet]);
+
+  return { wallet, smartWallet, isSmartWallet };
 };

@@ -1,5 +1,5 @@
+import { FaCircleUser } from "react-icons/fa6";
 import { CommonIcon } from "../common/CommonIcon";
-import { DefaultUserIcon } from "./DefaultUserIcon";
 
 interface UserIconProps {
   userImageUrl: string | undefined;
@@ -11,7 +11,18 @@ export const UserIcon = ({ userImageUrl, size = "full" }: UserIconProps) => {
     <CommonIcon
       imageUrl={userImageUrl}
       size={size}
-      fallbackIconComponent={<DefaultUserIcon />}
+      fallbackIconComponent={
+        <FaCircleUser
+          style={{
+            color: "#e9ecef",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            borderRadius: "100%",
+            border: "1px solid #343a40",
+          }}
+        />
+      }
     />
   );
 };

@@ -23,7 +23,6 @@ export const CommonButton = ({
       backgroundColor={backgroundColor}
       color={color}
       borderRadius="12px"
-      border="1px solid #1e1e1e"
       {...props}
     >
       {children}

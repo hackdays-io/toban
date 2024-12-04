@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
-import { useSmartAccountClient } from "./useSmartWallet";
+import { useSmartAccountClient } from "./useWallet";
 import { publicClient } from "./useViem";
 
 // ###############################################################

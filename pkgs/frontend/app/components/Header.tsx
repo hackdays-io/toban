@@ -5,7 +5,7 @@ import { UserIcon } from "./icon/UserIcon";
 import { useLocation } from "@remix-run/react";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
-const WORKSPACES_PATHS: string[] = ["/workspaces"]; // 適宜ヘッダーが不要なページのパスを追加
+const WORKSPACES_PATHS: string[] = ["/workspaces"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
 const HEADER_SIZE: number = 12; // 偶数のnumberだとアイコンが対応しているため望ましい
 
 const headerTextStyle = {

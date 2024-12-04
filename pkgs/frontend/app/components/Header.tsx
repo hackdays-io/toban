@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import { WorkspaceIcon } from "./WorkspaceIcon";
-import { UserIcon } from "./UserIcon";
+import { WorkspaceIcon } from "./icon/WorkspaceIcon";
+import { UserIcon } from "./icon/UserIcon";
 import { useLocation } from "@remix-run/react";
 
-const NO_HEADER_PATHS: string[] = ["/login"]; // 適宜ヘッダーが不要なページのパスを追加
+const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
+const WORKSPACES_PATHS: string[] = ["/workspaces"]; // 適宜ヘッダーが不要なページのパスを追加
 const HEADER_SIZE: number = 12; // 偶数のnumberだとアイコンが対応しているため望ましい
 
 const headerTextStyle = {
+  color: "gray.800",
   my: "auto",
   wordBreak: "break-word",
   flex: "1",
@@ -43,7 +45,8 @@ export const Header = () => {
         isWalletConnected &&
         isUserTobanEnsFound
       ) {
-        return isWorkspaceSelected && workspaceName
+        return !WORKSPACES_PATHS.includes(pathname) ||
+          (isWorkspaceSelected && workspaceName)
           ? HeaderType.WorkspaceAndUserIcons
           : HeaderType.UserIconOnly;
       }

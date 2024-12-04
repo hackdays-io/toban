@@ -12,7 +12,7 @@ const Login: FC = () => {
 
   return (
     <>
-      <CommonButton onClick={connectOrCreateWallet} bgColor="red.300">
+      <CommonButton onClick={connectOrCreateWallet} bgColor="yellow.400">
         login
       </CommonButton>
 

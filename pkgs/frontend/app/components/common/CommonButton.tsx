@@ -12,8 +12,8 @@ export const CommonButton = ({
   children,
   width = "full",
   size = "md",
-  backgroundColor,
-  color,
+  backgroundColor = "yellow.400",
+  color = "gray.800",
   ...props
 }: CommonButtonProps) => {
   return (
@@ -22,6 +22,7 @@ export const CommonButton = ({
       size={size}
       backgroundColor={backgroundColor}
       color={color}
+      borderRadius="12px"
       {...props}
     >
       {children}

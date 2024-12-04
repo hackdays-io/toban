@@ -1,14 +1,14 @@
 import { FaPeopleGroup } from "react-icons/fa6";
-import { CommonIcon } from "./common/CommonIcon";
+import { CommonIcon } from "../common/CommonIcon";
 
 interface WorkspaceIconProps {
   workspaceImageUrl?: string;
-  size: number;
+  size?: number | "full";
 }
 
 export const WorkspaceIcon = ({
   workspaceImageUrl,
-  size,
+  size = "full",
 }: WorkspaceIconProps) => {
   return (
     <CommonIcon

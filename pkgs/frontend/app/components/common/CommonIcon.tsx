@@ -3,7 +3,7 @@ import { Box, Image } from "@chakra-ui/react";
 
 interface CommonIconProps {
   imageUrl: string | undefined;
-  size: number;
+  size: number | "full";
   fallbackIconComponent?: ReactNode;
 }
 
@@ -28,6 +28,7 @@ export const CommonIcon = ({
       my="auto"
       borderRadius="full"
       flexShrink={0}
+      overflow="hidden"
     >
       {!showFallbackIcon ? (
         <Image
@@ -35,6 +36,7 @@ export const CommonIcon = ({
           width="100%"
           height="100%"
           objectFit="cover"
+          borderRadius="full"
           onError={() => setShowFallbackIcon(true)}
         />
       ) : (

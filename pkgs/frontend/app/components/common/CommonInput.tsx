@@ -5,6 +5,18 @@ interface CommonInputProps extends Omit<InputProps, "value"> {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const CommonInput = ({ value, onChange }: CommonInputProps) => {
-  return <Input value={value} onChange={onChange} />;
+export const CommonInput = ({
+  value,
+  placeholder,
+  onChange,
+}: CommonInputProps) => {
+  return (
+    <Input
+      value={value}
+      placeholder={placeholder}
+      width="100%"
+      onChange={onChange}
+      borderColor="gray.800"
+    />
+  );
 };

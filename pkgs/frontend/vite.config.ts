@@ -10,7 +10,7 @@ export default defineConfig({
         v3_relativeSplatPath: true,
         v3_throwAbortReason: true,
       },
-      ssr: false,
+      ssr: true,
     }),
     tsconfigPaths(),
   ],

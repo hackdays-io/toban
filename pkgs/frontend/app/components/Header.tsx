@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { Box, Text } from "@chakra-ui/react";
-import { WorkspaceIcon } from "./WorkspaceIcon";
-import { UserIcon } from "./UserIcon";
+import { Box, Flex, Text } from "@chakra-ui/react";
+import { WorkspaceIcon } from "./icon/WorkspaceIcon";
+import { UserIcon } from "./icon/UserIcon";
 import { useLocation } from "@remix-run/react";
 
-const NO_HEADER_PATHS: string[] = ["/login"]; // 適宜ヘッダーが不要なページのパスを追加
+const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
+const WORKSPACES_PATHS: string[] = ["/workspaces"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
 const HEADER_SIZE: number = 12; // 偶数のnumberだとアイコンが対応しているため望ましい
 
 const headerTextStyle = {
+  color: "gray.800",
   my: "auto",
   wordBreak: "break-word",
   flex: "1",
@@ -43,7 +45,8 @@ export const Header = () => {
         isWalletConnected &&
         isUserTobanEnsFound
       ) {
-        return isWorkspaceSelected && workspaceName
+        return !WORKSPACES_PATHS.includes(pathname) ||
+          (isWorkspaceSelected && workspaceName)
           ? HeaderType.WorkspaceAndUserIcons
           : HeaderType.UserIconOnly;
       }
@@ -59,38 +62,29 @@ export const Header = () => {
     workspaceName,
   ]);
 
-  return (
-    <Box
-      height={HEADER_SIZE}
-      display="flex"
-      justifyContent="space-between"
-      width="100%"
-      alignItems="center"
-      mb={6}
-    >
-      {headerType !== HeaderType.NonHeader && (
-        <>
-          <Box display="flex" height={HEADER_SIZE} flex="1">
-            {headerType === HeaderType.UserIconOnly && (
-              <Text {...headerTextStyle} fontSize="xl">
-                Workspaces
-              </Text>
-            )}
-            {headerType === HeaderType.WorkspaceAndUserIcons && (
-              <>
-                <WorkspaceIcon
-                  workspaceImageUrl={workspaceImageUrl}
-                  size={HEADER_SIZE}
-                />
-                <Text {...headerTextStyle} ml={4}>
-                  {workspaceName}
-                </Text>
-              </>
-            )}
-          </Box>
-          <UserIcon userImageUrl={userImageUrl} size={HEADER_SIZE - 2} />
-        </>
-      )}
-    </Box>
+  return headerType !== HeaderType.NonHeader ? (
+    <Flex justifyContent="space-between" w="100%">
+      <Box display="flex" height={HEADER_SIZE} flex="1">
+        {headerType === HeaderType.UserIconOnly && (
+          <Text {...headerTextStyle} fontSize="xl">
+            Workspaces
+          </Text>
+        )}
+        {headerType === HeaderType.WorkspaceAndUserIcons && (
+          <>
+            <WorkspaceIcon
+              workspaceImageUrl={workspaceImageUrl}
+              size={HEADER_SIZE}
+            />
+            <Text {...headerTextStyle} ml={4}>
+              {workspaceName}
+            </Text>
+          </>
+        )}
+      </Box>
+      <UserIcon userImageUrl={userImageUrl} size={HEADER_SIZE - 2} />
+    </Flex>
+  ) : (
+    <></>
   );
 };

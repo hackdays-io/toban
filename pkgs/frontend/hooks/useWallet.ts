@@ -1,4 +1,4 @@
-import { useWallets } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
@@ -36,6 +36,8 @@ export const useSmartAccountClient = () => {
      * @returns
      */
     const create = async () => {
+      setClient(undefined);
+      console.log(wallets);
       const embeddedWallet = wallets.find(
         (wallet) => wallet.connectorType === "embedded"
       );
@@ -78,6 +80,7 @@ export const useAccountClient = () => {
 
   useEffect(() => {
     const create = async () => {
+      setClient(undefined);
       if (!wallets[0]) return;
       const wallet = wallets[0];
 

@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";
 import { UserIcon } from "./icon/UserIcon";
 import { useLocation } from "@remix-run/react";
+import { useActiveWalletIdentity } from "hooks/useENS";
+import { ipfs2https } from "utils/ipfs";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
 const WORKSPACES_PATHS: string[] = ["/workspaces"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
@@ -34,7 +36,6 @@ export const Header = () => {
   const isWorkspaceSelected = true;
 
   // ToDo: ユーザーやワークスペースごとの各種データを取得するロジックを実装する
-  const userImageUrl: string | undefined = undefined;
   const workspaceName: string | undefined = "Workspace Name";
   const workspaceImageUrl: string | undefined = undefined;
 
@@ -61,6 +62,13 @@ export const Header = () => {
     isWorkspaceSelected,
     workspaceName,
   ]);
+
+  const { identity } = useActiveWalletIdentity();
+
+  const userImageUrl = useMemo(() => {
+    const avatar = identity?.text_records?.["avatar"];
+    return avatar ? ipfs2https(avatar) : undefined;
+  }, [identity]);
 
   return headerType !== HeaderType.NonHeader ? (
     <Flex justifyContent="space-between" w="100%">

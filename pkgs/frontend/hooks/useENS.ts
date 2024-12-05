@@ -1,6 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { NameData, TextRecords } from "namestone-sdk";
 import axios from "axios";
+import { useActiveWallet } from "./useWallet";
+
+export const useActiveWalletIdentity = () => {
+  const { wallet } = useActiveWallet();
+
+  const address = useMemo(() => {
+    return [wallet?.account?.address!];
+  }, [wallet]);
+  const { names } = useNamesByAddresses(address);
+
+  const identity = useMemo(() => {
+    if (!names || names.length === 0) return;
+    return names[0][0];
+  }, [names]);
+
+  return { identity };
+};
 
 export const useNamesByAddresses = (addresses?: string[]) => {
   const [names, setNames] = useState<NameData[][]>([]);

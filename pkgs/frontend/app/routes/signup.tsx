@@ -5,7 +5,7 @@ import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { TextRecords } from "namestone-sdk";
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useMemo, useState } from "react";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -22,7 +22,7 @@ const Login: FC = () => {
     isLoading: isIpfsLoading,
   } = useUploadImageFileToIpfs();
 
-  const { wallet, smartWallet, isSmartWallet } = useActiveWallet();
+  const { wallet } = useActiveWallet();
 
   const { setName, isLoading: isSetNameLoading } = useSetName();
 
@@ -38,7 +38,7 @@ const Login: FC = () => {
   }, [userName, addresses]);
 
   const handleSubmit = async () => {
-    if (!smartWallet && !wallet) return;
+    if (!wallet) return;
 
     const params: {
       name: string;
@@ -46,7 +46,7 @@ const Login: FC = () => {
       text_records: TextRecords;
     } = {
       name: userName,
-      address: isSmartWallet ? smartWallet?.account?.address! : wallet?.address,
+      address: wallet.account?.address!,
       text_records: {},
     };
 

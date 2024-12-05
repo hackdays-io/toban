@@ -2,8 +2,8 @@ import { useWallets } from "@privy-io/react-auth";
 import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { useEffect, useMemo, useState } from "react";
-import { http } from "viem";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createWalletClient, custom, http, WalletClient } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
 
@@ -71,18 +71,43 @@ export const useSmartAccountClient = () => {
   return client;
 };
 
-export const useActiveWallet = () => {
+export const useAccountClient = () => {
   const { wallets } = useWallets();
 
-  const smartWallet = useSmartAccountClient();
+  const [client, setClient] = useState<WalletClient>();
 
-  const wallet = useMemo(() => {
-    return wallets[0];
+  useEffect(() => {
+    const create = async () => {
+      if (!wallets[0]) return;
+      const wallet = wallets[0];
+
+      const provider = await wallet.getEthereumProvider();
+
+      const walletClient = createWalletClient({
+        chain: currentChain,
+        transport: custom(provider),
+      });
+
+      setClient(walletClient);
+    };
+
+    create();
   }, [wallets]);
 
-  const isSmartWallet = useMemo(() => {
-    return smartWallet ? true : false;
-  }, [smartWallet]);
+  return client;
+};
 
-  return { wallet, smartWallet, isSmartWallet };
+export const useActiveWallet = () => {
+  const walletClient = useAccountClient();
+  const smartWalletClient = useSmartAccountClient();
+
+  const isSmartWallet = useMemo(() => {
+    return !!smartWalletClient;
+  }, [smartWalletClient]);
+
+  const wallet = useMemo(() => {
+    return smartWalletClient ? smartWalletClient : walletClient;
+  }, [walletClient, smartWalletClient]);
+
+  return { wallet, isSmartWallet };
 };

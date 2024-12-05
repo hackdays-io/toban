@@ -49,3 +49,9 @@ export const ipfsUploadFile = async (file: File) => {
     throw error;
   }
 };
+
+export const ipfs2https = (ipfsUri: string) => {
+  const { pinataGateway } = getPinataConfig();
+  const cid = ipfsUri.replace("ipfs://", "");
+  return `${pinataGateway}/ipfs/${cid}`;
+};

@@ -3,7 +3,7 @@ import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createWalletClient, custom, http, WalletClient } from "viem";
+import { Address, createWalletClient, custom, http, WalletClient } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
 
@@ -86,6 +86,7 @@ export const useAccountClient = () => {
       const walletClient = createWalletClient({
         chain: currentChain,
         transport: custom(provider),
+        account: wallet.address as Address,
       });
 
       setClient(walletClient);

@@ -92,18 +92,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
        ```txt
         VITE_CHAIN_ID=11155111
-
         VITE_PRIVY_APP_ID=
-
-        VITE_BIGBANG_ADDRESS=0x5d7a64Cc808294C516076d371685ed4E6aDd6337
-
-        VITE_HATS_ADDRESS=0x3bc1A0Ad72417f2d411118085256fC53CBdDd137
-
-        VITE_FRACTION_TOKEN_ADDRESS=0xb8f7ca7a5b1e457b8735884419e114f90d53e1d5
-
-        VITE_SPLITS_CREATOR_ADDRESS=0x9c3648df4bb82fdf067a9b083900a986f9b27e9a
-
+        VITE_BIGBANG_ADDRESS=
+        VITE_HATS_ADDRESS=
+        VITE_FRACTION_TOKEN_ADDRESS=
+        VITE_SPLITS_CREATOR_ADDRESS=
         VITE_PIMLICO_API_KEY=
+        VITE_NAMESTONE_API_KEY=
        ```
 
   - #### **smartconract**

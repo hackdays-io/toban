@@ -5,14 +5,13 @@ pragma solidity ^0.8.24;
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { SplitsCreator } from "./SplitsCreator.sol";
 import { ISplitsCreator } from "./ISplitsCreator.sol";
-import { ERC2771ContextUpgradeable } from "./../ERC2771ContextUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
+contract SplitsCreatorFactory is Initializable {
 	event SplitCreatorCreated(
 		address indexed creator,
 		address indexed splitCreator,
 		uint256 topHatId,
-		address trustedForwarder,
 		address splitFactoryV2,
 		address hatsTimeFrameModule,
 		address fractionToken
@@ -21,16 +20,13 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 	address public SPLITS_CREATOR_IMPLEMENTATION;
 
 	function initialize(
-		address _trustedForwarderAddress,
 		address _splitsCreatorImplementation
 	) public initializer {
-		__ERC2771Context_init(_trustedForwarderAddress);
 		SPLITS_CREATOR_IMPLEMENTATION = _splitsCreatorImplementation;
 	}
 
 	function createSplitCreatorDeterministic(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
@@ -40,7 +36,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 		splitCreator = LibClone.cloneDeterministic(
 			SPLITS_CREATOR_IMPLEMENTATION,
 			abi.encode(
-				_trustedForwarder,
 				_hats,
 				_splitFactoryV2,
 				_hatsTimeFrameModule,
@@ -48,7 +43,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 			),
 			_getSalt(
 				_topHatId,
-				_trustedForwarder,
 				_hats,
 				_splitFactoryV2,
 				_hatsTimeFrameModule,
@@ -58,10 +52,9 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 		);
 
 		emit SplitCreatorCreated(
-			_msgSender(),
+			msg.sender,
 			splitCreator,
 			_topHatId,
-			_trustedForwarder,
 			_splitFactoryV2,
 			_hatsTimeFrameModule,
 			_fractionToken
@@ -70,7 +63,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 
 	function predictDeterministicAddress(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
@@ -81,7 +73,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 			LibClone.predictDeterministicAddress(
 				SPLITS_CREATOR_IMPLEMENTATION,
 				abi.encode(
-					_trustedForwarder,
 					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
@@ -89,7 +80,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 				),
 				_getSalt(
 					_topHatId,
-					_trustedForwarder,
 					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
@@ -102,7 +92,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 
 	function _getSalt(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
@@ -113,7 +102,6 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 			keccak256(
 				abi.encodePacked(
 					_topHatId,
-					_trustedForwarder,
 					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
@@ -121,23 +109,5 @@ contract SplitsCreatorFactory is ERC2771ContextUpgradeable {
 					_salt
 				)
 			);
-	}
-
-	function _msgSender()
-		internal
-		view
-		override(ERC2771ContextUpgradeable)
-		returns (address sender)
-	{
-		return super._msgSender();
-	}
-
-	function _msgData()
-		internal
-		view
-		override(ERC2771ContextUpgradeable)
-		returns (bytes calldata)
-	{
-		return super._msgData();
 	}
 }

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { ERC1155Upgradeable, ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IHats } from "../hats/src/Interfaces/IHats.sol";
-import { ERC2771ContextUpgradeable } from "./../ERC2771ContextUpgradeable.sol";
 
-contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
+contract FractionToken is ERC1155Upgradeable {
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
@@ -15,11 +14,9 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 	function initialize(
 		string memory _uri,
 		uint256 _tokenSupply,
-		address _hatsAddress,
-		address _trustedForwarderAddress
+		address _hatsAddress
 	) public initializer {
 		__ERC1155_init(_uri);
-		__ERC2771Context_init(address(_trustedForwarderAddress));
 		hatsContract = IHats(_hatsAddress);
 		TOKEN_SUPPLY = _tokenSupply;
 	}
@@ -190,23 +187,5 @@ contract FractionToken is ERC1155Upgradeable, ERC2771ContextUpgradeable {
 		uint256 tokenId
 	) public view override(ERC1155Upgradeable) returns (string memory) {
 		return super.uri(tokenId);
-	}
-
-	function _msgSender()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (address sender)
-	{
-		return super._msgSender();
-	}
-
-	function _msgData()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (bytes calldata)
-	{
-		return super._msgData();
 	}
 }

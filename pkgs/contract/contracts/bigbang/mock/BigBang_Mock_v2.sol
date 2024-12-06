@@ -5,13 +5,12 @@ import { IHats } from "../../hats/src/Interfaces/IHats.sol";
 import { IHatsModuleFactory } from "../IHatsModuleFactory.sol";
 import { ISplitsCreatorFactory } from "../../splitscreator/ISplitsCreatorFactory.sol";
 import { HatsTimeFrameModule } from "../../timeframe/HatsTimeFrameModule.sol";
-import "../../ERC2771ContextUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  * Upgradableになっている確認するための検証用BigBangコントラクト
  */
-contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
+contract BigBang_Mock_v2 is OwnableUpgradeable {
 	IHats public Hats;
 
 	IHatsModuleFactory public HatsModuleFactory;
@@ -34,7 +33,6 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 
 	/**
 	 * @dev Constructor to initialize the trusted forwarder.
-	 * @param _trustedForwarder Address of the trusted forwarder contract.
 	 * @param _hatsAddress Address of the hats protocol V1 contract.
 	 * @param _hatsModuleFactory Address of the hats module factory contract.
 	 * @param _hatsTimeFrameModule_IMPL Address of the hats time frame module implementation contract.
@@ -43,7 +41,6 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 	 * @param _fractionToken Address of the fraction token contract.
 	 */
 	function initialize(
-		address _trustedForwarder,
 		address _hatsAddress,
 		address _hatsModuleFactory,
 		address _hatsTimeFrameModule_IMPL,
@@ -52,7 +49,6 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		address _fractionToken
 	) public initializer {
 		__Ownable_init(_msgSender());
-		__ERC2771Context_init(address(_trustedForwarder));
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
@@ -68,7 +64,6 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 	 * @param _topHatImageURI The image URI of the topHat.
 	 * @param _hatterHatDetails The details of the hatterHat.
 	 * @param _hatterHatImageURI The image URI of the hatterHat.
-	 * @param _trustedForwarder The address of the trusted forwarder.
 	 * @return topHatId The ID used for navigating to the ProjectTop page after project creation.
 	 */
 	function bigbang(
@@ -76,8 +71,7 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		string calldata _topHatDetails,
 		string calldata _topHatImageURI,
 		string calldata _hatterHatDetails,
-		string calldata _hatterHatImageURI,
-		address _trustedForwarder
+		string calldata _hatterHatImageURI
 	) external returns (uint256) {
 		// 1. TopHatのMint
 
@@ -118,7 +112,6 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 		address splitCreator = SplitsCreatorFactory
 			.createSplitCreatorDeterministic(
 				topHatId,
-				_trustedForwarder,
 				address(Hats),
 				SplitsFactoryV2,
 				hatsTimeFrameModule,
@@ -165,24 +158,6 @@ contract BigBang_Mock_v2 is ERC2771ContextUpgradeable, OwnableUpgradeable {
 
 	function setFractionToken(address _fractionToken) external onlyOwner {
 		FractionToken = _fractionToken;
-	}
-
-	function _msgSender()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (address sender)
-	{
-		return super._msgSender();
-	}
-
-	function _msgData()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (bytes calldata)
-	{
-		return super._msgData();
 	}
 
 	/**

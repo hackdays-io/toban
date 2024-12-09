@@ -10,8 +10,7 @@ import { Address } from "viem";
  */
 export const upgradeBigBang = async (
 	contractAddress: string,
-	contractName: string,
-	params?: any[]
+	contractName: string
 ) => {
 	// 新しいコントラクトのファクトリーを取得
 	const BigBang_Mock_v2 = await ethers.getContractFactory(contractName);

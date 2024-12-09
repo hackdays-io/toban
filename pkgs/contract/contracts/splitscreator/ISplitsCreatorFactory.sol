@@ -7,7 +7,6 @@ interface ISplitsCreatorFactory {
 
 	function createSplitCreatorDeterministic(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,

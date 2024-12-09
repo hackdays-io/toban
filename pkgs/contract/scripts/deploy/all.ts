@@ -34,8 +34,7 @@ const deployAll = async () => {
 	const { FractionToken } = await deployFractionToken(
 		"",
 		10000n,
-		Hats as Address,
-		zeroAddress
+		Hats as Address
 	);
 
 	const { SplitsCreator } = await deploySplitsCreator();
@@ -45,7 +44,6 @@ const deployAll = async () => {
 	);
 
 	const { BigBang } = await deployBigBang({
-		trustedForwarder: zeroAddress,
 		hatsContractAddress: Hats as Address,
 		hatsModuleFacotryAddress: HatsModuleFactory as Address,
 		hatsTimeFrameModule_impl: HatsTimeFrameModule.address,

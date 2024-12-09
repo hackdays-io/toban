@@ -124,6 +124,8 @@ describe("IntegrationTest", () => {
 	});
 
 	it("should execute bigbang", async () => {
+		SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+
 		const txHash = await BigBang.write.bigbang(
 			[
 				deployer.account?.address!,

@@ -33,6 +33,7 @@ import {
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
 import { sqrt } from "../helpers/util/sqrt";
+import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 
 describe("SplitsCreator Factory", () => {
 	let Hats: Hats;
@@ -46,8 +47,11 @@ describe("SplitsCreator Factory", () => {
 	let SplitsCreator_IMPL: SplitsCreator;
 	let SplitsCreator: SplitsCreator;
 	let FractionToken: FractionToken;
+	let BigBang: BigBang;
 
 	let address1: WalletClient;
+	let relayer: WalletClient;
+	let publicClient: PublicClient;
 
 	let topHatId: bigint;
 
@@ -116,6 +120,9 @@ describe("SplitsCreator Factory", () => {
 			"HatsTimeFrameModule",
 			hatsTimeFrameModuleAddress
 		);
+
+		[address1, relayer] = await viem.getWalletClients();
+		publicClient = await viem.getPublicClient();
 	});
 
 	it("Should deploy SplitsCreatorFactory", async () => {
@@ -138,6 +145,30 @@ describe("SplitsCreator Factory", () => {
 		).to.be.a("string");
 	});
 
+	it("should deploy BigBang", async () => {
+		const { BigBang: _BigBang } = await deployBigBang({
+			trustedForwarder: zeroAddress,
+			hatsContractAddress: Hats.address,
+			hatsModuleFacotryAddress: HatsModuleFactory.address,
+			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
+			splitsFactoryV2Address: PullSplitsFactory.address,
+			fractionTokenAddress: FractionToken.address,
+		});
+
+		expect(_BigBang.address).to.not.be.undefined;
+
+		BigBang = _BigBang;
+
+		expect((await BigBang.read.owner()).toLowerCase()).to.equal(
+			address1.account?.address
+		);
+
+		// SplitsCreatorFactoryにBigBangアドレスをセット
+		SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+		console.log("BigBang address", BigBang.address);
+	});
+
 	it("Should deploy SplitsCreator", async () => {
 		const predictedAddress =
 			await SplitsCreatorFactory.read.predictDeterministicAddress([
@@ -150,15 +181,18 @@ describe("SplitsCreator Factory", () => {
 				keccak256("0x1234"),
 			]);
 
-		await SplitsCreatorFactory.write.createSplitCreatorDeterministic([
-			topHatId,
-			address1.account?.address!,
-			Hats.address,
-			PullSplitsFactory.address,
-			HatsTimeFrameModule.address,
-			FractionToken.address,
-			keccak256("0x1234"),
-		]);
+		await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
+			[
+				topHatId,
+				address1.account?.address!,
+				Hats.address,
+				PullSplitsFactory.address,
+				HatsTimeFrameModule.address,
+				FractionToken.address,
+				keccak256("0x1234"),
+			],
+			{ account: BigBang.address }
+		);
 
 		SplitsCreator = await viem.getContractAt("SplitsCreator", predictedAddress);
 

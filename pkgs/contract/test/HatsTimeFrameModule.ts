@@ -21,6 +21,7 @@ describe("HatsTimeFrameModule", () => {
 	let address2: WalletClient;
 
 	let topHatId: bigint;
+	let roleHatId!: bigint;
 
 	let publicClient: PublicClient;
 
@@ -121,8 +122,6 @@ describe("HatsTimeFrameModule", () => {
 			hash: txHash,
 		});
 
-		let roleHatId!: bigint;
-
 		for (const log of receipt.logs) {
 			const decodedLog = decodeEventLog({
 				abi: Hats.abi,
@@ -133,19 +132,22 @@ describe("HatsTimeFrameModule", () => {
 				roleHatId = decodedLog.args.id;
 			}
 		}
+	});
 
+	it("mint hat", async () => {
 		const initialTime = BigInt(await time.latest());
 
 		await HatsTimeFrameModule.write.mintHat([
-		roleHatId,
-		address1.account?.address!,
+			roleHatId,
+			address1.account?.address!,
+			0n,
 		]);
 
 		const afterMintTime = BigInt(await time.latest());
 
 		let woreTime = await HatsTimeFrameModule.read.getWoreTime([
-		address1.account?.address!,
-		roleHatId,
+			address1.account?.address!,
+			roleHatId,
 		]);
 
 		expect(woreTime).to.equal(afterMintTime);
@@ -211,7 +213,8 @@ describe("HatsTimeFrameModule", () => {
 
 		const currentTime3 = BigInt(await time.latest());
 
-		expectedElapsedTime = totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
+		expectedElapsedTime =
+			totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
 
 		elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
 			address1.account?.address!,
@@ -219,5 +222,23 @@ describe("HatsTimeFrameModule", () => {
 		]);
 
 		expect(elapsedTime).to.equal(expectedElapsedTime);
+	});
+
+	it("mint hat previous time", async () => {
+		const initialTime = BigInt(await time.latest());
+		await time.increaseTo(initialTime + 10000n);
+
+		await HatsTimeFrameModule.write.mintHat([
+			roleHatId,
+			address2.account?.address!,
+			initialTime + 5000n,
+		]);
+
+		const woreTime = await HatsTimeFrameModule.read.getWoreTime([
+			address2.account?.address!,
+			roleHatId,
+		]);
+
+		expect(woreTime).to.equal(initialTime + 5000n);
 	});
 });

@@ -79,8 +79,7 @@ describe("SplitsCreator Factory", () => {
 		const { FractionToken: _FractionToken } = await deployFractionToken(
 			"",
 			10000n,
-			Hats.address,
-			zeroAddress
+			Hats.address
 		);
 		FractionToken = _FractionToken;
 
@@ -123,7 +122,7 @@ describe("SplitsCreator Factory", () => {
 
 	it("Should deploy SplitsCreatorFactory", async () => {
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-			await deploySplitsCreatorFactory(zeroAddress, SplitsCreator_IMPL.address);
+			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
@@ -131,7 +130,7 @@ describe("SplitsCreator Factory", () => {
 		expect(
 			await SplitsCreatorFactory.read.predictDeterministicAddress([
 				topHatId,
-				zeroAddress,
+
 				Hats.address,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
@@ -149,7 +148,6 @@ describe("SplitsCreator Factory", () => {
 		const predictedAddress =
 			await SplitsCreatorFactory.read.predictDeterministicAddress([
 				topHatId,
-				address1.account?.address!,
 				Hats.address,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
@@ -236,8 +234,7 @@ describe("CreateSplit", () => {
 		const { FractionToken: _FractionToken } = await deployFractionToken(
 			"",
 			10000n,
-			Hats.address,
-			zeroAddress
+			Hats.address
 		);
 		FractionToken = _FractionToken;
 
@@ -280,7 +277,7 @@ describe("CreateSplit", () => {
 		);
 
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-			await deploySplitsCreatorFactory(zeroAddress, SplitsCreator_IMPL.address);
+			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
@@ -401,6 +398,7 @@ describe("CreateSplit", () => {
 		await HatsTimeFrameModule.write.mintHat([
 			hat1_id,
 			address1.account?.address!,
+			0n,
 		]);
 
 		address1WoreTime = await publicClient
@@ -414,6 +412,7 @@ describe("CreateSplit", () => {
 		await HatsTimeFrameModule.write.mintHat([
 			hat1_id,
 			address2.account?.address!,
+			0n,
 		]);
 
 		address2WoreTime = await publicClient
@@ -425,6 +424,7 @@ describe("CreateSplit", () => {
 		await HatsTimeFrameModule.write.mintHat([
 			hat2_id,
 			address3.account?.address!,
+			0n,
 		]);
 
 		address3WoreTime = await publicClient

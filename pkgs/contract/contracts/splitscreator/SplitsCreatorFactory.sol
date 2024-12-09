@@ -5,18 +5,13 @@ pragma solidity ^0.8.24;
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { SplitsCreator } from "./SplitsCreator.sol";
 import { ISplitsCreator } from "./ISplitsCreator.sol";
-import { ERC2771ContextUpgradeable, ContextUpgradeable } from "./../ERC2771ContextUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract SplitsCreatorFactory is
-	ERC2771ContextUpgradeable,
-	OwnableUpgradeable
-{
+contract SplitsCreatorFactory is OwnableUpgradeable {
 	event SplitCreatorCreated(
 		address indexed creator,
 		address indexed splitCreator,
 		uint256 topHatId,
-		address trustedForwarder,
 		address splitFactoryV2,
 		address hatsTimeFrameModule,
 		address fractionToken
@@ -27,17 +22,14 @@ contract SplitsCreatorFactory is
 	address public BIG_BANG;
 
 	function initialize(
-		address _trustedForwarderAddress,
 		address _splitsCreatorImplementation
 	) public initializer {
-		__ERC2771Context_init(_trustedForwarderAddress);
-		__Ownable_init(_msgSender());
+		__Ownable_init(msg.sender);
 		SPLITS_CREATOR_IMPLEMENTATION = _splitsCreatorImplementation;
 	}
 
 	function createSplitCreatorDeterministic(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
@@ -51,7 +43,6 @@ contract SplitsCreatorFactory is
 		splitCreator = LibClone.cloneDeterministic(
 			SPLITS_CREATOR_IMPLEMENTATION,
 			abi.encode(
-				_trustedForwarder,
 				_hats,
 				_splitFactoryV2,
 				_hatsTimeFrameModule,
@@ -59,7 +50,6 @@ contract SplitsCreatorFactory is
 			),
 			_getSalt(
 				_topHatId,
-				_trustedForwarder,
 				_hats,
 				_splitFactoryV2,
 				_hatsTimeFrameModule,
@@ -69,10 +59,9 @@ contract SplitsCreatorFactory is
 		);
 
 		emit SplitCreatorCreated(
-			_msgSender(),
+			msg.sender,
 			splitCreator,
 			_topHatId,
-			_trustedForwarder,
 			_splitFactoryV2,
 			_hatsTimeFrameModule,
 			_fractionToken
@@ -81,7 +70,6 @@ contract SplitsCreatorFactory is
 
 	function predictDeterministicAddress(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
@@ -92,7 +80,6 @@ contract SplitsCreatorFactory is
 			LibClone.predictDeterministicAddress(
 				SPLITS_CREATOR_IMPLEMENTATION,
 				abi.encode(
-					_trustedForwarder,
 					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
@@ -100,7 +87,6 @@ contract SplitsCreatorFactory is
 				),
 				_getSalt(
 					_topHatId,
-					_trustedForwarder,
 					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
@@ -125,7 +111,6 @@ contract SplitsCreatorFactory is
 
 	function _getSalt(
 		uint256 _topHatId,
-		address _trustedForwarder,
 		address _hats,
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
@@ -136,7 +121,6 @@ contract SplitsCreatorFactory is
 			keccak256(
 				abi.encodePacked(
 					_topHatId,
-					_trustedForwarder,
 					_hats,
 					_splitFactoryV2,
 					_hatsTimeFrameModule,
@@ -144,23 +128,5 @@ contract SplitsCreatorFactory is
 					_salt
 				)
 			);
-	}
-
-	function _msgSender()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (address sender)
-	{
-		return super._msgSender();
-	}
-
-	function _msgData()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (bytes calldata)
-	{
-		return super._msgData();
 	}
 }

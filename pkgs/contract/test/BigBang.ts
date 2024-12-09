@@ -67,8 +67,7 @@ describe("BigBang", () => {
 		const { FractionToken: _FractionToken } = await deployFractionToken(
 			"",
 			10000n,
-			Hats.address,
-			zeroAddress
+			Hats.address
 		);
 		FractionToken = _FractionToken;
 
@@ -76,7 +75,7 @@ describe("BigBang", () => {
 		SplitsCreator_IMPL = _SplitsCreator;
 
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-			await deploySplitsCreatorFactory(zeroAddress, SplitsCreator_IMPL.address);
+			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
@@ -86,7 +85,6 @@ describe("BigBang", () => {
 
 	it("should deploy BigBang", async () => {
 		const { BigBang: _BigBang } = await deployBigBang({
-			trustedForwarder: zeroAddress,
 			hatsContractAddress: Hats.address,
 			hatsModuleFacotryAddress: HatsModuleFactory.address,
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
@@ -115,7 +113,6 @@ describe("BigBang", () => {
 				"tophatURI",
 				"hatterhatDetails",
 				"hatterhatURI",
-				relayer.account?.address!,
 			],
 			{ account: address1.account }
 		);
@@ -307,8 +304,7 @@ describe("BigBang", () => {
 			// BigBangをアップグレード
 			const newBigBang = await upgradeBigBang(
 				BigBang.address,
-				"BigBang_Mock_v2",
-				["", 10000n, Hats.address, zeroAddress]
+				"BigBang_Mock_v2"
 			);
 
 			// upgrade後にしかないメソッドを実行
@@ -320,8 +316,7 @@ describe("BigBang", () => {
 			// BigBangをアップグレード
 			const newBigBang = await upgradeBigBang(
 				BigBang.address,
-				"BigBang_Mock_v2",
-				["", 10000n, Hats.address, zeroAddress]
+				"BigBang_Mock_v2"
 			);
 
 			// SplitsCreatorFactoryにBigBangアドレスをセット
@@ -334,7 +329,6 @@ describe("BigBang", () => {
 					"tophatURI",
 					"hatterhatDetails",
 					"hatterhatURI",
-					address1.account?.address!,
 				],
 				{ account: address1.account }
 			);

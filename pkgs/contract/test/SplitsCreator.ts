@@ -50,8 +50,7 @@ describe("SplitsCreator Factory", () => {
 	let BigBang: BigBang;
 
 	let address1: WalletClient;
-	let relayer: WalletClient;
-	let publicClient: PublicClient;
+	let bigBangAddress: WalletClient;
 
 	let topHatId: bigint;
 
@@ -88,7 +87,7 @@ describe("SplitsCreator Factory", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
-		[address1] = await viem.getWalletClients();
+		[address1, bigBangAddress] = await viem.getWalletClients();
 
 		await Hats.write.mintTopHat([
 			address1.account?.address!,
@@ -120,9 +119,6 @@ describe("SplitsCreator Factory", () => {
 			"HatsTimeFrameModule",
 			hatsTimeFrameModuleAddress
 		);
-
-		[address1, relayer] = await viem.getWalletClients();
-		publicClient = await viem.getPublicClient();
 	});
 
 	it("Should deploy SplitsCreatorFactory", async () => {
@@ -145,28 +141,8 @@ describe("SplitsCreator Factory", () => {
 		).to.be.a("string");
 	});
 
-	it("should deploy BigBang", async () => {
-		const { BigBang: _BigBang } = await deployBigBang({
-			trustedForwarder: zeroAddress,
-			hatsContractAddress: Hats.address,
-			hatsModuleFacotryAddress: HatsModuleFactory.address,
-			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
-			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
-			splitsFactoryV2Address: PullSplitsFactory.address,
-			fractionTokenAddress: FractionToken.address,
-		});
-
-		expect(_BigBang.address).to.not.be.undefined;
-
-		BigBang = _BigBang;
-
-		expect((await BigBang.read.owner()).toLowerCase()).to.equal(
-			address1.account?.address
-		);
-
-		// SplitsCreatorFactoryにBigBangアドレスをセット
-		SplitsCreatorFactory.write.setBigBang([BigBang.address]);
-		console.log("BigBang address", BigBang.address);
+	it("should set BigBang Address", async () => {
+		SplitsCreatorFactory.write.setBigBang([bigBangAddress.account?.address!]);
 	});
 
 	it("Should deploy SplitsCreator", async () => {
@@ -191,7 +167,7 @@ describe("SplitsCreator Factory", () => {
 				FractionToken.address,
 				keccak256("0x1234"),
 			],
-			{ account: BigBang.address }
+			{ account: bigBangAddress.account }
 		);
 
 		SplitsCreator = await viem.getContractAt("SplitsCreator", predictedAddress);
@@ -221,6 +197,7 @@ describe("CreateSplit", () => {
 	let address1: WalletClient;
 	let address2: WalletClient;
 	let address3: WalletClient;
+	let bigBangAddress: WalletClient;
 
 	let topHatId: bigint;
 	let hatterHatId: bigint;
@@ -267,7 +244,7 @@ describe("CreateSplit", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
-		[address1, address2, address3] = await viem.getWalletClients();
+		[address1, address2, address3, bigBangAddress] = await viem.getWalletClients();
 
 		publicClient = await viem.getPublicClient();
 
@@ -307,16 +284,21 @@ describe("CreateSplit", () => {
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
+		SplitsCreatorFactory.write.setBigBang([bigBangAddress.account?.address!]);
+
 		let txHash =
-			await SplitsCreatorFactory.write.createSplitCreatorDeterministic([
-				topHatId,
-				address1.account?.address!,
-				Hats.address,
-				PullSplitsFactory.address,
-				HatsTimeFrameModule.address,
-				FractionToken.address,
-				keccak256("0x1234"),
-			]);
+			await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
+				[
+					topHatId,
+					address1.account?.address!,
+					Hats.address,
+					PullSplitsFactory.address,
+					HatsTimeFrameModule.address,
+					FractionToken.address,
+					keccak256("0x1234"),
+				],
+				{ account: bigBangAddress.account }
+			);
 
 		let receipt = await publicClient.waitForTransactionReceipt({
 			hash: txHash,

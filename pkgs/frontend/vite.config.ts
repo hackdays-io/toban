@@ -14,4 +14,12 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  server: {
+    hmr: {
+      overlay: false, // オーバーレイを無効化
+    },
+  },
+  build: {
+    target: "es2020",
+  },
 });

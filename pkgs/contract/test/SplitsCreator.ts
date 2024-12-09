@@ -158,7 +158,6 @@ describe("SplitsCreator Factory", () => {
 		await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
 			[
 				topHatId,
-				address1.account?.address!,
 				Hats.address,
 				PullSplitsFactory.address,
 				HatsTimeFrameModule.address,
@@ -287,7 +286,6 @@ describe("CreateSplit", () => {
 			await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
 				[
 					topHatId,
-					address1.account?.address!,
 					Hats.address,
 					PullSplitsFactory.address,
 					HatsTimeFrameModule.address,

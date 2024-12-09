@@ -24,7 +24,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable {
 	function initialize(
 		address _splitsCreatorImplementation
 	) public initializer {
-		__Ownable_init(msg.sender);
+		__Ownable_init(_msgSender());
 		SPLITS_CREATOR_IMPLEMENTATION = _splitsCreatorImplementation;
 	}
 

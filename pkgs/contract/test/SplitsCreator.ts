@@ -33,7 +33,7 @@ import {
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
 import { sqrt } from "../helpers/util/sqrt";
-import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
+import { upgradeSplitsCreatorFacotry } from "../helpers/upgrade/splitsCreatorFactory";
 
 describe("SplitsCreator Factory", () => {
 	let Hats: Hats;
@@ -47,10 +47,10 @@ describe("SplitsCreator Factory", () => {
 	let SplitsCreator_IMPL: SplitsCreator;
 	let SplitsCreator: SplitsCreator;
 	let FractionToken: FractionToken;
-	let BigBang: BigBang;
 
 	let address1: WalletClient;
 	let bigBangAddress: WalletClient;
+	let newImplementation: WalletClient;
 
 	let topHatId: bigint;
 
@@ -86,7 +86,7 @@ describe("SplitsCreator Factory", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
-		[address1, bigBangAddress] = await viem.getWalletClients();
+		[address1, bigBangAddress, newImplementation] = await viem.getWalletClients();
 
 		await Hats.write.mintTopHat([
 			address1.account?.address!,
@@ -141,7 +141,7 @@ describe("SplitsCreator Factory", () => {
 	});
 
 	it("should set BigBang Address", async () => {
-		SplitsCreatorFactory.write.setBigBang([bigBangAddress.account?.address!]);
+		await SplitsCreatorFactory.write.setBigBang([bigBangAddress.account?.address!]);
 	});
 
 	it("Should deploy SplitsCreator", async () => {
@@ -175,6 +175,30 @@ describe("SplitsCreator Factory", () => {
 		expect((await SplitsCreator.read.FRACTION_TOKEN()).toLowerCase()).equal(
 			FractionToken.address.toLowerCase()
 		);
+	});
+
+	it("should change SplitsCreator implementation address", async () => {
+		await SplitsCreatorFactory.write.setImplementation([newImplementation.account?.address!]);
+		expect(
+			(await SplitsCreatorFactory.read.SPLITS_CREATOR_IMPLEMENTATION()).toLocaleLowerCase()
+		).to.equal(
+			newImplementation.account?.address!
+		);
+	});
+
+	it("sohuld upgrade SplitsCreatorFactory", async () => {
+		const newSplitsCreatorFactory = await upgradeSplitsCreatorFacotry(
+			SplitsCreatorFactory.address,
+			"SplitsCreatorFactory_Mock_v2",
+			[]
+		);
+
+		/**
+		 * upgrade後にしかないメソッドを実行
+		 */
+		expect(
+			await newSplitsCreatorFactory.read.testUpgradeFunction()
+		).to.equal("testUpgradeFunction");
 	});
 });
 

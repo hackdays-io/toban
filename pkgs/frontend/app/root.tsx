@@ -14,7 +14,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { useTranslation } from "react-i18next";
 import { useChangeLanguage } from "remix-i18next/react";
-import i18next from "~/i18next.server";
+import i18next from "~/config/i18next.server";
 import { ChakraProvider } from "./components/chakra-provider";
 import { Header } from "./components/Header";
 import { useInjectStyles } from "./emotion/emotion-client";

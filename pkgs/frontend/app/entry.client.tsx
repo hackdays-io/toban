@@ -7,8 +7,8 @@ import { hydrateRoot } from "react-dom/client";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import { getInitialNamespaces } from "remix-i18next/client";
 import { ChakraProvider } from "./components/chakra-provider";
+import i18n from "./config/i18n";
 import { ClientCacheProvider } from "./emotion/emotion-client";
-import i18n from "./i18n";
 
 const hydrate = async () => {
   await i18next
@@ -53,4 +53,12 @@ if (typeof requestIdleCallback === "function") {
   // Safari doesn't support requestIdleCallback
   // https://caniuse.com/requestidlecallback
   setTimeout(hydrate, 1);
+}
+
+if (window.requestIdleCallback) {
+  window.requestIdleCallback(hydrate);
+} else {
+  // Safari doesn't support requestIdleCallback
+  // https://caniuse.com/requestidlecallback
+  window.setTimeout(hydrate, 1);
 }

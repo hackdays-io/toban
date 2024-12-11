@@ -1,7 +1,7 @@
 import Backend from "i18next-fs-backend";
 import { resolve } from "node:path";
 import { RemixI18Next } from "remix-i18next/server";
-import i18n from "~/i18n"; // your i18n configuration file
+import i18n from "~/config/i18n"; // your i18n configuration file
 
 /**
  * This is the i18next instance that will be used to translate messages server-side

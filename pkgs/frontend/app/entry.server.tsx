@@ -1,12 +1,19 @@
-import type { EntryContext } from "@remix-run/node";
+import {
+  createReadableStreamFromReadable,
+  type EntryContext,
+} from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
 import { createInstance } from "i18next";
 import Backend from "i18next-fs-backend";
+import { isbot } from "isbot";
 import { resolve } from "node:path";
+import { renderToPipeableStream } from "react-dom/server";
 import { I18nextProvider, initReactI18next } from "react-i18next";
-import { createEmotion } from "./emotion/emotion-server";
-import i18n from "./i18n";
-import i18next from "./i18next.server";
+import { PassThrough } from "stream";
+import i18n from "./config/i18n";
+import i18next from "./config/i18next.server";
+
+const ABORT_DELAY = 5000;
 
 const handleRequest = async (
   request: Request,
@@ -14,9 +21,13 @@ const handleRequest = async (
   responseHeaders: Headers,
   remixContext: EntryContext
 ) => {
+  const callbackName = isbot(request.headers.get("user-agent"))
+    ? "onAllReady"
+    : "onShellReady";
+
   const instance = createInstance();
   const lng = await i18next.getLocale(request);
-  const ns = i18next.getRouteNamespaces(remixContext as any);
+  const ns = i18next.getRouteNamespaces(remixContext);
 
   await instance
     .use(initReactI18next) // Tell our instance to use react-i18next
@@ -28,23 +39,39 @@ const handleRequest = async (
       backend: { loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json") },
     });
 
-  new Promise((resolve) => {
-    const { renderToString, injectStyles } = createEmotion();
+  return new Promise((resolve, reject) => {
+    let didError = false;
 
-    const html = renderToString(
+    const { pipe, abort } = renderToPipeableStream(
       <I18nextProvider i18n={instance}>
         <RemixServer context={remixContext} url={request.url} />
-      </I18nextProvider>
+      </I18nextProvider>,
+      {
+        [callbackName]: () => {
+          const body = new PassThrough();
+          const stream = createReadableStreamFromReadable(body);
+          responseHeaders.set("Content-Type", "text/html");
+
+          resolve(
+            new Response(stream, {
+              headers: responseHeaders,
+              status: didError ? 500 : responseStatusCode,
+            })
+          );
+
+          pipe(body);
+        },
+        onShellError(error: unknown) {
+          reject(error);
+        },
+        onError(error: unknown) {
+          didError = true;
+
+          console.error(error);
+        },
+      }
     );
-
-    responseHeaders.set("Content-Type", "text/html");
-
-    const response = new Response(`<!DOCTYPE html>${injectStyles(html)}`, {
-      status: responseStatusCode,
-      headers: responseHeaders,
-    });
-
-    resolve(response);
+    setTimeout(abort, ABORT_DELAY);
   });
 };
 

@@ -1,7 +1,7 @@
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
-import { Hat, HatsSubgraphClient } from "@hatsprotocol/sdk-v1-subgraph";
+import { Hat, HatsSubgraphClient, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
@@ -29,6 +29,30 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
     },
   },
 });
+
+export const useTreeInfo = (treeId: number) => {
+  const [treeInfo, setTreeInfo] = useState<Tree>();
+
+  const { getTreeInfo } = useHats();
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!treeId) return;
+      const tree = await getTreeInfo({
+        chainId: currentChain.id,
+        treeId: treeId,
+      });
+
+      if (!tree) return;
+
+      setTreeInfo(tree);
+    };
+
+    fetch();
+  }, [treeId]);
+
+  return treeInfo;
+};
 
 /**
  * Hats 向けの React Hooks

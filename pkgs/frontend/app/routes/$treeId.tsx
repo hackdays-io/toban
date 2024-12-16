@@ -1,17 +1,47 @@
-import { useSmartAccountClient } from "hooks/useWallet";
+import { Box } from "@chakra-ui/react";
+import { useParams } from "@remix-run/react";
+import { useTreeInfo } from "hooks/useHats";
+import { FC } from "react";
+import { BasicRole } from "~/components/BasicRole";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 
-export default function Tree({ treeId }: { treeId: string }) {
-  console.log("=== Tree render ===");
+const WorkspaceTop: FC = () => {
+  const { treeId } = useParams();
 
-  const smartWallet = useSmartAccountClient();
-  console.log("smartWallet.account.address", smartWallet?.account?.address);
+  const tree = useTreeInfo(Number(treeId));
 
   return (
-    <>
-      <div>
-        Tree {treeId}
-        <div>{smartWallet?.account?.address}</div>
-      </div>
-    </>
+    // filterでlevelAtLocalTreeが0以上のものだけを表示にしているが、実際には2以上のものだけを表示される
+    <Box>
+      {tree?.hats
+        ?.filter((h) => Number(h.levelAtLocalTree) >= 0)
+        .map((h) => (
+          <HatsListItemParser
+            imageUri={h.imageUri}
+            detailUri={h.details}
+            children={(<BasicRole />) as any}
+          />
+        ))}
+    </Box>
   );
-}
+};
+
+export default WorkspaceTop;
+
+// import { useSmartAccountClient } from "hooks/useWallet";
+
+// export default function Tree({ treeId }: { treeId: string }) {
+//   console.log("=== Tree render ===");
+
+//   const smartWallet = useSmartAccountClient();
+//   console.log("smartWallet.account.address", smartWallet?.account?.address);
+
+//   return (
+//     <>
+//       <div>
+//         Tree {treeId}
+//         <div>{smartWallet?.account?.address}</div>
+//       </div>
+//     </>
+//   );
+// }

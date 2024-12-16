@@ -52,7 +52,7 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
             alignItems="center"
             position="relative"
           >
-            <Header />
+            {/* <Header /> */}
             <Box
               width="100%"
               height="100%"

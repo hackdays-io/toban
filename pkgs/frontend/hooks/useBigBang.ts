@@ -1,7 +1,12 @@
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 import { BIGBANG_ABI } from "abi/bigbang";
 import { useCallback, useState } from "react";
-import { Address, decodeEventLog, encodeFunctionData } from "viem";
+import {
+  Address,
+  decodeEventLog,
+  encodeFunctionData,
+  parseEventLogs,
+} from "viem";
 import { BIGBANG_ADDRESS } from "./useContracts";
 import { useSmartAccountClient } from "./useWallet";
 import { publicClient } from "./useViem";
@@ -52,35 +57,34 @@ export const useBigBang = () => {
           ],
         });
 
+        console.log("txHash:", txHash);
+
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
+        console.log("receipt:", receipt);
 
-        const log = receipt.logs.find((log) => {
-          try {
-            const decodedLog = decodeEventLog({
-              abi: BIGBANG_ABI,
-              data: log.data,
-              topics: log.topics,
-            });
-            return decodedLog.eventName === "Executed";
-          } catch (error) {}
-        })!;
+        // @help イベントが取れない（undefinedになる）
+        const parsedLog = parseEventLogs({
+          abi: BIGBANG_ABI,
+          eventName: "Executed",
+          logs: receipt.logs,
+          strict: false,
+        });
 
-        if (log) {
-          const decodedLog = decodeEventLog({
-            abi: BIGBANG_ABI,
-            data: log.data,
-            topics: log.topics,
-          });
-          console.log(decodedLog);
-          console.log(
-            "Tree Link:",
-            `https://app.hatsprotocol.xyz/trees/${String(
-              publicClient.chain?.id
-            )}/${hatIdToTreeId(BigInt(decodedLog.args.topHatId))}`
-          );
+        console.log("parsedLog:", parsedLog);
+
+        if (parsedLog) {
+          console.log("parsedLog.args:", parsedLog.args);
+          // console.log(
+          //   "Tree Link:",
+          //   `https://app.hatsprotocol.xyz/trees/${String(
+          //     publicClient.chain?.id
+          //   )}/${hatIdToTreeId(BigInt(parsedLog.args.topHatId))}`
+          // );
         }
+
+        return parsedLog;
       } finally {
         setIsLoading(false);
       }

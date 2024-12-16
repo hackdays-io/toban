@@ -20,6 +20,7 @@ export const WorkspaceIcon = ({
             width: "90%",
             height: "90%",
             objectFit: "cover",
+            backgroundColor: "yellow",
           }}
         />
       }

@@ -35,7 +35,7 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
  * @returns
  */
 export const useHats = () => {
-  const smartAccountClient = useSmartAccountClient();
+  const { smartWallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,7 +46,7 @@ export const useHats = () => {
    */
   const getTreeInfo = useCallback(
     async (params: { chainId: number; treeId: number }) => {
-      if (!smartAccountClient) return;
+      if (!smartWallet) return;
 
       setIsLoading(true);
 
@@ -80,7 +80,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [smartWallet]
   );
 
   /**
@@ -90,7 +90,7 @@ export const useHats = () => {
    */
   const getWearersInfo = useCallback(
     async (params: { chainId: number; hatId: string }) => {
-      if (!smartAccountClient) return;
+      if (!smartWallet) return;
 
       setIsLoading(true);
 
@@ -111,7 +111,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [smartWallet]
   );
 
   /**
@@ -121,7 +121,7 @@ export const useHats = () => {
    */
   const getWearerInfo = useCallback(
     async (params: { chainId: number; walletAddress: string }) => {
-      if (!smartAccountClient) return;
+      if (!smartWallet) return;
 
       setIsLoading(true);
 
@@ -156,7 +156,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [smartWallet]
   );
 
   /**
@@ -164,7 +164,7 @@ export const useHats = () => {
    */
   const getHatsTimeframeModuleAddress = useCallback(
     async (params: { chainId: number; hatId: string }) => {
-      if (!smartAccountClient) return;
+      if (!smartWallet) return;
 
       setIsLoading(true);
 
@@ -202,7 +202,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [smartWallet]
   );
 
   /**
@@ -225,12 +225,12 @@ export const useHats = () => {
       mutable?: boolean;
       imageURI?: string;
     }) => {
-      if (!smartAccountClient) return;
+      if (!smartWallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartAccountClient.sendTransaction({
+        const txHash = await smartWallet.sendTransaction({
           calls: [
             {
               to: HATS_ADDRESS,
@@ -284,7 +284,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [smartWallet]
   );
 
   /**
@@ -294,12 +294,12 @@ export const useHats = () => {
    */
   const mintHat = useCallback(
     async (params: { hatId: bigint; wearer: Address }) => {
-      if (!smartAccountClient) return;
+      if (!smartWallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartAccountClient.sendTransaction({
+        const txHash = await smartWallet.sendTransaction({
           calls: [
             {
               to: HATS_ADDRESS,
@@ -325,7 +325,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [smartWallet]
   );
 
   return {

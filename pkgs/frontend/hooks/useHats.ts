@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
-import { useSmartAccountClient } from "./useWallet";
+import { useActiveWallet, useSmartAccountClient } from "./useWallet";
 import { currentChain, publicClient } from "./useViem";
 
 // ###############################################################
@@ -59,7 +59,7 @@ export const useTreeInfo = (treeId: number) => {
  * @returns
  */
 export const useHats = () => {
-  const smartAccountClient = useSmartAccountClient();
+  const { wallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -243,30 +243,44 @@ export const useHats = () => {
       mutable?: boolean;
       imageURI?: string;
     }) => {
-      if (!smartAccountClient) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartAccountClient.sendTransaction({
-          calls: [
-            {
-              to: HATS_ADDRESS,
-              data: encodeFunctionData({
-                abi: HATS_ABI,
-                functionName: "createHat",
-                args: [
-                  params.parentHatId,
-                  params.details || "",
-                  params.maxSupply || 5,
-                  params.eligibility ||
-                    "0x0000000000000000000000000000000000004a75",
-                  params.toggle || "0x0000000000000000000000000000000000004a75",
-                  params.mutable || true,
-                  params.imageURI || "",
-                ],
-              }),
-            },
+        // const txHash = await wallet.sendTransaction({
+        //   calls: [
+        //     {
+        //       to: HATS_ADDRESS,
+        //       data: encodeFunctionData({
+        //         abi: HATS_ABI,
+        //         functionName: "createHat",
+        //         args: [
+        //           params.parentHatId,
+        //           params.details || "",
+        //           params.maxSupply || 5,
+        //           params.eligibility ||
+        //             "0x0000000000000000000000000000000000004a75",
+        //           params.toggle || "0x0000000000000000000000000000000000004a75",
+        //           params.mutable || true,
+        //           params.imageURI || "",
+        //         ],
+        //       }),
+        //     },
+        //   ],
+        // });
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "createHat",
+          args: [
+            params.parentHatId,
+            params.details || "",
+            params.maxSupply || 5,
+            params.eligibility || "0x0000000000000000000000000000000000004a75",
+            params.toggle || "0x0000000000000000000000000000000000004a75",
+            params.mutable || true,
+            params.imageURI || "",
           ],
         });
 
@@ -302,7 +316,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [wallet]
   );
 
   /**
@@ -312,22 +326,16 @@ export const useHats = () => {
    */
   const mintHat = useCallback(
     async (params: { hatId: bigint; wearer: Address }) => {
-      if (!smartAccountClient) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartAccountClient.sendTransaction({
-          calls: [
-            {
-              to: HATS_ADDRESS,
-              data: encodeFunctionData({
-                abi: HATS_ABI,
-                functionName: "mintHat",
-                args: [params.hatId, params.wearer],
-              }),
-            },
-          ],
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "mintHat",
+          args: [params.hatId, params.wearer],
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({
@@ -343,7 +351,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [wallet]
   );
 
   return {

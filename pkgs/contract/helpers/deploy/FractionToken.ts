@@ -8,13 +8,12 @@ export type FractionToken = Awaited<
 export const deployFractionToken = async (
 	uri: string,
 	tokenSupply: bigint = 10000n,
-	hatsContractAddress: Address,
-	forwarderAddress: Address
+	hatsContractAddress: Address
 ) => {
 	const fractionToken = await ethers.getContractFactory("FractionToken");
 	const _FractionToken = await upgrades.deployProxy(
 		fractionToken,
-		[uri, tokenSupply, hatsContractAddress, forwarderAddress],
+		[uri, tokenSupply, hatsContractAddress],
 		{
 			initializer: "initialize",
 		}

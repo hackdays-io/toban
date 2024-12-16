@@ -36,12 +36,8 @@ export const deployEmptyHatsModule = async () => {
 	return { HatsModule };
 };
 
-export const deployHatsTimeFrameModule = async (
-	forwarderAddress: Address = zeroAddress,
-	version: string = "0.0.0"
-) => {
+export const deployHatsTimeFrameModule = async (version: string = "0.0.0") => {
 	const HatsTimeFrameModule = await viem.deployContract("HatsTimeFrameModule", [
-		forwarderAddress,
 		version,
 	]);
 

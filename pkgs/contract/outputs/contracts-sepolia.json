@@ -3,10 +3,10 @@
     "Hats": "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137",
     "HatsModuleFactory": "0x0a3f85fa597B6a967271286aA0724811acDF5CD9",
     "PullSplitsFactory": "0x80f1B766817D04870f115fEBbcCADF8DBF75E017",
-    "BigBang": "0x08EA1AFcF193b19EcEd95538AcCDA4D770eeC147",
-    "FractionToken": "0x4747b535f1C4a48bbfc88CA68DC8973DD38Eb413",
-    "SplitsCreatorFactory": "0x96bbed9989387bb512ea29a8fa54f03d33bad169",
-    "SplitsCreator": "0x9c3648df4bb82fdf067a9b083900a986f9b27e9a",
-    "HatsTimeFrameModule": "0x8760411d317e560021db83b35971ab0dded4e205"
+    "BigBang": "0x08B4c53b98f46B14E2AD00189C2Aa3b9F3d0c8f3",
+    "FractionToken": "0xd921517fdF141d97C289bDb9686f51A1375dCc69",
+    "SplitsCreatorFactory": "0xbe985Fdd213d85d72C82cf34774C5D830e806FcB",
+    "SplitsCreator": "0x6b5d2e27ff74e9adf4d23aebb9efb52867823583",
+    "HatsTimeFrameModule": "0x9878f0905bcea0c2380be801f24dd5654f9b678f"
   }
 }

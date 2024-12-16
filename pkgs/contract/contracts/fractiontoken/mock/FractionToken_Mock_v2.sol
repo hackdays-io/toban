@@ -4,10 +4,8 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { IHats } from "../../hats/src/Interfaces/IHats.sol";
-import "./../../ERC2771ContextUpgradeable.sol";
 
-
-contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable {
+contract FractionToken_Mock_v2 is ERC1155Upgradeable {
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
@@ -17,19 +15,14 @@ contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable 
 	function initialize(
 		string memory _uri,
 		uint256 _tokenSupply,
-		address _hatsAddress,
-		address _trustedForwarderAddress
+		address _hatsAddress
 	) public initializer {
 		__ERC1155_init(_uri);
-		__ERC2771Context_init(address(_trustedForwarderAddress));
 		hatsContract = IHats(_hatsAddress);
 		TOKEN_SUPPLY = _tokenSupply;
 	}
 
-	function mintInitialSupply(
-		uint256 hatId,
-		address account
-	) public {
+	function mintInitialSupply(uint256 hatId, address account) public {
 		require(
 			_hasHatRole(account, hatId),
 			"This account does not have the role"
@@ -54,18 +47,14 @@ contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable 
 		}
 	}
 
-	function mint(
-		uint256 hatId,
-		address account,
-		uint256 amount
-	) public {
+	function mint(uint256 hatId, address account, uint256 amount) public {
 		uint256 tokenId = getTokenId(hatId, account);
 
 		require(
 			tokenRecipients[tokenId].length > 0,
 			"This account has not received the initial supply"
 		);
-		
+
 		require(
 			_msgSender() == tokenRecipients[tokenId][0],
 			"Only the first recipient can additionally mint"
@@ -154,9 +143,7 @@ contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable 
 		return balance > 0;
 	}
 
-	function _hasHatAuthority(
-		uint256 hatId
-	) private view returns (bool) {
+	function _hasHatAuthority(uint256 hatId) private view returns (bool) {
 		uint32 hatLevel = hatsContract.getHatLevel(hatId);
 
 		uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);
@@ -203,24 +190,6 @@ contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC2771ContextUpgradeable 
 		uint256 tokenId
 	) public view override(ERC1155Upgradeable) returns (string memory) {
 		return super.uri(tokenId);
-	}
-
-	function _msgSender()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (address sender)
-	{
-		return super._msgSender();
-	}
-
-	function _msgData()
-		internal
-		view
-		override(ERC2771ContextUpgradeable, ContextUpgradeable)
-		returns (bytes calldata)
-	{
-		return super._msgData();
 	}
 
 	function _contextSuffixLength()

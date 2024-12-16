@@ -58,7 +58,11 @@ const config: Config = {
 				src: "img/logo.png",
 			},
 			items: [
-				{ to: "/docs", label: "Docs", position: "left" },
+				{
+					to: "/docs/about",
+					label: "Docs",
+					position: "left",
+				},
 				{
 					href: "https://github.com/hackdays-io/toban",
 					label: "GitHub",
@@ -74,7 +78,7 @@ const config: Config = {
 					items: [
 						{
 							label: "Docs",
-							to: "/docs",
+							to: "/docs/about",
 						},
 					],
 				},

@@ -11,7 +11,7 @@ const Login: FC = () => {
   const navigate = useNavigate();
   const { connectOrCreateWallet, logout } = usePrivy();
   const { wallets } = useWallets();
-  const { wallet, smartWallet, isSmartWallet } = useActiveWallet();
+  const { wallet, isSmartWallet } = useActiveWallet();
   const { fetchNames } = useNamesByAddresses();
 
   // ToDo：Metamask、Privyアカウント、どちらともディスコネクトできないので修正する
@@ -26,11 +26,9 @@ const Login: FC = () => {
 
   useEffect(() => {
     const afterLogin = async () => {
-      if (!wallet && !smartWallet) return;
+      if (!wallet) return;
 
-      const names = await fetchNames([
-        isSmartWallet ? smartWallet?.account?.address! : wallet.address,
-      ]);
+      const names = await fetchNames([wallet.account?.address!]);
 
       if (names?.[0].length === 0) {
         navigate("/signup");

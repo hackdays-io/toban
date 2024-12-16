@@ -3,13 +3,8 @@ pragma solidity ^0.8.24;
 
 import { IHatsTimeFrameModule } from "./IHatsTimeFrameModule.sol";
 import { HatsModule } from "../hats/module/HatsModule.sol";
-import { ERC2771Context } from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract HatsTimeFrameModule is
-	ERC2771Context,
-	HatsModule,
-	IHatsTimeFrameModule
-{
+contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
 	// hatId => wearer => wore timestamp
 	mapping(uint256 => mapping(address => uint256)) public woreTime;
 
@@ -24,15 +19,18 @@ contract HatsTimeFrameModule is
 
 	/**
 	 * @dev Constructor to initialize the trusted forwarder.
-	 * @param _trustedForwarder Address of the trusted forwarder contract.
+	 * @param _version The version of the contract.
 	 */
-	constructor(
-		address _trustedForwarder,
-		string memory _version
-	) ERC2771Context(_trustedForwarder) HatsModule(_version) {}
+	constructor(string memory _version) HatsModule(_version) {}
 
-	function mintHat(uint256 hatId, address wearer) external {
-		_setWoreTime(wearer, hatId);
+	/**
+	 * @dev Mint a hat for a specific address.
+	 * @param hatId The ID of the hat that was minted.
+	 * @param wearer The address of the person who received the hat.
+	 * @param time The specific timestamp when the hat was minted.
+	 */
+	function mintHat(uint256 hatId, address wearer, uint256 time) external {
+		_setWoreTime(wearer, hatId, time);
 		isActive[hatId][wearer] = true;
 		HATS().mintHat(hatId, wearer);
 	}
@@ -70,9 +68,13 @@ contract HatsTimeFrameModule is
 	 * Can only be called by the contract that handles the minting logic.
 	 * @param hatId The ID of the hat that was minted.
 	 */
-	function _setWoreTime(address wearer, uint256 hatId) internal {
+	function _setWoreTime(
+		address wearer,
+		uint256 hatId,
+		uint256 time
+	) internal {
 		require(woreTime[hatId][wearer] == 0, "Hat already minted");
-		woreTime[hatId][wearer] = block.timestamp;
+		woreTime[hatId][wearer] = time == 0 ? block.timestamp : time;
 	}
 
 	/**
@@ -107,31 +109,5 @@ contract HatsTimeFrameModule is
 		}
 
 		return activeTime;
-	}
-
-	/**
-	 * @dev Override _msgSender to use the context from ERC2771Context.
-	 * @return The message sender address.
-	 */
-	function _msgSender()
-		internal
-		view
-		override(ERC2771Context)
-		returns (address)
-	{
-		return ERC2771Context._msgSender();
-	}
-
-	/**
-	 * @dev Override _msgData to use the context from ERC2771Context.
-	 * @return The calldata of the message.
-	 */
-	function _msgData()
-		internal
-		view
-		override(ERC2771Context)
-		returns (bytes calldata)
-	{
-		return ERC2771Context._msgData();
 	}
 }

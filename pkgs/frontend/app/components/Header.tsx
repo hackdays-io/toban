@@ -1,8 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";
 import { UserIcon } from "./icon/UserIcon";
-import { useLocation } from "@remix-run/react";
+import { useLocation, useNavigate } from "@remix-run/react";
+import { useActiveWalletIdentity } from "hooks/useENS";
+import { ipfs2https } from "utils/ipfs";
+import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
+import { useActiveWallet } from "hooks/useWallet";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import CommonButton from "./common/CommonButton";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
 const WORKSPACES_PATHS: string[] = ["/workspace", "/workspace/new"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
@@ -28,6 +34,7 @@ export const Header = () => {
     HeaderType.NonHeader
   );
 
+  const navigate = useNavigate();
   const { pathname } = useLocation();
 
   // ToDo: ページのパスや hooks で柔軟にロジックを実装する（切り替えてテストできます）
@@ -36,7 +43,6 @@ export const Header = () => {
   const isWorkspaceSelected = false;
 
   // ToDo: ユーザーやワークスペースごとの各種データを取得するロジックを実装する
-  const userImageUrl: string | undefined = undefined;
   const workspaceName: string | undefined = "Workspace Name";
   const workspaceImageUrl: string | undefined = undefined;
 
@@ -65,6 +71,28 @@ export const Header = () => {
     workspaceName,
   ]);
 
+  const { isSmartWallet } = useActiveWallet();
+  const { logout } = usePrivy();
+  const { wallets } = useWallets();
+  const { identity } = useActiveWalletIdentity();
+
+  const userImageUrl = useMemo(() => {
+    const avatar = identity?.text_records?.["avatar"];
+    return avatar ? ipfs2https(avatar) : undefined;
+  }, [identity]);
+
+  const handleLogout = () => {
+    if (isSmartWallet) {
+      logout();
+    } else {
+      if (wallets.find((w) => w.connectorType === "injected")) {
+        alert("ウォレット拡張機能から切断してください。");
+      } else {
+        Promise.all(wallets.map((wallet) => wallet.disconnect()));
+      }
+    }
+  };
+
   return headerType !== HeaderType.NonHeader ? (
     <Flex justifyContent="space-between" w="100%">
       <Box display="flex" height={HEADER_SIZE} flex="1">
@@ -85,7 +113,29 @@ export const Header = () => {
           </>
         )}
       </Box>
-      <UserIcon userImageUrl={userImageUrl} size={HEADER_SIZE - 2} />
+      {identity ? (
+        <MenuRoot closeOnSelect={false}>
+          <MenuTrigger asChild>
+            <button>
+              <UserIcon userImageUrl={userImageUrl} size={HEADER_SIZE - 2} />
+            </button>
+          </MenuTrigger>
+          <MenuContent>
+            <MenuItem value="logout" onClick={handleLogout}>
+              Logout
+            </MenuItem>
+          </MenuContent>
+        </MenuRoot>
+      ) : (
+        <CommonButton
+          onClick={() => {
+            navigate("/login");
+          }}
+          w="auto"
+        >
+          Login
+        </CommonButton>
+      )}
     </Flex>
   ) : (
     <></>

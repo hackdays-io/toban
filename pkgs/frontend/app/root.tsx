@@ -32,6 +32,29 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
         />
       </head>
       <body>
+        {children}
+
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+});
+
+export default function App() {
+  return (
+    <PrivyProvider
+      appId={import.meta.env.VITE_PRIVY_APP_ID}
+      config={{
+        embeddedWallets: {
+          createOnLogin: "users-without-wallets",
+        },
+      }}
+    >
+      <ChakraProvider>
+        {/* DarkMode 切り替えの実装の可能性に備え、ThemeProvider を残しておいてあります */}
+        {/* <ThemeProvider disableTransitionOnChange attribute="class"> */}
+
         <Box
           bg="gray.50"
           width="100%"
@@ -60,31 +83,10 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
               flexDirection="column"
               position="relative"
             >
-              {children}
+              <Outlet />
             </Box>
           </Container>
         </Box>
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  );
-});
-
-export default function App() {
-  return (
-    <PrivyProvider
-      appId={import.meta.env.VITE_PRIVY_APP_ID}
-      config={{
-        embeddedWallets: {
-          createOnLogin: "users-without-wallets",
-        },
-      }}
-    >
-      <ChakraProvider>
-        {/* DarkMode 切り替えの実装の可能性に備え、ThemeProvider を残しておいてあります */}
-        {/* <ThemeProvider disableTransitionOnChange attribute="class"> */}
-        <Outlet />
         {/* </ThemeProvider> */}
       </ChakraProvider>
     </PrivyProvider>

@@ -1,9 +1,9 @@
-import { ConnectedWallet, useWallets } from "@privy-io/react-auth";
+import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { useEffect, useMemo, useState } from "react";
-import { http } from "viem";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Address, createWalletClient, custom, http, WalletClient } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
 
@@ -57,6 +57,8 @@ export const useSmartAccountClient = () => {
     const create = async () => {
       console.log("=== create ===", _wallets);
 
+      setClient(undefined);
+      console.log(wallets);
       const embeddedWallet = _wallets?.find(
         (wallet) => wallet.connectorType === "embedded"
       );
@@ -100,7 +102,7 @@ export const useSmartAccountClient = () => {
   return client;
 };
 
-export const useActiveWallet = () => {
+export const useAccountClient = () => {
   const { wallets } = useWallets();
   const [_wallets, setWallets] = useState<ConnectedWallet[] | undefined>(
     undefined

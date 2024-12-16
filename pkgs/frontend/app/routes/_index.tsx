@@ -1,16 +1,16 @@
 import { Box, Input } from "@chakra-ui/react";
 import type { MetaFunction } from "@remix-run/node";
-import { CommonButton } from "~/components/common/CommonButton";
 import { useBigBang } from "hooks/useBigBang";
 import {
-  useUploadMetadataToIpfs,
   useUploadImageFileToIpfs,
+  useUploadMetadataToIpfs,
 } from "hooks/useIpfs";
+import { CommonButton } from "~/components/common/CommonButton";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Toban" },
+    { name: "description", content: "Welcome to Toban!" },
   ];
 };
 

@@ -3,11 +3,11 @@
 pragma solidity ^0.8.24;
 
 import { LibClone } from "solady/src/utils/LibClone.sol";
-import { SplitsCreator } from "./SplitsCreator.sol";
-import { ISplitsCreator } from "./ISplitsCreator.sol";
+import { SplitsCreator } from "../SplitsCreator.sol";
+import { ISplitsCreator } from "../ISplitsCreator.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract SplitsCreatorFactory is OwnableUpgradeable {
+contract SplitsCreatorFactory_Mock_v2 is OwnableUpgradeable {
 	event SplitCreatorCreated(
 		address indexed creator,
 		address indexed splitCreator,
@@ -128,5 +128,12 @@ contract SplitsCreatorFactory is OwnableUpgradeable {
 					_salt
 				)
 			);
+	}
+
+    /**
+	 * 検証用に追加した関数
+	 */
+	function testUpgradeFunction() external pure returns (string memory) {
+		return "testUpgradeFunction";
 	}
 }

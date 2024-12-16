@@ -5,8 +5,8 @@ import { useCallback, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
-import { useSmartAccountClient } from "./useWallet";
-import { publicClient } from "./useViem";
+import { useActiveWallet } from "./useWallet";
+import { currentChain, publicClient } from "./useViem";
 
 // ###############################################################
 // Read with subgraph
@@ -35,7 +35,7 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
  * @returns
  */
 export const useHats = () => {
-  const { smartWallet } = useActiveWallet();
+  const { wallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,14 +45,14 @@ export const useHats = () => {
    * @param treeId
    */
   const getTreeInfo = useCallback(
-    async (params: { chainId: number; treeId: number }) => {
-      if (!smartWallet) return;
+    async (params: { treeId: number }) => {
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
         const tree = await hatsSubgraphClient.getTree({
-          chainId: params.chainId,
+          chainId: currentChain.id,
           treeId: params.treeId,
           props: {
             hats: {
@@ -80,7 +80,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartWallet]
+    [wallet]
   );
 
   /**
@@ -89,14 +89,14 @@ export const useHats = () => {
    * @param hatId
    */
   const getWearersInfo = useCallback(
-    async (params: { chainId: number; hatId: string }) => {
-      if (!smartWallet) return;
+    async (params: { hatId: string }) => {
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
         const wearers = await hatsSubgraphClient.getWearersOfHatPaginated({
-          chainId: params.chainId,
+          chainId: currentChain.id,
           props: {},
           hatId: BigInt(params.hatId),
           page: 0,
@@ -111,7 +111,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartWallet]
+    [wallet]
   );
 
   /**
@@ -120,14 +120,14 @@ export const useHats = () => {
    * @param walletAddress
    */
   const getWearerInfo = useCallback(
-    async (params: { chainId: number; walletAddress: string }) => {
-      if (!smartWallet) return;
+    async (params: { walletAddress: string }) => {
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
         const wearer = await hatsSubgraphClient.getWearer({
-          chainId: params.chainId,
+          chainId: currentChain.id,
           wearerAddress: params.walletAddress as `0x${string}`,
           props: {
             currentHats: {
@@ -156,15 +156,79 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartWallet]
+    [wallet]
   );
+
+  const getTreesInfoByWearer = useCallback(
+    async (params: { walletAddress: string }) => {
+      const wearer = await getWearerInfo({
+        walletAddress: params.walletAddress as `0x${string}`,
+      });
+
+      console.log("wearer", wearer);
+
+      if (!wearer?.currentHats) return [];
+
+      const treesIds = wearer.currentHats.map((hat) => {
+        const treeId = hatIdToTreeId(BigInt(hat.id));
+        console.log("treeId", treeId);
+        return treeId;
+      });
+
+      const treesInfo = await hatsSubgraphClient.getTreesByIds({
+        chainId: currentChain.id,
+        treeIds: treesIds,
+        props: {
+          hats: {
+            props: {
+              details: true,
+              imageUri: true,
+            },
+          },
+        },
+      });
+
+      // const treesInfo = await Promise.all(
+      //   wearer.currentHats.map(async (hat) => {
+      //     const treeId = hatIdToTreeId(BigInt(hat.id));
+      //     console.log("treeId", treeId);
+      //     const treeInfo = await getTreeInfo({
+      //       treeId: treeId,
+      //     });
+      //     console.log("treeInfo", treeInfo);
+      //     return treeInfo;
+      //   })
+      // );
+
+      console.log("treesInfo", treesInfo);
+
+      return treesInfo;
+    },
+    [getWearerInfo]
+  );
+
+  const getWorkspacesList = useCallback(async () => {
+    const treesInfo = await getTreesInfoByWearer({
+      walletAddress: "0x0000000000000000000000000000000000000000",
+    });
+    console.log("treesInfo", treesInfo);
+    const workspacesList = await Promise.all(
+      treesInfo.map(async (tree) => {
+        return {
+          name: "workspace",
+          imageUrl: tree?.hats?.[0]?.imageUri,
+        };
+      })
+    );
+    return workspacesList;
+  }, [getTreesInfoByWearer]);
 
   /**
    * HatsTimeframeModuleコントラクトのアドレスを取得するコールバック関数
    */
   const getHatsTimeframeModuleAddress = useCallback(
     async (params: { chainId: number; hatId: string }) => {
-      if (!smartWallet) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
@@ -172,7 +236,6 @@ export const useHats = () => {
         const treeId = hatIdToTreeId(BigInt(params.hatId));
         // get TreeInfo
         const tree = await getTreeInfo({
-          chainId: params.chainId,
           treeId,
         });
         const hatterHat = tree?.hats?.find(
@@ -184,7 +247,6 @@ export const useHats = () => {
         // get WearersInfo
         const wearers = await getWearersInfo({
           hatId: hatterHat.id,
-          chainId: params.chainId,
         });
 
         if (wearers!.length === 0) {
@@ -202,7 +264,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartWallet]
+    [wallet]
   );
 
   /**
@@ -225,12 +287,12 @@ export const useHats = () => {
       mutable?: boolean;
       imageURI?: string;
     }) => {
-      if (!smartWallet) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartWallet.sendTransaction({
+        const txHash = await wallet.sendTransaction({
           calls: [
             {
               to: HATS_ADDRESS,
@@ -284,7 +346,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartWallet]
+    [wallet]
   );
 
   /**
@@ -294,12 +356,12 @@ export const useHats = () => {
    */
   const mintHat = useCallback(
     async (params: { hatId: bigint; wearer: Address }) => {
-      if (!smartWallet) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartWallet.sendTransaction({
+        const txHash = await wallet.sendTransaction({
           calls: [
             {
               to: HATS_ADDRESS,
@@ -325,7 +387,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [smartWallet]
+    [wallet]
   );
 
   return {
@@ -333,6 +395,8 @@ export const useHats = () => {
     getTreeInfo,
     getWearersInfo,
     getWearerInfo,
+    getTreesInfoByWearer,
+    getWorkspacesList,
     getHatsTimeframeModuleAddress,
     createHat,
     mintHat,

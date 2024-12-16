@@ -41,8 +41,10 @@ const Workspace: FC = () => {
   const navigate = useNavigate();
 
   console.log("Workspace render");
-  const { preferredAddress } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getWearerInfo, getTreesInfoByWearer } = useHats();
+
+  const preferredAddress = wallet?.account?.address;
 
   console.log("preferredAddress", preferredAddress);
 

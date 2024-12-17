@@ -3,7 +3,7 @@ import { Box, Image } from "@chakra-ui/react";
 
 interface CommonIconProps {
   imageUrl: string | undefined;
-  size: number | "full";
+  size: number | `${number}px` | "full";
   fallbackIconComponent?: ReactNode;
 }
 

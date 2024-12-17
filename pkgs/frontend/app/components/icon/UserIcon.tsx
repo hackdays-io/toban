@@ -3,7 +3,7 @@ import { CommonIcon } from "../common/CommonIcon";
 
 interface UserIconProps {
   userImageUrl: string | undefined;
-  size?: number | "full";
+  size?: number | `${number}px` | "full";
 }
 
 export const UserIcon = ({ userImageUrl, size = "full" }: UserIconProps) => {

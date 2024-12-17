@@ -7,15 +7,19 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
   useNamesByAddresses,
 } from "hooks/useENS";
-import { NameData } from "namestone-sdk";
-import { FC, useEffect, useMemo, useState } from "react";
+import { useFractionToken } from "hooks/useFractionToken";
+import { useTreeInfo } from "hooks/useHats";
+import { NameData, TextRecords } from "namestone-sdk";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
 import { ipfs2https } from "utils/ipfs";
+import { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { RoleIcon } from "~/components/icon/RoleIcon";
@@ -24,12 +28,24 @@ import { PageHeader } from "~/components/PageHeader";
 import { Field } from "~/components/ui/field";
 
 const AssistCreditSend: FC = () => {
+  const { treeId, hatId, address } = useParams();
   const me = useActiveWalletIdentity();
-  const tokenBalance = 1000;
 
   // 送信先取得
+  const tree = useTreeInfo(Number(treeId));
   const [searchText, setSearchText] = useState<string>("");
 
+  const members = useMemo(() => {
+    if (!tree || !tree.hats) return [];
+    return tree.hats
+      .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 0)
+      .map((h) => h.wearers)
+      .flat()
+      .filter((w) => w)
+      .map((w) => w!.id);
+  }, [tree]);
+
+  const { names: defaultNames } = useNamesByAddresses(members);
   const { names, fetchNames } = useNamesByAddresses();
   const { addresses, fetchAddresses } = useAddressesByNames();
 
@@ -38,10 +54,6 @@ const AssistCreditSend: FC = () => {
   }, [searchText]);
 
   useEffect(() => {
-    if (searchText.length === 0) {
-      return;
-    }
-
     if (isSearchAddress) {
       fetchNames([searchText]);
     } else {
@@ -50,12 +62,44 @@ const AssistCreditSend: FC = () => {
   }, [searchText, isSearchAddress]);
 
   const users = useMemo(() => {
+    if (!searchText) {
+      const unresolvedMembers = Array.from(
+        new Set(
+          members.filter((m) => !defaultNames[0].find((n) => n.address === m))
+        )
+      );
+      return [
+        ...defaultNames,
+        ...unresolvedMembers.map((m) => [
+          {
+            address: m,
+            name: "",
+            domain: "",
+            text_records: {
+              avatar: "",
+            } as TextRecords,
+          },
+        ]),
+      ];
+    }
+
     return isSearchAddress ? names : addresses;
-  }, [names, addresses, isSearchAddress]);
+  }, [defaultNames, names, addresses, isSearchAddress]);
 
   // 送信先選択後
   const [receiver, setReceiver] = useState<NameData>();
   const [amount, setAmount] = useState<number>(0);
+
+  const { sendFractionToken } = useFractionToken();
+  const send = useCallback(async () => {
+    if (!receiver || !hatId || !me) return;
+    await sendFractionToken({
+      hatId: BigInt(hatId),
+      account: me.identity?.address as Address,
+      to: receiver.address as Address,
+      amount: BigInt(amount),
+    });
+  }, [sendFractionToken, receiver, amount, hatId, address]);
 
   return (
     <Box>
@@ -92,17 +136,17 @@ const AssistCreditSend: FC = () => {
           </Field>
 
           <List.Root listStyle="none" my={10} gap={3}>
-            {users[0]?.map((user, index) => (
+            {users?.flat().map((user, index) => (
               <List.Item key={index} onClick={() => setReceiver(user)}>
                 <HStack>
                   <UserIcon
                     userImageUrl={ipfs2https(user.text_records?.avatar)}
                     size={10}
                   />
-                  <Text>{user.name}</Text>
-                  <Text>
-                    ({`${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
-                    )
+                  <Text lineBreak="anywhere">
+                    {user.name
+                      ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
+                      : user.address}
                   </Text>
                 </HStack>
               </List.Item>
@@ -126,12 +170,11 @@ const AssistCreditSend: FC = () => {
               w="120px"
               type="number"
               min={0}
-              max={100}
+              max={9999}
               textAlign={"right"}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
             />
-            <Text fontSize="25px">%</Text>
           </HStack>
 
           <Float
@@ -151,7 +194,7 @@ const AssistCreditSend: FC = () => {
                 <Text fontSize="xs">{me.identity?.name}</Text>
               </Box>
               <VStack textAlign="center">
-                <Text>{(tokenBalance / 100) * amount}</Text>
+                <Text>{amount}</Text>
                 <FaArrowRight size="20px" />
               </VStack>
               <Box>
@@ -162,7 +205,7 @@ const AssistCreditSend: FC = () => {
                 <Text fontSize="xs">{receiver.name}</Text>
               </Box>
             </HStack>
-            <BasicButton>送信</BasicButton>
+            <BasicButton onClick={send}>送信</BasicButton>
           </Float>
         </>
       )}

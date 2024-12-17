@@ -5,7 +5,7 @@ import { ipfs2https } from "utils/ipfs";
 
 interface RoleIconProps {
   roleImageUrl?: string;
-  size?: number | "full";
+  size?: number | `${number}px` | "full";
 }
 
 export const RoleIcon = ({ roleImageUrl, size = "full" }: RoleIconProps) => {

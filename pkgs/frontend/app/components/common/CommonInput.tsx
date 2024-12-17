@@ -17,6 +17,7 @@ export const CommonInput = ({
       width="100%"
       onChange={onChange}
       borderColor="gray.800"
+      backgroundColor="white"
     />
   );
 };

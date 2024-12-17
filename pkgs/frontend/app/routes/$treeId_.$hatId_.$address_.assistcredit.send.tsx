@@ -13,12 +13,16 @@ import {
   useAddressesByNames,
   useNamesByAddresses,
 } from "hooks/useENS";
-import { useFractionToken } from "hooks/useFractionToken";
+import {
+  useBalanceOfFractionToken,
+  useFractionToken,
+} from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { NameData, TextRecords } from "namestone-sdk";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
 import { ipfs2https } from "utils/ipfs";
+import { abbreviateAddress } from "utils/wallet";
 import { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
@@ -30,6 +34,11 @@ import { Field } from "~/components/ui/field";
 const AssistCreditSend: FC = () => {
   const { treeId, hatId, address } = useParams();
   const me = useActiveWalletIdentity();
+  const balanceOfToken = useBalanceOfFractionToken(
+    me.identity?.address as Address,
+    address as Address,
+    BigInt(hatId!)
+  );
 
   // 送信先取得
   const tree = useTreeInfo(Number(treeId));
@@ -106,7 +115,7 @@ const AssistCreditSend: FC = () => {
       <PageHeader
         title={
           receiver
-            ? `${receiver.name || `${receiver.address.slice(0, 6)}...${receiver.address.slice(-4)}`}に送信`
+            ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
             : "アシストクレジット送信"
         }
         backLink={
@@ -120,7 +129,7 @@ const AssistCreditSend: FC = () => {
 
       <HStack my={2}>
         <RoleIcon size="50px" />
-        <Text>掃除当番</Text>
+        <Text>掃除当番（残高: {balanceOfToken?.toLocaleString()}）</Text>
       </HStack>
 
       {!receiver ? (
@@ -155,7 +164,8 @@ const AssistCreditSend: FC = () => {
         </>
       ) : (
         <>
-          <HStack
+          <Field
+            label="送信量"
             mt="calc(50vh - 230px)"
             alignItems="center"
             justifyContent="center"
@@ -166,16 +176,20 @@ const AssistCreditSend: FC = () => {
               fontSize="60px"
               size="2xl"
               border="none"
+              borderBottom="2px solid"
               borderRadius="0"
-              w="120px"
+              w="auto"
               type="number"
+              textAlign="center"
               min={0}
               max={9999}
-              textAlign={"right"}
+              style={{
+                WebkitAppearance: "none",
+              }}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
             />
-          </HStack>
+          </Field>
 
           <Float
             placement="bottom-center"
@@ -202,7 +216,9 @@ const AssistCreditSend: FC = () => {
                   size={10}
                   userImageUrl={ipfs2https(receiver.text_records?.avatar)}
                 />
-                <Text fontSize="xs">{receiver.name}</Text>
+                <Text fontSize="xs">
+                  {receiver.name || abbreviateAddress(receiver.address)}
+                </Text>
               </Box>
             </HStack>
             <BasicButton onClick={send}>送信</BasicButton>

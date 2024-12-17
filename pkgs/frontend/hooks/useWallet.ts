@@ -57,7 +57,6 @@ export const useSmartAccountClient = () => {
      */
     const create = async () => {
       setClient(undefined);
-      console.log(wallets);
       const embeddedWallet = wallets.find(
         (wallet) => wallet.connectorType === "embedded"
       );

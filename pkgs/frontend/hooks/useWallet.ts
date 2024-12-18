@@ -1,4 +1,4 @@
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
@@ -39,7 +39,7 @@ export const pimlicoClient = createPimlicoClient({
 /**
  * Pimlico 向けの React Hooks
  */
-export const useSmartAccountClient = () => {
+export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
   const [client, setClient] =
     useState<
       SmartAccountClient<
@@ -48,7 +48,6 @@ export const useSmartAccountClient = () => {
         SmartAccount<SmartAccountImplementation>
       >
     >();
-  const { wallets } = useWallets();
 
   useEffect(() => {
     /**
@@ -92,9 +91,7 @@ export const useSmartAccountClient = () => {
   return client;
 };
 
-export const useAccountClient = () => {
-  const { wallets } = useWallets();
-
+export const useAccountClient = (wallets: ConnectedWallet[]) => {
   const [client, setClient] =
     useState<WalletClient<CustomTransport, typeof currentChain, Account>>();
 
@@ -122,8 +119,13 @@ export const useAccountClient = () => {
 };
 
 export const useActiveWallet = () => {
-  const walletClient = useAccountClient();
-  const smartWalletClient = useSmartAccountClient();
+  const { wallets } = useWallets();
+  const walletClient = useAccountClient(wallets);
+  const smartWalletClient = useSmartAccountClient(wallets);
+
+  const isConnectingEmbeddedWallet = useMemo(() => {
+    return wallets.some((wallet) => wallet.connectorType === "embedded");
+  }, [wallets]);
 
   const isSmartWallet = useMemo(() => {
     return !!smartWalletClient;
@@ -133,5 +135,5 @@ export const useActiveWallet = () => {
     return smartWalletClient ? smartWalletClient : walletClient;
   }, [walletClient, smartWalletClient]);
 
-  return { wallet, isSmartWallet };
+  return { wallet, isSmartWallet, isConnectingEmbeddedWallet };
 };

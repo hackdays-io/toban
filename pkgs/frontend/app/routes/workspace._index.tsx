@@ -39,36 +39,26 @@ const Workspace: FC = () => {
       imageUrl: string | undefined;
     }[]
   >([]);
-  const smartWalletRef = useRef<Address | undefined>(undefined);
 
   const navigate = useNavigate();
 
-  const { wallet, isSmartWallet } = useActiveWallet();
+  const { wallet, isSmartWallet, isConnectingEmbeddedWallet } =
+    useActiveWallet();
   const { getWorkspacesList } = useHats();
 
   const address = useMemo(() => {
-    if (smartWalletRef.current) {
-      return smartWalletRef.current;
-    } else if (isSmartWallet) {
-      smartWalletRef.current = wallet?.account?.address;
-      return smartWalletRef.current;
-    } else {
-      return wallet?.account?.address;
-    }
-  }, [wallet?.account?.address, isSmartWallet]);
+    if (isConnectingEmbeddedWallet && !isSmartWallet) return;
+    return wallet?.account?.address as Address;
+  }, [wallet?.account?.address, isSmartWallet, isConnectingEmbeddedWallet]);
 
   useEffect(() => {
-    if (smartWalletRef.current !== undefined && !isSmartWallet) return;
-
     const fetchWorkspacesList = async () => {
+      if (!address) return;
       const _workspacesList = await getWorkspacesList({
         walletAddress: address as `0x${string}`,
       });
 
-      // このセッションでスマートウォレットに接続した記録があれば、ユーザー自身のウォレットによるワークスペースの更新は無視する
-      if (smartWalletRef.current === undefined || isSmartWallet) {
-        setWorkspacesList(_workspacesList);
-      }
+      setWorkspacesList(_workspacesList);
     };
     fetchWorkspacesList();
   }, [address, getWorkspacesList]);

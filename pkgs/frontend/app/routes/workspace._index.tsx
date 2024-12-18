@@ -24,7 +24,7 @@ const WorkspaceCard: FC<{
       alignItems="center"
       onClick={() => navigate(`/${treeId}`)}
     >
-      <WorkspaceIcon workspaceImageUrl={imageUrl} size={10} />
+      <WorkspaceIcon workspaceImageUrl={imageUrl} size={12} />
       <Text ml={4}>{name}</Text>
     </Box>
   );

@@ -14,6 +14,7 @@ export const WorkspaceIcon = ({
     <CommonIcon
       imageUrl={workspaceImageUrl}
       size={size}
+      borderRadius="xl"
       fallbackIconComponent={
         <FaPeopleGroup
           style={{

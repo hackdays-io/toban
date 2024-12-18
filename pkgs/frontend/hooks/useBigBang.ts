@@ -1,12 +1,6 @@
-import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 import { BIGBANG_ABI } from "abi/bigbang";
 import { useCallback, useState } from "react";
-import {
-  Address,
-  decodeEventLog,
-  encodeFunctionData,
-  parseEventLogs,
-} from "viem";
+import { Address, parseEventLogs } from "viem";
 import { BIGBANG_ADDRESS } from "./useContracts";
 import { useActiveWallet } from "./useWallet";
 import { publicClient } from "./useViem";
@@ -35,9 +29,6 @@ export const useBigBang = () => {
 
       setIsLoading(true);
 
-      console.log("wallet", wallet);
-      console.log("params", params);
-
       try {
         const txHash = await wallet.writeContract({
           abi: BIGBANG_ABI,
@@ -57,7 +48,6 @@ export const useBigBang = () => {
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        console.log("receipt:", receipt);
 
         const parsedLog = parseEventLogs({
           abi: BIGBANG_ABI,
@@ -65,8 +55,6 @@ export const useBigBang = () => {
           logs: receipt.logs,
           strict: false,
         });
-
-        console.log("parsedLog:", parsedLog);
 
         return parsedLog;
       } finally {

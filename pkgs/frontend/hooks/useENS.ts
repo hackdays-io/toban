@@ -42,13 +42,13 @@ export const useNamesByAddresses = (addresses?: string[]) => {
   return { names, fetchNames };
 };
 
-export const useAddressesByNames = (names?: string[]) => {
+export const useAddressesByNames = (names?: string[], exactMatch?: boolean) => {
   const [addresses, setAddresses] = useState<NameData[][]>([]);
 
   const fetchAddresses = useCallback(async (resolveNames: string[]) => {
     try {
       const { data } = await axios.get("/api/namestone/resolve-addresses", {
-        params: { names: resolveNames.join(",") },
+        params: { names: resolveNames.join(","), exact_match: exactMatch },
       });
       setAddresses(data);
       return data as NameData[][];

@@ -1,11 +1,11 @@
 import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import {
   FRACTION_TOKEN_ADDRESS,
   fractionTokenBaseConfig,
 } from "./useContracts";
-import { useSmartAccountClient } from "./useWallet";
+import { useActiveWallet } from "./useWallet";
 import { publicClient } from "./useViem";
 
 /**
@@ -13,7 +13,7 @@ import { publicClient } from "./useViem";
  * @returns
  */
 export const useFractionToken = () => {
-  const smartAccountClient = useSmartAccountClient();
+  const { wallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,7 +24,7 @@ export const useFractionToken = () => {
    */
   const getTokenId = useCallback(
     async (params: { hatId: bigint; account: Address }) => {
-      if (!smartAccountClient) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
@@ -42,7 +42,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [wallet]
   );
 
   /**
@@ -52,22 +52,15 @@ export const useFractionToken = () => {
    */
   const mintFractionToken = useCallback(
     async (params: { hatId: bigint; account: Address }) => {
-      if (!smartAccountClient) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
       try {
-        const txHash = await smartAccountClient.sendTransaction({
-          calls: [
-            {
-              to: FRACTION_TOKEN_ADDRESS,
-              data: encodeFunctionData({
-                abi: FRACTION_TOKEN_ABI,
-                functionName: "mint",
-                args: [params.hatId, params.account],
-              }),
-            },
-          ],
+        const txHash = await wallet.writeContract({
+          ...fractionTokenBaseConfig,
+          functionName: "mint",
+          args: [params.hatId, params.account],
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({
@@ -100,7 +93,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [wallet]
   );
 
   /**
@@ -117,7 +110,7 @@ export const useFractionToken = () => {
       to: Address;
       amount: bigint;
     }) => {
-      if (!smartAccountClient) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
@@ -130,17 +123,10 @@ export const useFractionToken = () => {
         });
 
         // FractionTokenをtransferする。
-        const txHash = await smartAccountClient.sendTransaction({
-          calls: [
-            {
-              to: FRACTION_TOKEN_ADDRESS,
-              data: encodeFunctionData({
-                abi: FRACTION_TOKEN_ABI,
-                functionName: "safeTransferFrom",
-                args: [params.account, params.to, tokenId, params.amount, "0x"],
-              }),
-            },
-          ],
+        const txHash = await wallet.writeContract({
+          ...fractionTokenBaseConfig,
+          functionName: "safeTransferFrom",
+          args: [params.account, params.to, tokenId, params.amount, "0x"],
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({
@@ -173,8 +159,36 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [wallet]
   );
 
   return { isLoading, getTokenId, mintFractionToken, sendFractionToken };
+};
+
+export const useBalanceOfFractionToken = (
+  holder: Address,
+  address: Address,
+  hatId: bigint
+) => {
+  const [balance, setBalance] = useState<bigint>();
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!holder || !address || !hatId) return;
+      try {
+        const balance = await publicClient.readContract({
+          ...fractionTokenBaseConfig,
+          functionName: "balanceOf",
+          args: [holder, address, hatId],
+        });
+        setBalance(balance);
+      } catch (error) {
+        setBalance(0n);
+      }
+    };
+
+    fetch();
+  }, [holder, hatId, address]);
+
+  return balance;
 };

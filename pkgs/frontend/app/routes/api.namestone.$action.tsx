@@ -6,10 +6,11 @@ const domain = "toban.eth";
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const { action } = params;
+  const searchParams = new URL(request.url).searchParams;
 
   switch (action) {
     case "resolve-names":
-      const addresses = new URL(request.url).searchParams.get("addresses");
+      const addresses = searchParams.get("addresses");
       if (!addresses) return Response.json([]);
 
       const resolvedNames = await Promise.all(
@@ -17,14 +18,20 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       );
       return Response.json(resolvedNames);
     case "resolve-addresses":
-      const names = new URL(request.url).searchParams.get("names");
+      const names = searchParams.get("names");
       if (!names) return Response.json([]);
+
+      const exactMatch = searchParams.get("exact_match");
 
       const resolvedAddresses = await Promise.all(
         names
           .split(",")
           .map((name) =>
-            ns.searchNames({ domain, name, exact_match: 1 as any })
+            ns.searchNames({
+              domain,
+              name,
+              exact_match: exactMatch === "true" ? 1 : (0 as any),
+            })
           )
       );
       return Response.json(resolvedAddresses);

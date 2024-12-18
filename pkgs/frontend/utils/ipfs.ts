@@ -55,9 +55,10 @@ export const ipfsUploadFile = async (file: File) => {
   }
 };
 
-export const ipfs2https = (ipfsUri: string | undefined) => {
+export const ipfs2https = (ipfsUri?: string | undefined) => {
   if (!ipfsUri) return undefined;
 
+  if (!ipfsUri) return;
   const { pinataGateway, pinataGatewayToken } = getPinataConfig();
   const cid = ipfsUri.replace("ipfs://", "");
   return `https://${pinataGateway}/ipfs/${cid}?pinataGatewayToken=${pinataGatewayToken}`;

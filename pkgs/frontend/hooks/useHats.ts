@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Address, decodeEventLog, encodeFunctionData } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
-import { useActiveWallet } from "./useWallet";
+import { useActiveWallet, useSmartAccountClient } from "./useWallet";
 import { currentChain, publicClient } from "./useViem";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
 
@@ -91,6 +91,9 @@ export const useHats = () => {
                 toggle: true,
                 levelAtLocalTree: true,
                 currentSupply: true,
+                wearers: {
+                  props: {},
+                },
               },
             },
           },
@@ -313,25 +316,18 @@ export const useHats = () => {
       setIsLoading(true);
 
       try {
-        const txHash = await wallet.sendTransaction({
-          calls: [
-            {
-              to: HATS_ADDRESS,
-              data: encodeFunctionData({
-                abi: HATS_ABI,
-                functionName: "createHat",
-                args: [
-                  params.parentHatId,
-                  params.details || "",
-                  params.maxSupply || 5,
-                  params.eligibility ||
-                    "0x0000000000000000000000000000000000004a75",
-                  params.toggle || "0x0000000000000000000000000000000000004a75",
-                  params.mutable || true,
-                  params.imageURI || "",
-                ],
-              }),
-            },
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "createHat",
+          args: [
+            params.parentHatId,
+            params.details || "",
+            params.maxSupply || 5,
+            params.eligibility || "0x0000000000000000000000000000000000004a75",
+            params.toggle || "0x0000000000000000000000000000000000004a75",
+            params.mutable || true,
+            params.imageURI || "",
           ],
         });
 
@@ -382,17 +378,11 @@ export const useHats = () => {
       setIsLoading(true);
 
       try {
-        const txHash = await wallet.sendTransaction({
-          calls: [
-            {
-              to: HATS_ADDRESS,
-              data: encodeFunctionData({
-                abi: HATS_ABI,
-                functionName: "mintHat",
-                args: [params.hatId, params.wearer],
-              }),
-            },
-          ],
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "mintHat",
+          args: [params.hatId, params.wearer],
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({

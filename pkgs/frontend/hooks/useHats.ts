@@ -7,6 +7,7 @@ import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
 import { useActiveWallet } from "./useWallet";
 import { currentChain, publicClient } from "./useViem";
+import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
 
 // ###############################################################
 // Read with subgraph
@@ -39,7 +40,6 @@ export const useTreeInfo = (treeId: number) => {
     const fetch = async () => {
       if (!treeId) return;
       const tree = await getTreeInfo({
-        chainId: currentChain.id,
         treeId: treeId,
       });
 
@@ -195,7 +195,6 @@ export const useHats = () => {
 
       const treesIds = wearer.currentHats.map((hat) => {
         const treeId = hatIdToTreeId(BigInt(hat.id));
-        console.log("treeId", treeId);
         return treeId;
       });
 
@@ -212,18 +211,6 @@ export const useHats = () => {
         },
       });
 
-      // const treesInfo = await Promise.all(
-      //   wearer.currentHats.map(async (hat) => {
-      //     const treeId = hatIdToTreeId(BigInt(hat.id));
-      //     console.log("treeId", treeId);
-      //     const treeInfo = await getTreeInfo({
-      //       treeId: treeId,
-      //     });
-      //     console.log("treeInfo", treeInfo);
-      //     return treeInfo;
-      //   })
-      // );
-
       console.log("treesInfo", treesInfo);
 
       return treesInfo;
@@ -231,21 +218,31 @@ export const useHats = () => {
     [getWearerInfo]
   );
 
-  const getWorkspacesList = useCallback(async () => {
-    const treesInfo = await getTreesInfoByWearer({
-      walletAddress: "0x0000000000000000000000000000000000000000",
-    });
-    console.log("treesInfo", treesInfo);
-    const workspacesList = await Promise.all(
-      treesInfo.map(async (tree) => {
-        return {
-          name: "workspace",
-          imageUrl: tree?.hats?.[0]?.imageUri,
-        };
-      })
-    );
-    return workspacesList;
-  }, [getTreesInfoByWearer]);
+  const getWorkspacesList = useCallback(
+    async (params: { walletAddress: string }) => {
+      const treesInfo = await getTreesInfoByWearer({
+        walletAddress: params.walletAddress,
+      });
+      console.log("treesInfo", treesInfo);
+      const workspacesList = await Promise.all(
+        treesInfo.map(async (tree) => {
+          const detailsUri = tree?.hats?.[0]?.details;
+          const detailsJson = detailsUri
+            ? await ipfs2httpsJson(detailsUri)
+            : undefined;
+          const imageIpfsUri = tree?.hats?.[0].imageUri;
+          const imageHttps = ipfs2https(imageIpfsUri);
+          return {
+            treeId: tree?.id,
+            name: detailsJson?.data.name,
+            imageUrl: imageHttps,
+          };
+        })
+      );
+      return workspacesList;
+    },
+    [getTreesInfoByWearer]
+  );
 
   /**
    * HatsTimeframeModuleコントラクトのアドレスを取得するコールバック関数

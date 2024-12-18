@@ -17,6 +17,7 @@ const WorkspaceTop: FC = () => {
         ?.filter((h) => Number(h.levelAtLocalTree) >= 0)
         .map((h) => (
           <HatsListItemParser
+            key={h.id}
             imageUri={h.imageUri}
             detailUri={h.details}
             children={(<BasicRole />) as any}

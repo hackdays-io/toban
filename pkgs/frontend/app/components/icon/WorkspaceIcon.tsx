@@ -2,7 +2,7 @@ import { FaPeopleGroup } from "react-icons/fa6";
 import { CommonIcon } from "../common/CommonIcon";
 
 interface WorkspaceIconProps {
-  workspaceImageUrl?: string;
+  workspaceImageUrl?: string | undefined;
   size?: number | "full";
 }
 

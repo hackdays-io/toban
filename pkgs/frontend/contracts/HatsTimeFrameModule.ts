@@ -4,7 +4,7 @@ import { sepolia, optimism, base, mainnet } from "viem/chains";
 import { startLoading } from "../../cli/src/services/loading";
 
 const CONTRACT_ADDRESSES: Record<number, `0x${string}`> = {
-  [sepolia.id]: "0x3DB725901779ea2E0d895f7b4c0CbAE1A40cc2bC",
+  [sepolia.id]: "0xYourSepoliaContractAddressHere",
   [optimism.id]: "0xYourOptimismContractAddressHere",
   [base.id]: "0xYourBaseContractAddressHere",
   [mainnet.id]: "0xYourMainnetContractAddressHere",

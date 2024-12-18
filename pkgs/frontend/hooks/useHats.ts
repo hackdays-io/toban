@@ -2,10 +2,10 @@ import { hatIdToTreeId, treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import { Hat, HatsSubgraphClient, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
-import { Address, decodeEventLog, encodeFunctionData } from "viem";
+import { Address, decodeEventLog } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
-import { useActiveWallet, useSmartAccountClient } from "./useWallet";
+import { useActiveWallet } from "./useWallet";
 import { currentChain, publicClient } from "./useViem";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
 

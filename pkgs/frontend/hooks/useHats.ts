@@ -1,4 +1,4 @@
-import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { hatIdToTreeId, treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import { Hat, HatsSubgraphClient, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
@@ -233,7 +233,7 @@ export const useHats = () => {
           const imageIpfsUri = tree?.hats?.[0].imageUri;
           const imageHttps = ipfs2https(imageIpfsUri);
           return {
-            treeId: tree?.id,
+            treeId: treeIdHexToDecimal(tree?.id),
             name: detailsJson?.data.name,
             imageUrl: imageHttps,
           };

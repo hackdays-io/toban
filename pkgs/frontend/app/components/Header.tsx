@@ -11,7 +11,7 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import CommonButton from "./common/CommonButton";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
-const WORKSPACES_PATHS: string[] = ["/workspaces"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
+const WORKSPACES_PATHS: string[] = ["/workspace", "/workspace/new"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
 const HEADER_SIZE: number = 12; // 偶数のnumberだとアイコンが対応しているため望ましい
 
 const headerTextStyle = {
@@ -38,7 +38,7 @@ export const Header = () => {
   // ToDo: ページのパスや hooks で柔軟にロジックを実装する（切り替えてテストできます）
   const isWalletConnected = true;
   const isUserTobanEnsFound = true;
-  const isWorkspaceSelected = true;
+  const isWorkspaceSelected = false;
 
   // ToDo: ユーザーやワークスペースごとの各種データを取得するロジックを実装する
   const workspaceName: string | undefined = "Workspace Name";

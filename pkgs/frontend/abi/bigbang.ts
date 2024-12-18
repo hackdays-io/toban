@@ -1,48 +1,45 @@
 export const BIGBANG_ABI = [
   {
+    inputs: [],
+    name: "InvalidInitialization",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotInitializing",
+    type: "error",
+  },
+  {
     inputs: [
       {
         internalType: "address",
-        name: "_trustedForwarder",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_hatsAddress",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_hatsModuleFactory",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_hatsTimeFrameModule_IMPL",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_splitsCreatorFactory",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_splitFactoryV2",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_fractionToken",
+        name: "owner",
         type: "address",
       },
     ],
-    stateMutability: "nonpayable",
-    type: "constructor",
+    name: "OwnableInvalidOwner",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "OwnableUnauthorizedAccount",
+    type: "error",
   },
   {
     anonymous: false,
     inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "creator",
+        type: "address",
+      },
       {
         indexed: true,
         internalType: "address",
@@ -53,6 +50,12 @@ export const BIGBANG_ABI = [
         indexed: true,
         internalType: "uint256",
         name: "topHatId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "hatterHatId",
         type: "uint256",
       },
       {
@@ -70,6 +73,51 @@ export const BIGBANG_ABI = [
     ],
     name: "Executed",
     type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint64",
+        name: "version",
+        type: "uint64",
+      },
+    ],
+    name: "Initialized",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferred",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "FractionToken",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
   },
   {
     inputs: [],
@@ -124,6 +172,19 @@ export const BIGBANG_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "SplitsFactoryV2",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "address",
@@ -150,11 +211,6 @@ export const BIGBANG_ABI = [
         name: "_hatterHatImageURI",
         type: "string",
       },
-      {
-        internalType: "address",
-        name: "_trustedForwarder",
-        type: "address",
-      },
     ],
     name: "bigbang",
     outputs: [
@@ -168,8 +224,46 @@ export const BIGBANG_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_hatsAddress",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_hatsModuleFactory",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_hatsTimeFrameModule_IMPL",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_splitsCreatorFactory",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_splitFactoryV2",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_fractionToken",
+        type: "address",
+      },
+    ],
+    name: "initialize",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [],
-    name: "fractionToken",
+    name: "owner",
     outputs: [
       {
         internalType: "address",
@@ -178,51 +272,104 @@ export const BIGBANG_ABI = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
-        name: "forwarder",
+        name: "_fractionToken",
         type: "address",
       },
     ],
-    name: "isTrustedForwarder",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
+    name: "setFractionToken",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
-    inputs: [],
-    name: "splitFactoryV2",
-    outputs: [
+    inputs: [
       {
         internalType: "address",
-        name: "",
+        name: "_hats",
         type: "address",
       },
     ],
-    stateMutability: "view",
+    name: "setHats",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
-    inputs: [],
-    name: "trustedForwarder",
-    outputs: [
+    inputs: [
       {
         internalType: "address",
-        name: "",
+        name: "_hatsModuleFactory",
         type: "address",
       },
     ],
-    stateMutability: "view",
+    name: "setHatsModuleFactory",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_hatsTimeFrameModuleImpl",
+        type: "address",
+      },
+    ],
+    name: "setHatsTimeFrameModuleImpl",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_splitsCreatorFactory",
+        type: "address",
+      },
+    ],
+    name: "setSplitsCreatorFactory",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_splitsFactoryV2",
+        type: "address",
+      },
+    ],
+    name: "setSplitsFactoryV2",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
 ] as const;

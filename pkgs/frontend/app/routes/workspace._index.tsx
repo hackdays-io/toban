@@ -1,10 +1,11 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
 import { BasicButton } from "~/components/BasicButton";
 import { useNavigate } from "@remix-run/react";
 import { useActiveWallet } from "hooks/useWallet";
 import { useHats } from "../../hooks/useHats";
+import { Address } from "viem";
 
 const WorkspaceCard: FC<{
   treeId: string;
@@ -38,26 +39,38 @@ const Workspace: FC = () => {
       imageUrl: string | undefined;
     }[]
   >([]);
+  const smartWalletRef = useRef<Address | undefined>(undefined);
+
   const navigate = useNavigate();
 
-  const { wallet } = useActiveWallet();
+  const { wallet, isSmartWallet } = useActiveWallet();
   const { getWorkspacesList } = useHats();
 
-  useEffect(() => {
-    console.log("wallet?.account?.address", wallet?.account?.address);
-  }, [wallet?.account?.address]);
+  const address = useMemo(() => {
+    if (smartWalletRef.current) {
+      return smartWalletRef.current;
+    } else if (isSmartWallet) {
+      smartWalletRef.current = wallet?.account?.address;
+      return smartWalletRef.current;
+    } else {
+      return wallet?.account?.address;
+    }
+  }, [wallet?.account?.address, isSmartWallet]);
 
   useEffect(() => {
+    if (smartWalletRef.current !== undefined && !isSmartWallet) return;
+
     const fetchWorkspacesList = async () => {
       const _workspacesList = await getWorkspacesList({
-        walletAddress: wallet?.account?.address as `0x${string}`,
+        walletAddress: address as `0x${string}`,
       });
-      console.log("_workspacesList", _workspacesList);
 
-      setWorkspacesList(_workspacesList);
+      if (smartWalletRef.current === undefined || isSmartWallet) {
+        setWorkspacesList(_workspacesList);
+      }
     };
     fetchWorkspacesList();
-  }, [wallet?.account?.address, getWorkspacesList]);
+  }, [address, getWorkspacesList]);
 
   return (
     <>

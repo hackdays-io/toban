@@ -233,7 +233,7 @@ export const useHats = () => {
           const imageIpfsUri = tree?.hats?.[0].imageUri;
           const imageHttps = ipfs2https(imageIpfsUri);
           return {
-            treeId: treeIdHexToDecimal(tree?.id),
+            treeId: String(treeIdHexToDecimal(tree?.id)),
             name: detailsJson?.data.name,
             imageUrl: imageHttps,
           };

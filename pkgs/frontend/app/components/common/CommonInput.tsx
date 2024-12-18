@@ -9,15 +9,17 @@ export const CommonInput = ({
   value,
   placeholder,
   onChange,
+  ...props
 }: CommonInputProps) => {
   return (
     <Input
-      value={value}
       placeholder={placeholder}
       width="100%"
-      onChange={onChange}
       borderColor="gray.800"
       backgroundColor="white"
+      {...props}
+      value={value}
+      onChange={onChange}
     />
   );
 };

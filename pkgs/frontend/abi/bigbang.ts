@@ -37,6 +37,12 @@ export const BIGBANG_ABI = [
       {
         indexed: true,
         internalType: "address",
+        name: "creator",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
         name: "owner",
         type: "address",
       },
@@ -47,7 +53,7 @@ export const BIGBANG_ABI = [
         type: "uint256",
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: "uint256",
         name: "hatterHatId",
         type: "uint256",
@@ -205,11 +211,6 @@ export const BIGBANG_ABI = [
         name: "_hatterHatImageURI",
         type: "string",
       },
-      {
-        internalType: "address",
-        name: "_trustedForwarder",
-        type: "address",
-      },
     ],
     name: "bigbang",
     outputs: [
@@ -224,11 +225,6 @@ export const BIGBANG_ABI = [
   },
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "_trustedForwarder",
-        type: "address",
-      },
       {
         internalType: "address",
         name: "_hatsAddress",
@@ -263,25 +259,6 @@ export const BIGBANG_ABI = [
     name: "initialize",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "forwarder",
-        type: "address",
-      },
-    ],
-    name: "isTrustedForwarder",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
     type: "function",
   },
   {

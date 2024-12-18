@@ -23,10 +23,14 @@ const WorkspaceNew: FC = () => {
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { bigbang } = useBigBang();
-  const { preferredAddress } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
+    if (!wallet) {
+      alert("ウォレットを接続してください。");
+      return;
+    }
     if (!name || !description || !imageFile) {
       alert("全ての項目を入力してください。");
       return;
@@ -48,34 +52,33 @@ const WorkspaceNew: FC = () => {
 
       const resUploadImage = await uploadImageFileToIpfs();
       if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
-      console.log(resUploadImage);
+      console.log("resUploadImage", resUploadImage);
 
       const parsedLog = await bigbang({
-        owner: preferredAddress as Address,
+        owner: wallet?.account.address as Address,
         topHatDetails: resUploadMetadata.ipfsUri,
         topHatImageURI: resUploadImage.ipfsUri,
         hatterHatDetails: resUploadMetadata.ipfsUri,
         hatterHatImageURI: resUploadImage.ipfsUri,
-        trustedForwarder: "0x0000000000000000000000000000000000000000",
       });
 
-      // if (!decodedLog) throw new Error("Tx failed");
-      console.log("parsedLog", parsedLog);
+      const topHatId = parsedLog?.[0].args.topHatId;
+      console.log("topHatId", topHatId);
 
-      // const topHatId = parsedLog.args.topHatId;
-      // console.log(topHatId);
+      if (topHatId) {
+        const treeId = hatIdToTreeId(topHatId);
+        console.log(treeId);
 
-      // const treeId = hatIdToTreeId(BigInt(topHatId));
-      // // const treeId = 1;
-      // console.log(treeId);
+        const treeIdStr = treeId.toString();
+        console.log("treeIdStr", treeIdStr);
 
-      // const treeIdStr = treeId.toString();
-
-      // navigate(`/${treeIdStr}`);
-      navigate("/workspace");
+        navigate(`/${treeIdStr}`);
+      } else {
+        navigate("/workspace");
+      }
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。");
+      alert("エラーが発生しました。" + error);
     } finally {
       setIsLoading(false);
     }

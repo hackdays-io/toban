@@ -8,7 +8,7 @@ import {
   parseEventLogs,
 } from "viem";
 import { BIGBANG_ADDRESS } from "./useContracts";
-import { useSmartAccountClient } from "./useWallet";
+import { useActiveWallet } from "./useWallet";
 import { publicClient } from "./useViem";
 
 /**
@@ -16,7 +16,7 @@ import { publicClient } from "./useViem";
  * @returns
  */
 export const useBigBang = () => {
-  const smartAccountClient = useSmartAccountClient();
+  const { wallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,30 +30,25 @@ export const useBigBang = () => {
       topHatImageURI: string;
       hatterHatDetails: string;
       hatterHatImageURI: string;
-      trustedForwarder: Address;
     }) => {
-      if (!smartAccountClient) return;
+      if (!wallet) return;
 
       setIsLoading(true);
 
+      console.log("wallet", wallet);
+      console.log("params", params);
+
       try {
-        const txHash = await smartAccountClient.sendTransaction({
-          calls: [
-            {
-              to: BIGBANG_ADDRESS,
-              data: encodeFunctionData({
-                abi: BIGBANG_ABI,
-                functionName: "bigbang",
-                args: [
-                  params.owner,
-                  params.topHatDetails,
-                  params.topHatImageURI,
-                  params.hatterHatDetails,
-                  params.hatterHatImageURI,
-                  params.trustedForwarder,
-                ],
-              }),
-            },
+        const txHash = await wallet.writeContract({
+          abi: BIGBANG_ABI,
+          address: BIGBANG_ADDRESS,
+          functionName: "bigbang",
+          args: [
+            params.owner,
+            params.topHatDetails,
+            params.topHatImageURI,
+            params.hatterHatDetails,
+            params.hatterHatImageURI,
           ],
         });
 
@@ -64,7 +59,6 @@ export const useBigBang = () => {
         });
         console.log("receipt:", receipt);
 
-        // @help イベントが取れない（undefinedになる）
         const parsedLog = parseEventLogs({
           abi: BIGBANG_ABI,
           eventName: "Executed",
@@ -74,22 +68,12 @@ export const useBigBang = () => {
 
         console.log("parsedLog:", parsedLog);
 
-        if (parsedLog) {
-          console.log("parsedLog.args:", parsedLog.args);
-          // console.log(
-          //   "Tree Link:",
-          //   `https://app.hatsprotocol.xyz/trees/${String(
-          //     publicClient.chain?.id
-          //   )}/${hatIdToTreeId(BigInt(parsedLog.args.topHatId))}`
-          // );
-        }
-
         return parsedLog;
       } finally {
         setIsLoading(false);
       }
     },
-    [smartAccountClient]
+    [wallet]
   );
 
   return { bigbang, isLoading };

@@ -65,6 +65,7 @@ const Workspace: FC = () => {
         walletAddress: address as `0x${string}`,
       });
 
+      // このセッションでスマートウォレットに接続した記録があれば、ユーザー自身のウォレットによるワークスペースの更新は無視する
       if (smartWalletRef.current === undefined || isSmartWallet) {
         setWorkspacesList(_workspacesList);
       }

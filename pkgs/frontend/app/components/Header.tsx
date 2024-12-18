@@ -28,8 +28,6 @@ enum HeaderType {
 }
 
 export const Header = () => {
-  console.log("=== Header render ===");
-
   const [headerType, setHeaderType] = useState<HeaderType>(
     HeaderType.NonHeader
   );
@@ -48,7 +46,6 @@ export const Header = () => {
 
   useEffect(() => {
     const determineHeaderType = () => {
-      console.log("pathname", pathname);
       if (
         !NO_HEADER_PATHS.includes(pathname) &&
         isWalletConnected &&

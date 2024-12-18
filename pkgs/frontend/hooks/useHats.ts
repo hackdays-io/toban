@@ -214,8 +214,6 @@ export const useHats = () => {
         },
       });
 
-      console.log("treesInfo", treesInfo);
-
       return treesInfo;
     },
     [getWearerInfo]
@@ -226,7 +224,6 @@ export const useHats = () => {
       const treesInfo = await getTreesInfoByWearer({
         walletAddress: params.walletAddress,
       });
-      console.log("treesInfo", treesInfo);
       const workspacesList = await Promise.all(
         treesInfo.map(async (tree) => {
           const detailsUri = tree?.hats?.[0]?.details;

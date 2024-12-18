@@ -47,16 +47,6 @@ const Workspace: FC = () => {
     console.log("wallet?.account?.address", wallet?.account?.address);
   }, [wallet?.account?.address]);
 
-  const address = useMemo(() => {
-    if (wallet?.account?.address) {
-      return wallet?.account?.address as `0x${string}`;
-    }
-  }, [wallet?.account?.address]);
-
-  useEffect(() => {
-    console.log("address", address);
-  }, [address]);
-
   useEffect(() => {
     const fetchWorkspacesList = async () => {
       const _workspacesList = await getWorkspacesList({

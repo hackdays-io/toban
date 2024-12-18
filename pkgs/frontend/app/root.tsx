@@ -75,7 +75,7 @@ export default function App() {
             alignItems="center"
             position="relative"
           >
-            {/* <Header /> */}
+            <Header />
             <Box
               width="100%"
               height="100%"

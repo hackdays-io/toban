@@ -96,11 +96,11 @@ describe("FractionToken", () => {
 	it("should mint, transfer and burn tokens", async () => {
 		// address1がaddress2,address3にtokenをmint
 		await FractionToken.write.mintInitialSupply(
-			[hatId, address2.account?.address!],
+			[hatId, address2.account?.address!, 0n],
 			{ account: address1.account! }
 		);
 		await FractionToken.write.mintInitialSupply(
-			[hatId, address3.account?.address!],
+			[hatId, address3.account?.address!, 0n],
 			{ account: address1.account! }
 		);
 
@@ -187,7 +187,7 @@ describe("FractionToken", () => {
 	it("should fail to mint a token", async () => {
 		// roleのない人にtokenはmintできない
 		await FractionToken.write
-			.mintInitialSupply([hatId, address4.account?.address!], {
+			.mintInitialSupply([hatId, address4.account?.address!, 0n], {
 				account: address1.account!,
 			})
 			.catch((error: any) => {
@@ -196,7 +196,7 @@ describe("FractionToken", () => {
 
 		// 権限のない人はtokenをmintできない
 		await FractionToken.write
-			.mintInitialSupply([hatId, address2.account?.address!], {
+			.mintInitialSupply([hatId, address2.account?.address!, 0n], {
 				account: address2.account!,
 			})
 			.catch((error: any) => {
@@ -207,7 +207,7 @@ describe("FractionToken", () => {
 
 		// tokenは二度mintできない
 		await FractionToken.write
-			.mintInitialSupply([hatId, address2.account?.address!])
+			.mintInitialSupply([hatId, address2.account?.address!, 0n])
 			.catch((error: any) => {
 				expect(error.message).to.include("This account has already received");
 			});

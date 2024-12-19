@@ -22,7 +22,7 @@ const upgrade = async () => {
 	// FractionTokenコントラクトをアップグレードする
 	const newFractionToken = await upgradeFractionToken(
 		FractionToken,
-		"FractionToken_Mock_v2" // ここにアップグレード後のFractionTokenのコントラクト名を指定する。
+		"FractionToken" // ここにアップグレード後のFractionTokenのコントラクト名を指定する。
 	);
 
 	console.log("upgrded address:", newFractionToken.address);

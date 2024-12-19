@@ -14,12 +14,12 @@ export const upgradeFractionToken = async (
 	params?: any[]
 ) => {
 	// 新しいコントラクトのファクトリーを取得
-	const FractionToken_Mock_v2 = await ethers.getContractFactory(contractName);
+	const FractionToken = await ethers.getContractFactory(contractName);
 
 	// アップグレードを実行
 	const _FractionToken = await upgrades.upgradeProxy(
 		contractAddress,
-		FractionToken_Mock_v2
+		FractionToken
 	);
 
 	const address = _FractionToken.target;

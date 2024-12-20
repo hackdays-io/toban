@@ -86,7 +86,8 @@ describe("SplitsCreator Factory", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
-		[address1, bigBangAddress, newImplementation] = await viem.getWalletClients();
+		[address1, bigBangAddress, newImplementation] =
+			await viem.getWalletClients();
 
 		await Hats.write.mintTopHat([
 			address1.account?.address!,
@@ -141,7 +142,9 @@ describe("SplitsCreator Factory", () => {
 	});
 
 	it("should set BigBang Address", async () => {
-		await SplitsCreatorFactory.write.setBigBang([bigBangAddress.account?.address!]);
+		await SplitsCreatorFactory.write.setBigBang([
+			bigBangAddress.account?.address!,
+		]);
 	});
 
 	it("Should deploy SplitsCreator", async () => {
@@ -178,12 +181,14 @@ describe("SplitsCreator Factory", () => {
 	});
 
 	it("should change SplitsCreator implementation address", async () => {
-		await SplitsCreatorFactory.write.setImplementation([newImplementation.account?.address!]);
+		await SplitsCreatorFactory.write.setImplementation([
+			newImplementation.account?.address!,
+		]);
 		expect(
-			(await SplitsCreatorFactory.read.SPLITS_CREATOR_IMPLEMENTATION()).toLocaleLowerCase()
-		).to.equal(
-			newImplementation.account?.address!
-		);
+			(
+				await SplitsCreatorFactory.read.SPLITS_CREATOR_IMPLEMENTATION()
+			).toLocaleLowerCase()
+		).to.equal(newImplementation.account?.address!);
 	});
 
 	it("sohuld upgrade SplitsCreatorFactory", async () => {
@@ -196,9 +201,9 @@ describe("SplitsCreator Factory", () => {
 		/**
 		 * upgrade後にしかないメソッドを実行
 		 */
-		expect(
-			await newSplitsCreatorFactory.read.testUpgradeFunction()
-		).to.equal("testUpgradeFunction");
+		expect(await newSplitsCreatorFactory.read.testUpgradeFunction()).to.equal(
+			"testUpgradeFunction"
+		);
 	});
 });
 
@@ -264,7 +269,8 @@ describe("CreateSplit", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
-		[address1, address2, address3, bigBangAddress] = await viem.getWalletClients();
+		[address1, address2, address3, bigBangAddress] =
+			await viem.getWalletClients();
 
 		publicClient = await viem.getPublicClient();
 
@@ -458,14 +464,17 @@ describe("CreateSplit", () => {
 		await FractionToken.write.mintInitialSupply([
 			hat1_id,
 			address1.account?.address!,
+			0n,
 		]);
 		await FractionToken.write.mintInitialSupply([
 			hat1_id,
 			address2.account?.address!,
+			0n,
 		]);
 		await FractionToken.write.mintInitialSupply([
 			hat2_id,
 			address3.account?.address!,
+			0n,
 		]);
 
 		// let balance: bigint;

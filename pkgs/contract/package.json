@@ -17,7 +17,7 @@
     "getContractAddress": "npx hardhat getContractAddress",
     "registerSubdomain": "npx hardhat registerSubdomain",
     "createSplit": "npx hardhat run scripts/createSplit.ts",
-    "upgrade:FractionToken": "npx hardhat run scripts/upgrade/FractionToken.ts",
+    "upgrade:FractionToken": "npx hardhat run scripts/upgrade/fractionToken.ts",
     "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts",
     "bigbang": "npx hardhat bigbang",
     "getWoreTime": "npx hardhat getWoreTime",

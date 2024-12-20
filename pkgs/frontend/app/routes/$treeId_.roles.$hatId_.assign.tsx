@@ -1,17 +1,6 @@
-import React, { FC, useState, useEffect, useMemo } from "react";
-import {
-  Box,
-  Button,
-  Input,
-  Text,
-  VStack,
-  HStack,
-  Image,
-  Flex,
-  Heading,
-} from "@chakra-ui/react";
+import { FC, useState, useEffect, useMemo, useCallback } from "react";
+import { Box, Button, Text, HStack } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import { useAssignRole } from "../../hooks/useAssignRole";
 import { Address } from "viem";
 import { useAddressesByNames } from "hooks/useENS";
 import { isValidEthAddress, abbreviateAddress } from "utils/wallet";
@@ -20,6 +9,10 @@ import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { HatsDetailSchama } from "types/hats";
 import { RoleIcon } from "~/components/icon/RoleIcon";
 import { CommonInput } from "~/components/common/CommonInput";
+import { PageHeader } from "~/components/PageHeader";
+import { FaCircleCheck } from "react-icons/fa6";
+import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
+import CommonButton from "~/components/common/CommonButton";
 
 interface RoleDetailProps {
   imageUri?: string;
@@ -44,32 +37,20 @@ const RoleDetail: FC<RoleDetailProps> = ({ imageUri, detail }) => {
 
 const AssignRole: FC = () => {
   const { hatId } = useParams();
-  // In case you need hatId internally, you can use it from here, but we won't display it.
-  // const parsedHatId = hatId ? BigInt(hatId) : undefined;
 
-  // User input for name or address
   const [inputValue, setInputValue] = useState("");
-  const [resolvedAddress, setResolvedAddress] = useState<Address | null>(null);
+  const [resolvedAddress, setResolvedAddress] = useState<Address>();
+  const [startDatetime, setStartDatetime] = useState<string>("");
 
-  // Date input: default to today's date
-  const today = useMemo(() => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }, []);
-
-  const { assignRole, isAssigning, assignError, assignSuccess } =
-    useAssignRole();
+  const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule();
 
   const { hat, isLoading } = useGetHat(hatId!);
 
   // Name resolution
-  const { addresses, fetchAddresses } = useAddressesByNames();
+  const { addresses, fetchAddresses } = useAddressesByNames(undefined, true);
 
   useEffect(() => {
-    setResolvedAddress(null);
+    setResolvedAddress(undefined);
     if (!inputValue) return;
 
     if (isValidEthAddress(inputValue)) {
@@ -91,7 +72,8 @@ const AssignRole: FC = () => {
     }
   }, [addresses]);
 
-  const handleAssign = () => {
+  const handleAssign = useCallback(async () => {
+    if (!hatId) return;
     let finalAddress: Address | null = null;
 
     if (isValidEthAddress(inputValue)) {
@@ -99,23 +81,22 @@ const AssignRole: FC = () => {
     } else if (resolvedAddress) {
       finalAddress = resolvedAddress;
     } else {
-      alert("Please enter a valid Ethereum address or a resolvable username.");
+      alert("Please enter a valid Ethereum address or username.");
       return;
     }
 
-    // Assuming you have logic to handle hatId inside useAssignRole or mintHat
-    // If hatId is required, ensure your assignRole logic doesn't rely on UI input.
-    assignRole({
-      hatId: hatId ? BigInt(hatId) : 0n, // or handle no hatId scenario
-      wearer: finalAddress,
-    });
-  };
+    await mintHat(
+      BigInt(hatId),
+      finalAddress,
+      startDatetime
+        ? BigInt(new Date(startDatetime as any).getTime() / 1000)
+        : BigInt(0)
+    );
+  }, [hatId, resolvedAddress, inputValue, mintHat]);
 
   return (
     <>
-      <Heading as="h2" fontSize="xl" mb={4}>
-        Assign Role
-      </Heading>
+      <PageHeader title="役割を割り当てる" />
 
       <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
         <RoleDetail />
@@ -132,9 +113,10 @@ const AssignRole: FC = () => {
           onChange={(e) => setInputValue(e.target.value)}
         />
         {resolvedAddress && !isValidEthAddress(inputValue) && (
-          <Text fontSize="xs" mt={1} color="gray.500">
-            {abbreviateAddress(resolvedAddress)}
-          </Text>
+          <HStack mt={1} fontSize="sm" justifyContent="end" color="blue.300">
+            <FaCircleCheck />
+            <Text color="gray.500">{abbreviateAddress(resolvedAddress)}</Text>
+          </HStack>
         )}
       </Box>
 
@@ -144,39 +126,26 @@ const AssignRole: FC = () => {
           開始日
         </Text>
         <CommonInput
-          value=""
-          onChange={() => {}}
-          type="date"
-          defaultValue={today}
+          value={startDatetime!}
+          onChange={(e) => {
+            setStartDatetime(e.target.value);
+          }}
+          type="datetime-local"
         />
       </Box>
 
       {/* Assign Button */}
-      <Button
+      <CommonButton
         onClick={handleAssign}
         bg="#FFD266"
         color="black"
         w="100%"
         size="lg"
-        // isLoading={isAssigning}
-        disabled={isAssigning}
+        loading={isMinting}
         _hover={{ bg: "#FFC94D" }}
       >
         Assign
-      </Button>
-
-      {/* Feedback messages */}
-      {isAssigning && <Text mt={4}>Assigning role... Please wait.</Text>}
-      {assignError && (
-        <Text mt={4} color="red.500">
-          Error: {assignError}
-        </Text>
-      )}
-      {assignSuccess && (
-        <Text mt={4} color="green.500">
-          Role assigned successfully!
-        </Text>
-      )}
+      </CommonButton>
     </>
   );
 };

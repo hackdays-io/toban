@@ -1,4 +1,5 @@
 import { Input, InputProps } from "@chakra-ui/react";
+import { FC } from "react";
 
 interface CommonInputProps extends Omit<InputProps, "value"> {
   minHeight?: string;
@@ -6,12 +7,13 @@ interface CommonInputProps extends Omit<InputProps, "value"> {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const CommonInput = ({
+export const CommonInput: FC<CommonInputProps> = ({
   minHeight,
   value,
   placeholder,
   onChange,
-}: CommonInputProps) => {
+  ...rest
+}) => {
   return (
     <Input
       value={value}
@@ -19,6 +21,7 @@ export const CommonInput = ({
       width="100%"
       minHeight={minHeight}
       onChange={onChange}
+      {...rest}
       borderColor="gray.800"
       borderRadius="xl"
       backgroundColor="white"

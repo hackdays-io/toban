@@ -2,11 +2,6 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "_trustedForwarder",
-        type: "address",
-      },
-      {
         internalType: "string",
         name: "_version",
         type: "string",
@@ -62,6 +57,48 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
       },
     ],
     stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "hatId",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "wearer",
+        type: "address",
+      },
+    ],
+    name: "deactivate",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "deactivatedTime",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -128,12 +165,17 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
   {
     inputs: [
       {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+      {
         internalType: "address",
-        name: "forwarder",
+        name: "",
         type: "address",
       },
     ],
-    name: "isTrustedForwarder",
+    name: "isActive",
     outputs: [
       {
         internalType: "bool",
@@ -156,8 +198,31 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
         name: "wearer",
         type: "address",
       },
+      {
+        internalType: "uint256",
+        name: "time",
+        type: "uint256",
+      },
     ],
     name: "mintHat",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "hatId",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "wearer",
+        type: "address",
+      },
+    ],
+    name: "reactivate",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -176,13 +241,24 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "trustedForwarder",
-    outputs: [
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
       {
         internalType: "address",
         name: "",
         type: "address",
+      },
+    ],
+    name: "totalActiveTime",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -209,6 +285,30 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
         internalType: "string",
         name: "",
         type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "woreTime",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",

@@ -3,8 +3,10 @@ pragma solidity ^0.8.24;
 
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IHats } from "../hats/src/Interfaces/IHats.sol";
+import { IFractionToken } from "./IFractionToken.sol";
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
-contract FractionToken is ERC1155Upgradeable {
+contract FractionToken is ERC1155Upgradeable, IFractionToken {
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
@@ -21,7 +23,11 @@ contract FractionToken is ERC1155Upgradeable {
 		TOKEN_SUPPLY = _tokenSupply;
 	}
 
-	function mintInitialSupply(uint256 hatId, address account) public {
+	function mintInitialSupply(
+		uint256 hatId,
+		address account,
+		uint256 amount
+	) public {
 		require(
 			_hasHatRole(account, hatId),
 			"This account does not have the role"
@@ -39,9 +45,12 @@ contract FractionToken is ERC1155Upgradeable {
 			"This account has already received"
 		);
 
-		_mint(account, tokenId, TOKEN_SUPPLY, "");
+		uint256 initialAmount = amount > 0 ? amount : TOKEN_SUPPLY;
+		_mint(account, tokenId, initialAmount, "");
 
 		tokenRecipients[tokenId].push(account);
+
+		emit InitialMint(account, hatId, tokenId);
 	}
 
 	function mint(uint256 hatId, address account, uint256 amount) public {
@@ -82,7 +91,7 @@ contract FractionToken is ERC1155Upgradeable {
 		uint256 tokenId,
 		uint256 amount,
 		bytes memory data
-	) public override {
+	) public override(ERC1155Upgradeable, IERC1155) {
 		super.safeTransferFrom(from, to, tokenId, amount, data);
 
 		if (!_containsRecipient(tokenId, to)) {
@@ -96,7 +105,7 @@ contract FractionToken is ERC1155Upgradeable {
 		uint256[] memory tokenIds,
 		uint256[] memory amounts,
 		bytes memory data
-	) public override {
+	) public override(ERC1155Upgradeable, IERC1155) {
 		super.safeBatchTransferFrom(from, to, tokenIds, amounts, data);
 
 		for (uint256 i = 0; i < tokenIds.length; i++) {

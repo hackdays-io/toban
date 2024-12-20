@@ -4,6 +4,7 @@ import { Box, Image } from "@chakra-ui/react";
 interface CommonIconProps {
   imageUrl: string | undefined;
   size: number | `${number}px` | "full";
+  borderRadius?: string;
   fallbackIconComponent?: ReactNode;
 }
 
@@ -11,6 +12,7 @@ export const CommonIcon = ({
   size,
   imageUrl,
   fallbackIconComponent,
+  borderRadius,
 }: CommonIconProps) => {
   const [showFallbackIcon, setShowFallbackIcon] = useState(!imageUrl);
 
@@ -26,7 +28,7 @@ export const CommonIcon = ({
       alignItems="center"
       justifyContent="center"
       my="auto"
-      borderRadius="full"
+      borderRadius={borderRadius}
       flexShrink={0}
       overflow="hidden"
     >
@@ -36,7 +38,7 @@ export const CommonIcon = ({
           width="100%"
           height="100%"
           objectFit="cover"
-          borderRadius="full"
+          borderRadius={borderRadius}
           onError={() => setShowFallbackIcon(true)}
         />
       ) : (

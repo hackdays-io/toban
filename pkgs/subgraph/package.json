@@ -1,0 +1,28 @@
+{
+  "name": "subgraph",
+  "license": "MIT",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.yaml",
+    "deploy:sepolia": "goldsky subgraph deploy toban-sepolia/1.0.0 --path .",
+    "update:sepolia": "goldsky subgraph update toban-sepolia/1.0.0",
+    "create-local": "graph create --node http://localhost:8020/ poap-xyz/poap",
+    "remove-local": "graph remove --node http://localhost:8020/ poap-xyz/poap",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 poap-xyz/poap"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.51.0",
+    "@graphprotocol/graph-ts": "0.31.0",
+    "@hatsprotocol/sdk-v1-core": "^0.10.0",
+    "viem": "^2.21.55"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "mustache": "^4.0.1"
+  }
+}

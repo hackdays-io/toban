@@ -1,0 +1,32 @@
+specVersion: 0.0.1
+description: Toban
+repository: https://github.com/hackdays-io/toban
+schema:
+  file: ./schema.graphql
+dataSources:
+  {{#contracts}}
+  - kind: ethereum/contract
+    name: {{ file }}
+    network: {{ network }}
+    source:
+      address: "{{ address}}"
+      abi: {{ file }}
+      startBlock: {{ startBlock }}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        {{#entities}}
+        - {{name}}
+        {{/entities}}
+      abis:
+        - name: {{ file }}
+          file: ./abis/{{ file }}.json
+      eventHandlers:
+        {{#handlers}}
+        - event: {{event}}
+          handler: {{handler}}
+        {{/handlers}}
+      file: ./src/mapping.ts
+  {{/contracts}}

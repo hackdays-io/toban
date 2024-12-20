@@ -15,9 +15,35 @@ import { useAssignRole } from "../../hooks/useAssignRole";
 import { Address } from "viem";
 import { useAddressesByNames } from "hooks/useENS";
 import { isValidEthAddress, abbreviateAddress } from "utils/wallet";
+import { useGetHat } from "hooks/useHats";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { HatsDetailSchama } from "types/hats";
+import { RoleIcon } from "~/components/icon/RoleIcon";
+import { CommonInput } from "~/components/common/CommonInput";
+
+interface RoleDetailProps {
+  imageUri?: string;
+  detail?: HatsDetailSchama;
+}
+
+const RoleDetail: FC<RoleDetailProps> = ({ imageUri, detail }) => {
+  return (
+    <HStack align="start" mb={6} columnGap={4}>
+      <RoleIcon roleImageUrl={imageUri} size={20} />
+      <Box>
+        <Text fontWeight="bold" fontSize="lg">
+          {detail?.data.name}
+        </Text>
+        <Text fontSize="sm" color="gray.600">
+          {detail?.data.description}
+        </Text>
+      </Box>
+    </HStack>
+  );
+};
 
 const AssignRole: FC = () => {
-  const { treeId, hatId } = useParams();
+  const { hatId } = useParams();
   // In case you need hatId internally, you can use it from here, but we won't display it.
   // const parsedHatId = hatId ? BigInt(hatId) : undefined;
 
@@ -36,6 +62,8 @@ const AssignRole: FC = () => {
 
   const { assignRole, isAssigning, assignError, assignSuccess } =
     useAssignRole();
+
+  const { hat, isLoading } = useGetHat(hatId!);
 
   // Name resolution
   const { addresses, fetchAddresses } = useAddressesByNames();
@@ -83,116 +111,73 @@ const AssignRole: FC = () => {
     });
   };
 
-  // Theming:
-  // - Background: #FFF8E5 (cream)
-  // - Accent: #FFD266 (warm yellow)
-  // Adopting a layout similar to the "Assign role" image:
   return (
-    <Flex justify="center" align="center" minH="100vh" bg="#FFF8E5" p={4}>
-      <Box
-        w={{ base: "100%", sm: "400px" }}
-        bg="white"
-        borderRadius="lg"
-        boxShadow="md"
-        p={6}
-      >
-        {/* Header with logo and user avatar */}
-        <HStack justify="space-between" mb={6}>
-          <HStack>
-            <Image
-              src="https://via.placeholder.com/40?text=Logo"
-              borderRadius="md"
-              boxSize="40px"
-              alt="Hackdays Logo"
-            />
-            <Text fontWeight="bold" fontSize="lg">
-              Hackdays
-            </Text>
-          </HStack>
-          <Image
-            src="https://via.placeholder.com/40"
-            borderRadius="full"
-            boxSize="40px"
-            alt="User Avatar"
-          />
-        </HStack>
+    <>
+      <Heading as="h2" fontSize="xl" mb={4}>
+        Assign Role
+      </Heading>
 
-        <Heading as="h2" fontSize="xl" mb={4}>
-          Assign Role
-        </Heading>
+      <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
+        <RoleDetail />
+      </HatsListItemParser>
 
-        {/* Role Icon and Description */}
-        <VStack align="start" mb={6}>
-          <Image
-            src="https://via.placeholder.com/80?text=Role"
-            boxSize="80px"
-            borderRadius="md"
-            alt="Role Icon"
-          />
-          <Text fontWeight="bold" fontSize="lg">
-            掃除係
-          </Text>
-          <Text fontSize="sm" color="gray.600">
-            説明説明説明説明説明説明説明説明 説明説明説明説明説明説明説明説明
-            説明説明説明説明説明説明
-          </Text>
-        </VStack>
-
-        {/* User name or address input */}
-        <Box mb={4}>
-          <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
-            ユーザー名 or ウォレットアドレス
-          </Text>
-          <Input
-            placeholder="ユーザー名 or ウォレットアドレス"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            size="md"
-            variant="outline"
-          />
-          {resolvedAddress && !isValidEthAddress(inputValue) && (
-            <Text fontSize="xs" mt={1} color="gray.500">
-              {abbreviateAddress(resolvedAddress)}
-            </Text>
-          )}
-        </Box>
-
-        {/* Date input */}
-        <Box mb={4}>
-          <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
-            開始日
-          </Text>
-          <Input type="date" defaultValue={today} size="md" variant="outline" />
-        </Box>
-
-        {/* Assign Button */}
-        <Button
-          onClick={handleAssign}
-          bg="#FFD266"
-          color="black"
-          w="100%"
-          size="lg"
-          isLoading={isAssigning}
-          disabled={isAssigning}
-          _hover={{ bg: "#FFC94D" }}
-        >
-          Assign
-        </Button>
-
-        {/* Feedback messages */}
-        {isAssigning && <Text mt={4}>Assigning role... Please wait.</Text>}
-        {assignError && (
-          <Text mt={4} color="red.500">
-            Error: {assignError}
-          </Text>
-        )}
-        {assignSuccess && (
-          <Text mt={4} color="green.500">
-            Role assigned successfully!
+      {/* User name or address input */}
+      <Box mb={4}>
+        <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
+          ユーザー名 or ウォレットアドレス
+        </Text>
+        <CommonInput
+          placeholder="ユーザー名 or ウォレットアドレス"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+        />
+        {resolvedAddress && !isValidEthAddress(inputValue) && (
+          <Text fontSize="xs" mt={1} color="gray.500">
+            {abbreviateAddress(resolvedAddress)}
           </Text>
         )}
       </Box>
-    </Flex>
+
+      {/* Date input */}
+      <Box mb={4}>
+        <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
+          開始日
+        </Text>
+        <CommonInput
+          value=""
+          onChange={() => {}}
+          type="date"
+          defaultValue={today}
+        />
+      </Box>
+
+      {/* Assign Button */}
+      <Button
+        onClick={handleAssign}
+        bg="#FFD266"
+        color="black"
+        w="100%"
+        size="lg"
+        // isLoading={isAssigning}
+        disabled={isAssigning}
+        _hover={{ bg: "#FFC94D" }}
+      >
+        Assign
+      </Button>
+
+      {/* Feedback messages */}
+      {isAssigning && <Text mt={4}>Assigning role... Please wait.</Text>}
+      {assignError && (
+        <Text mt={4} color="red.500">
+          Error: {assignError}
+        </Text>
+      )}
+      {assignSuccess && (
+        <Text mt={4} color="green.500">
+          Role assigned successfully!
+        </Text>
+      )}
+    </>
   );
 };
 

@@ -458,3 +458,18 @@ export const useGetHat = (hatId: string) => {
 
   return { hat, isLoading };
 };
+
+export const useAssignableHats = (treeId: number) => {
+  const [assignableHats, setAssignableHats] = useState<Hat[]>([]);
+
+  const tree = useTreeInfo(treeId);
+
+  useEffect(() => {
+    if (!tree) return;
+    const hats =
+      tree?.hats?.filter((h) => Number(h.levelAtLocalTree) >= 2) || [];
+    setAssignableHats(hats);
+  }, [tree]);
+
+  return assignableHats;
+};

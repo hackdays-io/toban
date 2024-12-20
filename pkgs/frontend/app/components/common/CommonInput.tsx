@@ -12,19 +12,18 @@ export const CommonInput: FC<CommonInputProps> = ({
   value,
   placeholder,
   onChange,
-  ...rest
-}) => {
+  ...props
+}: CommonInputProps) => {
   return (
     <Input
-      value={value}
       placeholder={placeholder}
       width="100%"
-      minHeight={minHeight}
-      onChange={onChange}
-      {...rest}
       borderColor="gray.800"
       borderRadius="xl"
       backgroundColor="white"
+      {...props}
+      value={value}
+      onChange={onChange}
     />
   );
 };

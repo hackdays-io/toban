@@ -11,10 +11,9 @@ const WorkspaceTop: FC = () => {
   const tree = useTreeInfo(Number(treeId));
 
   return (
-    // filterでlevelAtLocalTreeが0以上のものだけを表示にしているが、実際には2以上のものだけを表示される
     <Box>
       {tree?.hats
-        ?.filter((h) => Number(h.levelAtLocalTree) >= 0)
+        ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
         .map((h) => (
           <HatsListItemParser
             key={h.id}

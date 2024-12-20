@@ -11,7 +11,8 @@
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\""
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\"",
+    "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
     "@apollo/client": "^3.12.4",
@@ -38,6 +39,10 @@
     "viem": "^2.21.51"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "5.0.3",
+    "@graphql-codegen/client-preset": "4.5.1",
+    "@graphql-codegen/introspection": "4.0.3",
+    "@graphql-codegen/typescript-react-apollo": "^4.3.2",
     "@remix-run/dev": "^2.15.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

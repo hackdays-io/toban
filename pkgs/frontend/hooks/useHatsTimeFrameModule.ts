@@ -4,7 +4,9 @@ import { Address, parseEventLogs } from "viem";
 import { useState } from "react";
 import { publicClient } from "./useViem";
 
-export const useMintHatFromTimeFrameModule = () => {
+export const useMintHatFromTimeFrameModule = (
+  hatsTimeFrameModuleAddress: Address
+) => {
   const { wallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +19,7 @@ export const useMintHatFromTimeFrameModule = () => {
     try {
       const txHash = await wallet?.writeContract({
         abi: HATS_TIME_FRAME_MODULE_ABI,
-        address: "0xa192116b30ece60149039d2095594a7c0af9500f" as any,
+        address: hatsTimeFrameModuleAddress,
         functionName: "mintHat",
         args: [hatId, wearer, time || BigInt(0)],
       });

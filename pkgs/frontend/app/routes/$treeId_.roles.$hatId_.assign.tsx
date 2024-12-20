@@ -13,6 +13,7 @@ import { PageHeader } from "~/components/PageHeader";
 import { FaCircleCheck } from "react-icons/fa6";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
 import CommonButton from "~/components/common/CommonButton";
+import { useGetWorkspace } from "hooks/useWorkspace";
 
 interface RoleDetailProps {
   imageUri?: string;
@@ -36,13 +37,17 @@ const RoleDetail: FC<RoleDetailProps> = ({ imageUri, detail }) => {
 };
 
 const AssignRole: FC = () => {
-  const { hatId } = useParams();
+  const { hatId, treeId } = useParams();
 
   const [inputValue, setInputValue] = useState("");
   const [resolvedAddress, setResolvedAddress] = useState<Address>();
   const [startDatetime, setStartDatetime] = useState<string>("");
 
-  const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule();
+  const { data } = useGetWorkspace(treeId!);
+  console.log(data);
+  const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule(
+    data?.workspace?.hatsTimeFrameModule as Address
+  );
 
   const { hat, isLoading } = useGetHat(hatId!);
 

@@ -3,7 +3,7 @@ import { useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
 import { FC, useCallback, useState } from "react";
 import { CommonButton } from "~/components/common/CommonButton";
-import { FaAngleDown } from "react-icons/fa6";
+import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
 import { UserIcon } from "~/components/icon/UserIcon";
 
 const SplitInfoItem = () => {
@@ -27,10 +27,22 @@ const SplitInfoItem = () => {
         </Flex>
         <Text textStyle="md">2024Q3_Rewards</Text>
         <Text textStyle="sm">Created at 2024/7/11</Text>
-        <Flex mt={4}>
+        <Flex mt={4} placeItems="center">
           <Text textStyle="sm" flexGrow={1}>
             0xabc89dsakdfasdfasdd123sdafsdfasdf
           </Text>
+          <CommonButton
+            color="#333"
+            background="transparent"
+            w="auto"
+            h="auto"
+            p="4px"
+            minW="unset"
+          >
+            <FaRegCopy
+              style={{ width: "16px", height: "16px", objectFit: "cover" }}
+            />
+          </CommonButton>
         </Flex>
         {open || (
           <CommonButton color="#333" background="transparent" w="full" h="auto">

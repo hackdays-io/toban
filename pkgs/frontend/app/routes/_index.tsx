@@ -31,7 +31,6 @@ export default function Index() {
       topHatImageURI: "https://example.com/top-hat.png",
       hatterHatDetails: "Hatter Hat Details",
       hatterHatImageURI: "https://example.com/hatter-hat.png",
-      trustedForwarder: "0x1234567890123456789012345678901234567890",
     });
 
     console.log(res);

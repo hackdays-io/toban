@@ -3,7 +3,6 @@ import { useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
 import { FC, useCallback, useState } from "react";
 import { CommonButton } from "~/components/common/CommonButton";
-import { Button } from "~/components/ui/button";
 import { FaAngleDown } from "react-icons/fa6";
 import { UserIcon } from "~/components/icon/UserIcon";
 
@@ -34,11 +33,11 @@ const SplitInfoItem = () => {
           </Text>
         </Flex>
         {open || (
-          <Button color="#333" background="transparent" w="full" h="auto">
+          <CommonButton color="#333" background="transparent" w="full" h="auto">
             <FaAngleDown
               style={{ width: "16px", height: "16px", objectFit: "cover" }}
             />
-          </Button>
+          </CommonButton>
         )}
       </Collapsible.Trigger>
       <Collapsible.Content>

@@ -7,6 +7,7 @@ import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
 import { UserIcon } from "~/components/icon/UserIcon";
 
 const SplitInfoItem = () => {
+  const dummyFromAddress = "0xabc89dsakdfasdfasdd123sdafsdfasdf";
   const [open, setOpen] = useState(false);
   const onOpen = useCallback(() => {
     setOpen(true);
@@ -29,7 +30,7 @@ const SplitInfoItem = () => {
         <Text textStyle="sm">Created at 2024/7/11</Text>
         <Flex mt={4} placeItems="center">
           <Text textStyle="sm" flexGrow={1}>
-            0xabc89dsakdfasdfasdd123sdafsdfasdf
+            {dummyFromAddress}
           </Text>
           <CommonButton
             color="#333"

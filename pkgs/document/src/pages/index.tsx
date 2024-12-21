@@ -8,12 +8,11 @@ import Layout from "@theme/Layout";
 export default function Home(): JSX.Element {
 	const { siteConfig } = useDocusaurusContext();
 	return (
-		<Layout
-			title={`${siteConfig.title} Whitepaper`}
-			description="This is a Toban Whitepaper"
-		>
+		<Layout title={`${siteConfig.title}`} description="This is a Toban Docs">
 			<main>
-				<img src="img/banner.png" />
+				<article>
+					<img src="img/banner.png" />
+				</article>
 			</main>
 		</Layout>
 	);

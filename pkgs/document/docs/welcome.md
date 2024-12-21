@@ -1,8 +1,9 @@
 ---
-title: About Toban
+title: Welcome
+sidebar_position: 1
 ---
 
-# Concept
+# Welcome
 
 Toban is a simplest way to record contribution and distribute rewards.
 

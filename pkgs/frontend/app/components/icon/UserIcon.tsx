@@ -2,8 +2,8 @@ import { FaCircleUser } from "react-icons/fa6";
 import { CommonIcon } from "../common/CommonIcon";
 
 interface UserIconProps {
-  userImageUrl: string | undefined;
-  size?: number | "full";
+  userImageUrl?: string;
+  size?: number | `${number}px` | "full";
 }
 
 export const UserIcon = ({ userImageUrl, size = "full" }: UserIconProps) => {

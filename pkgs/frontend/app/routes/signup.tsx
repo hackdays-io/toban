@@ -29,7 +29,7 @@ const Login: FC = () => {
   const names = useMemo(() => {
     return userName ? [userName] : [];
   }, [userName]);
-  const { addresses } = useAddressesByNames(names);
+  const { addresses } = useAddressesByNames(names, true);
 
   const availableName = useMemo(() => {
     if (!userName) return false;

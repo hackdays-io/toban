@@ -1,10 +1,23 @@
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Address, createWalletClient, custom, http, WalletClient } from "viem";
-import { entryPoint07Address } from "viem/account-abstraction";
+import {
+  Account,
+  Address,
+  createWalletClient,
+  custom,
+  CustomTransport,
+  http,
+  Transport,
+  WalletClient,
+} from "viem";
+import {
+  entryPoint07Address,
+  SmartAccount,
+  SmartAccountImplementation,
+} from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
 
 // Pimlico API endpoint URL
@@ -26,9 +39,15 @@ export const pimlicoClient = createPimlicoClient({
 /**
  * Pimlico 向けの React Hooks
  */
-export const useSmartAccountClient = () => {
-  const [client, setClient] = useState<SmartAccountClient>();
-  const { wallets } = useWallets();
+export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
+  const [client, setClient] =
+    useState<
+      SmartAccountClient<
+        Transport,
+        typeof currentChain,
+        SmartAccount<SmartAccountImplementation>
+      >
+    >();
 
   useEffect(() => {
     /**
@@ -37,7 +56,6 @@ export const useSmartAccountClient = () => {
      */
     const create = async () => {
       setClient(undefined);
-      console.log(wallets);
       const embeddedWallet = wallets.find(
         (wallet) => wallet.connectorType === "embedded"
       );
@@ -65,7 +83,7 @@ export const useSmartAccountClient = () => {
         },
       });
 
-      setClient(smartAccountClient);
+      setClient(smartAccountClient as any);
     };
     create();
   }, [wallets]);
@@ -73,10 +91,9 @@ export const useSmartAccountClient = () => {
   return client;
 };
 
-export const useAccountClient = () => {
-  const { wallets } = useWallets();
-
-  const [client, setClient] = useState<WalletClient>();
+export const useAccountClient = (wallets: ConnectedWallet[]) => {
+  const [client, setClient] =
+    useState<WalletClient<CustomTransport, typeof currentChain, Account>>();
 
   useEffect(() => {
     const create = async () => {
@@ -102,8 +119,13 @@ export const useAccountClient = () => {
 };
 
 export const useActiveWallet = () => {
-  const walletClient = useAccountClient();
-  const smartWalletClient = useSmartAccountClient();
+  const { wallets } = useWallets();
+  const walletClient = useAccountClient(wallets);
+  const smartWalletClient = useSmartAccountClient(wallets);
+
+  const isConnectingEmbeddedWallet = useMemo(() => {
+    return wallets.some((wallet) => wallet.connectorType === "embedded");
+  }, [wallets]);
 
   const isSmartWallet = useMemo(() => {
     return !!smartWalletClient;
@@ -113,5 +135,5 @@ export const useActiveWallet = () => {
     return smartWalletClient ? smartWalletClient : walletClient;
   }, [walletClient, smartWalletClient]);
 
-  return { wallet, isSmartWallet };
+  return { wallet, isSmartWallet, isConnectingEmbeddedWallet };
 };

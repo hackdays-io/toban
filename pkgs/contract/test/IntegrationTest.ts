@@ -89,7 +89,7 @@ describe("IntegrationTest", () => {
 		const { FractionToken: _FractionToken } = await deployFractionToken(
 			"",
 			10000n,
-			Hats.address,
+			Hats.address
 		);
 		FractionToken = _FractionToken;
 
@@ -122,6 +122,8 @@ describe("IntegrationTest", () => {
 	});
 
 	it("should execute bigbang", async () => {
+		SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+
 		const txHash = await BigBang.write.bigbang(
 			[
 				deployer.account?.address!,
@@ -237,10 +239,12 @@ describe("IntegrationTest", () => {
 		await FractionToken.write.mintInitialSupply([
 			hat1_id,
 			address1.account?.address!,
+			0n,
 		]);
 		await FractionToken.write.mintInitialSupply([
 			hat1_id,
 			address2.account?.address!,
+			0n,
 		]);
 
 		// Check balance for address1

@@ -16,7 +16,7 @@ export const CommonDialog = ({
   return (
     <DialogRoot>
       <DialogTrigger asChild>{dialogTriggerReactNode}</DialogTrigger>
-      <DialogContent>{children}</DialogContent>
+      <DialogContent mx={3}>{children}</DialogContent>
     </DialogRoot>
   );
 };

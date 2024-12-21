@@ -1,3 +1,4 @@
+import { type MouseEvent } from "react";
 import { Box, Collapsible, Flex, Text } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
@@ -5,6 +6,7 @@ import { FC, useCallback, useState } from "react";
 import { CommonButton } from "~/components/common/CommonButton";
 import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
 import { UserIcon } from "~/components/icon/UserIcon";
+import { useCopyToClipboard } from "hooks/useCopyToClipboard";
 
 const SplitInfoItem = () => {
   const dummyFromAddress = "0xabc89dsakdfasdfasdd123sdafsdfasdf";
@@ -12,6 +14,16 @@ const SplitInfoItem = () => {
   const onOpen = useCallback(() => {
     setOpen(true);
   }, [setOpen]);
+
+  const { copyToClipboardAction } = useCopyToClipboard(dummyFromAddress);
+
+  const onClickCopyButton = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      copyToClipboardAction();
+    },
+    [copyToClipboardAction]
+  );
 
   const dummyRatioBreakdown = [
     { name: "Ryoma", address: "0x12344sdfasdfadfaweifsd", ratio: 0.2 },
@@ -39,6 +51,7 @@ const SplitInfoItem = () => {
             h="auto"
             p="4px"
             minW="unset"
+            onClick={onClickCopyButton}
           >
             <FaRegCopy
               style={{ width: "16px", height: "16px", objectFit: "cover" }}

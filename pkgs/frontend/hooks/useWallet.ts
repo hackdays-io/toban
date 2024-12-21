@@ -132,6 +132,7 @@ export const useActiveWallet = () => {
   }, [smartWalletClient]);
 
   const wallet = useMemo(() => {
+    if (isConnectingEmbeddedWallet && !smartWalletClient) return;
     return smartWalletClient ? smartWalletClient : walletClient;
   }, [walletClient, smartWalletClient]);
 

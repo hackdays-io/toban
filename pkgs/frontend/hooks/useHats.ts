@@ -219,6 +219,28 @@ export const useHats = () => {
     [getWearerInfo]
   );
 
+  const getHat = async (hatId: string) => {
+    const hat = await hatsSubgraphClient.getHat({
+      chainId: currentChain.id,
+      hatId: BigInt(hatId),
+      props: {
+        prettyId: true,
+        status: true,
+        createdAt: true,
+        details: true,
+        maxSupply: true,
+        eligibility: true,
+        toggle: true,
+        mutable: true,
+        imageUri: true,
+        levelAtLocalTree: true,
+        currentSupply: true,
+      },
+    });
+
+    return hat;
+  };
+
   const getWorkspacesList = useCallback(
     async (params: { walletAddress: string }) => {
       const treesInfo = await getTreesInfoByWearer({
@@ -404,9 +426,50 @@ export const useHats = () => {
     getWearersInfo,
     getWearerInfo,
     getTreesInfoByWearer,
+    getHat,
     getWorkspacesList,
     getHatsTimeframeModuleAddress,
     createHat,
     mintHat,
   };
+};
+
+export const useGetHat = (hatId: string) => {
+  const [hat, setHat] = useState<Hat>();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { getHat } = useHats();
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!hatId) return;
+      setIsLoading(true);
+      try {
+        const hat = await getHat(hatId);
+        if (!hat) throw new Error("Hat not found");
+        setHat(hat);
+      } catch (error) {
+        console.error("error occured when fetching hat:", error);
+      }
+      setIsLoading(false);
+    };
+    fetch();
+  }, [hatId]);
+
+  return { hat, isLoading };
+};
+
+export const useAssignableHats = (treeId: number) => {
+  const [assignableHats, setAssignableHats] = useState<Hat[]>([]);
+
+  const tree = useTreeInfo(treeId);
+
+  useEffect(() => {
+    if (!tree) return;
+    const hats =
+      tree?.hats?.filter((h) => Number(h.levelAtLocalTree) >= 2) || [];
+    setAssignableHats(hats);
+  }, [tree]);
+
+  return assignableHats;
 };

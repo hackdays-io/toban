@@ -1,19 +1,19 @@
 import { FC, useState } from "react";
-import { Box, Float, Input, Text } from "@chakra-ui/react";
-import { HiOutlinePlus } from "react-icons/hi2";
-import { CommonInput } from "~/components/common/CommonInput";
+import { Box, Float, Text } from "@chakra-ui/react";
 import { BasicButton } from "~/components/BasicButton";
-import { CommonTextArea } from "~/components/common/CommonTextarea";
 import {
   useUploadMetadataToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 import { useNavigate } from "@remix-run/react";
-import { CommonIcon } from "~/components/common/CommonIcon";
 import { useBigBang } from "hooks/useBigBang";
 import { useActiveWallet } from "hooks/useWallet";
 import { Address } from "viem";
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { InputImage } from "~/components/InputImage";
+import { InputName } from "~/components/InputName";
+import { InputDescription } from "~/components/InputDescription";
+import { ContentContainer } from "~/components/ContentContainer";
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");
@@ -84,82 +84,17 @@ const WorkspaceNew: FC = () => {
     }
   };
 
-  const EmptyImage = () => {
-    return (
-      <Box
-        borderRadius="3xl"
-        border="1px solid"
-        borderColor="#1e1e1e"
-        bg="#e9ecef"
-        p={5}
-        w={200}
-        h={200}
-      >
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          w="33%"
-          mx="auto"
-          mt={9}
-          mb={1}
-        >
-          <HiOutlinePlus size="full" />
-        </Box>
-        <Text textAlign="center">画像を選択</Text>
-      </Box>
-    );
-  };
-
   return (
     <>
       <Box mt={5} w="100%">
         <Text fontSize="lg">新しいワークスペースを作成</Text>
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          mt={10}
-          alignItems="center"
-        >
-          <Box as="label" cursor="pointer" m="100px auto 40px">
-            <Input
-              type="file"
-              accept="image/*"
-              display="none"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && file.type.startsWith("image/")) {
-                  setImageFile(file);
-                } else {
-                  alert("画像ファイルを選択してください");
-                }
-              }}
-            />
-            <CommonIcon
-              imageUrl={imageFile ? URL.createObjectURL(imageFile) : undefined}
-              fallbackIconComponent={<EmptyImage />}
-              size={200}
-              borderRadius="3xl"
-            />
-          </Box>
-          <Box w="100%" mt={8}>
-            <CommonInput
-              minHeight="45px"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Box>
-          <Box minH="100px" w="100%" mt={6}>
-            <CommonTextArea
-              minHeight="125px"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </Box>
+        <ContentContainer>
+          <InputImage imageFile={imageFile} setImageFile={setImageFile} />
+          <InputName name={name} setName={setName} />
+          <InputDescription
+            description={description}
+            setDescription={setDescription}
+          />
           <Float
             placement="bottom-center"
             mb="4vh"
@@ -176,7 +111,7 @@ const WorkspaceNew: FC = () => {
               作成
             </BasicButton>
           </Float>
-        </Box>
+        </ContentContainer>
       </Box>
     </>
   );

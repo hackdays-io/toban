@@ -1,7 +1,7 @@
 import { RemixBrowser } from "@remix-run/react";
 import i18next from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
-import Backend from "i18next-http-backend";
+import Backend from "i18next-http-backend/cjs";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { I18nextProvider, initReactI18next } from "react-i18next";
@@ -19,7 +19,9 @@ const hydrate = async () => {
       ...i18n, // spread the configuration
       // This function detects the namespaces your routes rendered while SSR use
       ns: getInitialNamespaces(),
-      backend: { loadPath: "/locales/{{lng}}/{{ns}}.json" },
+      backend: {
+        loadPath: "/locales/{{lng}}/{{ns}}.json",
+      },
       detection: {
         // Here only enable htmlTag detection, we'll detect the language only
         // server-side with remix-i18next, by using the `<html lang>` attribute
@@ -47,6 +49,7 @@ const hydrate = async () => {
   });
 };
 
+/*
 if (typeof requestIdleCallback === "function") {
   requestIdleCallback(hydrate);
 } else {
@@ -54,6 +57,7 @@ if (typeof requestIdleCallback === "function") {
   // https://caniuse.com/requestidlecallback
   setTimeout(hydrate, 1);
 }
+  */
 
 if (window.requestIdleCallback) {
   window.requestIdleCallback(hydrate);

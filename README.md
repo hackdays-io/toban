@@ -99,6 +99,9 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
         VITE_SPLITS_CREATOR_ADDRESS=
         VITE_PIMLICO_API_KEY=
         VITE_NAMESTONE_API_KEY=
+        VITE_PINATA_JWT=
+        VITE_PINATA_GATEWAY=
+        VITE_PINATA_GATEWAY_TOKEN=
        ```
 
   - #### **smartconract**

@@ -14,12 +14,23 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
-  server: {
-    hmr: {
-      overlay: false, // オーバーレイを無効化
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "esnext",
     },
   },
+  ssr: {
+    noExternal: [
+      "@chakra-ui/react",
+      "@emotion/react",
+      "@emotion/styled",
+      "framer-motion",
+    ],
+  },
+  server: {
+    hmr: true,
+  },
   build: {
-    target: "es2020",
+    target: "esnext",
   },
 });

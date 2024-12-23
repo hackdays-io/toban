@@ -15,6 +15,8 @@ const i18next = new RemixI18Next({
   // when translating messages server-side only
   i18next: {
     ...i18n,
+    defaultNS: "common",
+    ns: ["common", "home"],
     backend: {
       loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json"),
     },

@@ -1,5 +1,5 @@
 export default {
-  debugger: true,
+  debug: true, // デバッグを有効
   // This is the list of languages your application supports
   supportedLngs: ["en", "ja"],
   // This is the language you want to use in case

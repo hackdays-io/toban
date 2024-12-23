@@ -46,8 +46,11 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   useInjectStyles(cache);
   useChangeLanguage(locale);
 
+  console.log("locale:", locale);
+  console.log("i18n:", i18n.languages);
+
   return (
-    <html lang={locale} dir={i18n.dir()}>
+    <html lang={"en"} dir={i18n.dir()}>
       <head suppressHydrationWarning>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

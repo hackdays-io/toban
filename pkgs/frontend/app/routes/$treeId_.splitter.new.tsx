@@ -5,12 +5,26 @@ import {
   HStack,
   List,
   Separator,
+  Stack,
   Text,
+  VStack,
 } from "@chakra-ui/react";
+import { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
-import { useAssignableHats } from "hooks/useHats";
-import { FC } from "react";
+import { useNamesByAddresses } from "hooks/useENS";
+import { useAssignableHats, useHats } from "hooks/useHats";
+import { useSplitsCreator } from "hooks/useSplitsCreator";
+import {
+  ChangeEvent,
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { HatsDetailSchama } from "types/hats";
+import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { CommonInput } from "~/components/common/CommonInput";
@@ -20,17 +34,97 @@ import { UserIcon } from "~/components/icon/UserIcon";
 import { PageHeader } from "~/components/PageHeader";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Field } from "~/components/ui/field";
+import {
+  FieldArrayWithId,
+  useFieldArray,
+  UseFieldArrayUpdate,
+  useForm,
+} from "react-hook-form";
 
 interface RoleItemProps {
+  update: UseFieldArrayUpdate<FormData, "roles">;
+  fieldIndex: number;
   detail?: HatsDetailSchama;
   imageUri?: string;
+  field: FieldArrayWithId<FormData, "roles", "id">;
 }
 
-const RoleItem: FC<RoleItemProps> = ({ detail, imageUri }) => {
+const RoleItem: FC<RoleItemProps> = ({
+  detail,
+  imageUri,
+  update,
+  fieldIndex,
+  field,
+}) => {
+  const { getWearersInfo } = useHats();
+
+  const [wearersAddress, setWearersAddress] = useState<Address[]>([]);
+
+  const [multiplier, setMultiplier] = useState<number>(1);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const res = await getWearersInfo({ hatId: field.hatId });
+      if (!res) return;
+      setWearersAddress(res.map((w) => w.id));
+    };
+    fetch();
+  }, [field.hatId, getWearersInfo]);
+
+  const { names } = useNamesByAddresses(wearersAddress);
+
+  // const handleUpdateMultiplier = (e: ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.value.endsWith(".")) return;
+  //   const float = Number(e.target.value);
+  //   if (Number.isInteger(float)) {
+  //     update(fieldIndex, {
+  //       ...field,
+  //       multiplierTop: BigInt(float),
+  //       multiplierBottom: BigInt(1),
+  //     });
+  //     return;
+  //   }
+
+  //   const str = float.toString();
+  //   const decimalPlaces = str.includes(".") ? str.split(".")[1].length : 0;
+
+  //   const bottom = Math.pow(10, decimalPlaces);
+  //   const top = Math.round(float * bottom);
+
+  //   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  //   const divisor = gcd(top, bottom);
+
+  //   update(fieldIndex, {
+  //     ...field,
+  //     multiplierTop: BigInt(top / divisor),
+  //     multiplierBottom: BigInt(bottom / divisor),
+  //   });
+  // };
+
+  const handleOnCheck = (address: Address) => {
+    if (!address) return;
+    const array = field.wearers.includes(address)
+      ? field.wearers.filter((a) => a !== address)
+      : [...field.wearers, address];
+    update(fieldIndex, {
+      ...field,
+      wearers: array,
+    });
+  };
+
   return (
     <List.Item>
       <HStack gap={2}>
-        <Checkbox />
+        <Checkbox
+          colorPalette="blue"
+          checked={field.active}
+          onChange={() => {
+            update(fieldIndex, {
+              ...field,
+              active: !field.active,
+            });
+          }}
+        />
         <RoleIcon size="70px" roleImageUrl={imageUri} />
         <Box>
           <Text>{detail?.data.name}</Text>
@@ -38,8 +132,8 @@ const RoleItem: FC<RoleItemProps> = ({ detail, imageUri }) => {
             <Text fontSize="sm">分配係数</Text>
             <CommonInput
               type="number"
-              value={1}
-              onChange={() => {}}
+              value={multiplier}
+              onChange={(e) => setMultiplier(Number(e.target.value))}
               placeholder="例: 1, 1.5 10"
               textAlign="center"
               w="80px"
@@ -57,16 +151,35 @@ const RoleItem: FC<RoleItemProps> = ({ detail, imageUri }) => {
               <Text fontSize="lg" mb={5}>
                 分配対象にするメンバーと役割を選択
               </Text>
-              <HStack gap={2}>
-                <Checkbox />
-                <UserIcon size="40px" />
-                <Box>
-                  <Text>User name</Text>
-                  <Text>0x123</Text>
-                </Box>
-              </HStack>
+              <Stack rowGap={5}>
+                {names
+                  .filter((name) => name.length > 0)
+                  .map((name, index) => (
+                    <HStack columnGap={3} key={index + name[0]?.address}>
+                      <Checkbox
+                        colorPalette="blue"
+                        checked={field.wearers.includes(
+                          name[0]?.address.toLowerCase() as Address
+                        )}
+                        onChange={() =>
+                          handleOnCheck(
+                            name[0]?.address.toLowerCase() as Address
+                          )
+                        }
+                      />
+                      <UserIcon
+                        size="40px"
+                        userImageUrl={ipfs2https(name[0]?.text_records?.avatar)}
+                      />
+                      <Box>
+                        <Text>{name[0]?.name}</Text>
+                        <Text>{name[0]?.address}</Text>
+                      </Box>
+                    </HStack>
+                  ))}
+              </Stack>
 
-              <Separator my={5} borderColor="black" />
+              {/* <Separator my={5} borderColor="black" />
 
               <List.Root listStyle="none" mb={10}>
                 <List.Item>
@@ -90,7 +203,7 @@ const RoleItem: FC<RoleItemProps> = ({ detail, imageUri }) => {
                     </List.Item>
                   </List.Root>
                 </List.Item>
-              </List.Root>
+              </List.Root> */}
             </Box>
           </CommonDialog>
         </Box>
@@ -99,36 +212,143 @@ const RoleItem: FC<RoleItemProps> = ({ detail, imageUri }) => {
   );
 };
 
+interface FormData {
+  roles: RoleInput[];
+}
+
+interface RoleInput {
+  hat: Pick<Hat, "details" | "imageUri">;
+  hatId: Address;
+  active: boolean;
+  multiplier: number;
+  wearers: Address[];
+}
+
 const SplitterNew: FC = () => {
   const { treeId } = useParams();
 
   const hats = useAssignableHats(Number(treeId));
 
-  const baseHats = hats.filter((h) => Number(h.levelAtLocalTree) == 2);
+  const baseHats = useMemo(() => {
+    return hats.filter(
+      (h) => Number(h.levelAtLocalTree) == 2 && h.wearers?.length
+    );
+  }, [hats]);
+
+  const { isLoading, createSplits, previewSplits } = useSplitsCreator(treeId!);
+
+  const { control, getValues } = useForm<FormData>();
+  const { fields, insert, update } = useFieldArray({
+    control,
+    name: "roles",
+  });
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (fields.length == 0) {
+        for (let index = 0; index < baseHats.length; index++) {
+          const hat = baseHats[index];
+          insert(index, {
+            hat,
+            hatId: hat.id,
+            active: true,
+            multiplier: 1,
+            wearers: hat.wearers?.map((w) => w.id) || [],
+          });
+        }
+      }
+    };
+    fetch();
+  }, [baseHats, fields]);
+
+  const [preview, setPreview] =
+    useState<{ address: Address; ratio: string }[]>();
+
+  const handlePreview = async () => {
+    const data = getValues();
+    const params = data.roles.map((role) => ({
+      hatId: BigInt(role.hatId),
+      multiplierBottom: BigInt(1),
+      multiplierTop: BigInt(1),
+      wearers: role.wearers,
+    }));
+    const res = await previewSplits(params);
+
+    const _preview = [];
+    const sumOfScore = res[1].reduce((acc, cur) => acc + Number(cur), 0);
+    for (let index = 0; index < res[0].length; index++) {
+      const address = res[0][index];
+      const score = res[1][index];
+      const ratio = ((Number(score) / sumOfScore) * 100).toFixed(2);
+      _preview.push({ address, ratio });
+    }
+    setPreview(_preview);
+  };
+
+  const handleCreateSplitter = async () => {
+    const data = getValues();
+    const params = data.roles.map((role) => ({
+      hatId: BigInt(role.hatId),
+      multiplierBottom: BigInt(1),
+      multiplierTop: BigInt(1),
+      wearers: role.wearers,
+    }));
+    const txHash = await createSplits({
+      args: params,
+    });
+    console.log(txHash);
+  };
 
   return (
     <>
-      <PageHeader title="Create Splitter" />
+      <PageHeader
+        title="Create Splitter"
+        backLink={
+          preview
+            ? () => {
+                setPreview(undefined);
+              }
+            : undefined
+        }
+      />
 
-      <Field label="Splitter名" mt={5}>
-        <CommonInput value="" onChange={() => {}} placeholder="名前" />
-      </Field>
+      {preview ? (
+        <>
+          <List.Root>
+            {preview.map((item, index) => (
+              <List.Item key={index}>
+                <HStack gap={2}>
+                  <Text>{item.address}</Text>
+                  <Text>{item.ratio}%</Text>
+                </HStack>
+              </List.Item>
+            ))}
+          </List.Root>
+          <BasicButton onClick={handleCreateSplitter}>作成</BasicButton>
+        </>
+      ) : (
+        <>
+          <Field label="Splitter名" mt={5}>
+            <CommonInput value="" onChange={() => {}} placeholder="名前" />
+          </Field>
 
-      <Text fontSize="lg" mt={10}>
-        分配設定
-      </Text>
-      <List.Root listStyle="none" mb={10}>
-        {baseHats.map((h, index) => (
-          <HatsListItemParser
-            key={index}
-            detailUri={h.details}
-            imageUri={h.imageUri}
-          >
-            <RoleItem />
-          </HatsListItemParser>
-        ))}
-      </List.Root>
-      <BasicButton>プレビュー</BasicButton>
+          <Text fontSize="lg" mt={10}>
+            分配設定
+          </Text>
+          <List.Root listStyle="none" mb={10}>
+            {fields.map((field, index) => (
+              <HatsListItemParser
+                key={index}
+                detailUri={field.hat.details}
+                imageUri={field.hat.imageUri}
+              >
+                <RoleItem update={update} fieldIndex={index} field={field} />
+              </HatsListItemParser>
+            ))}
+          </List.Root>
+          <BasicButton onClick={handlePreview}>プレビュー</BasicButton>
+        </>
+      )}
     </>
   );
 };

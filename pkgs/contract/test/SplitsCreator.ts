@@ -223,6 +223,7 @@ describe("CreateSplit", () => {
 	let address1: WalletClient;
 	let address2: WalletClient;
 	let address3: WalletClient;
+	let address4: WalletClient;
 	let bigBangAddress: WalletClient;
 
 	let topHatId: bigint;
@@ -269,7 +270,7 @@ describe("CreateSplit", () => {
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
-		[address1, address2, address3, bigBangAddress] =
+		[address1, address2, address3, address4, bigBangAddress] =
 			await viem.getWalletClients();
 
 		publicClient = await viem.getPublicClient();
@@ -477,14 +478,29 @@ describe("CreateSplit", () => {
 			0n,
 		]);
 
-		// let balance: bigint;
+		const tokenId = await FractionToken.read.getTokenId([
+			hat1_id,
+			address1.account?.address!,
+		]);
+		await FractionToken.write.safeTransferFrom(
+			[
+				address1.account?.address!,
+				address4.account?.address!,
+				tokenId,
+				3000n,
+				"0x",
+			],
+			{
+				account: address1.account!,
+			}
+		);
 
 		const address1Balance = await FractionToken.read.balanceOf([
 			address1.account?.address!,
 			address1.account?.address!,
 			hat1_id,
 		]);
-		expect(address1Balance).to.equal(10000n);
+		expect(address1Balance).to.equal(7000n);
 
 		// address2のbalance
 		const address2Balance = await FractionToken.read.balanceOf([
@@ -555,7 +571,7 @@ describe("CreateSplit", () => {
 			}
 		}
 
-		expect(shareHolders.length).to.equal(3);
+		expect(shareHolders.length).to.equal(4);
 
 		const address1Time = endWoreTime - address1WoreTime;
 		const address2Time = endWoreTime - address2WoreTime;
@@ -570,9 +586,14 @@ describe("CreateSplit", () => {
 			address1.account?.address!,
 			hat1_id,
 		]);
-		expect(address1Balance).to.equal(10000n);
+		expect(address1Balance).to.equal(7000n);
 
-		// address2のbalance
+		const address4Balance = await FractionToken.read.balanceOf([
+			address4.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
+
 		const address2Balance = await FractionToken.read.balanceOf([
 			address2.account?.address!,
 			address2.account?.address!,
@@ -580,7 +601,6 @@ describe("CreateSplit", () => {
 		]);
 		expect(address2Balance).to.equal(10000n);
 
-		// address3のbalance
 		const address3Balance = await FractionToken.read.balanceOf([
 			address3.account?.address!,
 			address3.account?.address!,
@@ -588,10 +608,19 @@ describe("CreateSplit", () => {
 		]);
 		expect(address3Balance).to.equal(10000n);
 
-		expect(allocations.length).to.equal(3);
-		expect(allocations[0]).to.equal(address1Balance * 1n * sqrtAddress1Time);
-		expect(allocations[1]).to.equal(address2Balance * 1n * sqrtAddress2Time);
-		expect(allocations[2]).to.equal(address3Balance * 2n * sqrtAddress3Time);
+		expect(allocations.length).to.equal(4);
+		expect(allocations[0]).to.equal(
+			((address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time
+		);
+		expect(allocations[1]).to.equal(
+			((address4Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time
+		);
+		expect(allocations[2]).to.equal(
+			((address2Balance * 1000000n) / 20000n) * 1n * sqrtAddress2Time
+		);
+		expect(allocations[3]).to.equal(
+			((address3Balance * 1000000n) / 10000n) * 2n * sqrtAddress3Time
+		);
 
 		await address1.sendTransaction({
 			account: address1.account!,
@@ -691,7 +720,8 @@ describe("CreateSplit", () => {
 		const previewResult = await SplitsCreator.read.preview([splitsInfo]);
 
 		const shareHolders = previewResult[0];
-		const percentages = previewResult[1];
+		const allocations = previewResult[1];
+		const totalAllocation = previewResult[2];
 
 		const endWoreTime = await publicClient
 			.getBlock({
@@ -713,6 +743,12 @@ describe("CreateSplit", () => {
 			hat1_id,
 		]);
 
+		const address4Balance = await FractionToken.read.balanceOf([
+			address4.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
+
 		const address2Balance = await FractionToken.read.balanceOf([
 			address2.account?.address!,
 			address2.account?.address!,
@@ -725,23 +761,27 @@ describe("CreateSplit", () => {
 			hat2_id,
 		]);
 
-		const allocation0 = address1Balance * 1n * sqrtAddress1Time;
-		const allocation1 = address2Balance * 1n * sqrtAddress2Time;
-		const allocation2 = address3Balance * 2n * sqrtAddress3Time;
+		const allocation0 =
+			((address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time;
+		const allocation1 =
+			((address4Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time;
+		const allocation2 =
+			((address2Balance * 1000000n) / 20000n) * 1n * sqrtAddress2Time;
+		const allocation3 =
+			((address3Balance * 1000000n) / 10000n) * 2n * sqrtAddress3Time;
 
-		const expectedAllocations = [allocation0, allocation1, allocation2];
+		const expectedAllocations = [
+			allocation0,
+			allocation1,
+			allocation2,
+			allocation3,
+		];
 
-		const totalAllocation = allocation0 + allocation1 + allocation2;
-
-		const expectedPercentages = expectedAllocations.map(
-			(allocation) =>
-				(allocation * 1_000_000_000_000_000_000n) / totalAllocation
-		);
-
-		expect(shareHolders.length).to.equal(3);
+		expect(shareHolders.length).to.equal(4);
 
 		const expectedShareHolders = [
 			address1.account?.address!,
+			address4.account?.address!,
 			address2.account?.address!,
 			address3.account?.address!,
 		];
@@ -756,11 +796,15 @@ describe("CreateSplit", () => {
 		expect(shareHolders[2].toLowerCase()).to.equal(
 			expectedShareHolders[2].toLowerCase()
 		);
+		expect(shareHolders[3].toLowerCase()).to.equal(
+			expectedShareHolders[3].toLowerCase()
+		);
 
-		expect(percentages.length).to.equal(3);
+		expect(allocations.length).to.equal(4);
 
-		expect(percentages[0]).to.equal(expectedPercentages[0]);
-		expect(percentages[1]).to.equal(expectedPercentages[1]);
-		expect(percentages[2]).to.equal(expectedPercentages[2]);
+		expect(allocations[0]).to.equal(expectedAllocations[0]);
+		expect(allocations[1]).to.equal(expectedAllocations[1]);
+		expect(allocations[2]).to.equal(expectedAllocations[2]);
+		expect(allocations[3]).to.equal(expectedAllocations[3]);
 	});
 });

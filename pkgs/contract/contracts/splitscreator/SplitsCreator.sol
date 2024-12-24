@@ -9,6 +9,7 @@ import { SplitV2Lib } from "../splits/libraries/SplitV2.sol";
 import { IFractionToken } from "../fractiontoken/IFractionToken.sol";
 import { IHatsTimeFrameModule } from "../timeframe/IHatsTimeFrameModule.sol";
 import { Clone } from "solady/src/utils/Clone.sol";
+import "hardhat/console.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
 	function HATS() public pure returns (IHats) {
@@ -68,27 +69,23 @@ contract SplitsCreator is ISplitsCreator, Clone {
 	 * @notice Previews the allocations without creating a split contract.
 	 * @param _splitsInfo An array of SplitsInfo structs containing details about roles, wearers, and multipliers.
 	 * @return shareHolders An array of shareholder addresses.
-	 * @return percentages Corresponding allocation percentages (with 18 decimals) for each shareholder.
+	 * @return allocations Corresponding allocations for each shareholder.
+	 * @return totalAllocation Sum of all allocations.
 	 */
 	function preview(
 		SplitsInfo[] memory _splitsInfo
 	)
 		external
 		view
-		returns (address[] memory shareHolders, uint256[] memory percentages)
-	{
-		(
-			address[] memory _shareHolders,
+		returns (
+			address[] memory shareHolders,
 			uint256[] memory allocations,
 			uint256 totalAllocation
-		) = _calculateAllocations(_splitsInfo);
-
-		percentages = new uint256[](allocations.length);
-		for (uint256 i = 0; i < allocations.length; i++) {
-			percentages[i] = (allocations[i] * 1e18) / totalAllocation;
-		}
-
-		return (_shareHolders, percentages);
+		)
+	{
+		(shareHolders, allocations, totalAllocation) = _calculateAllocations(
+			_splitsInfo
+		);
 	}
 
 	/**
@@ -113,80 +110,98 @@ contract SplitsCreator is ISplitsCreator, Clone {
 		for (uint256 i = 0; i < _splitsInfo.length; i++) {
 			SplitsInfo memory _splitInfo = _splitsInfo[i];
 			for (uint256 si = 0; si < _splitInfo.wearers.length; si++) {
-				uint256 tokenId = FRACTION_TOKEN().getTokenId(
-					_splitInfo.hatId,
-					_splitInfo.wearers[si]
-				);
 				address[] memory recipients = FRACTION_TOKEN()
-					.getTokenRecipients(tokenId);
-				numOfShareHolders += recipients.length;
-			}
-		}
-
-		shareHolders = new address[](numOfShareHolders);
-		address[] memory wearers = new address[](numOfShareHolders);
-		uint256[] memory hatIdsOfShareHolders = new uint256[](
-			numOfShareHolders
-		);
-		uint256[] memory roleMultipliersOfShareHolders = new uint256[](
-			numOfShareHolders
-		);
-		uint256[] memory hatsTimeFrameMultipliersOfShareHolders = new uint256[](
-			numOfShareHolders
-		);
-
-		uint256 shareHolderIndex = 0;
-
-		for (uint256 i = 0; i < _splitsInfo.length; i++) {
-			SplitsInfo memory _splitInfo = _splitsInfo[i];
-			uint256 roleMultiplier = _splitInfo.multiplierTop /
-				_splitInfo.multiplierBottom;
-			for (uint256 si = 0; si < _splitInfo.wearers.length; si++) {
-				address wearer = _splitInfo.wearers[si];
-
-				require(
-					HATS().balanceOf(wearer, _splitInfo.hatId) > 0,
-					"Invalid wearer"
-				);
-
-				uint256 tokenId = FRACTION_TOKEN().getTokenId(
-					_splitInfo.hatId,
-					wearer
-				);
-				uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
-					wearer,
-					_splitInfo.hatId
-				);
-
-				// Get the recipients from FractionToken
-				address[] memory recipients = FRACTION_TOKEN()
-					.getTokenRecipients(tokenId);
-				for (uint256 j = 0; j < recipients.length; j++) {
-					shareHolders[shareHolderIndex] = recipients[j];
-					wearers[shareHolderIndex] = wearer;
-					hatIdsOfShareHolders[shareHolderIndex] = _splitInfo.hatId;
-					roleMultipliersOfShareHolders[
-						shareHolderIndex
-					] = roleMultiplier;
-					hatsTimeFrameMultipliersOfShareHolders[
-						shareHolderIndex
-					] = hatsTimeFrameMultiplier;
-					shareHolderIndex++;
+					.getTokenRecipients(
+						FRACTION_TOKEN().getTokenId(
+							_splitInfo.hatId,
+							_splitInfo.wearers[si]
+						)
+					);
+				if (recipients.length == 0) {
+					numOfShareHolders++;
+				} else {
+					numOfShareHolders += recipients.length;
 				}
 			}
 		}
 
-		uint256[] memory balanceOfShareHolders = FRACTION_TOKEN()
-			.balanceOfBatch(shareHolders, wearers, hatIdsOfShareHolders);
+		shareHolders = new address[](numOfShareHolders);
+		allocations = new uint256[](numOfShareHolders);
+		uint256 shareHolderIndex = 0;
+
+		for (uint i = 0; i < _splitsInfo.length; i++) {
+			SplitsInfo memory _splitInfo = _splitsInfo[i];
+
+			uint256 roleMultiplier = _splitInfo.multiplierTop /
+				_splitInfo.multiplierBottom;
+
+			uint256 fractionTokenSupply = 0;
+			uint256 currentShareHolderIndex = shareHolderIndex;
+			for (uint j = 0; j < _splitInfo.wearers.length; j++) {
+				uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
+					_splitInfo.wearers[j],
+					_splitInfo.hatId
+				);
+
+				fractionTokenSupply += FRACTION_TOKEN().totalSupply(
+					_splitInfo.wearers[j],
+					_splitInfo.hatId
+				);
+
+				uint256 wearerBalance = FRACTION_TOKEN().balanceOf(
+					_splitInfo.wearers[j],
+					_splitInfo.wearers[j],
+					_splitInfo.hatId
+				);
+
+				uint256 wearerScore = wearerBalance *
+					roleMultiplier *
+					hatsTimeFrameMultiplier;
+
+				shareHolders[shareHolderIndex] = _splitInfo.wearers[j];
+				allocations[shareHolderIndex] = wearerScore;
+
+				shareHolderIndex++;
+
+				address[] memory recipients = FRACTION_TOKEN()
+					.getTokenRecipients(
+						FRACTION_TOKEN().getTokenId(
+							_splitInfo.hatId,
+							_splitInfo.wearers[j]
+						)
+					);
+
+				for (uint k = 0; k < recipients.length; k++) {
+					if (recipients[k] == _splitInfo.wearers[j]) continue;
+
+					uint256 recipientBalance = FRACTION_TOKEN().balanceOf(
+						recipients[k],
+						_splitInfo.wearers[j],
+						_splitInfo.hatId
+					);
+
+					uint256 recipientScore = recipientBalance *
+						roleMultiplier *
+						hatsTimeFrameMultiplier;
+
+					shareHolders[shareHolderIndex] = recipients[k];
+					allocations[shareHolderIndex] = recipientScore;
+					shareHolderIndex++;
+				}
+			}
+
+			for (uint l = 0; l < allocations.length; l++) {
+				if (l >= currentShareHolderIndex && l < shareHolderIndex) {
+					allocations[l] =
+						(allocations[l] * 10e5) /
+						fractionTokenSupply;
+				}
+			}
+		}
 
 		totalAllocation = 0;
-		allocations = new uint256[](shareHolderIndex);
-		for (uint256 i = 0; i < shareHolderIndex; i++) {
-			uint256 share = balanceOfShareHolders[i] *
-				roleMultipliersOfShareHolders[i] *
-				hatsTimeFrameMultipliersOfShareHolders[i];
-			totalAllocation += share;
-			allocations[i] = share;
+		for (uint i = 0; i < allocations.length; i++) {
+			totalAllocation += allocations[i];
 		}
 
 		return (shareHolders, allocations, totalAllocation);

@@ -2,11 +2,16 @@
 pragma solidity ^0.8.24;
 
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { ERC1155SupplyUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import { IHats } from "../hats/src/Interfaces/IHats.sol";
 import { IFractionToken } from "./IFractionToken.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
-contract FractionToken is ERC1155Upgradeable, IFractionToken {
+contract FractionToken is
+	ERC1155Upgradeable,
+	ERC1155SupplyUpgradeable,
+	IFractionToken
+{
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
@@ -192,9 +197,31 @@ contract FractionToken is ERC1155Upgradeable, IFractionToken {
 		return balances;
 	}
 
+	function totalSupply(
+		address wearer,
+		uint256 hatId
+	) public view returns (uint256) {
+		uint256 tokenId = getTokenId(hatId, wearer);
+
+		if (tokenRecipients[tokenId].length == 0) {
+			return TOKEN_SUPPLY;
+		}
+
+		return super.totalSupply(tokenId);
+	}
+
 	function uri(
 		uint256 tokenId
 	) public view override(ERC1155Upgradeable) returns (string memory) {
 		return super.uri(tokenId);
+	}
+
+	function _update(
+		address from,
+		address to,
+		uint256[] memory ids,
+		uint256[] memory values
+	) internal virtual override(ERC1155Upgradeable, ERC1155SupplyUpgradeable) {
+		super._update(from, to, ids, values);
 	}
 }

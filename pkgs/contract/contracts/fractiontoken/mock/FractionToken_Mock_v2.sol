@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { ERC1155SupplyUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { IHats } from "../../hats/src/Interfaces/IHats.sol";
 
-contract FractionToken_Mock_v2 is ERC1155Upgradeable {
+contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC1155SupplyUpgradeable {
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;
@@ -200,6 +201,15 @@ contract FractionToken_Mock_v2 is ERC1155Upgradeable {
 		returns (uint256)
 	{
 		return super._contextSuffixLength();
+	}
+
+	function _update(
+		address from,
+		address to,
+		uint256[] memory ids,
+		uint256[] memory values
+	) internal virtual override(ERC1155Upgradeable, ERC1155SupplyUpgradeable) {
+		super._update(from, to, ids, values);
 	}
 
 	/**

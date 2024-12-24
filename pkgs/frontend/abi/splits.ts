@@ -8,6 +8,24 @@ export const SPLITS_CREATOR_ABI = [
         name: "split",
         type: "address",
       },
+      {
+        indexed: false,
+        internalType: "address[]",
+        name: "shareHolders",
+        type: "address[]",
+      },
+      {
+        indexed: false,
+        internalType: "uint256[]",
+        name: "allocations",
+        type: "uint256[]",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "totalAllocation",
+        type: "uint256",
+      },
     ],
     name: "SplitsCreated",
     type: "event",
@@ -18,6 +36,19 @@ export const SPLITS_CREATOR_ABI = [
     outputs: [
       {
         internalType: "contract IFractionToken",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "HATS",
+    outputs: [
+      {
+        internalType: "contract IHats",
         name: "",
         type: "address",
       },
@@ -44,19 +75,6 @@ export const SPLITS_CREATOR_ABI = [
     outputs: [
       {
         internalType: "contract ISplitFactoryV2",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "pure",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "TRUSTED_FORWARDER",
-    outputs: [
-      {
-        internalType: "address",
         name: "",
         type: "address",
       },
@@ -103,6 +121,52 @@ export const SPLITS_CREATOR_ABI = [
       },
     ],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "hatId",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "multiplierBottom",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "multiplierTop",
+            type: "uint256",
+          },
+          {
+            internalType: "address[]",
+            name: "wearers",
+            type: "address[]",
+          },
+        ],
+        internalType: "struct ISplitsCreator.SplitsInfo[]",
+        name: "_splitsInfo",
+        type: "tuple[]",
+      },
+    ],
+    name: "preview",
+    outputs: [
+      {
+        internalType: "address[]",
+        name: "shareHolders",
+        type: "address[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "percentages",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
 ] as const;

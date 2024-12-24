@@ -9,7 +9,6 @@ import { SplitV2Lib } from "../splits/libraries/SplitV2.sol";
 import { IFractionToken } from "../fractiontoken/IFractionToken.sol";
 import { IHatsTimeFrameModule } from "../timeframe/IHatsTimeFrameModule.sol";
 import { Clone } from "solady/src/utils/Clone.sol";
-import "hardhat/console.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
 	function HATS() public pure returns (IHats) {

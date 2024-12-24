@@ -364,9 +364,6 @@ describe("IntegrationTest", () => {
 		expect(shareHolders.length).to.equal(3);
 		expect(allocations.length).to.equal(3);
 
-		console.log(shareHolders);
-		console.log(allocations);
-
 		DeployedPullSplit = await viem.getContractAt("PullSplit", splitAddress);
 
 		// Splitコントラクトに1ETH送金
@@ -416,7 +413,6 @@ describe("IntegrationTest", () => {
 		);
 
 		// withdrawを実行
-		console.log(address1.account?.address);
 		await SplitsWarehouse.write.withdraw(
 			[
 				address1.account?.address!,

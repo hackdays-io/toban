@@ -278,7 +278,7 @@ describe("IntegrationTest", () => {
 			address1.account?.address!,
 		]);
 
-		// address2のtokenの半分をaddress3に移動
+		// address1のtokenの一部をaddress3に移動
 		await FractionToken.write.safeTransferFrom(
 			[
 				address1.account?.address!,
@@ -348,11 +348,12 @@ describe("IntegrationTest", () => {
 					data: log.data,
 					topics: log.topics,
 				});
-				if (decodedLog.eventName == "SplitsCreated")
+				if (decodedLog.eventName == "SplitsCreated") {
 					splitAddress = decodedLog.args.split;
-				shareHolders = decodedLog.args.shareHolders;
-				allocations = decodedLog.args.allocations;
-				totalAllocation = decodedLog.args.totalAllocation;
+					shareHolders = decodedLog.args.shareHolders;
+					allocations = decodedLog.args.allocations;
+					totalAllocation = decodedLog.args.totalAllocation;
+				}
 			} catch (error) {
 				shareHolders = [];
 				allocations = [];

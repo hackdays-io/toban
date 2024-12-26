@@ -23,7 +23,7 @@ export const useNamesByAddresses = (addresses?: string[]) => {
   const [names, setNames] = useState<NameData[][]>([]);
 
   useEffect(() => {
-    if (!addresses) return;
+    if (!addresses || addresses.length == 0) return;
     fetchNames(addresses);
   }, [addresses]);
 

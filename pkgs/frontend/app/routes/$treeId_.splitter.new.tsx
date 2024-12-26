@@ -60,8 +60,6 @@ const RoleItem: FC<RoleItemProps> = ({
 
   const [wearersAddress, setWearersAddress] = useState<Address[]>([]);
 
-  const [multiplier, setMultiplier] = useState<number>(1);
-
   useEffect(() => {
     const fetch = async () => {
       const res = await getWearersInfo({ hatId: field.hatId });
@@ -73,34 +71,6 @@ const RoleItem: FC<RoleItemProps> = ({
 
   const { names } = useNamesByAddresses(wearersAddress);
 
-  // const handleUpdateMultiplier = (e: ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.value.endsWith(".")) return;
-  //   const float = Number(e.target.value);
-  //   if (Number.isInteger(float)) {
-  //     update(fieldIndex, {
-  //       ...field,
-  //       multiplierTop: BigInt(float),
-  //       multiplierBottom: BigInt(1),
-  //     });
-  //     return;
-  //   }
-
-  //   const str = float.toString();
-  //   const decimalPlaces = str.includes(".") ? str.split(".")[1].length : 0;
-
-  //   const bottom = Math.pow(10, decimalPlaces);
-  //   const top = Math.round(float * bottom);
-
-  //   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-  //   const divisor = gcd(top, bottom);
-
-  //   update(fieldIndex, {
-  //     ...field,
-  //     multiplierTop: BigInt(top / divisor),
-  //     multiplierBottom: BigInt(bottom / divisor),
-  //   });
-  // };
-
   const handleOnCheck = (address: Address) => {
     if (!address) return;
     const array = field.wearers.includes(address)
@@ -109,6 +79,14 @@ const RoleItem: FC<RoleItemProps> = ({
     update(fieldIndex, {
       ...field,
       wearers: array,
+    });
+  };
+
+  const handleUpdateMultiplier = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    update(fieldIndex, {
+      ...field,
+      multiplier: value,
     });
   };
 
@@ -132,8 +110,8 @@ const RoleItem: FC<RoleItemProps> = ({
             <Text fontSize="sm">分配係数</Text>
             <CommonInput
               type="number"
-              value={multiplier}
-              onChange={(e) => setMultiplier(Number(e.target.value))}
+              value={field.multiplier}
+              onChange={handleUpdateMultiplier}
               placeholder="例: 1, 1.5 10"
               textAlign="center"
               w="80px"
@@ -235,7 +213,7 @@ const SplitterNew: FC = () => {
     );
   }, [hats]);
 
-  const { isLoading, createSplits, previewSplits } = useSplitsCreator(treeId!);
+  const { createSplits, previewSplits } = useSplitsCreator(treeId!);
 
   const { control, getValues } = useForm<FormData>();
   const { fields, insert, update } = useFieldArray({
@@ -266,10 +244,17 @@ const SplitterNew: FC = () => {
 
   const handlePreview = async () => {
     const data = getValues();
+
     const params = data.roles.map((role) => ({
       hatId: BigInt(role.hatId),
-      multiplierBottom: BigInt(1),
-      multiplierTop: BigInt(1),
+      multiplierBottom: role.multiplier
+        ? BigInt(String(role.multiplier).split(".")[1].length * 10)
+        : BigInt(1),
+      multiplierTop: role.multiplier
+        ? BigInt(
+            role.multiplier * String(role.multiplier).split(".")[1].length * 10
+          )
+        : BigInt(1),
       wearers: role.wearers,
     }));
     const res = await previewSplits(params);
@@ -289,8 +274,14 @@ const SplitterNew: FC = () => {
     const data = getValues();
     const params = data.roles.map((role) => ({
       hatId: BigInt(role.hatId),
-      multiplierBottom: BigInt(1),
-      multiplierTop: BigInt(1),
+      multiplierBottom: role.multiplier
+        ? BigInt(String(role.multiplier).split(".")[1].length * 10)
+        : BigInt(1),
+      multiplierTop: role.multiplier
+        ? BigInt(
+            role.multiplier * String(role.multiplier).split(".")[1].length * 10
+          )
+        : BigInt(1),
       wearers: role.wearers,
     }));
     const txHash = await createSplits({

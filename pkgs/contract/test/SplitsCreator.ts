@@ -234,7 +234,7 @@ describe("CreateSplit", () => {
 	let address1WoreTime: bigint;
 	let address2WoreTime: bigint;
 	let address3WoreTime: bigint;
-	let address1_additional_woreTime: number = 500000;
+	let address1_additional_woreTime: number = 2592000;
 
 	let publicClient: PublicClient;
 
@@ -311,7 +311,9 @@ describe("CreateSplit", () => {
 
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
-		SplitsCreatorFactory.write.setBigBang([bigBangAddress.account?.address!]);
+		await SplitsCreatorFactory.write.setBigBang([
+			bigBangAddress.account?.address!,
+		]);
 
 		let txHash =
 			await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
@@ -494,13 +496,25 @@ describe("CreateSplit", () => {
 				account: address1.account!,
 			}
 		);
+		await FractionToken.write.safeTransferFrom(
+			[
+				address1.account?.address!,
+				address3.account?.address!,
+				tokenId,
+				1000n,
+				"0x",
+			],
+			{
+				account: address1.account!,
+			}
+		);
 
 		const address1Balance = await FractionToken.read.balanceOf([
 			address1.account?.address!,
 			address1.account?.address!,
 			hat1_id,
 		]);
-		expect(address1Balance).to.equal(7000n);
+		expect(address1Balance).to.equal(6000n);
 
 		// address2のbalance
 		const address2Balance = await FractionToken.read.balanceOf([
@@ -571,7 +585,7 @@ describe("CreateSplit", () => {
 			}
 		}
 
-		expect(shareHolders.length).to.equal(4);
+		expect(shareHolders.length).to.equal(5);
 
 		const address1Time = endWoreTime - address1WoreTime;
 		const address2Time = endWoreTime - address2WoreTime;
@@ -586,7 +600,13 @@ describe("CreateSplit", () => {
 			address1.account?.address!,
 			hat1_id,
 		]);
-		expect(address1Balance).to.equal(7000n);
+		expect(address1Balance).to.equal(6000n);
+
+		const address3_address1Balance = await FractionToken.read.balanceOf([
+			address3.account?.address!,
+			address1.account?.address!,
+			hat1_id,
+		]);
 
 		const address4Balance = await FractionToken.read.balanceOf([
 			address4.account?.address!,
@@ -608,7 +628,7 @@ describe("CreateSplit", () => {
 		]);
 		expect(address3Balance).to.equal(10000n);
 
-		expect(allocations.length).to.equal(4);
+		expect(allocations.length).to.equal(5);
 		expect(allocations[0]).to.equal(
 			((address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time
 		);
@@ -616,9 +636,12 @@ describe("CreateSplit", () => {
 			((address4Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time
 		);
 		expect(allocations[2]).to.equal(
-			((address2Balance * 1000000n) / 20000n) * 1n * sqrtAddress2Time
+			((address3_address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time
 		);
 		expect(allocations[3]).to.equal(
+			((address2Balance * 1000000n) / 20000n) * 1n * sqrtAddress2Time
+		);
+		expect(allocations[4]).to.equal(
 			((address3Balance * 1000000n) / 10000n) * 2n * sqrtAddress3Time
 		);
 
@@ -777,11 +800,12 @@ describe("CreateSplit", () => {
 			allocation3,
 		];
 
-		expect(shareHolders.length).to.equal(4);
+		expect(shareHolders.length).to.equal(5);
 
 		const expectedShareHolders = [
 			address1.account?.address!,
 			address4.account?.address!,
+			address3.account?.address!,
 			address2.account?.address!,
 			address3.account?.address!,
 		];
@@ -799,12 +823,15 @@ describe("CreateSplit", () => {
 		expect(shareHolders[3].toLowerCase()).to.equal(
 			expectedShareHolders[3].toLowerCase()
 		);
+		expect(shareHolders[4].toLowerCase()).to.equal(
+			expectedShareHolders[4].toLowerCase()
+		);
 
-		expect(allocations.length).to.equal(4);
+		expect(allocations.length).to.equal(5);
 
 		expect(allocations[0]).to.equal(expectedAllocations[0]);
 		expect(allocations[1]).to.equal(expectedAllocations[1]);
-		expect(allocations[2]).to.equal(expectedAllocations[2]);
-		expect(allocations[3]).to.equal(expectedAllocations[3]);
+		expect(allocations[3]).to.equal(expectedAllocations[2]);
+		expect(allocations[4]).to.equal(expectedAllocations[3]);
 	});
 });

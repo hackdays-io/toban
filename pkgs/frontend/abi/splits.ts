@@ -162,8 +162,13 @@ export const SPLITS_CREATOR_ABI = [
       },
       {
         internalType: "uint256[]",
-        name: "percentages",
+        name: "allocations",
         type: "uint256[]",
+      },
+      {
+        internalType: "uint256",
+        name: "totalAllocation",
+        type: "uint256",
       },
     ],
     stateMutability: "view",

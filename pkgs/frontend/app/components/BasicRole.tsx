@@ -44,18 +44,19 @@ export const RoleActions: FC<RoleActionsProps> = (params) => {
 
   const navigate = useNavigate();
 
-  const navigateToDetail = () => navigate(`/${treeId}/${hatId}/${address}`);
-
-  const navigateToAssistCredit = () =>
-    navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`);
-
   return (
     <HStack>
       <Image rounded="4xl" width="1/3" src={imageUri} />
       <VStack width="full">
         <Text textStyle="xl">{detail?.data.name}</Text>
-        <BasicButton onClick={navigateToDetail}>See Detail</BasicButton>
-        <BasicButton onClick={navigateToAssistCredit}>
+        <BasicButton onClick={() => navigate(`/${treeId}/${hatId}/${address}`)}>
+          See Detail
+        </BasicButton>
+        <BasicButton
+          onClick={() =>
+            navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`)
+          }
+        >
           Transfer Assist Credit
         </BasicButton>
       </VStack>

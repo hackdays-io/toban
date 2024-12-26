@@ -24,7 +24,6 @@ const WorkspaceTop: FC = () => {
   const topHatId = tree?.hats?.find((h) => h.levelAtLocalTree === 0)?.id;
 
   const navigate = useNavigate();
-  const navigateToNewRole = () => navigate(`/workspaces/${topHatId}/roles/new`);
 
   return (
     <>
@@ -54,17 +53,18 @@ const WorkspaceTop: FC = () => {
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
             .map((h) => (
-              <HatsListItemParser
-                key={h.id}
-                imageUri={h.imageUri}
-                detailUri={h.details}
-              >
-                <VerticalRole />
-              </HatsListItemParser>
+              <Box key={h.id} onClick={() => navigate(`/${treeId}/${h.id}`)}>
+                <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
+                  <VerticalRole />
+                </HatsListItemParser>
+              </Box>
             ))}
           <VStack>
             <AspectRatio width="full" ratio={1}>
-              <CommonButton rounded="4xl" onClick={navigateToNewRole}>
+              <CommonButton
+                rounded="4xl"
+                onClick={() => navigate(`/workspaces/${topHatId}/roles/new`)}
+              >
                 <FaPlus />
               </CommonButton>
             </AspectRatio>

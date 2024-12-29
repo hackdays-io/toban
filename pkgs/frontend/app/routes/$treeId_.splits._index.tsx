@@ -1,21 +1,39 @@
-import { type MouseEvent } from "react";
-import { Box, Collapsible, Flex, Text } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
-import { useTreeInfo } from "hooks/useHats";
+import { useEffect, useMemo, type MouseEvent } from "react";
+import { Box, Collapsible, Flex, Text, VStack } from "@chakra-ui/react";
+import { Link, useParams } from "@remix-run/react";
 import { FC, useCallback, useState } from "react";
 import { CommonButton } from "~/components/common/CommonButton";
 import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { useCopyToClipboard } from "hooks/useCopyToClipboard";
+import { useGetWorkspace } from "hooks/useWorkspace";
+import { useSplitsCreatorRelatedSplits } from "hooks/useSplitsCreator";
+import { Address } from "viem";
+import { Split } from "@0xsplits/splits-sdk";
+import { abbreviateAddress } from "utils/wallet";
+import { publicClient } from "hooks/useViem";
+import dayjs from "dayjs";
+import { useNamesByAddresses } from "hooks/useENS";
+import { ipfs2https } from "utils/ipfs";
 
-const SplitInfoItem = () => {
-  const dummyFromAddress = "0xabc89dsakdfasdfasdd123sdafsdfasdf";
+interface SplitInfoItemProps {
+  split: Split;
+}
+
+const SplitInfoItem: FC<SplitInfoItemProps> = ({ split }) => {
+  const [createdTime, setCreatedTime] = useState<string>();
+
+  const addresses = useMemo(() => {
+    return split.recipients.map((r) => r.recipient.address);
+  }, [split]);
+  const { names } = useNamesByAddresses(addresses);
+
   const [open, setOpen] = useState(false);
   const onOpen = useCallback(() => {
     setOpen(true);
   }, [setOpen]);
 
-  const { copyToClipboardAction } = useCopyToClipboard(dummyFromAddress);
+  const { copyToClipboardAction } = useCopyToClipboard(split.address);
 
   const onClickCopyButton = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
@@ -25,74 +43,115 @@ const SplitInfoItem = () => {
     [copyToClipboardAction]
   );
 
-  const dummyRatioBreakdown = [
-    { name: "Ryoma", address: "0x12344sdfasdfadfaweifsd", ratio: 0.2 },
-    { name: "Taro", address: "0x12344sdfasdfadfaweifsd", ratio: 0.8 },
-  ];
+  const totalAllocation = useMemo(() => {
+    return split.recipients.reduce((acc, recipient) => {
+      return acc + Number(recipient.percentAllocation);
+    }, 0);
+  }, [split]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const data = await publicClient.getBlock({
+        blockNumber: BigInt(split.createdBlock),
+      });
+
+      setCreatedTime(
+        dayjs(Number(data.timestamp) * 1000).format("YYYY/MM/DD HH:mm:ss")
+      );
+    };
+    fetch();
+  }, [split]);
 
   return (
-    <Collapsible.Root disabled={open} onOpenChange={onOpen}>
-      <Collapsible.Trigger w="full" textAlign={"start"} cursor="pointer">
-        <Flex mb={2}>
-          <Text as="span" textStyle="xs">
-            Optimism
-          </Text>
-        </Flex>
-        <Text textStyle="md">2024Q3_Rewards</Text>
-        <Text textStyle="sm">Created at 2024/7/11</Text>
-        <Flex mt={4} placeItems="center">
-          <Text textStyle="sm" flexGrow={1}>
-            {dummyFromAddress}
-          </Text>
-          <CommonButton
-            color="#333"
-            background="transparent"
-            w="auto"
-            h="auto"
-            p="4px"
-            minW="unset"
-            onClick={onClickCopyButton}
-          >
-            <FaRegCopy
-              style={{ width: "16px", height: "16px", objectFit: "cover" }}
-            />
-          </CommonButton>
-        </Flex>
-        {open || (
-          <CommonButton color="#333" background="transparent" w="full" h="auto">
-            <FaAngleDown
-              style={{ width: "16px", height: "16px", objectFit: "cover" }}
-            />
-          </CommonButton>
-        )}
-      </Collapsible.Trigger>
-      <Collapsible.Content>
-        <Box
-          mx={2}
-          my={4}
-          borderTop="1px solid #868e96"
-          role="presentation"
-        ></Box>
-        {dummyRatioBreakdown.map((breakdown) => (
-          <Flex key={breakdown.name} my={2} alignItems="center" gap={2}>
-            <UserIcon size="40px" />
-            <Box flexGrow={1}>
-              <Text textStyle="sm">{breakdown.name}</Text>
-              <Text textStyle="sm">{breakdown.address}</Text>
-            </Box>
-            {breakdown.ratio * 100} %
+    <Box w="100%" px={4} py={4} borderRadius={8} border="1px solid #333">
+      <Collapsible.Root disabled={open} onOpenChange={onOpen}>
+        <Collapsible.Trigger w="full" textAlign={"start"} cursor="pointer">
+          <Text textStyle="md">{abbreviateAddress(split.address)}</Text>
+          <Text textStyle="sm">Created at {createdTime}</Text>
+          <Flex mt={4} placeItems="center">
+            <Text textStyle="sm" flexGrow={1}>
+              {split.address}
+            </Text>
+            <CommonButton
+              color="#333"
+              background="transparent"
+              w="auto"
+              h="auto"
+              p="4px"
+              minW="unset"
+              onClick={onClickCopyButton}
+            >
+              <FaRegCopy
+                style={{ width: "16px", height: "16px", objectFit: "cover" }}
+              />
+            </CommonButton>
           </Flex>
-        ))}
-      </Collapsible.Content>
-    </Collapsible.Root>
+          {open || (
+            <CommonButton
+              color="#333"
+              background="transparent"
+              w="full"
+              h="auto"
+            >
+              <FaAngleDown
+                style={{ width: "16px", height: "16px", objectFit: "cover" }}
+              />
+            </CommonButton>
+          )}
+        </Collapsible.Trigger>
+        <Collapsible.Content>
+          <Box
+            mx={2}
+            my={4}
+            borderTop="1px solid #868e96"
+            role="presentation"
+          ></Box>
+          {names.map((name) => (
+            <Flex
+              key={name[0]?.address + split.address}
+              my={2}
+              alignItems="center"
+              gap={2}
+            >
+              <UserIcon
+                size="40px"
+                userImageUrl={ipfs2https(name[0]?.text_records?.avatar)}
+              />
+              <Box flexGrow={1}>
+                <Text textStyle="sm">{name[0]?.name}</Text>
+                <Text textStyle="sm">
+                  {abbreviateAddress(name[0]?.address || "")}
+                </Text>
+              </Box>
+              {(Number(
+                split.recipients.find(
+                  (recipient) =>
+                    recipient.recipient.address.toLowerCase() ===
+                    name[0]?.address.toLowerCase()
+                )?.percentAllocation
+              ) /
+                totalAllocation) *
+                100}{" "}
+              %
+            </Flex>
+          ))}
+        </Collapsible.Content>
+      </Collapsible.Root>
+    </Box>
   );
 };
 
 const SplitsIndex: FC = () => {
   const { treeId } = useParams();
 
-  treeId;
-  // const tree = useTreeInfo(Number(treeId));
+  const { data } = useGetWorkspace(treeId);
+
+  const splitCreatorAddress = useMemo(() => {
+    return data?.workspace?.splitCreator as Address;
+  }, [data]);
+
+  const { splits, isLoading } =
+    useSplitsCreatorRelatedSplits(splitCreatorAddress);
 
   return (
     <Box w="100%">
@@ -100,13 +159,22 @@ const SplitsIndex: FC = () => {
         <Text fontSize="lg" flexGrow={1}>
           Splits
         </Text>
-        <CommonButton w={"auto"} size="sm">
-          Create New
-        </CommonButton>
+        <Link to={`/${treeId}/splits/new`}>
+          <CommonButton w={"auto"} size="sm">
+            Create New
+          </CommonButton>
+        </Link>
       </Flex>
-      <Box px={4} py={4} borderRadius={8} border="1px solid #333">
-        <SplitInfoItem />
-      </Box>
+
+      {isLoading ? (
+        <></>
+      ) : (
+        <VStack gap={3}>
+          {splits.map((split) => (
+            <SplitInfoItem key={split.address} split={split} />
+          ))}
+        </VStack>
+      )}
     </Box>
   );
 };

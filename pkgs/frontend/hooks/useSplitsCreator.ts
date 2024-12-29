@@ -1,9 +1,11 @@
 import { SPLITS_CREATOR_ABI } from "abi/splits";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AbiItemArgs, Address, encodeFunctionData } from "viem";
 import { useActiveWallet, useSmartAccountClient } from "./useWallet";
-import { publicClient } from "./useViem";
+import { currentChain, publicClient } from "./useViem";
 import { useGetWorkspace } from "./useWorkspace";
+import { splitsDataClient } from "utils/splits";
+import { Split } from "@0xsplits/splits-sdk";
 
 /**
  * Splits creator 用 React hooks
@@ -71,4 +73,33 @@ export const useSplitsCreator = (treeId: string) => {
     createSplits,
     previewSplits,
   };
+};
+
+export const useSplitsCreatorRelatedSplits = (splitsCreator?: Address) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [splits, setSplits] = useState<Split[]>([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      setIsLoading(true);
+      try {
+        if (!splitsCreator) return;
+        const res = await splitsDataClient?.getRelatedSplits({
+          address: splitsCreator,
+          chainId: currentChain.id,
+        });
+
+        if (res) {
+          setSplits(res.controlling);
+        }
+      } catch (error) {
+        console.error("error occured when fetching splits:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetch();
+  }, [splitsCreator]);
+
+  return { isLoading, splits };
 };

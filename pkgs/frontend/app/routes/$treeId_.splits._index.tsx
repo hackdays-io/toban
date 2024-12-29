@@ -4,17 +4,15 @@ import { Link, useParams } from "@remix-run/react";
 import { FC, useCallback, useState } from "react";
 import { CommonButton } from "~/components/common/CommonButton";
 import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
-import { UserIcon } from "~/components/icon/UserIcon";
 import { useCopyToClipboard } from "hooks/useCopyToClipboard";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { useSplitsCreatorRelatedSplits } from "hooks/useSplitsCreator";
 import { Address } from "viem";
 import { Split } from "@0xsplits/splits-sdk";
 import { abbreviateAddress } from "utils/wallet";
-import { publicClient } from "hooks/useViem";
+import { currentChain, publicClient } from "hooks/useViem";
 import dayjs from "dayjs";
-import { useNamesByAddresses } from "hooks/useENS";
-import { ipfs2https } from "utils/ipfs";
+import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 
 interface SplitInfoItemProps {
   split: Split;
@@ -23,10 +21,22 @@ interface SplitInfoItemProps {
 const SplitInfoItem: FC<SplitInfoItemProps> = ({ split }) => {
   const [createdTime, setCreatedTime] = useState<string>();
 
-  const addresses = useMemo(() => {
-    return split.recipients.map((r) => r.recipient.address);
-  }, [split]);
-  const { names } = useNamesByAddresses(addresses);
+  const consolidatedRecipients = useMemo(() => {
+    const consolidated = split.recipients.reduce(
+      (acc, recipient) => {
+        const address = recipient.recipient.address;
+        acc[address] =
+          (acc[address] || 0) + Number(recipient.percentAllocation);
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    return Object.entries(consolidated).map(([address, percentAllocation]) => ({
+      address,
+      percentAllocation,
+    }));
+  }, [split.recipients]);
 
   const [open, setOpen] = useState(false);
   const onOpen = useCallback(() => {
@@ -43,12 +53,6 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split }) => {
     [copyToClipboardAction]
   );
 
-  const totalAllocation = useMemo(() => {
-    return split.recipients.reduce((acc, recipient) => {
-      return acc + Number(recipient.percentAllocation);
-    }, 0);
-  }, [split]);
-
   useEffect(() => {
     const fetch = async () => {
       const data = await publicClient.getBlock({
@@ -63,10 +67,27 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split }) => {
   }, [split]);
 
   return (
-    <Box w="100%" px={4} py={4} borderRadius={8} border="1px solid #333">
+    <Box
+      w="100%"
+      px={4}
+      py={4}
+      borderRadius={8}
+      border="1px solid #333"
+      bg="white"
+    >
       <Collapsible.Root disabled={open} onOpenChange={onOpen}>
         <Collapsible.Trigger w="full" textAlign={"start"} cursor="pointer">
-          <Text textStyle="md">{abbreviateAddress(split.address)}</Text>
+          <Flex alignItems="center" justifyContent="space-between">
+            <Text textStyle="md">{abbreviateAddress(split.address)}</Text>
+            <Link
+              target="_blank"
+              to={`https://app.splits.org/accounts/${split.address}/?chainId=${currentChain.id}`}
+            >
+              <CommonButton size="xs" w="100" bgColor="blue.400">
+                詳細を確認
+              </CommonButton>
+            </Link>
+          </Flex>
           <Text textStyle="sm">Created at {createdTime}</Text>
           <Flex mt={4} placeItems="center">
             <Text textStyle="sm" flexGrow={1}>
@@ -106,35 +127,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split }) => {
             borderTop="1px solid #868e96"
             role="presentation"
           ></Box>
-          {names.map((name) => (
-            <Flex
-              key={name[0]?.address + split.address}
-              my={2}
-              alignItems="center"
-              gap={2}
-            >
-              <UserIcon
-                size="40px"
-                userImageUrl={ipfs2https(name[0]?.text_records?.avatar)}
-              />
-              <Box flexGrow={1}>
-                <Text textStyle="sm">{name[0]?.name}</Text>
-                <Text textStyle="sm">
-                  {abbreviateAddress(name[0]?.address || "")}
-                </Text>
-              </Box>
-              {(Number(
-                split.recipients.find(
-                  (recipient) =>
-                    recipient.recipient.address.toLowerCase() ===
-                    name[0]?.address.toLowerCase()
-                )?.percentAllocation
-              ) /
-                totalAllocation) *
-                100}{" "}
-              %
-            </Flex>
-          ))}
+          <SplitRecipientsList recipients={consolidatedRecipients} />
         </Collapsible.Content>
       </Collapsible.Root>
     </Box>
@@ -169,10 +162,13 @@ const SplitsIndex: FC = () => {
       {isLoading ? (
         <></>
       ) : (
-        <VStack gap={3}>
-          {splits.map((split) => (
-            <SplitInfoItem key={split.address} split={split} />
-          ))}
+        <VStack gap={3} mb={10}>
+          {splits
+            .slice()
+            .sort((a, b) => Number(b.createdBlock) - Number(a.createdBlock))
+            .map((split) => (
+              <SplitInfoItem key={split.address} split={split} />
+            ))}
         </VStack>
       )}
     </Box>

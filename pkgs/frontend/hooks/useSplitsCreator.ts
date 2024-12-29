@@ -1,7 +1,7 @@
 import { SPLITS_CREATOR_ABI } from "abi/splits";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AbiItemArgs, Address, encodeFunctionData } from "viem";
-import { useActiveWallet, useSmartAccountClient } from "./useWallet";
+import { AbiItemArgs, Address, parseEventLogs } from "viem";
+import { useActiveWallet } from "./useWallet";
 import { currentChain, publicClient } from "./useViem";
 import { useGetWorkspace } from "./useWorkspace";
 import { splitsDataClient } from "utils/splits";
@@ -52,13 +52,20 @@ export const useSplitsCreator = (treeId: string) => {
           args: [params.args],
         });
 
+        console.log("txHash:", txHash);
+
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
 
-        console.log({ receipt });
+        const parsedLog = parseEventLogs({
+          abi: SPLITS_CREATOR_ABI,
+          eventName: "SplitsCreated",
+          logs: receipt.logs,
+          strict: false,
+        });
 
-        return txHash;
+        return parsedLog;
       } catch (error) {
         console.error("error occured when creating Splits:", error);
       } finally {

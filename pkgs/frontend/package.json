@@ -15,6 +15,7 @@
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
+    "@0xsplits/splits-sdk": "^4.1.0",
     "@apollo/client": "^3.12.4",
     "@chakra-ui/react": "^3.2.3",
     "@emotion/cache": "^11.13.5",
@@ -28,6 +29,7 @@
     "@remix-run/serve": "^2.15.0",
     "@solana/web3.js": "^1.95.5",
     "axios": "^1.7.9",
+    "dayjs": "^1.11.13",
     "graphql": "^16.10.0",
     "isbot": "^5.1.11",
     "namestone-sdk": "^0.2.11",

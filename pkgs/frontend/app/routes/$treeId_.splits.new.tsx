@@ -10,7 +10,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useAssignableHats, useHats } from "hooks/useHats";
 import { useSplitsCreator } from "hooks/useSplitsCreator";
@@ -40,6 +40,7 @@ import {
   UseFieldArrayUpdate,
   useForm,
 } from "react-hook-form";
+import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 
 interface RoleItemProps {
   update: UseFieldArrayUpdate<FormData, "roles">;
@@ -47,6 +48,7 @@ interface RoleItemProps {
   detail?: HatsDetailSchama;
   imageUri?: string;
   field: FieldArrayWithId<FormData, "roles", "id">;
+  wearers: Wearer[];
 }
 
 const RoleItem: FC<RoleItemProps> = ({
@@ -55,21 +57,12 @@ const RoleItem: FC<RoleItemProps> = ({
   update,
   fieldIndex,
   field,
+  wearers,
 }) => {
-  const { getWearersInfo } = useHats();
-
-  const [wearersAddress, setWearersAddress] = useState<Address[]>([]);
-
-  useEffect(() => {
-    const fetch = async () => {
-      const res = await getWearersInfo({ hatId: field.hatId });
-      if (!res) return;
-      setWearersAddress(res.map((w) => w.id));
-    };
-    fetch();
-  }, [field.hatId, getWearersInfo]);
-
-  const { names } = useNamesByAddresses(wearersAddress);
+  const addresses = useMemo(() => {
+    return wearers.map((w) => w.id);
+  }, [wearers]);
+  const { names } = useNamesByAddresses(addresses);
 
   const handleOnCheck = (address: Address) => {
     if (!address) return;
@@ -91,7 +84,7 @@ const RoleItem: FC<RoleItemProps> = ({
   };
 
   return (
-    <List.Item>
+    <List.Item mb={5}>
       <HStack gap={2}>
         <Checkbox
           colorPalette="blue"
@@ -203,6 +196,8 @@ interface RoleInput {
 }
 
 const SplitterNew: FC = () => {
+  const navigate = useNavigate();
+
   const { treeId } = useParams();
 
   const hats = useAssignableHats(Number(treeId));
@@ -213,7 +208,7 @@ const SplitterNew: FC = () => {
     );
   }, [hats]);
 
-  const { createSplits, previewSplits } = useSplitsCreator(treeId!);
+  const { createSplits, previewSplits, isLoading } = useSplitsCreator(treeId!);
 
   const { control, getValues } = useForm<FormData>();
   const { fields, insert, update } = useFieldArray({
@@ -237,57 +232,62 @@ const SplitterNew: FC = () => {
       }
     };
     fetch();
-  }, [baseHats, fields]);
+  }, [baseHats, fields.length]);
 
   const [preview, setPreview] =
-    useState<{ address: Address; ratio: string }[]>();
+    useState<{ address: Address; percentAllocation: number }[]>();
 
-  const handlePreview = async () => {
+  const calcParams = () => {
     const data = getValues();
 
-    const params = data.roles.map((role) => ({
-      hatId: BigInt(role.hatId),
-      multiplierBottom: role.multiplier
-        ? BigInt(String(role.multiplier).split(".")[1].length * 10)
-        : BigInt(1),
-      multiplierTop: role.multiplier
-        ? BigInt(
-            role.multiplier * String(role.multiplier).split(".")[1].length * 10
-          )
-        : BigInt(1),
-      wearers: role.wearers,
-    }));
+    return data.roles.map((role) => {
+      const [multiplierTop, multiplierBottom] = role.multiplier
+        ? String(role.multiplier).includes(".")
+          ? [
+              BigInt(
+                role.multiplier *
+                  10 ** String(role.multiplier).split(".")[1].length
+              ),
+              BigInt(10 ** String(role.multiplier).split(".")[1].length),
+            ]
+          : [BigInt(role.multiplier), BigInt(1)]
+        : [BigInt(1), BigInt(1)];
+
+      return {
+        hatId: BigInt(role.hatId),
+        multiplierTop,
+        multiplierBottom,
+        wearers: role.wearers,
+      };
+    });
+  };
+
+  const handlePreview = async () => {
+    const params = calcParams();
     const res = await previewSplits(params);
 
-    const _preview = [];
-    const sumOfScore = res[1].reduce((acc, cur) => acc + Number(cur), 0);
-    for (let index = 0; index < res[0].length; index++) {
-      const address = res[0][index];
-      const score = res[1][index];
-      const ratio = ((Number(score) / sumOfScore) * 100).toFixed(2);
-      _preview.push({ address, ratio });
-    }
-    setPreview(_preview);
+    const consolidatedRecipients = res[0].reduce((acc, address, index) => {
+      const percentAllocation = Number(res[1][index]);
+      acc.set(address, (acc.get(address) || 0) + percentAllocation);
+      return acc;
+    }, new Map<Address, number>());
+
+    setPreview(
+      Array.from(consolidatedRecipients.entries()).map(
+        ([address, percentAllocation]) => ({
+          address,
+          percentAllocation,
+        })
+      )
+    );
   };
 
   const handleCreateSplitter = async () => {
-    const data = getValues();
-    const params = data.roles.map((role) => ({
-      hatId: BigInt(role.hatId),
-      multiplierBottom: role.multiplier
-        ? BigInt(String(role.multiplier).split(".")[1].length * 10)
-        : BigInt(1),
-      multiplierTop: role.multiplier
-        ? BigInt(
-            role.multiplier * String(role.multiplier).split(".")[1].length * 10
-          )
-        : BigInt(1),
-      wearers: role.wearers,
-    }));
-    const txHash = await createSplits({
+    const params = calcParams();
+    await createSplits({
       args: params,
     });
-    console.log(txHash);
+    navigate(`/${treeId}/splits`);
   };
 
   return (
@@ -305,17 +305,10 @@ const SplitterNew: FC = () => {
 
       {preview ? (
         <>
-          <List.Root>
-            {preview.map((item, index) => (
-              <List.Item key={index}>
-                <HStack gap={2}>
-                  <Text>{item.address}</Text>
-                  <Text>{item.ratio}%</Text>
-                </HStack>
-              </List.Item>
-            ))}
-          </List.Root>
-          <BasicButton onClick={handleCreateSplitter}>作成</BasicButton>
+          <SplitRecipientsList recipients={preview} />
+          <BasicButton onClick={handleCreateSplitter} loading={isLoading}>
+            作成
+          </BasicButton>
         </>
       ) : (
         <>
@@ -333,7 +326,14 @@ const SplitterNew: FC = () => {
                 detailUri={field.hat.details}
                 imageUri={field.hat.imageUri}
               >
-                <RoleItem update={update} fieldIndex={index} field={field} />
+                <RoleItem
+                  update={update}
+                  fieldIndex={index}
+                  field={field}
+                  wearers={
+                    baseHats.find((h) => h.id == field.hatId)?.wearers || []
+                  }
+                />
               </HatsListItemParser>
             ))}
           </List.Root>

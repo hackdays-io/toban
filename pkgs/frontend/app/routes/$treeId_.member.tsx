@@ -3,7 +3,6 @@ import { useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
-import { TextRecords } from "namestone-sdk";
 import { FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { HorizontalRole } from "~/components/BasicRole";
@@ -39,28 +38,14 @@ const WorkspaceMember: FC = () => {
   const { names: wearersNames } = useNamesByAddresses(wearersIds);
 
   // Members
-  const members = useMemo(() => {
-    const unresolvedMembers = wearers.filter(
-      ({ id }) =>
-        !wearersNames.flat().find((n) => n.address.toLowerCase() === id)
-    );
-
-    return [
-      ...wearersNames.flat().map((n) => ({
+  const members = useMemo(
+    () =>
+      wearersNames.flat().map((n) => ({
         ...n,
         wearer: wearers.find((w) => w.id === n.address.toLowerCase()),
       })),
-      ...unresolvedMembers.map((m) => ({
-        wearer: m,
-        name: "",
-        address: m.id,
-        domain: "",
-        text_records: {
-          avatar: "",
-        } as TextRecords,
-      })),
-    ];
-  }, [wearers, wearersNames]);
+    [wearers, wearersNames]
+  );
 
   // hatIdとwearerのペアを取得
   const params = useMemo(() => {
@@ -95,32 +80,16 @@ const WorkspaceMember: FC = () => {
   const { names: assistantsNames } = useNamesByAddresses(assistantsIds);
 
   // AssistantMembers
-  const assistantMembers = useMemo(() => {
-    const unresolvedMembers = assistants.filter(
-      ({ id }) =>
-        !assistantsNames
-          .flat()
-          .find((n) => n.address.toLowerCase() === id.toLowerCase())
-    );
-
-    return [
-      ...assistantsNames.flat().map((n) => ({
+  const assistantMembers = useMemo(
+    () =>
+      assistantsNames.flat().map((n) => ({
         ...n,
         assistant: assistants.find(
           (a) => a.id.toLowerCase() === n.address.toLowerCase()
         ),
       })),
-      ...unresolvedMembers.map((m) => ({
-        assistant: m,
-        name: "",
-        address: m.id,
-        domain: "",
-        text_records: {
-          avatar: "",
-        } as TextRecords,
-      })),
-    ];
-  }, [assistants, assistantsNames]);
+    [assistants, assistantsNames]
+  );
 
   return (
     <>

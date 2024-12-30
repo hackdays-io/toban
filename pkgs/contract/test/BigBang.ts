@@ -104,7 +104,7 @@ describe("BigBang", () => {
 
 	it("should execute bigbang", async () => {
 		// SplitsCreatorFactoryにBigBangアドレスをセット
-		SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+		await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
 
 		const txHash = await BigBang.write.bigbang(
 			[

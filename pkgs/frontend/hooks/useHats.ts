@@ -43,7 +43,6 @@ export const useTreeInfo = (treeId: number) => {
       const tree = await getTreeInfo({
         treeId: treeId,
       });
-
       if (!tree) return;
 
       setTreeInfo(tree);
@@ -69,47 +68,42 @@ export const useHats = () => {
    * @param chainId
    * @param treeId
    */
-  const getTreeInfo = useCallback(
-    async (params: { treeId: number }) => {
-      if (!wallet) return;
+  const getTreeInfo = useCallback(async (params: { treeId: number }) => {
+    setIsLoading(true);
 
-      setIsLoading(true);
-
-      try {
-        const tree = await hatsSubgraphClient.getTree({
-          chainId: currentChain.id,
-          treeId: params.treeId,
-          props: {
-            hats: {
-              props: {
-                prettyId: true,
-                status: true,
-                createdAt: true,
-                details: true,
-                maxSupply: true,
-                eligibility: true,
-                imageUri: true,
-                toggle: true,
-                levelAtLocalTree: true,
-                currentSupply: true,
-                wearers: {
-                  props: {},
-                },
+    try {
+      const tree = await hatsSubgraphClient.getTree({
+        chainId: currentChain.id,
+        treeId: params.treeId,
+        props: {
+          hats: {
+            props: {
+              prettyId: true,
+              status: true,
+              createdAt: true,
+              details: true,
+              maxSupply: true,
+              eligibility: true,
+              imageUri: true,
+              toggle: true,
+              levelAtLocalTree: true,
+              currentSupply: true,
+              wearers: {
+                props: {},
               },
             },
           },
-        });
+        },
+      });
 
-        return tree;
-      } catch (error) {
-        console.error("error occured when fetching treeInfo:", error);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [wallet]
-  );
+      return tree;
+    } catch (error) {
+      console.error("error occured when fetching treeInfo:", error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   /**
    * 特定のウォレットアドレスが着用している全てのHats情報を取得するコールバック関数

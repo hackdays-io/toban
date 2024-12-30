@@ -24,11 +24,24 @@ export const useNamesByAddresses = (addresses?: string[]) => {
 
   const fetchNames = useCallback(async (addresses: string[]) => {
     try {
-      const { data } = await axios.get("/api/namestone/resolve-names", {
-        params: { addresses: addresses.join(",") },
-      });
-      setNames(data);
-      return data as NameData[][];
+      const { data } = await axios.get<NameData[][]>(
+        "/api/namestone/resolve-names",
+        {
+          params: { addresses: addresses.join(",") },
+        }
+      );
+      const unresolvedAddresses = addresses
+        .filter((address) => {
+          return !data.some(
+            (nameData) =>
+              nameData[0]?.address.toLowerCase() === address.toLowerCase()
+          );
+        })
+        .map((address) => {
+          return [{ address, name: "", domain: "" }];
+        });
+      setNames([...data, ...unresolvedAddresses]);
+      return data;
     } catch (error) {
       console.error(error);
     }
@@ -47,9 +60,12 @@ export const useAddressesByNames = (names?: string[], exactMatch?: boolean) => {
 
   const fetchAddresses = useCallback(async (resolveNames: string[]) => {
     try {
-      const { data } = await axios.get("/api/namestone/resolve-addresses", {
-        params: { names: resolveNames.join(","), exact_match: exactMatch },
-      });
+      const { data } = await axios.get<NameData[][]>(
+        "/api/namestone/resolve-addresses",
+        {
+          params: { names: resolveNames.join(","), exact_match: exactMatch },
+        }
+      );
       setAddresses(data);
       return data as NameData[][];
     } catch (error) {

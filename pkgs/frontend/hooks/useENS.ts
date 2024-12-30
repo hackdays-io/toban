@@ -22,12 +22,7 @@ export const useActiveWalletIdentity = () => {
 export const useNamesByAddresses = (addresses?: string[]) => {
   const [names, setNames] = useState<NameData[][]>([]);
 
-  useEffect(() => {
-    if (!addresses || addresses.length == 0) return;
-    fetchNames(addresses);
-  }, [addresses]);
-
-  const fetchNames = async (addresses: string[]) => {
+  const fetchNames = useCallback(async (addresses: string[]) => {
     try {
       const { data } = await axios.get<NameData[][]>(
         "/api/namestone/resolve-names",
@@ -50,7 +45,12 @@ export const useNamesByAddresses = (addresses?: string[]) => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!addresses) return;
+    fetchNames(addresses);
+  }, [addresses, fetchNames]);
 
   return { names, fetchNames };
 };

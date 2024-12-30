@@ -39,6 +39,7 @@ export const useTreeInfo = (treeId: number) => {
   useEffect(() => {
     const fetch = async () => {
       if (!treeId) return;
+
       const tree = await getTreeInfo({
         treeId: treeId,
       });
@@ -48,7 +49,7 @@ export const useTreeInfo = (treeId: number) => {
     };
 
     fetch();
-  }, [treeId]);
+  }, [treeId, getTreeInfo]);
 
   return treeInfo;
 };

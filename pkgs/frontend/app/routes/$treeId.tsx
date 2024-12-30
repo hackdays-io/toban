@@ -6,14 +6,15 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { FC } from "react";
 import { FaPlus } from "react-icons/fa6";
-import { VerticalRole, RoleActions } from "~/components/BasicRole";
+import { MyRole } from "~/components/roles/MyRole";
 import { CommonButton } from "~/components/common/CommonButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { VRole } from "~/components/roles/VRole";
 
 const WorkspaceTop: FC = () => {
   const { wallet } = useActiveWallet();
@@ -21,7 +22,6 @@ const WorkspaceTop: FC = () => {
 
   const { treeId } = useParams();
   const tree = useTreeInfo(Number(treeId));
-  const topHatId = tree?.hats?.find((h) => h.levelAtLocalTree === 0)?.id;
 
   const navigate = useNavigate();
 
@@ -29,7 +29,7 @@ const WorkspaceTop: FC = () => {
     <>
       {/* My roles */}
       <Box my={4}>
-        <Heading p={4}>My Roles</Heading>
+        <Heading py={4}>My Roles</Heading>
         <VStack>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
@@ -40,7 +40,7 @@ const WorkspaceTop: FC = () => {
                 imageUri={h.imageUri}
                 detailUri={h.details}
               >
-                <RoleActions address={me} treeId={treeId} hatId={h.id} />
+                <MyRole address={me} treeId={treeId} hatId={h.id} />
               </HatsListItemParser>
             ))}
         </VStack>
@@ -48,22 +48,23 @@ const WorkspaceTop: FC = () => {
 
       {/* All roles */}
       <Box my={4}>
-        <Heading p={4}>All Roles</Heading>
-        <SimpleGrid columns={3} gap={4}>
+        <Heading py={4}>All Roles</Heading>
+        <SimpleGrid columns={4} gap={4}>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
             .map((h) => (
-              <Box key={h.id} onClick={() => navigate(`/${treeId}/${h.id}`)}>
+              <Link key={"allrole" + h.id} to={`/${treeId}/${h.id}`}>
                 <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
-                  <VerticalRole />
+                  <VRole iconSize="80px" />
                 </HatsListItemParser>
-              </Box>
+              </Link>
             ))}
           <VStack>
-            <AspectRatio width="full" ratio={1}>
+            <AspectRatio width="80px" ratio={1}>
               <CommonButton
-                rounded="4xl"
-                onClick={() => navigate(`/workspaces/${topHatId}/roles/new`)}
+                rounded="xl"
+                onClick={() => navigate(`/${treeId}/roles/new`)}
+                bgColor="gray.300"
               >
                 <FaPlus />
               </CommonButton>

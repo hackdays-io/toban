@@ -1,13 +1,13 @@
 import { Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
-import { HorizontalRole } from "~/components/BasicRole";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
+import { RoleTag } from "~/components/roles/RoleTag";
 
 const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
@@ -95,7 +95,7 @@ const WorkspaceMember: FC = () => {
     <>
       {/* Members */}
       <Box my={4}>
-        <Heading p={4}>Members</Heading>
+        <Heading py={4}>Role Members</Heading>
         <VStack width="full" alignItems="start" gap={3}>
           {members.map((m, i) => (
             <HStack key={i} width="full">
@@ -111,13 +111,15 @@ const WorkspaceMember: FC = () => {
                 </Text>
                 <HStack wrap="wrap" width="full" gap={2}>
                   {m.wearer?.hats?.map((h) => (
-                    <HatsListItemParser
-                      key={h.id}
-                      imageUri={h.imageUri}
-                      detailUri={h.details}
-                    >
-                      <HorizontalRole />
-                    </HatsListItemParser>
+                    <Link to={`/${treeId}/${h.id}/${m.address}`}>
+                      <HatsListItemParser
+                        key={h.id}
+                        imageUri={h.imageUri}
+                        detailUri={h.details}
+                      >
+                        <RoleTag />
+                      </HatsListItemParser>
+                    </Link>
                   ))}
                 </HStack>
               </VStack>
@@ -128,7 +130,7 @@ const WorkspaceMember: FC = () => {
 
       {/* AssistantMembers */}
       <Box my={4}>
-        <Heading p={4}>Assistant Members</Heading>
+        <Heading py={4}>All Contributors</Heading>
         <VStack width="full" alignItems="start" gap={3}>
           {assistantMembers.map((m, i) => (
             <HStack key={i} width="full">
@@ -149,7 +151,7 @@ const WorkspaceMember: FC = () => {
                       imageUri={h.imageUri}
                       detailUri={h.details}
                     >
-                      <HorizontalRole />
+                      <RoleTag bgColor="blue.200" />
                     </HatsListItemParser>
                   ))}
                 </HStack>

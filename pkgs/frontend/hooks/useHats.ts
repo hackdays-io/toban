@@ -38,6 +38,7 @@ export const useTreeInfo = (treeId: number) => {
 
   useEffect(() => {
     const fetch = async () => {
+      setTreeInfo(undefined);
       if (!treeId) return;
 
       const tree = await getTreeInfo({
@@ -187,14 +188,16 @@ export const useHats = () => {
         walletAddress: params.walletAddress as `0x${string}`,
       });
 
-      console.log("wearer", wearer);
-
       if (!wearer?.currentHats) return [];
 
-      const treesIds = wearer.currentHats.map((hat) => {
-        const treeId = hatIdToTreeId(BigInt(hat.id));
-        return treeId;
-      });
+      const treesIds = Array.from(
+        new Set(
+          wearer.currentHats.map((hat) => {
+            const treeId = hatIdToTreeId(BigInt(hat.id));
+            return treeId;
+          })
+        )
+      );
 
       const treesInfo = await hatsSubgraphClient.getTreesByIds({
         chainId: currentChain.id,

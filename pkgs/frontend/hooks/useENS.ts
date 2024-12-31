@@ -12,9 +12,9 @@ export const useActiveWalletIdentity = () => {
   const { names } = useNamesByAddresses(address);
 
   const identity = useMemo(() => {
-    if (!names || names.length === 0) return;
+    if (!wallet || !names || names.length === 0) return;
     return names[0][0];
-  }, [names]);
+  }, [names, wallet]);
 
   return { identity };
 };

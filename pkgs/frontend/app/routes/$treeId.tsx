@@ -15,6 +15,7 @@ import { MyRole } from "~/components/roles/MyRole";
 import { CommonButton } from "~/components/common/CommonButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { VRole } from "~/components/roles/VRole";
+import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceTop: FC = () => {
   const { wallet } = useActiveWallet();
@@ -73,6 +74,7 @@ const WorkspaceTop: FC = () => {
           </VStack>
         </SimpleGrid>
       </Box>
+      <StickyNav />
     </>
   );
 };

@@ -8,6 +8,7 @@ import { ipfs2https } from "utils/ipfs";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { RoleTag } from "~/components/roles/RoleTag";
+import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
@@ -166,6 +167,8 @@ const WorkspaceMember: FC = () => {
         <Heading p={4}>Contribution</Heading>
         {/* 何らかの形でコントリビューションのランクを出したい */}
       </Box>
+
+      <StickyNav />
     </>
   );
 };

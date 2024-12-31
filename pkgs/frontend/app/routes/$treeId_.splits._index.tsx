@@ -13,6 +13,7 @@ import { abbreviateAddress } from "utils/wallet";
 import { currentChain, publicClient } from "hooks/useViem";
 import dayjs from "dayjs";
 import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
+import { StickyNav } from "~/components/StickyNav";
 
 interface SplitInfoItemProps {
   split: Split;
@@ -147,31 +148,34 @@ const SplitsIndex: FC = () => {
     useSplitsCreatorRelatedSplits(splitCreatorAddress);
 
   return (
-    <Box w="100%">
-      <Flex my={4} placeItems="center">
-        <Text fontSize="lg" flexGrow={1}>
-          Splits
-        </Text>
-        <Link to={`/${treeId}/splits/new`}>
-          <CommonButton w={"auto"} size="sm">
-            Create New
-          </CommonButton>
-        </Link>
-      </Flex>
+    <>
+      <Box w="100%">
+        <Flex my={4} placeItems="center">
+          <Text fontSize="lg" flexGrow={1}>
+            Splits
+          </Text>
+          <Link to={`/${treeId}/splits/new`}>
+            <CommonButton w={"auto"} size="sm">
+              Create New
+            </CommonButton>
+          </Link>
+        </Flex>
 
-      {isLoading ? (
-        <></>
-      ) : (
-        <VStack gap={3} mb={10}>
-          {splits
-            .slice()
-            .sort((a, b) => Number(b.createdBlock) - Number(a.createdBlock))
-            .map((split) => (
-              <SplitInfoItem key={split.address} split={split} />
-            ))}
-        </VStack>
-      )}
-    </Box>
+        {isLoading ? (
+          <></>
+        ) : (
+          <VStack gap={3} mb={10}>
+            {splits
+              .slice()
+              .sort((a, b) => Number(b.createdBlock) - Number(a.createdBlock))
+              .map((split) => (
+                <SplitInfoItem key={split.address} split={split} />
+              ))}
+          </VStack>
+        )}
+      </Box>
+      <StickyNav />
+    </>
   );
 };
 

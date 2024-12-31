@@ -1,9 +1,10 @@
 import { FaPeopleGroup } from "react-icons/fa6";
 import { CommonIcon } from "../common/CommonIcon";
+import { Icon } from "@chakra-ui/react";
 
 interface WorkspaceIconProps {
   workspaceImageUrl?: string | undefined;
-  size?: number | "full";
+  size?: `${number}px` | number | "full";
 }
 
 export const WorkspaceIcon = ({
@@ -16,14 +17,9 @@ export const WorkspaceIcon = ({
       size={size}
       borderRadius="xl"
       fallbackIconComponent={
-        <FaPeopleGroup
-          style={{
-            width: "90%",
-            height: "90%",
-            objectFit: "cover",
-            backgroundColor: "yellow",
-          }}
-        />
+        <Icon fontSize={size} bgColor="yellow.200" p={2}>
+          <FaPeopleGroup />
+        </Icon>
       }
     />
   );

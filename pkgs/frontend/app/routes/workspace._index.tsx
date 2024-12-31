@@ -1,8 +1,8 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { Box, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
 import { BasicButton } from "~/components/BasicButton";
-import { useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { useActiveWallet } from "hooks/useWallet";
 import { useHats } from "../../hooks/useHats";
 import { Address } from "viem";
@@ -12,22 +12,22 @@ const WorkspaceCard: FC<{
   name: string;
   imageUrl: string | undefined;
 }> = ({ treeId, name, imageUrl }) => {
-  const navigate = useNavigate();
-
   return (
-    <Box
-      w="100%"
-      borderRadius="xl"
-      border="1px solid #E0E0E0"
-      mb={3}
-      p={3}
-      display="flex"
-      alignItems="center"
-      onClick={() => navigate(`/${treeId}`)}
-    >
-      <WorkspaceIcon workspaceImageUrl={imageUrl} size={12} />
-      <Text ml={4}>{name}</Text>
-    </Box>
+    <Link to={`/${treeId}`}>
+      <Box
+        w="100%"
+        borderRadius="xl"
+        border="1px solid #E0E0E0"
+        mb={3}
+        p={2}
+        display="flex"
+        alignItems="center"
+        bgColor="blue.100"
+      >
+        <WorkspaceIcon workspaceImageUrl={imageUrl} size="60px" />
+        <Text ml={4}>{name}</Text>
+      </Box>
+    </Link>
   );
 };
 

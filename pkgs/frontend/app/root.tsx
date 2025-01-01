@@ -1,20 +1,33 @@
 import { withEmotionCache } from "@emotion/react";
 import {
+  json,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import { ChakraProvider } from "./components/chakra-provider";
-import { useInjectStyles } from "./emotion/emotion-client";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { Box, Container } from "@chakra-ui/react";
-import { Header } from "./components/Header";
 import { ApolloProvider } from "@apollo/client/react";
+import { Box, Container } from "@chakra-ui/react";
+import { PrivyProvider } from "@privy-io/react-auth";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { goldskyClient } from "utils/apollo";
+import { ChakraProvider } from "./components/chakra-provider";
+import { Header } from "./components/Header";
+import i18nServer, { localeCookie } from "./config/i18n.server";
+import { useInjectStyles } from "./emotion/emotion-client";
 
 interface LayoutProps extends React.PropsWithChildren {}
+
+export const handle = { i18n: ["translation"] };
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const locale = await i18nServer.getLocale(request);
+  return json(
+    { locale },
+    { headers: { "Set-Cookie": await localeCookie.serialize(locale) } }
+  );
+}
 
 export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   const { children } = props;

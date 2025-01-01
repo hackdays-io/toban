@@ -13,7 +13,7 @@ import { Box, Container } from "@chakra-ui/react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { useTranslation } from "react-i18next";
-import { useChangeLanguage } from "remix-i18next/react";
+import { useChangeLanguage } from "remix-i18next/client";
 import i18next from "~/config/i18next.server";
 import { ChakraProvider } from "./components/chakra-provider";
 import { Header } from "./components/Header";
@@ -50,7 +50,7 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   console.log("i18n:", i18n.languages);
 
   return (
-    <html lang={"en"} dir={i18n.dir()}>
+    <html lang={locale} dir={i18n.dir()}>
       <head suppressHydrationWarning>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

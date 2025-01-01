@@ -5,7 +5,7 @@ import Backend from "i18next-http-backend/cjs";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { I18nextProvider, initReactI18next } from "react-i18next";
-import { getInitialNamespaces } from "remix-i18next/client";
+import { getInitialNamespaces } from "remix-i18next";
 import { ChakraProvider } from "./components/chakra-provider";
 import i18n from "./config/i18n";
 import { ClientCacheProvider } from "./emotion/emotion-client";
@@ -31,6 +31,7 @@ const hydrate = async () => {
         // on the browser, so we disable it
         caches: [],
       },
+      react: { useSuspense: false },
     });
 
   startTransition(() => {
@@ -49,7 +50,7 @@ const hydrate = async () => {
   });
 };
 
-/*
+/**/
 if (typeof requestIdleCallback === "function") {
   requestIdleCallback(hydrate);
 } else {
@@ -57,7 +58,6 @@ if (typeof requestIdleCallback === "function") {
   // https://caniuse.com/requestidlecallback
   setTimeout(hydrate, 1);
 }
-  */
 
 if (window.requestIdleCallback) {
   window.requestIdleCallback(hydrate);

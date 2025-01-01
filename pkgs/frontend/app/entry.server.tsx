@@ -8,7 +8,8 @@ import Backend from "i18next-fs-backend";
 import { isbot } from "isbot";
 import { resolve } from "node:path";
 import { renderToPipeableStream } from "react-dom/server";
-import { I18nextProvider, initReactI18next } from "react-i18next";
+import { initReactI18next } from "react-i18next";
+import { RemixI18NextProvider } from "remix-i18next";
 import { PassThrough } from "stream";
 import i18n from "./config/i18n";
 import i18next from "./config/i18next.server";
@@ -29,6 +30,8 @@ const handleRequest = async (
   const lng = await i18next.getLocale(request);
   const ns = i18next.getRouteNamespaces(remixContext);
 
+  console.log("ns:", ns);
+
   await instance
     .use(initReactI18next) // Tell our instance to use react-i18next
     .use(Backend) // Setup our backend
@@ -43,9 +46,9 @@ const handleRequest = async (
     let didError = false;
 
     const { pipe, abort } = renderToPipeableStream(
-      <I18nextProvider i18n={instance}>
+      <RemixI18NextProvider i18n={instance}>
         <RemixServer context={remixContext} url={request.url} />
-      </I18nextProvider>,
+      </RemixI18NextProvider>,
       {
         [callbackName]: () => {
           const body = new PassThrough();

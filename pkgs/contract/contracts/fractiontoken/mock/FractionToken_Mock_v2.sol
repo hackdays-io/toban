@@ -3,10 +3,15 @@ pragma solidity ^0.8.24;
 
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { ERC1155SupplyUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
+import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { IHats } from "../../hats/src/Interfaces/IHats.sol";
 
-contract FractionToken_Mock_v2 is ERC1155Upgradeable, ERC1155SupplyUpgradeable {
+contract FractionToken_Mock_v2 is
+	ERC1155Upgradeable,
+	ERC1155SupplyUpgradeable,
+	MulticallUpgradeable
+{
 	uint256 public TOKEN_SUPPLY;
 
 	mapping(uint256 => address[]) private tokenRecipients;

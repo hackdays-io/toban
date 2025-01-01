@@ -2,6 +2,7 @@ import {
   Box,
   Flex,
   Float,
+  Grid,
   HStack,
   List,
   Separator,
@@ -11,7 +12,11 @@ import {
 } from "@chakra-ui/react";
 import { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
-import { useNamesByAddresses } from "hooks/useENS";
+import {
+  useAddressesByNames,
+  useNamesByAddresses,
+  useSetName,
+} from "hooks/useENS";
 import { useAssignableHats, useHats } from "hooks/useHats";
 import { useSplitsCreator } from "hooks/useSplitsCreator";
 import {
@@ -143,8 +148,8 @@ const RoleItem: FC<RoleItemProps> = ({
                         userImageUrl={ipfs2https(name[0]?.text_records?.avatar)}
                       />
                       <Box>
-                        <Text>{name[0]?.name}</Text>
-                        <Text>{name[0]?.address}</Text>
+                        <Text wordBreak="break-all">{name[0]?.name}</Text>
+                        <Text wordBreak="break-all">{name[0]?.address}</Text>
                       </Box>
                     </HStack>
                   ))}
@@ -207,6 +212,17 @@ const SplitterNew: FC = () => {
       (h) => Number(h.levelAtLocalTree) == 2 && h.wearers?.length
     );
   }, [hats]);
+
+  const [splitterName, setSplitterName] = useState<string>("");
+  const _splitterName = useMemo(() => {
+    return [`${splitterName}.splitter`];
+  }, [splitterName]);
+  const { addresses } = useAddressesByNames(_splitterName, true);
+  const availableName = useMemo(() => {
+    if (!splitterName) return false;
+
+    return addresses?.[0]?.length === 0;
+  }, [splitterName, addresses]);
 
   const { createSplits, previewSplits, isLoading } = useSplitsCreator(treeId!);
 
@@ -282,18 +298,33 @@ const SplitterNew: FC = () => {
     );
   };
 
+  const { setName } = useSetName();
   const handleCreateSplitter = async () => {
-    const params = calcParams();
-    await createSplits({
-      args: params,
-    });
-    navigate(`/${treeId}/splits`);
+    try {
+      const params = calcParams();
+      const res = await createSplits({
+        args: params,
+      });
+
+      const address = res?.find((res) => res.eventName === "SplitsCreated")
+        ?.args.split;
+      if (address) {
+        await setName({ name: `${splitterName}.split`, address: address! });
+      }
+
+      navigate(`/${treeId}/splits`);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
-    <>
+    <Grid
+      minH="calc(100vh - 72px)"
+      gridTemplateRows={preview ? "auto auto 1fr auto" : "auto auto 1fr auto"}
+    >
       <PageHeader
-        title="Create Splitter"
+        title="スプリッターを作成"
         backLink={
           preview
             ? () => {
@@ -305,42 +336,64 @@ const SplitterNew: FC = () => {
 
       {preview ? (
         <>
+          <Text my={5} fontWeight="bold">
+            スプリッター名: {splitterName}
+          </Text>
           <SplitRecipientsList recipients={preview} />
-          <BasicButton onClick={handleCreateSplitter} loading={isLoading}>
+          <BasicButton
+            mb={5}
+            onClick={handleCreateSplitter}
+            loading={isLoading}
+          >
             作成
           </BasicButton>
         </>
       ) : (
         <>
-          <Field label="Splitter名" mt={5}>
-            <CommonInput value="" onChange={() => {}} placeholder="名前" />
+          <Field label="スプリッター名" mt={5}>
+            <CommonInput
+              value={splitterName}
+              onChange={(e) => {
+                setSplitterName(e.target.value);
+              }}
+              placeholder="名前"
+            />
+            <Text textAlign="right" fontSize="xs" mt={1} w="100%">
+              {availableName
+                ? "この名前は利用可能です"
+                : "この名前は利用できません"}
+            </Text>
           </Field>
 
-          <Text fontSize="lg" mt={10}>
-            分配設定
-          </Text>
-          <List.Root listStyle="none" mb={10}>
-            {fields.map((field, index) => (
-              <HatsListItemParser
-                key={index}
-                detailUri={field.hat.details}
-                imageUri={field.hat.imageUri}
-              >
-                <RoleItem
-                  update={update}
-                  fieldIndex={index}
-                  field={field}
-                  wearers={
-                    baseHats.find((h) => h.id == field.hatId)?.wearers || []
-                  }
-                />
-              </HatsListItemParser>
-            ))}
-          </List.Root>
-          <BasicButton onClick={handlePreview}>プレビュー</BasicButton>
+          <Box>
+            <Text fontSize="lg" mt={10}>
+              分配設定
+            </Text>
+            <List.Root listStyle="none" mb={10}>
+              {fields.map((field, index) => (
+                <HatsListItemParser
+                  key={index}
+                  detailUri={field.hat.details}
+                  imageUri={field.hat.imageUri}
+                >
+                  <RoleItem
+                    update={update}
+                    fieldIndex={index}
+                    field={field}
+                    wearers={
+                      baseHats.find((h) => h.id == field.hatId)?.wearers || []
+                    }
+                  />
+                </HatsListItemParser>
+              ))}
+            </List.Root>
+          </Box>
+          <BasicButton onClick={handlePreview} mb={5}>
+            プレビュー
+          </BasicButton>
         </>
       )}
-    </>
+    </Grid>
   );
 };
 

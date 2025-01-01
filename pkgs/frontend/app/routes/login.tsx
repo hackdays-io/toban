@@ -1,4 +1,4 @@
-import { Box, Text, Float } from "@chakra-ui/react";
+import { Box, Text, Float, Grid, Flex } from "@chakra-ui/react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
@@ -41,34 +41,18 @@ const Login: FC = () => {
   }, [wallet, navigate]);
 
   return (
-    <>
-      <Float
-        placement="middle-center"
-        width="100%"
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-      >
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          width="160px"
-        >
-          <CommonIcon size="full" imageUrl="/images/toban-logo.svg" />
+    <Grid gridTemplateRows="1fr auto" h="100vh">
+      <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
+        <Box>
+          <Box width="160px">
+            <CommonIcon size="full" imageUrl="/images/toban-logo.svg" />
+          </Box>
+          <Text textAlign="center" color="gray.800" mt={5} w="100%">
+            Toban -当番-
+          </Text>
         </Box>
-        <Text textAlign="center" color="gray.800" mt={5}>
-          Toban -当番-
-        </Text>
-      </Float>
-      <Float
-        placement="bottom-center"
-        mb="4vh"
-        width="100%"
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-      >
+      </Flex>
+      <Box mb={5}>
         {wallets.length === 0 ? (
           <BasicButton onClick={connectOrCreateWallet}>Login</BasicButton>
         ) : !isSmartWallet ? (
@@ -76,8 +60,8 @@ const Login: FC = () => {
         ) : (
           <BasicButton onClick={logout}>Logout</BasicButton>
         )}
-      </Float>
-    </>
+      </Box>
+    </Grid>
   );
 };
 

@@ -1,13 +1,15 @@
 import {
   Box,
+  Flex,
   Float,
+  Grid,
   HStack,
   Input,
   List,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
@@ -16,6 +18,7 @@ import {
 import {
   useBalanceOfFractionToken,
   useFractionToken,
+  useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { NameData, TextRecords } from "namestone-sdk";
@@ -32,6 +35,8 @@ import { PageHeader } from "~/components/PageHeader";
 import { Field } from "~/components/ui/field";
 
 const AssistCreditSend: FC = () => {
+  const navigate = useNavigate();
+
   const { treeId, hatId, address } = useParams();
   const me = useActiveWalletIdentity();
   const balanceOfToken = useBalanceOfFractionToken(
@@ -71,47 +76,35 @@ const AssistCreditSend: FC = () => {
   }, [searchText, isSearchAddress]);
 
   const users = useMemo(() => {
-    if (!searchText) {
-      const unresolvedMembers = Array.from(
-        new Set(
-          members.filter((m) => !defaultNames[0].find((n) => n.address === m))
-        )
-      );
-      return [
-        ...defaultNames,
-        ...unresolvedMembers.map((m) => [
-          {
-            address: m,
-            name: "",
-            domain: "",
-            text_records: {
-              avatar: "",
-            } as TextRecords,
-          },
-        ]),
-      ];
-    }
-
-    return isSearchAddress ? names : addresses;
+    return !searchText ? defaultNames : isSearchAddress ? names : addresses;
   }, [defaultNames, names, addresses, isSearchAddress]);
 
   // 送信先選択後
   const [receiver, setReceiver] = useState<NameData>();
   const [amount, setAmount] = useState<number>(0);
 
-  const { sendFractionToken } = useFractionToken();
+  const { transferFractionToken, isLoading } = useTransferFractionToken(
+    BigInt(hatId!),
+    address as Address
+  );
   const send = useCallback(async () => {
-    if (!receiver || !hatId || !me) return;
-    await sendFractionToken({
-      hatId: BigInt(hatId),
-      account: me.identity?.address as Address,
-      to: receiver.address as Address,
-      amount: BigInt(amount),
-    });
-  }, [sendFractionToken, receiver, amount, hatId, address]);
+    if (!receiver || !hatId || !me || isLoading) return;
+    try {
+      const res = await transferFractionToken(
+        receiver.address as Address,
+        BigInt(amount)
+      );
+      res && navigate(`/${treeId}/${hatId}/${address}`);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [transferFractionToken, receiver, amount]);
 
   return (
-    <Box>
+    <Grid
+      gridTemplateRows={!receiver ? "auto auto auto 1fr" : "auto auto 1fr auto"}
+      minH="calc(100vh - 72px)"
+    >
       <PageHeader
         title={
           receiver
@@ -164,12 +157,7 @@ const AssistCreditSend: FC = () => {
         </>
       ) : (
         <>
-          <Field
-            label="送信量"
-            mt="calc(50vh - 230px)"
-            alignItems="center"
-            justifyContent="center"
-          >
+          <Field label="送信量" alignItems="center" justifyContent="center">
             <Input
               p={2}
               pb={4}
@@ -191,14 +179,7 @@ const AssistCreditSend: FC = () => {
             />
           </Field>
 
-          <Float
-            placement="bottom-center"
-            mb="7vh"
-            width="100%"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-          >
+          <Flex width="100%" flexDirection="column" alignItems="center">
             <HStack columnGap={3} mb={4}>
               <Box textAlign="center">
                 <UserIcon
@@ -221,11 +202,13 @@ const AssistCreditSend: FC = () => {
                 </Text>
               </Box>
             </HStack>
-            <BasicButton onClick={send}>送信</BasicButton>
-          </Float>
+            <BasicButton loading={isLoading} onClick={send} mb={5}>
+              送信
+            </BasicButton>
+          </Flex>
         </>
       )}
-    </Box>
+    </Grid>
   );
 };
 

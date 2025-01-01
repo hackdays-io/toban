@@ -1,36 +1,39 @@
 import { RemixBrowser } from "@remix-run/react";
+import I18nextBrowserLanguageDetector from "i18next-browser-languagedetector";
+import Fetch from "i18next-fetch-backend";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
+import { I18nextProvider, initReactI18next } from "react-i18next";
+import { getInitialNamespaces } from "remix-i18next/client";
+import { defaultNS, fallbackLng, supportedLngs } from "~/config/i18n";
 import { ChakraProvider } from "./components/chakra-provider";
 import { ClientCacheProvider } from "./emotion/emotion-client";
 
-import { I18nextProvider, initReactI18next } from "react-i18next";
-import { getInitialNamespaces } from "remix-i18next";
-import { i18nConfig } from "~/config/i18n.js";
-
 import i18next from "i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-import Backend from "i18next-http-backend";
 
 const hydrate = async () => {
   await i18next
-    // Use the react-i18next plugin.
-    .use(initReactI18next)
-    // Setup client-side language detector.
-    .use(LanguageDetector)
-    // Setup backend.
-    .use(Backend)
+    .use(initReactI18next) // Tell i18next to use the react-i18next plugin
+    .use(Fetch) // Tell i18next to use the Fetch backend
+    .use(I18nextBrowserLanguageDetector) // Setup a client-side language detector
     .init({
-      // Spread configuration.
-      ...i18nConfig,
-      // Detects the namespaces your routes rendered while SSR use
-      // and pass them here to load the translations.
+      defaultNS,
+      fallbackLng,
+      supportedLngs,
       ns: getInitialNamespaces(),
-      backend: { loadPath: "/locales/{{lng}}/{{ns}}.json" },
       detection: {
-        // We'll detect the language only server-side with remix-i18next.
-        // By using `<html lang>` attribute we communicate to the Client.
+        // Here only enable htmlTag detection, we'll detect the language only
+        // server-side with remix-i18next, by using the `<html lang>` attribute
+        // we can communicate to the client the language detected server-side
         order: ["htmlTag"],
+        // Because we only use htmlTag, there's no reason to cache the language
+        // on the browser, so we disable it
+        caches: [],
+      },
+      backend: {
+        // We will configure the backend to fetch the translations from the
+        // resource route /api/locales and pass the lng and ns as search params
+        loadPath: "/api/locales?lng={{lng}}&ns={{ns}}",
       },
     });
 
@@ -57,3 +60,5 @@ if (typeof requestIdleCallback === "function") {
   // https://caniuse.com/requestidlecallback
   setTimeout(hydrate, 1);
 }
+
+hydrate().catch((error) => console.error(error));

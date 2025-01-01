@@ -31,7 +31,6 @@
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
     "graphql": "^16.10.0",
-    "isbot": "^5.1.11",
     "namestone-sdk": "^0.2.11",
     "next-themes": "^0.4.3",
     "permissionless": "^0.2.20",
@@ -40,12 +39,13 @@
     "react-hook-form": "^7.54.2",
     "react-icons": "^5.4.0",
     "viem": "^2.21.51",
-    "i18next": "^23.5.1",
-    "i18next-browser-languagedetector": "^7.1.0",
-    "i18next-fs-backend": "^2.2.0",
-    "i18next-http-backend": "^2.2.2",
-    "react-i18next": "^13.2.2",
-    "remix-i18next": "^5.4.0"
+    "i18next": "^23.12.2",
+    "i18next-browser-languagedetector": "^8.0.0",
+    "i18next-fetch-backend": "^6.0.0",
+    "react-i18next": "^14.1.3",
+    "remix-i18next": "^6.1.0",
+    "isbot": "^5.1.13",
+    "pretty-cache-header": "^1.0.0"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "5.0.3",
@@ -68,7 +68,8 @@
     "prettier": "^3.3.3",
     "typescript": "^5.6.2",
     "vite": "^5.3.6",
-    "vite-tsconfig-paths": "^4.3.2"
+    "vite-tsconfig-paths": "^4.3.2",
+    "vite-env-only": "^3.0.3"
   },
   "engines": {
     "node": ">=20.0.0"

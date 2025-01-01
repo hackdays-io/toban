@@ -1,5 +1,6 @@
 import { withEmotionCache } from "@emotion/react";
 import {
+  json,
   Links,
   Meta,
   Outlet,
@@ -12,28 +13,21 @@ import { Box, Container } from "@chakra-ui/react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { goldskyClient } from "utils/apollo";
-import { i18nCookie, remixI18Next } from "~/config/i18next.server";
 import { ChakraProvider } from "./components/chakra-provider";
 import { Header } from "./components/Header";
+import i18nServer, { localeCookie } from "./config/i18n.server";
 import { useInjectStyles } from "./emotion/emotion-client";
 
 interface LayoutProps extends React.PropsWithChildren {}
 
-export const handle = {
-  // In the handle export, we can specify i18n namespaces needed for the route.
-  // Usually, we'll set it to our default namespace or "translation" if haven't set one.
-  // It can be a string or an array.
-  i18n: "common",
-};
+export const handle = { i18n: ["translation"] };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const locale = await remixI18Next.getLocale(request);
-
-  return Response.json({ locale } as const, {
-    headers: {
-      "set-cookie": await i18nCookie.serialize(locale),
-    },
-  });
+  const locale = await i18nServer.getLocale(request);
+  return json(
+    { locale },
+    { headers: { "Set-Cookie": await localeCookie.serialize(locale) } }
+  );
 }
 
 export const Layout = withEmotionCache((props: LayoutProps, cache) => {

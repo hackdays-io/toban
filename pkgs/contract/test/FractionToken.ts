@@ -1,6 +1,12 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
-import { decodeEventLog, PublicClient, WalletClient, zeroAddress } from "viem";
+import {
+	decodeEventLog,
+	encodeFunctionData,
+	PublicClient,
+	WalletClient,
+	zeroAddress,
+} from "viem";
 import {
 	deployFractionToken,
 	FractionToken,
@@ -16,9 +22,9 @@ describe("FractionToken", () => {
 	let address2: WalletClient;
 	let address3: WalletClient;
 	let address4: WalletClient;
+	let address5: WalletClient;
 
 	let hatId: bigint;
-	let topHatId: bigint;
 
 	let publicClient: PublicClient;
 
@@ -35,7 +41,8 @@ describe("FractionToken", () => {
 		);
 		FractionToken = _FractionToken;
 
-		[address1, address2, address3, address4] = await viem.getWalletClients();
+		[address1, address2, address3, address4, address5] =
+			await viem.getWalletClients();
 
 		publicClient = await viem.getPublicClient();
 
@@ -45,21 +52,9 @@ describe("FractionToken", () => {
 			"https://test.com/tophat.png",
 		]);
 
-		let receipt1 = await publicClient.waitForTransactionReceipt({
+		await publicClient.waitForTransactionReceipt({
 			hash: tx1,
 		});
-
-		for (const log of receipt1.logs) {
-			try {
-				const decodedLog = decodeEventLog({
-					abi: Hats.abi,
-					data: log.data,
-					topics: log.topics,
-				});
-				if (decodedLog.eventName === "HatCreated")
-					topHatId = decodedLog.args.id;
-			} catch (error) {}
-		}
 
 		let tx2 = await Hats.write.createHat([
 			BigInt(
@@ -88,9 +83,10 @@ describe("FractionToken", () => {
 			} catch (error) {}
 		}
 
-		// address2,address3にHatをmint
+		// address2,address3, address5にHatをmint
 		await Hats.write.mintHat([hatId, address2.account?.address!]);
 		await Hats.write.mintHat([hatId, address3.account?.address!]);
+		await Hats.write.mintHat([hatId, address5.account?.address!]);
 	});
 
 	it("should mint, transfer and burn tokens", async () => {
@@ -197,7 +193,7 @@ describe("FractionToken", () => {
 		// 権限のない人はtokenをmintできない
 		await FractionToken.write
 			.mintInitialSupply([hatId, address2.account?.address!, 0n], {
-				account: address2.account!,
+				account: address3.account!,
 			})
 			.catch((error: any) => {
 				expect(error.message).to.include(
@@ -245,6 +241,36 @@ describe("FractionToken", () => {
 			.catch((error: any) => {
 				expect(error.message).to.include("Not authorized");
 			});
+	});
+
+	it("should success initial supply and transfer with multicall", async () => {
+		const tokenId = await FractionToken.read.getTokenId([
+			hatId,
+			address5.account?.address!,
+		]);
+		const mintInitialSupplyCalldata = encodeFunctionData({
+			abi: FractionToken.abi,
+			functionName: "mintInitialSupply",
+			args: [hatId, address5.account?.address!, 0n],
+		});
+		const transferCalldata = encodeFunctionData({
+			abi: FractionToken.abi,
+			functionName: "safeTransferFrom",
+			args: [
+				address5.account?.address!,
+				address1.account?.address!,
+				tokenId,
+				1000n,
+				"0x",
+			],
+		});
+
+		await FractionToken.write.multicall(
+			[[mintInitialSupplyCalldata, transferCalldata]],
+			{
+				account: address5.account!,
+			}
+		);
 	});
 
 	/**

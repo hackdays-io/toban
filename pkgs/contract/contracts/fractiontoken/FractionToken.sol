@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { ERC1155SupplyUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
+import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { IHats } from "../hats/src/Interfaces/IHats.sol";
 import { IFractionToken } from "./IFractionToken.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -10,6 +11,7 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 contract FractionToken is
 	ERC1155Upgradeable,
 	ERC1155SupplyUpgradeable,
+	MulticallUpgradeable,
 	IFractionToken
 {
 	uint256 public TOKEN_SUPPLY;
@@ -39,7 +41,7 @@ contract FractionToken is
 		);
 
 		require(
-			_hasHatAuthority(hatId),
+			msg.sender == account || _hasHatAuthority(hatId),
 			"This msg.sender does not have the authority"
 		);
 

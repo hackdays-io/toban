@@ -22,13 +22,13 @@ export const SplitRecipientsList: FC<SplitRecipientsListProps> = ({
   }, [recipients]);
 
   return (
-    <>
+    <Box>
       {recipients.map((recipient) => {
         const name = names.find(
           (name) => name[0]?.address === recipient.address
         )?.[0];
         return (
-          <Flex key={recipient.address} my={2} alignItems="center" gap={2}>
+          <Flex key={recipient.address} mb={3} alignItems="center" gap={2}>
             <UserIcon
               size="40px"
               userImageUrl={ipfs2https(name?.text_records?.avatar)}
@@ -47,6 +47,6 @@ export const SplitRecipientsList: FC<SplitRecipientsListProps> = ({
           </Flex>
         );
       })}
-    </>
+    </Box>
   );
 };

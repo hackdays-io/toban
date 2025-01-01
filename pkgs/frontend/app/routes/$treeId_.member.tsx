@@ -5,6 +5,7 @@ import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
+import { abbreviateAddress } from "utils/wallet";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { RoleTag } from "~/components/roles/RoleTag";
@@ -95,8 +96,8 @@ const WorkspaceMember: FC = () => {
   return (
     <>
       {/* Members */}
-      <Box my={4}>
-        <Heading py={4}>Role Members</Heading>
+      <Box mb={4}>
+        <Heading pb={4}>Role Members</Heading>
         <VStack width="full" alignItems="start" gap={3}>
           {members.map((m, i) => (
             <HStack key={i} width="full">
@@ -107,8 +108,8 @@ const WorkspaceMember: FC = () => {
               <VStack alignItems="start" width="full">
                 <Text lineBreak="anywhere">
                   {m.name
-                    ? `${m.name} (${m.address.slice(0, 6)}...${m.address.slice(-4)})`
-                    : m.address}
+                    ? `${m.name} (${abbreviateAddress(m.address)})`
+                    : abbreviateAddress(m.address)}
                 </Text>
                 <HStack wrap="wrap" width="full" gap={2}>
                   {m.wearer?.hats?.map((h) => (
@@ -142,8 +143,8 @@ const WorkspaceMember: FC = () => {
               <VStack alignItems="start" width="full">
                 <Text lineBreak="anywhere">
                   {m.name
-                    ? `${m.name} (${m.address.slice(0, 6)}...${m.address.slice(-4)})`
-                    : m.address}
+                    ? `${m.name} (${abbreviateAddress(m.address)})`
+                    : abbreviateAddress(m.address)}
                 </Text>
                 <HStack wrap="wrap" width="full" gap={2}>
                   {m.assistant?.hats?.map((h) => (
@@ -160,12 +161,6 @@ const WorkspaceMember: FC = () => {
             </HStack>
           ))}
         </VStack>
-      </Box>
-
-      {/* Contribution */}
-      <Box my={4}>
-        <Heading p={4}>Contribution</Heading>
-        {/* 何らかの形でコントリビューションのランクを出したい */}
       </Box>
 
       <StickyNav />

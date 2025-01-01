@@ -12,15 +12,14 @@ import CommonButton from "./common/CommonButton";
 import { useTreeInfo } from "hooks/useHats";
 import axios from "axios";
 import { HatsDetailSchama } from "types/hats";
+import { abbreviateAddress } from "utils/wallet";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
 const WORKSPACES_PATHS: string[] = ["/workspace", "/workspace/new"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
 
 const headerTextStyle = {
   color: "gray.800",
-  my: "auto",
   wordBreak: "break-word",
-  flex: "1",
 };
 
 enum HeaderType {
@@ -90,8 +89,8 @@ export const Header = () => {
   };
 
   return headerType !== HeaderType.NonHeader ? (
-    <Flex justifyContent="space-between" w="100%">
-      <Box display="flex" height="48px" flex="1">
+    <Flex justifyContent="space-between" w="100%" py={3}>
+      <Box display="flex" height="48px" flex="1" alignItems="center">
         {headerType === HeaderType.UserIconOnly && (
           <Text {...headerTextStyle} fontSize="xl" fontWeight="bold">
             Workspaces
@@ -105,10 +104,10 @@ export const Header = () => {
                   treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)
                     ?.imageUri
                 )}
-                size="55px"
+                size="40px"
               />
             </Link>
-            <Text fontSize="xl" fontWeight="bold" {...headerTextStyle} ml={4}>
+            <Text fontSize="lg" fontWeight="bold" {...headerTextStyle} ml={4}>
               {workspaceName}
             </Text>
           </>
@@ -122,6 +121,13 @@ export const Header = () => {
             </button>
           </MenuTrigger>
           <MenuContent>
+            <MenuItem value="name" bgColor="blue.100" display="block">
+              <Text fontWeight="bold">{identity.name}</Text>
+              <Text fontSize="xs">
+                {identity.name}.{identity.domain}
+              </Text>
+              <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
+            </MenuItem>
             <MenuItem value="logout" onClick={handleLogout}>
               Logout
             </MenuItem>

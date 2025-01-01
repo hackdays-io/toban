@@ -1,5 +1,5 @@
 import { FC, useState } from "react";
-import { Box, Float, Input, Text } from "@chakra-ui/react";
+import { Box, Float, Grid, Input, Text } from "@chakra-ui/react";
 import { HiOutlinePlus } from "react-icons/hi2";
 import { CommonInput } from "~/components/common/CommonInput";
 import { BasicButton } from "~/components/BasicButton";
@@ -14,6 +14,7 @@ import { useBigBang } from "hooks/useBigBang";
 import { useActiveWallet } from "hooks/useWallet";
 import { Address } from "viem";
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { PageHeader } from "~/components/PageHeader";
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");
@@ -48,7 +49,6 @@ const WorkspaceNew: FC = () => {
       });
       if (!resUploadMetadata)
         throw new Error("Failed to upload metadata to ipfs");
-      console.log(resUploadMetadata);
 
       const resUploadImage = await uploadImageFileToIpfs();
       if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
@@ -63,7 +63,6 @@ const WorkspaceNew: FC = () => {
       });
 
       const topHatId = parsedLog?.[0].args.topHatId;
-      console.log("topHatId", topHatId);
 
       if (topHatId) {
         const treeId = hatIdToTreeId(topHatId);
@@ -78,7 +77,6 @@ const WorkspaceNew: FC = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。" + error);
     } finally {
       setIsLoading(false);
     }
@@ -113,9 +111,9 @@ const WorkspaceNew: FC = () => {
   };
 
   return (
-    <>
-      <Box mt={5} w="100%">
-        <Text fontSize="lg">新しいワークスペースを作成</Text>
+    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
+      <Box w="100%">
+        <PageHeader title="ワークスペースを新規作成" />
         <Box
           display="flex"
           flexDirection="column"
@@ -160,25 +158,17 @@ const WorkspaceNew: FC = () => {
               onChange={(e) => setDescription(e.target.value)}
             />
           </Box>
-          <Float
-            placement="bottom-center"
-            mb="4vh"
-            width="100%"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-          >
-            <BasicButton
-              onClick={handleSubmit}
-              disabled={!name || !description || !imageFile}
-              loading={isLoading}
-            >
-              作成
-            </BasicButton>
-          </Float>
         </Box>
       </Box>
-    </>
+      <BasicButton
+        onClick={handleSubmit}
+        disabled={!name || !description || !imageFile}
+        loading={isLoading}
+        mb={5}
+      >
+        作成
+      </BasicButton>
+    </Grid>
   );
 };
 

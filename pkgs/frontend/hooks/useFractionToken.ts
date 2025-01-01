@@ -164,13 +164,59 @@ export const useFractionToken = () => {
     [wallet]
   );
 
+  const mintInitialSupplyFractionToken = useCallback(
+    async (params: { hatId: bigint; account: Address; amount?: bigint }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          ...fractionTokenBaseConfig,
+          functionName: "mintInitialSupply",
+          args: [params.hatId, params.account, params.amount || BigInt(0)],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const log = receipt.logs.find((log) => {
+          try {
+            const decodedLog = decodeEventLog({
+              abi: FRACTION_TOKEN_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            return decodedLog.eventName === "InitialMint";
+          } catch (error) {
+            console.error("error occured when minting FractionToken:", error);
+          }
+        })!;
+
+        if (log) {
+          const decodedLog = decodeEventLog({
+            abi: FRACTION_TOKEN_ABI,
+            data: log.data,
+            topics: log.topics,
+          });
+          console.log({ decodedLog });
+        }
+        return txHash;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet]
+  );
+
   /**
    * FractionTokenを発行するコールバック関数
    * @param hatId
    * @param account address
    */
   const mintFractionToken = useCallback(
-    async (params: { hatId: bigint; account: Address }) => {
+    async (params: { hatId: bigint; account: Address; amount: bigint }) => {
       if (!wallet) return;
 
       setIsLoading(true);
@@ -179,7 +225,7 @@ export const useFractionToken = () => {
         const txHash = await wallet.writeContract({
           ...fractionTokenBaseConfig,
           functionName: "mint",
-          args: [params.hatId, params.account],
+          args: [params.hatId, params.account, params.amount],
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({
@@ -285,7 +331,89 @@ export const useFractionToken = () => {
     isLoading,
     getTokenRecipients,
     getTokenId,
+    mintInitialSupplyFractionToken,
     mintFractionToken,
     sendFractionToken,
   };
+};
+
+export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
+  const { wallet } = useActiveWallet();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [tokenId, setTokenId] = useState<bigint>();
+  const [initialized, setInitialized] = useState(false);
+
+  const { getTokenRecipients, getTokenId } = useFractionToken();
+
+  useEffect(() => {
+    const fetch = async () => {
+      const _tokenId = await getTokenId({
+        hatId: hatId,
+        account: wearer,
+      });
+      if (!_tokenId) return;
+      setTokenId(_tokenId);
+      const recipients = await getTokenRecipients({ tokenId: _tokenId });
+      if (recipients?.some((r) => r.toLowerCase() === wearer.toLowerCase())) {
+        setInitialized(true);
+      }
+    };
+    fetch();
+  }, [hatId, wearer, getTokenId]);
+
+  const transferFractionToken = useCallback(
+    async (to: Address, amount: bigint) => {
+      console.log(wallet, tokenId);
+      if (!wallet || !tokenId) return;
+
+      setIsLoading(true);
+
+      let txHash;
+      if (initialized) {
+        try {
+          txHash = await wallet.writeContract({
+            ...fractionTokenBaseConfig,
+            functionName: "safeTransferFrom",
+            args: [wallet.account.address, to, tokenId, amount, "0x"],
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (
+        wallet.account.address.toLocaleLowerCase() ===
+        wearer.toLocaleLowerCase()
+      ) {
+        const mintInitialSupplyData = encodeFunctionData({
+          abi: FRACTION_TOKEN_ABI,
+          functionName: "mintInitialSupply",
+          args: [hatId, wearer, BigInt(0)],
+        });
+        const transferData = encodeFunctionData({
+          abi: FRACTION_TOKEN_ABI,
+          functionName: "safeTransferFrom",
+          args: [wallet.account.address, to, tokenId, amount, "0x"],
+        });
+        try {
+          txHash = await wallet.writeContract({
+            ...fractionTokenBaseConfig,
+            functionName: "multicall",
+            args: [[mintInitialSupplyData, transferData]],
+          });
+        } catch (error) {
+          console.error(error);
+        } finally {
+          await publicClient.waitForTransactionReceipt({ hash: txHash! });
+          setIsLoading(false);
+        }
+      } else {
+        console.error("FractionToken is not initialized");
+      }
+
+      return txHash;
+    },
+    [wallet, initialized, tokenId]
+  );
+
+  return { isLoading, transferFractionToken };
 };

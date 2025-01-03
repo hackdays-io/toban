@@ -1,0 +1,32 @@
+{
+  "network": "sepolia",
+  "startBlock": 7222208,
+  "contracts": [
+    {
+      "address": "0x08B4c53b98f46B14E2AD00189C2Aa3b9F3d0c8f3",
+      "file": "BigBang",
+      "entities": [{ "name": "Executed" }],
+      "handlers": [
+        {
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,address,address)",
+          "handler": "handleExecuted"
+        }
+      ]
+    },
+    {
+      "address": "0xd921517fdF141d97C289bDb9686f51A1375dCc69",
+      "file": "FractionToken",
+      "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
+      "handlers": [
+        {
+          "event": "InitialMint(indexed address,indexed uint256,indexed uint256)",
+          "handler": "handleInitialMint"
+        },
+        {
+          "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
+          "handler": "handleTransferSingle"
+        }
+      ]
+    }
+  ]
+}

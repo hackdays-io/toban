@@ -1,4 +1,4 @@
-import { Box, VStack } from "@chakra-ui/react";
+import { Box, VStack, Button } from "@chakra-ui/react";
 import {
   DialogRoot,
   DialogContent,
@@ -9,7 +9,6 @@ import {
   DialogActionTrigger,
 } from "../ui/dialog";
 import { InputName } from "../InputName";
-import { BasicButton } from "../BasicButton";
 import { InputDescription } from "../InputDescription";
 import { InputLink } from "../InputLink";
 import { useEffect, useState } from "react";
@@ -61,11 +60,15 @@ export const BaseRoleAttributeDialog = ({
     setLink("");
   };
 
+  const setAttribute = (attribute: RoleAttribute) => {
+    setName(attribute.label);
+    setDescription(attribute.description ?? "");
+    setLink(attribute.link ?? "");
+  };
+
   useEffect(() => {
     if (mode === "edit" && attribute) {
-      setName(attribute.label);
-      setDescription(attribute.description ?? "");
-      setLink(attribute.link ?? "");
+      setAttribute(attribute);
     }
   }, [attribute, mode]);
 
@@ -78,6 +81,10 @@ export const BaseRoleAttributeDialog = ({
           setIsOpen(details.open);
           if (!details.open) {
             resetFormValues();
+          } else {
+            if (mode === "edit" && attribute) {
+              setAttribute(attribute);
+            }
           }
         }}
       >
@@ -102,28 +109,42 @@ export const BaseRoleAttributeDialog = ({
           <DialogFooter my={8}>
             <VStack gap={4} align="stretch" w="full">
               <DialogActionTrigger asChild>
-                <BasicButton
+                <Button
+                  size="lg"
+                  h="40px"
+                  maxHeight="64px"
+                  minHeight="48px"
+                  backgroundColor="yellow.400"
+                  color="gray.800"
+                  borderRadius="12px"
+                  disabled={!name}
                   onClick={() => {
                     onClick(name, description, link);
                     resetFormValues();
                   }}
-                  disabled={!name}
                 >
                   {BUTTON_TEXT_MAP[mode as keyof typeof BUTTON_TEXT_MAP] ??
                     mode}
-                </BasicButton>
+                </Button>
               </DialogActionTrigger>
               {mode === "edit" && onClickDelete && (
                 <DialogActionTrigger asChild>
-                  <BasicButton
+                  <Button
+                    size="lg"
+                    h="40px"
+                    maxHeight="64px"
+                    minHeight="48px"
+                    color="gray.800"
+                    borderRadius="12px"
+                    bg="orange.500"
+                    _hover={{ bg: "orange.600" }}
                     onClick={() => {
                       onClickDelete();
                       resetFormValues();
                     }}
-                    bg="orange.500"
                   >
                     Delete
-                  </BasicButton>
+                  </Button>
                 </DialogActionTrigger>
               )}
             </VStack>

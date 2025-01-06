@@ -1,83 +1,147 @@
 import { FC, useState } from "react";
-import { useParams } from "@remix-run/react";
-import { Box, Button, Float, Text } from "@chakra-ui/react";
+import { useNavigate, useParams } from "@remix-run/react";
+import { Box, Text } from "@chakra-ui/react";
 import { InputImage } from "~/components/InputImage";
-import { useUploadImageFileToIpfs } from "hooks/useIpfs";
+import {
+  useUploadImageFileToIpfs,
+  useUploadHatsDetailsToIpfs,
+} from "hooks/useIpfs";
 import { ContentContainer } from "~/components/ContentContainer";
 import { InputName } from "~/components/InputName";
 import { InputDescription } from "~/components/InputDescription";
-import { CommonInput } from "~/components/common/CommonInput";
 import { BasicButton } from "~/components/BasicButton";
+import { useActiveWallet } from "hooks/useWallet";
+import { useHats } from "hooks/useHats";
+import {
+  HatsDetailsAttributes,
+  HatsDetailsAuthorities,
+  HatsDetailsResponsabilities,
+} from "types/hats";
+import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
+import { EditRoleAttributeDialog } from "~/components/roleAttributeDialog/EditRoleAttributeDialog";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
 );
 
-const PlusButton: FC<{ onClick?: () => void }> = ({ onClick }) => {
-  return (
-    <Button width="full" bg="blue.500" mt={4} color="gray.50" onClick={onClick}>
-      +
-    </Button>
-  );
-};
-
 const DynamicInputList: FC<{
-  items: string[];
-  itemsCount: number;
-  updateArrValueAtIndex: (
-    index: number,
-    value: string,
-    arr: string[],
-    setArr: (value: string[]) => void
-  ) => void;
-  setItems: (value: string[]) => void;
-  itemLabel: string;
-}> = ({ items, itemsCount, updateArrValueAtIndex, setItems, itemLabel }) => {
+  items: HatsDetailsAttributes;
+  setItems: (value: HatsDetailsAttributes) => void;
+}> = ({ items, setItems }) => {
   return (
     <Box w="100%" mt={2}>
-      {[...Array(itemsCount)].map((_, index) => (
-        <CommonInput
+      {items.map((_, index) => (
+        <Box
           key={index}
           minHeight="45px"
           mt={2}
-          value={items[index]}
-          onChange={(e) =>
-            updateArrValueAtIndex(index, e.target.value, items, setItems)
-          }
-        />
+          width="100%"
+          border="1px solid"
+          borderColor="gray.800"
+          borderRadius="xl"
+          backgroundColor="white"
+          py="auto"
+          display="flex"
+          alignItems="stretch"
+          justifyContent="space-between"
+          gap={4}
+          fontWeight="normal"
+        >
+          <Text ml={4} display="flex" alignItems="center">
+            {items[index]?.label}
+          </Text>
+          <Box ml="auto" display="flex" alignItems="center">
+            <EditRoleAttributeDialog
+              type="responsibility"
+              attributes={items}
+              setAttributes={setItems}
+              attributeIndex={index}
+            />
+          </Box>
+        </Box>
       ))}
     </Box>
   );
 };
 
-const handleSubmit = () => {
-  console.log("submit");
-};
-
 const NewRole: FC = () => {
-  const { treeId, hatId, address } = useParams();
+  const { treeId } = useParams();
 
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [roleName, setRoleName] = useState("");
+  const [roleDescription, setRoleDescription] = useState("");
 
-  const [responsibilities, setResponsibilities] = useState<string[]>([]);
-  const [responsibilitiesCount, setResponsibilitiesCount] = useState<number>(0);
+  const [responsibilities, setResponsibilities] = useState<
+    NonNullable<HatsDetailsResponsabilities>
+  >([]);
+  // const [responsibilitiesCount, setResponsibilitiesCount] = useState<number>(0);
 
-  const [authorities, setAuthorities] = useState<string[]>([]);
-  const [authoritiesCount, setAuthoritiesCount] = useState<number>(0);
+  const [authorities, setAuthorities] = useState<
+    NonNullable<HatsDetailsAuthorities>
+  >([]);
+  // const [authoritiesCount, setAuthoritiesCount] = useState<number>(0);
+  const { wallet } = useActiveWallet();
+  const [isLoading, setIsLoading] = useState(false);
+  const { createHat } = useHats();
+  const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
+  const { getTreeInfo } = useHats();
+  const navigate = useNavigate();
 
-  const updateArrValueAtIndex = (
-    index: number,
-    newValue: string,
-    arr: string[],
-    setArr: (value: string[]) => void
-  ) => {
-    const newArr = [...arr];
-    newArr[index] = newValue;
-    setArr(newArr);
+  const handleSubmit = async () => {
+    if (!wallet) {
+      alert("ウォレットを接続してください。");
+      return;
+    }
+    if (!roleName || !roleDescription || !imageFile) {
+      alert("全ての項目を入力してください。");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const [resUploadHatsDetails, resUploadImage, treeInfo] =
+        await Promise.all([
+          uploadHatsDetailsToIpfs({
+            name: roleName,
+            description: roleDescription,
+            responsabilities: [],
+            authorities: [],
+          }),
+          uploadImageFileToIpfs(),
+          getTreeInfo({ treeId: Number(treeId) }),
+        ]);
+
+      if (!resUploadHatsDetails)
+        throw new Error("Failed to upload metadata to ipfs");
+      if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
+
+      // @todo HatterHatが親でよいか？
+      const hatterHatId = treeInfo?.hats?.[1]?.id;
+      if (!hatterHatId) throw new Error("Hat ID is required");
+
+      console.log("resUploadHatsDetails", resUploadHatsDetails);
+      console.log("resUploadImage", resUploadImage);
+      console.log("hatterHatId", hatterHatId);
+
+      const parsedLog = await createHat({
+        parentHatId: BigInt(hatterHatId),
+        details: resUploadHatsDetails?.ipfsUri,
+        imageURI: resUploadImage?.ipfsUri,
+      });
+      if (!parsedLog) throw new Error("Failed to create hat transaction");
+      console.log("parsedLog", parsedLog);
+
+      // @todo ハット作成後の遷移先はツリーのロール一覧ページでよいか？
+      navigate(`/${treeId}/roles`);
+    } catch (error) {
+      console.error(error);
+      alert("エラーが発生しました。" + error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,36 +150,32 @@ const NewRole: FC = () => {
         <Text fontSize="lg">新しいロールを作成</Text>
         <ContentContainer>
           <InputImage imageFile={imageFile} setImageFile={setImageFile} />
-          <InputName name={name} setName={setName} />
+          <InputName name={roleName} setName={setRoleName} />
           <InputDescription
-            description={description}
-            setDescription={setDescription}
+            description={roleDescription}
+            setDescription={setRoleDescription}
+            mt={6}
           />
         </ContentContainer>
         <SectionHeading>Responsibilities</SectionHeading>
         <ContentContainer>
           <DynamicInputList
             items={responsibilities}
-            itemsCount={responsibilitiesCount}
-            updateArrValueAtIndex={updateArrValueAtIndex}
             setItems={setResponsibilities}
-            itemLabel="Responsibility"
           />
-          <PlusButton
-            onClick={() => setResponsibilitiesCount(responsibilitiesCount + 1)}
+          <AddRoleAttributeDialog
+            type="responsibility"
+            attributes={responsibilities}
+            setAttributes={setResponsibilities}
           />
         </ContentContainer>
         <SectionHeading>Authorities</SectionHeading>
         <ContentContainer>
-          <DynamicInputList
-            items={authorities}
-            itemsCount={authoritiesCount}
-            updateArrValueAtIndex={updateArrValueAtIndex}
-            setItems={setAuthorities}
-            itemLabel="Authority"
-          />
-          <PlusButton
-            onClick={() => setAuthoritiesCount(authoritiesCount + 1)}
+          <DynamicInputList items={authorities} setItems={setAuthorities} />
+          <AddRoleAttributeDialog
+            type="authority"
+            attributes={authorities}
+            setAttributes={setAuthorities}
           />
         </ContentContainer>
         <Box
@@ -128,8 +188,14 @@ const NewRole: FC = () => {
         >
           <BasicButton
             onClick={handleSubmit}
-            disabled={!name || !description || !imageFile}
-            // loading={isLoading}
+            disabled={
+              !roleName ||
+              !roleDescription ||
+              !imageFile ||
+              responsibilities.length === 0 ||
+              authorities.length === 0
+            }
+            loading={isLoading}
           >
             作成
           </BasicButton>

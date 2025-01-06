@@ -164,7 +164,6 @@ const EditRole: FC = () => {
 
       await Promise.all([changeDetails(), changeImage()]);
 
-      // @todo ハット作成後の遷移先はツリーのロール一覧ページでよいか？
       navigate(`/${treeId}/roles`);
     } catch (error) {
       console.error(error);

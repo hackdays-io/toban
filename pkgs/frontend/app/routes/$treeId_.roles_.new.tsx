@@ -116,7 +116,6 @@ const NewRole: FC = () => {
         throw new Error("Failed to upload metadata to ipfs");
       if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
 
-      // @todo HatterHatが親でよいか？
       const hatterHatId = treeInfo?.hats?.[1]?.id;
       if (!hatterHatId) throw new Error("Hat ID is required");
 
@@ -132,7 +131,6 @@ const NewRole: FC = () => {
       if (!parsedLog) throw new Error("Failed to create hat transaction");
       console.log("parsedLog", parsedLog);
 
-      // @todo ハット作成後の遷移先はツリーのロール一覧ページでよいか？
       navigate(`/${treeId}/roles`);
     } catch (error) {
       console.error(error);

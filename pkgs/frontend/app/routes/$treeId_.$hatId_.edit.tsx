@@ -15,6 +15,7 @@ import { useHats } from "hooks/useHats";
 import {
   HatsDetailsAttributes,
   HatsDetailsAuthorities,
+  HatsDetailSchama,
   HatsDetailsResponsabilities,
 } from "types/hats";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
@@ -105,7 +106,7 @@ const EditRole: FC = () => {
   useEffect(() => {
     const setStates = async () => {
       if (!hat) return;
-      const detailsJson = hat.details
+      const detailsJson: HatsDetailSchama = hat.details
         ? await ipfs2httpsJson(hat.details)
         : undefined;
       console.log("detailsJson", detailsJson);
@@ -117,8 +118,52 @@ const EditRole: FC = () => {
     setStates();
   }, [hat]);
 
+  const areArraysEqual = (
+    arr1: HatsDetailsAttributes,
+    arr2: HatsDetailsAttributes
+  ) => {
+    if (arr1.length !== arr2.length) return false;
+    return JSON.stringify(arr1) === JSON.stringify(arr2);
+  };
+
   const changeDetails = async () => {
     if (!hatId || !hat) return;
+    const detailsJson: HatsDetailSchama = hat.details
+      ? await ipfs2httpsJson(hat.details)
+      : undefined;
+
+    if (!detailsJson) return;
+
+    console.log("name check", detailsJson.data.name === roleName);
+    console.log(
+      "description check",
+      detailsJson.data.description === roleDescription
+    );
+    console.log(
+      "responsibilities check",
+      areArraysEqual(detailsJson.data.responsabilities ?? [], responsibilities)
+    );
+    console.log(
+      "authorities check",
+      areArraysEqual(detailsJson.data.authorities ?? [], authorities)
+    );
+
+    console.log("responsibilities 1", detailsJson.data.responsabilities ?? []);
+    console.log("responsibilities 2", responsibilities);
+    console.log("authorities 1", detailsJson.data.authorities ?? []);
+    console.log("authorities 2", authorities);
+
+    if (
+      detailsJson.data.name === roleName &&
+      detailsJson.data.description === roleDescription &&
+      areArraysEqual(
+        detailsJson.data.responsabilities ?? [],
+        responsibilities
+      ) &&
+      areArraysEqual(detailsJson.data.authorities ?? [], authorities)
+    )
+      return;
+
     const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
       name: roleName,
       description: roleDescription,
@@ -154,7 +199,7 @@ const EditRole: FC = () => {
       alert("ウォレットを接続してください。");
       return;
     }
-    if (!roleName || !roleDescription || !imageFile) {
+    if (!roleName || !roleDescription) {
       alert("全ての項目を入力してください。");
       return;
     }
@@ -224,7 +269,6 @@ const EditRole: FC = () => {
             disabled={
               !roleName ||
               !roleDescription ||
-              !imageFile ||
               responsibilities.length === 0 ||
               authorities.length === 0
             }

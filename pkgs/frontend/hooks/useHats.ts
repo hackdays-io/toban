@@ -2,7 +2,7 @@ import { hatIdToTreeId, treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import { Hat, HatsSubgraphClient, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
-import { Address, decodeEventLog, parseEventLogs } from "viem";
+import { Address, parseEventLogs } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
 import { useActiveWallet } from "./useWallet";
@@ -404,6 +404,76 @@ export const useHats = () => {
     [wallet]
   );
 
+  const changeHatDetails = useCallback(
+    async (params: { hatId: bigint; newDetails: string }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "changeHatDetails",
+          args: [params.hatId, params.newDetails],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatDetailsChanged",
+          logs: receipt.logs,
+          strict: false,
+        });
+
+        return parsedLog;
+      } catch (error) {
+        console.error("error occured when creating Hats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet]
+  );
+
+  const changeHatImageURI = useCallback(
+    async (params: { hatId: bigint; newImageURI: string }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "changeHatImageURI",
+          args: [params.hatId, params.newImageURI],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatImageURIChanged",
+          logs: receipt.logs,
+          strict: false,
+        });
+
+        return parsedLog;
+      } catch (error) {
+        console.error("error occured when creating Hats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet]
+  );
+
   return {
     isLoading,
     getTreeInfo,
@@ -415,6 +485,8 @@ export const useHats = () => {
     getHatsTimeframeModuleAddress,
     createHat,
     mintHat,
+    changeHatDetails,
+    changeHatImageURI,
   };
 };
 

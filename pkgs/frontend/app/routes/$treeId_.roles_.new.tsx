@@ -76,12 +76,10 @@ const NewRole: FC = () => {
   const [responsibilities, setResponsibilities] = useState<
     NonNullable<HatsDetailsResponsabilities>
   >([]);
-  // const [responsibilitiesCount, setResponsibilitiesCount] = useState<number>(0);
 
   const [authorities, setAuthorities] = useState<
     NonNullable<HatsDetailsAuthorities>
   >([]);
-  // const [authoritiesCount, setAuthoritiesCount] = useState<number>(0);
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
   const { createHat } = useHats();
@@ -107,8 +105,8 @@ const NewRole: FC = () => {
           uploadHatsDetailsToIpfs({
             name: roleName,
             description: roleDescription,
-            responsabilities: [],
-            authorities: [],
+            responsabilities: responsibilities,
+            authorities: authorities,
           }),
           uploadImageFileToIpfs(),
           getTreeInfo({ treeId: Number(treeId) }),

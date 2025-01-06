@@ -33,10 +33,18 @@ const EmptyImage = () => {
 export const InputImage = ({
   imageFile,
   setImageFile,
+  previousImageUrl,
 }: {
   imageFile: File | null;
   setImageFile: (file: File | null) => void;
+  previousImageUrl?: string;
 }) => {
+  const imageUrl = imageFile
+    ? URL.createObjectURL(imageFile)
+    : previousImageUrl
+      ? previousImageUrl
+      : undefined;
+
   return (
     <Box as="label" cursor="pointer" m="100px auto 40px">
       <Input
@@ -53,7 +61,7 @@ export const InputImage = ({
         }}
       />
       <CommonIcon
-        imageUrl={imageFile ? URL.createObjectURL(imageFile) : undefined}
+        imageUrl={imageUrl}
         fallbackIconComponent={<EmptyImage />}
         size={200}
         borderRadius="3xl"

@@ -19,53 +19,13 @@ import {
   HatsDetailsResponsabilities,
 } from "types/hats";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { EditRoleAttributeDialog } from "~/components/roleAttributeDialog/EditRoleAttributeDialog";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
 import { Hat } from "@hatsprotocol/sdk-v1-subgraph";
+import { RoleAttributesList } from "~/components/RoleAttributesList";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
 );
-
-const DynamicInputList: FC<{
-  items: HatsDetailsAttributes;
-  setItems: (value: HatsDetailsAttributes) => void;
-}> = ({ items, setItems }) => {
-  return (
-    <Box w="100%" mt={2}>
-      {items.map((_, index) => (
-        <Box
-          key={index}
-          minHeight="45px"
-          mt={2}
-          width="100%"
-          border="1px solid"
-          borderColor="gray.800"
-          borderRadius="xl"
-          backgroundColor="white"
-          py="auto"
-          display="flex"
-          alignItems="stretch"
-          justifyContent="space-between"
-          gap={4}
-          fontWeight="normal"
-        >
-          <Text ml={4} display="flex" alignItems="center">
-            {items[index]?.label}
-          </Text>
-          <Box ml="auto" display="flex" alignItems="center">
-            <EditRoleAttributeDialog
-              type="responsibility"
-              attributes={items}
-              setAttributes={setItems}
-              attributeIndex={index}
-            />
-          </Box>
-        </Box>
-      ))}
-    </Box>
-  );
-};
 
 const EditRole: FC = () => {
   const { treeId, hatId } = useParams();
@@ -218,7 +178,7 @@ const EditRole: FC = () => {
         </ContentContainer>
         <SectionHeading>Responsibilities</SectionHeading>
         <ContentContainer>
-          <DynamicInputList
+          <RoleAttributesList
             items={responsibilities}
             setItems={setResponsibilities}
           />
@@ -230,7 +190,7 @@ const EditRole: FC = () => {
         </ContentContainer>
         <SectionHeading>Authorities</SectionHeading>
         <ContentContainer>
-          <DynamicInputList items={authorities} setItems={setAuthorities} />
+          <RoleAttributesList items={authorities} setItems={setAuthorities} />
           <AddRoleAttributeDialog
             type="authority"
             attributes={authorities}

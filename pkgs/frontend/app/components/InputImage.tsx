@@ -46,7 +46,7 @@ export const InputImage = ({
       : undefined;
 
   return (
-    <Box as="label" cursor="pointer" m="100px auto 40px">
+    <Box as="label" cursor="pointer" m="40px auto 40px">
       <Input
         type="file"
         accept="image/*"

@@ -7,6 +7,13 @@ import {
 } from "./useContracts";
 import { useActiveWallet } from "./useWallet";
 import { publicClient } from "./useViem";
+import { gql } from "@apollo/client/core";
+import { useQuery } from "@apollo/client/react/hooks";
+import {
+  GetTransferFractionTokensQuery,
+  GetTransferFractionTokensQueryVariables,
+  TransferFractionToken_Filter,
+} from "gql/graphql";
 
 export const useTokenRecipients = (
   params: {
@@ -106,7 +113,6 @@ export const useBalanceOfFractionToken = (
  */
 export const useFractionToken = () => {
   const { wallet } = useActiveWallet();
-
   const [isLoading, setIsLoading] = useState(false);
 
   /**
@@ -115,8 +121,6 @@ export const useFractionToken = () => {
    */
   const getTokenRecipients = useCallback(
     async (params: { tokenId: bigint }) => {
-      if (!wallet) return;
-
       setIsLoading(true);
 
       try {
@@ -133,7 +137,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    []
   );
 
   /**
@@ -143,8 +147,6 @@ export const useFractionToken = () => {
    */
   const getTokenId = useCallback(
     async (params: { hatId: bigint; account: Address }) => {
-      if (!wallet) return;
-
       setIsLoading(true);
 
       try {
@@ -161,7 +163,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    []
   );
 
   const mintInitialSupplyFractionToken = useCallback(
@@ -416,4 +418,40 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
   );
 
   return { isLoading, transferFractionToken };
+};
+
+/////////////////////////////////////
+/////// Start subgraph section //////
+/////////////////////////////////////
+
+const queryGetTransferFractionTokens = gql(`
+  query GetTransferFractionTokens($where: TransferFractionToken_filter = {}) {
+    transferFractionTokens(where: $where) {
+      amount
+      from
+      to
+      tokenId
+      blockNumber
+      blockTimestamp
+      hatId
+      id
+      wearer
+      workspaceId
+    }
+  }
+`);
+
+export const useGetTransferFractionTokens = (params: {
+  where?: TransferFractionToken_Filter;
+}) => {
+  const result = useQuery<
+    GetTransferFractionTokensQuery,
+    GetTransferFractionTokensQueryVariables
+  >(queryGetTransferFractionTokens, {
+    variables: {
+      where: params.where,
+    },
+  });
+
+  return result;
 };

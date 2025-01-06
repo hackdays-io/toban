@@ -2,7 +2,7 @@ import { FC, useState } from "react";
 import { Box, Float, Text } from "@chakra-ui/react";
 import { BasicButton } from "~/components/BasicButton";
 import {
-  useUploadMetadataToIpfs,
+  useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 import { useNavigate } from "@remix-run/react";
@@ -19,7 +19,7 @@ const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { uploadMetadataToIpfs } = useUploadMetadataToIpfs();
+  const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { bigbang } = useBigBang();
@@ -38,13 +38,11 @@ const WorkspaceNew: FC = () => {
     setIsLoading(true);
 
     try {
-      const resUploadMetadata = await uploadMetadataToIpfs({
+      const resUploadMetadata = await uploadHatsDetailsToIpfs({
         name,
         description,
-        responsibilities: "",
-        authorities: "",
-        eligibility: true,
-        toggle: true,
+        responsabilities: [],
+        authorities: [],
       });
       if (!resUploadMetadata)
         throw new Error("Failed to upload metadata to ipfs");
@@ -94,6 +92,7 @@ const WorkspaceNew: FC = () => {
           <InputDescription
             description={description}
             setDescription={setDescription}
+            mt={6}
           />
           <Float
             placement="bottom-center"

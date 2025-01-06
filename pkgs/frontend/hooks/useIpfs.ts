@@ -1,40 +1,19 @@
 import { useState } from "react";
+import { HatsDetailSchama, HatsDetailsData } from "types/hats";
 import { ipfsUploadJson, ipfsUploadFile } from "utils/ipfs";
 
 export const useUploadMetadataToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const uploadMetadataToIpfs = async ({
-    name,
-    description,
-    responsibilities,
-    authorities,
-    eligibility,
-    toggle,
-  }: {
-    name: string;
-    description: string;
-    responsibilities: string;
-    authorities: string;
-    eligibility: boolean;
-    toggle: boolean;
-  }): Promise<{ ipfsCid: string; ipfsUri: string } | null> => {
+  const uploadMetadataToIpfs = async (
+    metadata: object
+  ): Promise<{ ipfsCid: string; ipfsUri: string } | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const upload = await ipfsUploadJson({
-        type: "1.0",
-        data: {
-          name,
-          description,
-          responsibilities,
-          authorities,
-          eligibility,
-          toggle,
-        },
-      });
+      const upload = await ipfsUploadJson(metadata);
 
       const ipfsCid = upload.IpfsHash;
       const ipfsUri = `ipfs://${ipfsCid}`;
@@ -55,6 +34,33 @@ export const useUploadMetadataToIpfs = () => {
   };
 
   return { uploadMetadataToIpfs, isLoading, error };
+};
+
+export const useUploadHatsDetailsToIpfs = () => {
+  const { uploadMetadataToIpfs, isLoading, error } = useUploadMetadataToIpfs();
+
+  const uploadHatsDetailsToIpfs = async ({
+    name,
+    description,
+    responsabilities,
+    authorities,
+  }: HatsDetailsData): Promise<{ ipfsCid: string; ipfsUri: string } | null> => {
+    const details: HatsDetailSchama = {
+      type: "1.0",
+      data: {
+        name,
+        description,
+        responsabilities,
+        authorities,
+      },
+    };
+
+    const res = await uploadMetadataToIpfs(details);
+
+    return res;
+  };
+
+  return { uploadHatsDetailsToIpfs, isLoading, error };
 };
 
 export const useUploadImageFileToIpfs = () => {

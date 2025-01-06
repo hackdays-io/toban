@@ -134,25 +134,6 @@ const EditRole: FC = () => {
 
     if (!detailsJson) return;
 
-    console.log("name check", detailsJson.data.name === roleName);
-    console.log(
-      "description check",
-      detailsJson.data.description === roleDescription
-    );
-    console.log(
-      "responsibilities check",
-      areArraysEqual(detailsJson.data.responsabilities ?? [], responsibilities)
-    );
-    console.log(
-      "authorities check",
-      areArraysEqual(detailsJson.data.authorities ?? [], authorities)
-    );
-
-    console.log("responsibilities 1", detailsJson.data.responsabilities ?? []);
-    console.log("responsibilities 2", responsibilities);
-    console.log("authorities 1", detailsJson.data.authorities ?? []);
-    console.log("authorities 2", authorities);
-
     if (
       detailsJson.data.name === roleName &&
       detailsJson.data.description === roleDescription &&

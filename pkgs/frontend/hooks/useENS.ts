@@ -12,9 +12,9 @@ export const useActiveWalletIdentity = () => {
   const { names } = useNamesByAddresses(address);
 
   const identity = useMemo(() => {
-    if (!names || names.length === 0) return;
+    if (!wallet || !names || names.length === 0) return;
     return names[0][0];
-  }, [names]);
+  }, [names, wallet]);
 
   return { identity };
 };
@@ -22,22 +22,35 @@ export const useActiveWalletIdentity = () => {
 export const useNamesByAddresses = (addresses?: string[]) => {
   const [names, setNames] = useState<NameData[][]>([]);
 
-  useEffect(() => {
-    if (!addresses) return;
-    fetchNames(addresses);
-  }, [addresses]);
-
-  const fetchNames = async (addresses: string[]) => {
+  const fetchNames = useCallback(async (addresses: string[]) => {
     try {
-      const { data } = await axios.get("/api/namestone/resolve-names", {
-        params: { addresses: addresses.join(",") },
-      });
-      setNames(data);
-      return data as NameData[][];
+      const { data } = await axios.get<NameData[][]>(
+        "/api/namestone/resolve-names",
+        {
+          params: { addresses: addresses.join(",") },
+        }
+      );
+      const unresolvedAddresses = addresses
+        .filter((address) => {
+          return !data.some(
+            (nameData) =>
+              nameData[0]?.address.toLowerCase() === address.toLowerCase()
+          );
+        })
+        .map((address) => {
+          return [{ address, name: "", domain: "" }];
+        });
+      setNames([...data, ...unresolvedAddresses]);
+      return data;
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!addresses) return;
+    fetchNames(addresses);
+  }, [addresses, fetchNames]);
 
   return { names, fetchNames };
 };
@@ -47,9 +60,12 @@ export const useAddressesByNames = (names?: string[], exactMatch?: boolean) => {
 
   const fetchAddresses = useCallback(async (resolveNames: string[]) => {
     try {
-      const { data } = await axios.get("/api/namestone/resolve-addresses", {
-        params: { names: resolveNames.join(","), exact_match: exactMatch },
-      });
+      const { data } = await axios.get<NameData[][]>(
+        "/api/namestone/resolve-addresses",
+        {
+          params: { names: resolveNames.join(","), exact_match: exactMatch },
+        }
+      );
       setAddresses(data);
       return data as NameData[][];
     } catch (error) {

@@ -1,6 +1,4 @@
-import { Box, Float, Input, Text } from "@chakra-ui/react";
-import { useWallets } from "@privy-io/react-auth";
-import { useNavigate } from "@remix-run/react";
+import { Box, Flex, Grid, Input, Text } from "@chakra-ui/react";
 import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
@@ -11,8 +9,6 @@ import { CommonInput } from "~/components/common/CommonInput";
 import { UserIcon } from "~/components/icon/UserIcon";
 
 const Login: FC = () => {
-  const navigate = useNavigate();
-
   const [userName, setUserName] = useState("");
 
   const {
@@ -57,50 +53,61 @@ const Login: FC = () => {
 
     await setName(params);
 
-    navigate("/workspace");
+    window.location.href = "/workspace";
   };
 
   return (
-    <>
-      <Box as="label" cursor="pointer" m="100px auto 40px">
-        <Input
-          type="file"
-          accept="image/*"
-          display="none"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file && file.type.startsWith("image/")) {
-              setImageFile(file);
-            } else {
-              alert("画像ファイルを選択してください");
-            }
-          }}
-        />
-        <UserIcon
-          userImageUrl={imageFile ? URL.createObjectURL(imageFile) : undefined}
-          size={200}
-        />
-      </Box>
-      <Box width="100%">
-        <CommonInput
-          value={userName}
-          placeholder="ユーザー名"
-          onChange={(e) => setUserName(e.target.value)}
-        />
-        <Text textAlign="right" fontSize="sm" mt={1}>
-          {availableName
-            ? "この名前は利用可能です"
-            : "この名前は利用できません"}
-        </Text>
-      </Box>
-      <Float
-        placement="bottom-center"
-        mb="4vh"
-        width="100%"
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-      >
+    <Grid gridTemplateRows="1fr auto" h="100vh">
+      <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
+        <Box w="100%">
+          <Flex
+            flexDirection="column"
+            cursor="pointer"
+            justifyContent="center"
+            alignItems="center"
+            mb={8}
+            as="label"
+          >
+            <Input
+              type="file"
+              accept="image/*"
+              display="none"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && file.type.startsWith("image/")) {
+                  setImageFile(file);
+                } else {
+                  alert("画像ファイルを選択してください");
+                }
+              }}
+            />
+            <UserIcon
+              userImageUrl={
+                imageFile ? URL.createObjectURL(imageFile) : undefined
+              }
+              size="180px"
+            />
+            {!imageFile && (
+              <Text fontSize="sm" mt={2}>
+                画像を選択
+              </Text>
+            )}
+          </Flex>
+          <Box width="100%">
+            <CommonInput
+              value={userName}
+              placeholder="ユーザー名"
+              onChange={(e) => setUserName(e.target.value)}
+            />
+            <Text textAlign="right" fontSize="xs" mt={1}>
+              {availableName
+                ? "この名前は利用可能です"
+                : "この名前は利用できません"}
+            </Text>
+          </Box>
+        </Box>
+      </Flex>
+      <Box mb={5}>
         <BasicButton
           onClick={handleSubmit}
           loading={isIpfsLoading || isSetNameLoading}
@@ -108,8 +115,8 @@ const Login: FC = () => {
         >
           保存
         </BasicButton>
-      </Float>
-    </>
+      </Box>
+    </Grid>
   );
 };
 

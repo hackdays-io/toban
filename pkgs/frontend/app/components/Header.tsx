@@ -2,23 +2,24 @@ import { useState, useEffect, useMemo } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";
 import { UserIcon } from "./icon/UserIcon";
-import { useLocation, useNavigate } from "@remix-run/react";
+import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
 import { useActiveWalletIdentity } from "hooks/useENS";
 import { ipfs2https } from "utils/ipfs";
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
 import { useActiveWallet } from "hooks/useWallet";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import CommonButton from "./common/CommonButton";
+import { useTreeInfo } from "hooks/useHats";
+import axios from "axios";
+import { HatsDetailSchama } from "types/hats";
+import { abbreviateAddress } from "utils/wallet";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
 const WORKSPACES_PATHS: string[] = ["/workspace", "/workspace/new"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
-const HEADER_SIZE: number = 12; // 偶数のnumberだとアイコンが対応しているため望ましい
 
 const headerTextStyle = {
   color: "gray.800",
-  my: "auto",
   wordBreak: "break-word",
-  flex: "1",
 };
 
 enum HeaderType {
@@ -34,25 +35,28 @@ export const Header = () => {
 
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { treeId } = useParams();
+  const treeInfo = useTreeInfo(Number(treeId));
 
-  // ToDo: ページのパスや hooks で柔軟にロジックを実装する（切り替えてテストできます）
-  const isWalletConnected = true;
-  const isUserTobanEnsFound = true;
-  const isWorkspaceSelected = false;
-
-  // ToDo: ユーザーやワークスペースごとの各種データを取得するロジックを実装する
-  const workspaceName: string | undefined = "Workspace Name";
-  const workspaceImageUrl: string | undefined = undefined;
+  const [workspaceName, setWorkspaceName] = useState<string>();
+  useEffect(() => {
+    const fetch = async () => {
+      setWorkspaceName(undefined);
+      const topHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
+      if (topHat) {
+        const { data } = await axios.get<HatsDetailSchama>(
+          ipfs2https(topHat.details)!
+        );
+        setWorkspaceName(data.data.name);
+      }
+    };
+    fetch();
+  }, [treeInfo]);
 
   useEffect(() => {
     const determineHeaderType = () => {
-      if (
-        !NO_HEADER_PATHS.includes(pathname) &&
-        isWalletConnected &&
-        isUserTobanEnsFound
-      ) {
-        return !WORKSPACES_PATHS.includes(pathname) ||
-          (isWorkspaceSelected && workspaceName)
+      if (!NO_HEADER_PATHS.includes(pathname)) {
+        return !WORKSPACES_PATHS.includes(pathname) || workspaceName
           ? HeaderType.WorkspaceAndUserIcons
           : HeaderType.UserIconOnly;
       }
@@ -60,13 +64,7 @@ export const Header = () => {
     };
 
     setHeaderType(determineHeaderType());
-  }, [
-    pathname,
-    isWalletConnected,
-    isUserTobanEnsFound,
-    isWorkspaceSelected,
-    workspaceName,
-  ]);
+  }, [pathname, workspaceName]);
 
   const { isSmartWallet } = useActiveWallet();
   const { logout } = usePrivy();
@@ -91,20 +89,25 @@ export const Header = () => {
   };
 
   return headerType !== HeaderType.NonHeader ? (
-    <Flex justifyContent="space-between" w="100%">
-      <Box display="flex" height={HEADER_SIZE} flex="1">
+    <Flex justifyContent="space-between" w="100%" py={3}>
+      <Box display="flex" height="48px" flex="1" alignItems="center">
         {headerType === HeaderType.UserIconOnly && (
-          <Text {...headerTextStyle} fontSize="xl">
+          <Text {...headerTextStyle} fontSize="xl" fontWeight="bold">
             Workspaces
           </Text>
         )}
         {headerType === HeaderType.WorkspaceAndUserIcons && (
           <>
-            <WorkspaceIcon
-              workspaceImageUrl={workspaceImageUrl}
-              size={HEADER_SIZE}
-            />
-            <Text {...headerTextStyle} ml={4}>
+            <Link to="/workspace">
+              <WorkspaceIcon
+                workspaceImageUrl={ipfs2https(
+                  treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)
+                    ?.imageUri
+                )}
+                size="40px"
+              />
+            </Link>
+            <Text fontSize="lg" fontWeight="bold" {...headerTextStyle} ml={4}>
               {workspaceName}
             </Text>
           </>
@@ -114,10 +117,17 @@ export const Header = () => {
         <MenuRoot closeOnSelect={false}>
           <MenuTrigger asChild>
             <button>
-              <UserIcon userImageUrl={userImageUrl} size={HEADER_SIZE - 2} />
+              <UserIcon userImageUrl={userImageUrl} size="40px" />
             </button>
           </MenuTrigger>
           <MenuContent>
+            <MenuItem value="name" bgColor="blue.100" display="block">
+              <Text fontWeight="bold">{identity.name}</Text>
+              <Text fontSize="xs">
+                {identity.name}.{identity.domain}
+              </Text>
+              <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
+            </MenuItem>
             <MenuItem value="logout" onClick={handleLogout}>
               Logout
             </MenuItem>

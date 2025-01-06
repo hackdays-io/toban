@@ -1,14 +1,19 @@
-import { FaCircle, FaPeopleGroup } from "react-icons/fa6";
+import { MdOutlineBadge } from "react-icons/md";
 import { CommonIcon } from "../common/CommonIcon";
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
 
 interface RoleIconProps {
   roleImageUrl?: string;
   size?: number | `${number}px` | "full";
+  borderRadius?: string;
 }
 
-export const RoleIcon = ({ roleImageUrl, size = "full" }: RoleIconProps) => {
+export const RoleIcon: FC<RoleIconProps> = ({
+  roleImageUrl,
+  size = "full",
+  borderRadius = "xl",
+}) => {
   const [imageUrl, setImageUrl] = useState<string>();
 
   useEffect(() => {
@@ -23,8 +28,9 @@ export const RoleIcon = ({ roleImageUrl, size = "full" }: RoleIconProps) => {
     <CommonIcon
       imageUrl={imageUrl}
       size={size}
+      borderRadius={borderRadius}
       fallbackIconComponent={
-        <FaCircle
+        <MdOutlineBadge
           style={{
             width: "90%",
             height: "90%",

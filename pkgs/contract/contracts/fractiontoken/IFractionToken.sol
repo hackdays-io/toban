@@ -46,4 +46,9 @@ interface IFractionToken is IERC1155 {
 		address[] memory warers,
 		uint256[] memory hatIds
 	) external view returns (uint256[] memory);
+
+	function totalSupply(
+		address wearer,
+		uint256 hatId
+	) external view returns (uint256);
 }

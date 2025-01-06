@@ -1,5 +1,5 @@
 import { FC, useState } from "react";
-import { Box, Float, Text } from "@chakra-ui/react";
+import { Box, Grid } from "@chakra-ui/react";
 import { BasicButton } from "~/components/BasicButton";
 import {
   useUploadHatsDetailsToIpfs,
@@ -10,10 +10,10 @@ import { useBigBang } from "hooks/useBigBang";
 import { useActiveWallet } from "hooks/useWallet";
 import { Address } from "viem";
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { PageHeader } from "~/components/PageHeader";
 import { InputImage } from "~/components/InputImage";
 import { InputName } from "~/components/InputName";
 import { InputDescription } from "~/components/InputDescription";
-import { ContentContainer } from "~/components/ContentContainer";
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");
@@ -46,7 +46,6 @@ const WorkspaceNew: FC = () => {
       });
       if (!resUploadMetadata)
         throw new Error("Failed to upload metadata to ipfs");
-      console.log(resUploadMetadata);
 
       const resUploadImage = await uploadImageFileToIpfs();
       if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
@@ -61,7 +60,6 @@ const WorkspaceNew: FC = () => {
       });
 
       const topHatId = parsedLog?.[0].args.topHatId;
-      console.log("topHatId", topHatId);
 
       if (topHatId) {
         const treeId = hatIdToTreeId(topHatId);
@@ -76,17 +74,22 @@ const WorkspaceNew: FC = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。" + error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <Box mt={5} w="100%">
-        <Text fontSize="lg">新しいワークスペースを作成</Text>
-        <ContentContainer>
+    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
+      <Box w="100%">
+        <PageHeader title="ワークスペースを新規作成" />
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          mt={10}
+          alignItems="center"
+        >
           <InputImage imageFile={imageFile} setImageFile={setImageFile} />
           <InputName name={name} setName={setName} />
           <InputDescription
@@ -94,25 +97,17 @@ const WorkspaceNew: FC = () => {
             setDescription={setDescription}
             mt={6}
           />
-          <Float
-            placement="bottom-center"
-            mb="4vh"
-            width="100%"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-          >
-            <BasicButton
-              onClick={handleSubmit}
-              disabled={!name || !description || !imageFile}
-              loading={isLoading}
-            >
-              作成
-            </BasicButton>
-          </Float>
-        </ContentContainer>
+        </Box>
       </Box>
-    </>
+      <BasicButton
+        onClick={handleSubmit}
+        disabled={!name || !description || !imageFile}
+        loading={isLoading}
+        mb={5}
+      >
+        作成
+      </BasicButton>
+    </Grid>
   );
 };
 

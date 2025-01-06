@@ -1,33 +1,28 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Text } from "@chakra-ui/react";
+import { FC, useEffect, useMemo, useState } from "react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
 import { BasicButton } from "~/components/BasicButton";
-import { useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { useActiveWallet } from "hooks/useWallet";
 import { useHats } from "../../hooks/useHats";
 import { Address } from "viem";
+import { CommonDialog } from "~/components/common/CommonDialog";
 
 const WorkspaceCard: FC<{
   treeId: string;
   name: string;
   imageUrl: string | undefined;
 }> = ({ treeId, name, imageUrl }) => {
-  const navigate = useNavigate();
-
   return (
-    <Box
-      w="100%"
-      borderRadius="xl"
-      border="1px solid #E0E0E0"
-      mb={3}
-      p={3}
-      display="flex"
-      alignItems="center"
-      onClick={() => navigate(`/${treeId}`)}
-    >
-      <WorkspaceIcon workspaceImageUrl={imageUrl} size={12} />
-      <Text ml={4}>{name}</Text>
-    </Box>
+    <Link to={`/${treeId}`}>
+      <Flex w="100%" borderRadius="xl" mb={3} p={2} alignItems="center">
+        <WorkspaceIcon workspaceImageUrl={imageUrl} size="60px" />
+        <Box ml={4}>
+          <Text>{name}</Text>
+          <Text fontSize="xs">Workspace id: {treeId}</Text>
+        </Box>
+      </Flex>
+    </Link>
   );
 };
 
@@ -65,7 +60,7 @@ const Workspace: FC = () => {
 
   return (
     <>
-      <Box mt={5}>
+      <Box>
         {workspacesList.map((workspace) => (
           <WorkspaceCard key={workspace.treeId} {...workspace} />
         ))}
@@ -73,6 +68,19 @@ const Workspace: FC = () => {
       <BasicButton mt={7} onClick={() => navigate("/workspace/new")}>
         新しいワークスペースを作成
       </BasicButton>
+      <CommonDialog
+        dialogTriggerReactNode={
+          <BasicButton bgColor="blue.400" mt={3} mb={5}>
+            ワークスペースに参加
+          </BasicButton>
+        }
+      >
+        <Box p={5}>
+          <Text>
+            ワークスペースの管理者に役割を割り当ててもらうか、役割をもっている人からアシストクレジットを受け取るとワークスペースに自動的に参加できます。
+          </Text>
+        </Box>
+      </CommonDialog>
     </>
   );
 };

@@ -28,12 +28,12 @@ const queryGetWorkspace = gql(`
   }
 `);
 
-export const useGetWorkspace = (workspaceId: string) => {
+export const useGetWorkspace = (workspaceId?: string) => {
   const result = useQuery<GetWorkspaceQuery, GetWorkspaceQueryVariables>(
     queryGetWorkspace,
     {
       variables: {
-        workspaceId,
+        workspaceId: workspaceId!,
       },
     }
   );

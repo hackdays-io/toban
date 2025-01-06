@@ -1,5 +1,5 @@
 import { Box, BoxProps } from "@chakra-ui/react";
-import { CommonInput } from "./common/CommonInput";
+import { CommonInput } from "../common/CommonInput";
 
 export const InputName = ({
   name,

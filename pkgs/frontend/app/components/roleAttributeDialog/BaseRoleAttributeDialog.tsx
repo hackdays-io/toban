@@ -8,9 +8,9 @@ import {
   DialogFooter,
   DialogActionTrigger,
 } from "../ui/dialog";
-import { InputName } from "../InputName";
-import { InputDescription } from "../InputDescription";
-import { InputLink } from "../InputLink";
+import { InputName } from "../input/InputName";
+import { InputDescription } from "../input/InputDescription";
+import { InputLink } from "../input/InputLink";
 import { useEffect, useState } from "react";
 import { HatsDetailsAttributes } from "types/hats";
 

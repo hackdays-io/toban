@@ -1,14 +1,14 @@
 import { FC, useState } from "react";
 import { useNavigate, useParams } from "@remix-run/react";
 import { Box, Text } from "@chakra-ui/react";
-import { InputImage } from "~/components/InputImage";
+import { InputImage } from "~/components/input/InputImage";
 import {
   useUploadImageFileToIpfs,
   useUploadHatsDetailsToIpfs,
 } from "hooks/useIpfs";
 import { ContentContainer } from "~/components/ContentContainer";
-import { InputName } from "~/components/InputName";
-import { InputDescription } from "~/components/InputDescription";
+import { InputName } from "~/components/input/InputName";
+import { InputDescription } from "~/components/input/InputDescription";
 import { BasicButton } from "~/components/BasicButton";
 import { useActiveWallet } from "hooks/useWallet";
 import { useHats } from "hooks/useHats";

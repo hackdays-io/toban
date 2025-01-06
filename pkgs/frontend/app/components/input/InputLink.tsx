@@ -1,5 +1,5 @@
 import { Box, BoxProps } from "@chakra-ui/react";
-import { CommonInput } from "./common/CommonInput";
+import { CommonInput } from "../common/CommonInput";
 
 interface InputLinkProps extends BoxProps {
   link: string;

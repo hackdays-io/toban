@@ -11,9 +11,9 @@ import { useActiveWallet } from "hooks/useWallet";
 import { Address } from "viem";
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 import { PageHeader } from "~/components/PageHeader";
-import { InputImage } from "~/components/InputImage";
-import { InputName } from "~/components/InputName";
-import { InputDescription } from "~/components/InputDescription";
+import { InputImage } from "~/components/input/InputImage";
+import { InputName } from "~/components/input/InputName";
+import { InputDescription } from "~/components/input/InputDescription";
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");

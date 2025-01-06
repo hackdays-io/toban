@@ -18,6 +18,7 @@ import {
 } from "types/hats";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { PageHeader } from "~/components/PageHeader";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
@@ -101,8 +102,8 @@ const NewRole: FC = () => {
 
   return (
     <>
-      <Box mt={5} w="100%">
-        <Text fontSize="lg">新しいロールを作成</Text>
+      <Box w="100%">
+        <PageHeader title="新しいロールを作成" />
         <ContentContainer>
           <InputImage imageFile={imageFile} setImageFile={setImageFile} />
           <InputName name={roleName} setName={setRoleName} />

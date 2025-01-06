@@ -2,7 +2,7 @@ import { hatIdToTreeId, treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import { Hat, HatsSubgraphClient, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
-import { Address, decodeEventLog } from "viem";
+import { Address, decodeEventLog, parseEventLogs } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
 import { useActiveWallet } from "./useWallet";
@@ -196,10 +196,16 @@ export const useHats = () => {
 
       if (!wearer?.currentHats) return [];
 
-      const treesIds = wearer.currentHats.map((hat) => {
-        const treeId = hatIdToTreeId(BigInt(hat.id));
-        return treeId;
-      });
+      const treesIds = [
+        ...new Set(
+          wearer.currentHats.map((hat) => {
+            const treeId = hatIdToTreeId(BigInt(hat.id));
+            return treeId;
+          })
+        ),
+      ];
+
+      console.log("treesIds", treesIds);
 
       const treesInfo = await hatsSubgraphClient.getTreesByIds({
         chainId: currentChain.id,
@@ -354,28 +360,14 @@ export const useHats = () => {
           hash: txHash,
         });
 
-        const log = receipt.logs.find((log) => {
-          try {
-            const decodedLog = decodeEventLog({
-              abi: HATS_ABI,
-              data: log.data,
-              topics: log.topics,
-            });
-            return decodedLog.eventName === "HatCreated";
-          } catch (error) {
-            console.error("error occured when creating Hats :", error);
-          }
-        })!;
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatCreated",
+          logs: receipt.logs,
+          strict: false,
+        });
 
-        if (log) {
-          const decodedLog = decodeEventLog({
-            abi: HATS_ABI,
-            data: log.data,
-            topics: log.topics,
-          });
-          console.log({ decodedLog });
-        }
-        return txHash;
+        return parsedLog;
       } catch (error) {
         console.error("error occured when creating Hats:", error);
       } finally {

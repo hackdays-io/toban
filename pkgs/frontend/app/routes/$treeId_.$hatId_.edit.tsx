@@ -50,6 +50,9 @@ const EditRole: FC = () => {
   const navigate = useNavigate();
   const { getHat } = useHats();
   const [hat, setHat] = useState<Hat | undefined>(undefined);
+  const [details, setDetails] = useState<HatsDetailSchama | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     const fetchHat = async () => {
@@ -70,6 +73,7 @@ const EditRole: FC = () => {
         ? await ipfs2httpsJson(hat.details)
         : undefined;
       console.log("detailsJson", detailsJson);
+      setDetails(detailsJson);
       setRoleName(detailsJson?.data.name ?? "");
       setRoleDescription(detailsJson?.data.description ?? "");
       setResponsibilities(detailsJson?.data.responsabilities ?? []);
@@ -86,24 +90,22 @@ const EditRole: FC = () => {
     return JSON.stringify(arr1) === JSON.stringify(arr2);
   };
 
+  const isChangedDetails = () => {
+    if (!details) return false;
+
+    return (
+      details.data.name !== roleName ||
+      details.data.description !== roleDescription ||
+      !areArraysEqual(details.data.responsabilities ?? [], responsibilities) ||
+      !areArraysEqual(details.data.authorities ?? [], authorities)
+    );
+  };
+
   const changeDetails = async () => {
-    if (!hatId || !hat) return;
-    const detailsJson: HatsDetailSchama = hat.details
-      ? await ipfs2httpsJson(hat.details)
-      : undefined;
+    if (!hatId) return;
 
-    if (!detailsJson) return;
-
-    if (
-      detailsJson.data.name === roleName &&
-      detailsJson.data.description === roleDescription &&
-      areArraysEqual(
-        detailsJson.data.responsabilities ?? [],
-        responsibilities
-      ) &&
-      areArraysEqual(detailsJson.data.authorities ?? [], authorities)
-    )
-      return;
+    const isChanged = isChangedDetails();
+    if (!isChanged) return;
 
     const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
       name: roleName,
@@ -211,7 +213,8 @@ const EditRole: FC = () => {
               !roleName ||
               !roleDescription ||
               responsibilities.length === 0 ||
-              authorities.length === 0
+              authorities.length === 0 ||
+              (!isChangedDetails() && !imageFile)
             }
             loading={isLoading}
           >

@@ -1,11 +1,7 @@
-import { Box, Input } from "@chakra-ui/react";
+import { Box, Container, Heading, Image } from "@chakra-ui/react";
 import type { MetaFunction } from "@remix-run/node";
-import { CommonButton } from "~/components/common/CommonButton";
-import { useBigBang } from "hooks/useBigBang";
-import {
-  useUploadHatsDetailsToIpfs,
-  useUploadImageFileToIpfs,
-} from "hooks/useIpfs";
+import { Link } from "@remix-run/react";
+import CommonButton from "~/components/common/CommonButton";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,58 +11,44 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const { bigbang, isLoading } = useBigBang();
-  const { uploadHatsDetailsToIpfs, isLoading: isUploadingHatsDetailsToIpfs } =
-    useUploadHatsDetailsToIpfs();
-  const {
-    uploadImageFileToIpfs,
-    setImageFile,
-    isLoading: isUploadingImageFileToIpfs,
-  } = useUploadImageFileToIpfs();
-
-  const handleBigBang = async () => {
-    const res = await bigbang({
-      owner: "0xdCb93093424447bF4FE9Df869750950922F1E30B",
-      topHatDetails: "Top Hat Details",
-      topHatImageURI: "https://example.com/top-hat.png",
-      hatterHatDetails: "Hatter Hat Details",
-      hatterHatImageURI: "https://example.com/hatter-hat.png",
-    });
-
-    console.log(res);
-  };
-
-  const metadata = {
-    name: "Toban test",
-    description: "Toban test",
-    responsabilities: [],
-    authorities: [],
-  };
-
   return (
-    <Box textAlign="center" fontSize="xl" pt="30vh">
-      <CommonButton loading={isLoading} onClick={handleBigBang}>
-        BigBang
-      </CommonButton>
-      <CommonButton
-        loading={isUploadingHatsDetailsToIpfs}
-        onClick={() => uploadHatsDetailsToIpfs(metadata)}
-      >
-        Upload Metadata to IPFS
-      </CommonButton>
-      <Input
-        type="file"
-        accept="image/*"
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          setImageFile(e.target.files?.[0] || null)
-        }
-      />
-      <CommonButton
-        loading={isUploadingImageFileToIpfs}
-        onClick={uploadImageFileToIpfs}
-      >
-        Upload Image File to IPFS
-      </CommonButton>
+    <Box py={10} overflowX="hidden" mx="-4">
+      <Container>
+        <Image w="200px" src="/images/toban-logo-text.svg" alt="logo" />
+        <Heading as="h1" fontSize="3xl" lineHeight={1.5} mt={10}>
+          いちばん簡単な
+          <br />
+          貢献の記録と報酬の分配
+        </Heading>
+        <Heading as="h2" fontSize="xl" mt={5} color="gray.500">
+          Simplest way of contribution recording and rewards distribution.
+        </Heading>
+      </Container>
+
+      <Box mt={5} position={"relative"}>
+        <Image
+          position="absolute"
+          mt={20}
+          ml={-20}
+          w="150%"
+          maxW="fit-content"
+          src="/images/lp/people-deco.svg"
+        />
+        <Image
+          ml={-20}
+          w="150%"
+          maxW="fit-content"
+          src="/images/lp/wave-deco.svg"
+        />
+      </Box>
+
+      <Container mt={3}>
+        <Link to="/login">
+          <CommonButton size="xl" fontWeight="bold">
+            はじめる
+          </CommonButton>
+        </Link>
+      </Container>
     </Box>
   );
 }

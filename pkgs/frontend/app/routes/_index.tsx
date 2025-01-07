@@ -3,7 +3,7 @@ import type { MetaFunction } from "@remix-run/node";
 import { CommonButton } from "~/components/common/CommonButton";
 import { useBigBang } from "hooks/useBigBang";
 import {
-  useUploadMetadataToIpfs,
+  useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 
@@ -16,8 +16,8 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const { bigbang, isLoading } = useBigBang();
-  const { uploadMetadataToIpfs, isLoading: isUploadingMetadataToIpfs } =
-    useUploadMetadataToIpfs();
+  const { uploadHatsDetailsToIpfs, isLoading: isUploadingHatsDetailsToIpfs } =
+    useUploadHatsDetailsToIpfs();
   const {
     uploadImageFileToIpfs,
     setImageFile,
@@ -31,7 +31,6 @@ export default function Index() {
       topHatImageURI: "https://example.com/top-hat.png",
       hatterHatDetails: "Hatter Hat Details",
       hatterHatImageURI: "https://example.com/hatter-hat.png",
-      trustedForwarder: "0x1234567890123456789012345678901234567890",
     });
 
     console.log(res);
@@ -40,10 +39,8 @@ export default function Index() {
   const metadata = {
     name: "Toban test",
     description: "Toban test",
-    responsibilities: "Toban test",
-    authorities: "Toban test",
-    eligibility: true,
-    toggle: true,
+    responsabilities: [],
+    authorities: [],
   };
 
   return (
@@ -52,8 +49,8 @@ export default function Index() {
         BigBang
       </CommonButton>
       <CommonButton
-        loading={isUploadingMetadataToIpfs}
-        onClick={() => uploadMetadataToIpfs(metadata)}
+        loading={isUploadingHatsDetailsToIpfs}
+        onClick={() => uploadHatsDetailsToIpfs(metadata)}
       >
         Upload Metadata to IPFS
       </CommonButton>

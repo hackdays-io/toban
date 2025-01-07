@@ -72,6 +72,97 @@ export const useTokenRecipients = (
   return recipients;
 };
 
+export const useHoldersWithoutWearers = ({
+  hatId,
+  wearers,
+}: {
+  hatId?: string;
+  wearers: string[];
+}) => {
+  const [holders, setHolders] = useState<Address[]>([]);
+
+  const { getTokenId, getTokenRecipients } = useFractionToken();
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!hatId) return;
+      try {
+        const fetchedRecipients = await Promise.all(
+          wearers.map(async (w) => {
+            const tokenId = await getTokenId({
+              hatId: BigInt(hatId),
+              account: w as Address,
+            });
+            if (!tokenId) return [];
+            const recipients = (await getTokenRecipients({ tokenId }))?.filter(
+              (r) => r.toLowerCase() !== w.toLowerCase()
+            );
+            return recipients || [];
+          })
+        );
+
+        setHolders(fetchedRecipients.flat());
+      } catch (error) {
+        console.error("error occured when fetching tokenRecipients:", error);
+      }
+    };
+
+    fetch();
+  }, [getTokenId, getTokenRecipients, hatId, wearers]);
+
+  return holders;
+};
+
+export const useHoldersWithBalance = ({
+  wearer,
+  hatId,
+}: {
+  wearer?: string;
+  hatId?: string;
+}) => {
+  const [holders, setHolders] = useState<
+    {
+      holder: Address;
+      balance: bigint;
+    }[]
+  >([]);
+
+  const { getTokenId, getTokenRecipients } = useFractionToken();
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!wearer || !hatId) return;
+      try {
+        const tokenId = await getTokenId({
+          hatId: BigInt(hatId),
+          account: wearer as Address,
+        });
+        if (!tokenId) return;
+        const holders = [...((await getTokenRecipients({ tokenId })) || [])];
+
+        const holdersWithBalance = await Promise.all(
+          holders.map(async (holder) => {
+            const balance = await publicClient.readContract({
+              ...fractionTokenBaseConfig,
+              functionName: "balanceOf",
+              args: [wearer as Address, holder, BigInt(hatId)],
+            });
+            return { holder, balance };
+          })
+        );
+
+        setHolders(holdersWithBalance);
+      } catch (error) {
+        console.error("error occured when fetching tokenRecipients:", error);
+      }
+    };
+
+    fetch();
+  }, [getTokenId, getTokenRecipients, wearer, hatId]);
+
+  return holders;
+};
+
 export const useBalanceOfFractionToken = (
   holder: Address,
   address: Address,

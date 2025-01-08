@@ -135,7 +135,7 @@ const WorkspaceMember: FC = () => {
         <Heading py={4}>All Contributors</Heading>
         <VStack width="full" alignItems="start" gap={3}>
           {assistantMembers.map((m, i) => (
-            <HStack key={i} width="full">
+            <HStack key={`assistant_${i}`} width="full">
               <UserIcon
                 userImageUrl={ipfs2https(m.text_records?.avatar)}
                 size={10}

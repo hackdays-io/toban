@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, FC } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";
 import { UserIcon } from "./icon/UserIcon";
@@ -14,7 +14,7 @@ import axios from "axios";
 import { HatsDetailSchama } from "types/hats";
 import { abbreviateAddress } from "utils/wallet";
 
-const NO_HEADER_PATHS: string[] = ["/login", "/signup"]; // 適宜ヘッダーが不要なページのパスを追加
+const NO_HEADER_PATHS: string[] = ["/login", "/signup", "/"]; // 適宜ヘッダーが不要なページのパスを追加
 const WORKSPACES_PATHS: string[] = ["/workspace", "/workspace/new"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
 
 const headerTextStyle = {
@@ -28,7 +28,7 @@ enum HeaderType {
   WorkspaceAndUserIcons = "WorkspaceAndUserIcons",
 }
 
-export const Header = () => {
+export const Header: FC = () => {
   const [headerType, setHeaderType] = useState<HeaderType>(
     HeaderType.NonHeader
   );

@@ -18,3 +18,14 @@ export interface HatsDetailSchama {
     }[];
   };
 }
+
+export type HatsDetailsData = HatsDetailSchama["data"];
+
+export type HatsDetailsResponsabilities = HatsDetailsData["responsabilities"];
+
+export type HatsDetailsAuthorities = HatsDetailsData["authorities"];
+
+// 共通の型を作成
+export type HatsDetailsAttributes = NonNullable<
+  HatsDetailsResponsabilities | HatsDetailsAuthorities
+>;

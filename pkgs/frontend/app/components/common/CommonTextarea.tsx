@@ -1,7 +1,7 @@
 import { Textarea, TextareaProps } from "@chakra-ui/react";
 
 interface CommonTextAreaProps extends Omit<TextareaProps, "value"> {
-  minHeight?: string;
+  minHeight?: TextareaProps["minHeight"];
   value: string;
   onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }

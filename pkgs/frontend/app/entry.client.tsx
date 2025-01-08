@@ -53,6 +53,7 @@ const hydrate = async () => {
   });
 };
 
+/*
 if (typeof requestIdleCallback === "function") {
   requestIdleCallback(hydrate);
 } else {
@@ -60,5 +61,6 @@ if (typeof requestIdleCallback === "function") {
   // https://caniuse.com/requestidlecallback
   setTimeout(hydrate, 1);
 }
+*/
 
 hydrate().catch((error) => console.error(error));

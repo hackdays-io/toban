@@ -4,8 +4,7 @@ import {
   type LoaderFunctionArgs,
   type MetaFunction,
 } from "@remix-run/node";
-import { Form } from "@remix-run/react";
-import { useTranslation } from "react-i18next";
+import { Form, useLoaderData } from "@remix-run/react";
 import i18nServer from "~/config/i18n.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -22,11 +21,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
  * @returns
  */
 export default function I18n() {
-  const { t } = useTranslation();
+  const { title } = useLoaderData<typeof loader>();
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <h1>{t("title")}</h1>
+      <h1>{title}</h1>
 
       <Form>
         <Button type="submit" name="lng" value="en">

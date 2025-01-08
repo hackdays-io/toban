@@ -114,7 +114,7 @@ contract HatsModuleFactory {
 		HatsModule(_instance).setUp(_initData);
 
 		// log the deployment
-		emit HatsModuleFactory_ModuleDeployed(
+		emit HatsModuleFactoryModuleDeployed(
 			_implementation,
 			address(_instance),
 			_hatId,

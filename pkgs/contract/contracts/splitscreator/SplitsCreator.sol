@@ -128,7 +128,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 		allocations = new uint256[](numOfShareHolders);
 		uint256 shareHolderIndex = 0;
 
-		for (uint i = 0; i < _splitsInfo.length; i++) {
+		for (uint256 i = 0; i < _splitsInfo.length; i++) {
 			SplitsInfo memory _splitInfo = _splitsInfo[i];
 
 			uint256 roleMultiplier = _splitInfo.multiplierTop /
@@ -136,7 +136,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
 			uint256 fractionTokenSupply = 0;
 			uint256 currentShareHolderIndex = shareHolderIndex;
-			for (uint j = 0; j < _splitInfo.wearers.length; j++) {
+			for (uint256 j = 0; j < _splitInfo.wearers.length; j++) {
 				uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
 					_splitInfo.wearers[j],
 					_splitInfo.hatId
@@ -170,7 +170,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 						)
 					);
 
-				for (uint k = 0; k < recipients.length; k++) {
+				for (uint256 k = 0; k < recipients.length; k++) {
 					if (recipients[k] == _splitInfo.wearers[j]) continue;
 
 					uint256 recipientBalance = FRACTION_TOKEN().balanceOf(
@@ -189,7 +189,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 				}
 			}
 
-			for (uint l = 0; l < allocations.length; l++) {
+			for (uint256 l = 0; l < allocations.length; l++) {
 				if (l >= currentShareHolderIndex && l < shareHolderIndex) {
 					allocations[l] =
 						(allocations[l] * 10e5) /
@@ -199,7 +199,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
 		}
 
 		totalAllocation = 0;
-		for (uint i = 0; i < allocations.length; i++) {
+		for (uint256 i = 0; i < allocations.length; i++) {
 			totalAllocation += allocations[i];
 		}
 

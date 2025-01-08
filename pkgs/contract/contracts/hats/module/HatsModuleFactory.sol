@@ -33,7 +33,7 @@ contract HatsModuleFactory {
 
 	/// @notice Emitted when a HatsModule for `hatId`, `otherImmutableArgs`, and `saltNonce` is deployed to address
 	/// `instance`
-	event HatsModuleFactory_ModuleDeployed(
+	event HatsModuleFactoryModuleDeployed(
 		address implementation,
 		address instance,
 		uint256 hatId,

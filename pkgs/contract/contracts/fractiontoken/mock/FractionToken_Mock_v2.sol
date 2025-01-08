@@ -7,7 +7,7 @@ import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { IHats } from "../../hats/src/Interfaces/IHats.sol";
 
-contract FractionToken_Mock_v2 is
+contract FractionTokenMockV2 is
 	ERC1155Upgradeable,
 	ERC1155SupplyUpgradeable,
 	MulticallUpgradeable

@@ -10,28 +10,28 @@ dotenv.config();
  * @returns
  */
 const upgrade = async () => {
-	console.log(
-		"##################################### [Upgrade START] #####################################"
-	);
+  console.log(
+    "##################################### [Upgrade START] #####################################",
+  );
 
-	// BigBangコントラクトの各アドレスをjsonファイルから取得してくる。
-	const {
-		contracts: { BigBang },
-	} = loadDeployedContractAddresses(network.name);
+  // BigBangコントラクトの各アドレスをjsonファイルから取得してくる。
+  const {
+    contracts: { BigBang },
+  } = loadDeployedContractAddresses(network.name);
 
-	// BigBangコントラクトをアップグレードする
-	const newBigBang = await upgradeBigBang(
-		BigBang,
-		"BigBang_Mock_v2" // ここにアップグレード後のBigBangのコントラクト名を指定する。
-	);
+  // BigBangコントラクトをアップグレードする
+  const newBigBang = await upgradeBigBang(
+    BigBang,
+    "BigBang_Mock_v2", // ここにアップグレード後のBigBangのコントラクト名を指定する。
+  );
 
-	console.log("upgrded address:", newBigBang.address);
+  console.log("upgrded address:", newBigBang.address);
 
-	console.log(
-		"##################################### [Upgrade END] #####################################"
-	);
+  console.log(
+    "##################################### [Upgrade END] #####################################",
+  );
 
-	return;
+  return;
 };
 
 upgrade();

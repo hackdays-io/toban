@@ -1,18 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { WorkspaceIcon } from "./icon/WorkspaceIcon";
-import { UserIcon } from "./icon/UserIcon";
-import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
-import { useActiveWalletIdentity } from "hooks/useENS";
-import { ipfs2https } from "utils/ipfs";
-import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
-import { useActiveWallet } from "hooks/useWallet";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import CommonButton from "./common/CommonButton";
-import { useTreeInfo } from "hooks/useHats";
+import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
 import axios from "axios";
-import { HatsDetailSchama } from "types/hats";
+import { useActiveWalletIdentity } from "hooks/useENS";
+import { useTreeInfo } from "hooks/useHats";
+import { useActiveWallet } from "hooks/useWallet";
+import { useEffect, useMemo, useState } from "react";
+import type { HatsDetailSchama } from "types/hats";
+import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import CommonButton from "./common/CommonButton";
+import { UserIcon } from "./icon/UserIcon";
+import { WorkspaceIcon } from "./icon/WorkspaceIcon";
+import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
 
 const NO_HEADER_PATHS: string[] = ["/login", "/signup", "/"]; // 適宜ヘッダーが不要なページのパスを追加
 const WORKSPACES_PATHS: string[] = ["/workspace", "/workspace/new"]; // 適宜ワークスペースが未選択な状態のページのパスを追加
@@ -30,7 +30,7 @@ enum HeaderType {
 
 export const Header = () => {
   const [headerType, setHeaderType] = useState<HeaderType>(
-    HeaderType.NonHeader
+    HeaderType.NonHeader,
   );
 
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export const Header = () => {
       const topHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
       if (topHat) {
         const { data } = await axios.get<HatsDetailSchama>(
-          ipfs2https(topHat.details)!
+          ipfs2https(topHat.details)!,
         );
         setWorkspaceName(data.data.name);
       }
@@ -102,7 +102,7 @@ export const Header = () => {
               <WorkspaceIcon
                 workspaceImageUrl={ipfs2https(
                   treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)
-                    ?.imageUri
+                    ?.imageUri,
                 )}
                 size="40px"
               />

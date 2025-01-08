@@ -1,6 +1,9 @@
-import { useQuery } from "@apollo/client/react/hooks";
 import { gql } from "@apollo/client/core";
-import { GetWorkspaceQuery, GetWorkspaceQueryVariables } from "gql/graphql";
+import { useQuery } from "@apollo/client/react/hooks";
+import type {
+  GetWorkspaceQuery,
+  GetWorkspaceQueryVariables,
+} from "gql/graphql";
 
 const queryGetWorkspaces = gql(`
   query GetWorkspaces($where: Workspace_filter) {
@@ -39,7 +42,7 @@ export const useGetWorkspace = (workspaceId?: string) => {
       variables: {
         workspaceId: workspaceId!,
       },
-    }
+    },
   );
 
   return result;

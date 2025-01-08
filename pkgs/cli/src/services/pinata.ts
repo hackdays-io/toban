@@ -3,18 +3,18 @@ import path from "path";
 const pinataPath = path.join(__dirname, "pinata.json");
 
 export interface Pinata {
-	jwt: string
+  jwt: string;
 }
 
 export const getJwt = () => {
-	if (!existsSync(pinataPath)) {
-		writeFileSync(pinataPath, JSON.stringify({ jwt: "" }));
-	}
+  if (!existsSync(pinataPath)) {
+    writeFileSync(pinataPath, JSON.stringify({ jwt: "" }));
+  }
 
-	const data = readFileSync(pinataPath, "utf8");
-	return JSON.parse(data) as Pinata;
+  const data = readFileSync(pinataPath, "utf8");
+  return JSON.parse(data) as Pinata;
 };
 
 export const setJwt = (jwt: string) => {
-    writeFileSync(pinataPath, JSON.stringify({ jwt: jwt }));
-}
+  writeFileSync(pinataPath, JSON.stringify({ jwt: jwt }));
+};

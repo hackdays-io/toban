@@ -1,4 +1,8 @@
-import { ActionFunction, data, LoaderFunction } from "@remix-run/node";
+import {
+  type ActionFunction,
+  type LoaderFunction,
+  data,
+} from "@remix-run/node";
 import NameStone, { NameData } from "namestone-sdk";
 
 const ns = new NameStone(import.meta.env.VITE_NAMESTONE_API_KEY);
@@ -14,7 +18,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       if (!addresses) return [];
 
       const resolvedNames = await Promise.all(
-        addresses.split(",").map((address) => ns.getNames({ domain, address }))
+        addresses.split(",").map((address) => ns.getNames({ domain, address })),
       );
       return resolvedNames;
     case "resolve-addresses":
@@ -29,8 +33,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             domain,
             name,
             exact_match: exactMatch === "true" ? 1 : (0 as any),
-          })
-        )
+          }),
+        ),
       );
       return resolvedAddresses;
     default:

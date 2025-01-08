@@ -1,4 +1,4 @@
-import { CacheProvider, EmotionCache } from "@emotion/react";
+import { CacheProvider, type EmotionCache } from "@emotion/react";
 import {
   createContext,
   useContext,
@@ -34,7 +34,7 @@ export function ClientCacheProvider({ children }: ClientCacheProviderProps) {
         setCache(createEmotionCache());
       },
     }),
-    []
+    [],
   );
 
   return (

@@ -1,27 +1,27 @@
-import { FC, useEffect, useState } from "react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { Box, Text } from "@chakra-ui/react";
-import { InputImage } from "~/components/input/InputImage";
-import {
-  useUploadImageFileToIpfs,
-  useUploadHatsDetailsToIpfs,
-} from "hooks/useIpfs";
-import { ContentContainer } from "~/components/ContentContainer";
-import { InputName } from "~/components/input/InputName";
-import { InputDescription } from "~/components/input/InputDescription";
-import { BasicButton } from "~/components/BasicButton";
-import { useActiveWallet } from "hooks/useWallet";
+import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useHats } from "hooks/useHats";
 import {
+  useUploadHatsDetailsToIpfs,
+  useUploadImageFileToIpfs,
+} from "hooks/useIpfs";
+import { useActiveWallet } from "hooks/useWallet";
+import { type FC, useEffect, useState } from "react";
+import type {
+  HatsDetailSchama,
   HatsDetailsAttributes,
   HatsDetailsAuthorities,
-  HatsDetailSchama,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
-import { Hat } from "@hatsprotocol/sdk-v1-subgraph";
+import { BasicButton } from "~/components/BasicButton";
+import { ContentContainer } from "~/components/ContentContainer";
 import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { InputDescription } from "~/components/input/InputDescription";
+import { InputImage } from "~/components/input/InputImage";
+import { InputName } from "~/components/input/InputName";
+import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
@@ -51,7 +51,7 @@ const EditRole: FC = () => {
   const { getHat } = useHats();
   const [hat, setHat] = useState<Hat | undefined>(undefined);
   const [details, setDetails] = useState<HatsDetailSchama | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {
@@ -84,7 +84,7 @@ const EditRole: FC = () => {
 
   const areArraysEqual = (
     arr1: HatsDetailsAttributes,
-    arr2: HatsDetailsAttributes
+    arr2: HatsDetailsAttributes,
   ) => {
     if (arr1.length !== arr2.length) return false;
     return JSON.stringify(arr1) === JSON.stringify(arr2);

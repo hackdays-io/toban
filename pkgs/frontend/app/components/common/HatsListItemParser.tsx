@@ -1,15 +1,15 @@
+import axios from "axios";
 import {
   Children,
+  type FC,
+  type ReactNode,
   cloneElement,
-  FC,
   isValidElement,
-  ReactNode,
   useEffect,
   useState,
 } from "react";
+import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
-import { HatsDetailSchama } from "types/hats";
-import axios from "axios";
 
 interface HatsListItemParserProps {
   children: ReactNode;
@@ -43,7 +43,7 @@ export const HatsListItemParser: FC<HatsListItemParserProps> = (props) => {
       {Children.map(props.children, (child) =>
         isValidElement(child)
           ? cloneElement(child, { imageUri: parsedImageUri, detail } as any)
-          : child
+          : child,
       )}
     </>
   );

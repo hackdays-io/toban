@@ -1,172 +1,172 @@
-import { viem } from "hardhat";
 import { expect } from "chai";
+import { viem } from "hardhat";
+import { type PublicClient, type WalletClient, decodeEventLog } from "viem";
 import {
-	deployEmptyHatsModule,
-	deployHatsModuleFactory,
-	deployHatsProtocol,
-	Hats,
-	HatsModuleFactory,
+  type Hats,
+  type HatsModuleFactory,
+  deployEmptyHatsModule,
+  deployHatsModuleFactory,
+  deployHatsProtocol,
 } from "../helpers/deploy/Hats";
-import { decodeEventLog, PublicClient, WalletClient } from "viem";
 
 describe("Hats", () => {
-	let Hats: Hats;
+  let Hats: Hats;
 
-	let address1: WalletClient;
+  let address1: WalletClient;
 
-	let publicClient: PublicClient;
+  let publicClient: PublicClient;
 
-	before(async () => {
-		const { Hats: _Hats } = await deployHatsProtocol();
-		Hats = _Hats;
+  before(async () => {
+    const { Hats: _Hats } = await deployHatsProtocol();
+    Hats = _Hats;
 
-		[address1] = await viem.getWalletClients();
+    [address1] = await viem.getWalletClients();
 
-		publicClient = await viem.getPublicClient();
-	});
+    publicClient = await viem.getPublicClient();
+  });
 
-	it("should mint top hat", async () => {
-		await Hats.write.mintTopHat([
-			address1.account?.address!,
-			"Description",
-			"https://test.com/tophat.png",
-		]);
-	});
+  it("should mint top hat", async () => {
+    await Hats.write.mintTopHat([
+      address1.account?.address!,
+      "Description",
+      "https://test.com/tophat.png",
+    ]);
+  });
 
-	it("should create new hat", async () => {
-		// _adminには親HatのIdを入れる
-		// _eligibilityと_toggleはZeroAddress以外
-		let txHash = await Hats.write.createHat([
-			BigInt(
-				"0x0000000100000000000000000000000000000000000000000000000000000000"
-			),
-			"test",
-			10,
-			"0x0000000000000000000000000000000000004a75",
-			"0x0000000000000000000000000000000000004a75",
-			true,
-			"https://test.com/hat_image.png",
-		]);
+  it("should create new hat", async () => {
+    // _adminには親HatのIdを入れる
+    // _eligibilityと_toggleはZeroAddress以外
+    let txHash = await Hats.write.createHat([
+      BigInt(
+        "0x0000000100000000000000000000000000000000000000000000000000000000",
+      ),
+      "test",
+      10,
+      "0x0000000000000000000000000000000000004a75",
+      "0x0000000000000000000000000000000000004a75",
+      true,
+      "https://test.com/hat_image.png",
+    ]);
 
-		let receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
-		});
+    let receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
 
-		let firstLevelHatId!: bigint;
+    let firstLevelHatId!: bigint;
 
-		for (const log of receipt.logs) {
-			try {
-				const decodedLog = decodeEventLog({
-					abi: Hats.abi,
-					data: log.data,
-					topics: log.topics,
-				});
-				if (decodedLog.eventName == "HatCreated")
-					firstLevelHatId = decodedLog.args.id;
-			} catch (error) {}
-		}
+    for (const log of receipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: Hats.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName == "HatCreated")
+          firstLevelHatId = decodedLog.args.id;
+      } catch (error) {}
+    }
 
-		// 階層のチェック TopHat => FirstLevel
-		expect(await Hats.read.getHatLevel([firstLevelHatId])).equal(1);
+    // 階層のチェック TopHat => FirstLevel
+    expect(await Hats.read.getHatLevel([firstLevelHatId])).equal(1);
 
-		// FirstLevelHatの下に新しいHatを作成
-		txHash = await Hats.write.createHat([
-			firstLevelHatId,
-			"test",
-			10,
-			"0x0000000000000000000000000000000000004a75",
-			"0x0000000000000000000000000000000000004a75",
-			true,
-			"https://test.com/hat_image.png",
-		]);
+    // FirstLevelHatの下に新しいHatを作成
+    txHash = await Hats.write.createHat([
+      firstLevelHatId,
+      "test",
+      10,
+      "0x0000000000000000000000000000000000004a75",
+      "0x0000000000000000000000000000000000004a75",
+      true,
+      "https://test.com/hat_image.png",
+    ]);
 
-		receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
-		});
+    receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
 
-		let secondLevelHatId!: bigint;
+    let secondLevelHatId!: bigint;
 
-		for (const log of receipt.logs) {
-			try {
-				const decodedLog = decodeEventLog({
-					abi: Hats.abi,
-					data: log.data,
-					topics: log.topics,
-				});
-				if (decodedLog.eventName == "HatCreated")
-					secondLevelHatId = decodedLog.args.id;
-			} catch (error) {}
-		}
+    for (const log of receipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: Hats.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName == "HatCreated")
+          secondLevelHatId = decodedLog.args.id;
+      } catch (error) {}
+    }
 
-		// 階層のチェック TopHat => FirstLevel => SecondLevel
-		expect(await Hats.read.getHatLevel([secondLevelHatId])).equal(2);
-	});
+    // 階層のチェック TopHat => FirstLevel => SecondLevel
+    expect(await Hats.read.getHatLevel([secondLevelHatId])).equal(2);
+  });
 });
 
 describe("HatsModuleFactory", () => {
-	let Hats: Hats;
-	let HatsModuleFactory: HatsModuleFactory;
+  let Hats: Hats;
+  let HatsModuleFactory: HatsModuleFactory;
 
-	let address1: WalletClient;
+  let address1: WalletClient;
 
-	before(async () => {
-		const { Hats: _Hats } = await deployHatsProtocol();
-		Hats = _Hats;
+  before(async () => {
+    const { Hats: _Hats } = await deployHatsProtocol();
+    Hats = _Hats;
 
-		const { HatsModuleFactory: _HatsModuleFactory } =
-			await deployHatsModuleFactory(Hats.address);
-		HatsModuleFactory = _HatsModuleFactory;
+    const { HatsModuleFactory: _HatsModuleFactory } =
+      await deployHatsModuleFactory(Hats.address);
+    HatsModuleFactory = _HatsModuleFactory;
 
-		[address1] = await viem.getWalletClients();
-	});
+    [address1] = await viem.getWalletClients();
+  });
 
-	it("factory", async () => {
-		const version = await HatsModuleFactory.read.version();
+  it("factory", async () => {
+    const version = await HatsModuleFactory.read.version();
 
-		expect(version).equal("0.0.1");
-	});
+    expect(version).equal("0.0.1");
+  });
 
-	it("deploy module", async () => {
-		const { HatsModule: HatsModuleImpl } = await deployEmptyHatsModule();
+  it("deploy module", async () => {
+    const { HatsModule: HatsModuleImpl } = await deployEmptyHatsModule();
 
-		await Hats.write.mintTopHat([
-			address1.account?.address!,
-			"Description",
-			"https://test.com/tophat.png",
-		]);
+    await Hats.write.mintTopHat([
+      address1.account?.address!,
+      "Description",
+      "https://test.com/tophat.png",
+    ]);
 
-		const topHatId = BigInt(
-			"0x0000000100000000000000000000000000000000000000000000000000000000"
-		);
+    const topHatId = BigInt(
+      "0x0000000100000000000000000000000000000000000000000000000000000000",
+    );
 
-		await HatsModuleFactory.write.createHatsModule([
-			HatsModuleImpl.address,
-			topHatId,
-			"0x",
-			"0x",
-			BigInt(0),
-		]);
+    await HatsModuleFactory.write.createHatsModule([
+      HatsModuleImpl.address,
+      topHatId,
+      "0x",
+      "0x",
+      BigInt(0),
+    ]);
 
-		expect(
-			await HatsModuleFactory.read.deployed([
-				HatsModuleImpl.address,
-				topHatId,
-				"0x",
-				BigInt(0),
-			])
-		).equal(true);
+    expect(
+      await HatsModuleFactory.read.deployed([
+        HatsModuleImpl.address,
+        topHatId,
+        "0x",
+        BigInt(0),
+      ]),
+    ).equal(true);
 
-		const moduleAddress = await HatsModuleFactory.read.getHatsModuleAddress([
-			HatsModuleImpl.address,
-			topHatId,
-			"0x",
-			BigInt(0),
-		]);
+    const moduleAddress = await HatsModuleFactory.read.getHatsModuleAddress([
+      HatsModuleImpl.address,
+      topHatId,
+      "0x",
+      BigInt(0),
+    ]);
 
-		const module = await viem.getContractAt("HatsModule", moduleAddress);
+    const module = await viem.getContractAt("HatsModule", moduleAddress);
 
-		expect((await module.read.IMPLEMENTATION()).toLowerCase()).equal(
-			HatsModuleImpl.address
-		);
-	});
+    expect((await module.read.IMPLEMENTATION()).toLowerCase()).equal(
+      HatsModuleImpl.address,
+    );
+  });
 });

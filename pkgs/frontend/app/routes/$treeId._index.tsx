@@ -9,13 +9,13 @@ import {
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
-import { FC } from "react";
+import type { FC } from "react";
 import { FaPlus } from "react-icons/fa6";
-import { MyRole } from "~/components/roles/MyRole";
+import { StickyNav } from "~/components/StickyNav";
 import { CommonButton } from "~/components/common/CommonButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { MyRole } from "~/components/roles/MyRole";
 import { VRole } from "~/components/roles/VRole";
-import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceTop: FC = () => {
   const { wallet } = useActiveWallet();

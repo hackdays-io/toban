@@ -1,22 +1,29 @@
-import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import { createSmartAccountClient, SmartAccountClient } from "permissionless";
+import {
+  type ConnectedWallet,
+  usePrivy,
+  useWallets,
+} from "@privy-io/react-auth";
+import {
+  type SmartAccountClient,
+  createSmartAccountClient,
+} from "permissionless";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Account,
-  Address,
+  http,
+  type Account,
+  type Address,
+  type CustomTransport,
+  type Transport,
+  type WalletClient,
   createWalletClient,
   custom,
-  CustomTransport,
-  http,
-  Transport,
-  WalletClient,
 } from "viem";
 import {
+  type SmartAccount,
+  type SmartAccountImplementation,
   entryPoint07Address,
-  SmartAccount,
-  SmartAccountImplementation,
 } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
 
@@ -57,7 +64,7 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
     const create = async () => {
       setClient(undefined);
       const embeddedWallet = wallets.find(
-        (wallet) => wallet.connectorType === "embedded"
+        (wallet) => wallet.connectorType === "embedded",
       );
       const owner = await embeddedWallet?.getEthereumProvider();
       if (!owner) return;

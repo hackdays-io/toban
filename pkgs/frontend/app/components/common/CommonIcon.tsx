@@ -1,5 +1,5 @@
-import { useState, useEffect, ReactNode } from "react";
 import { Box, Image } from "@chakra-ui/react";
+import { type ReactNode, useEffect, useState } from "react";
 
 interface CommonIconProps {
   imageUrl: string | undefined;

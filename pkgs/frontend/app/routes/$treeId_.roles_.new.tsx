@@ -1,24 +1,24 @@
-import { FC, useState } from "react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { Box, Text } from "@chakra-ui/react";
-import { InputImage } from "~/components/input/InputImage";
-import {
-  useUploadImageFileToIpfs,
-  useUploadHatsDetailsToIpfs,
-} from "hooks/useIpfs";
-import { ContentContainer } from "~/components/ContentContainer";
-import { InputName } from "~/components/input/InputName";
-import { InputDescription } from "~/components/input/InputDescription";
-import { BasicButton } from "~/components/BasicButton";
-import { useActiveWallet } from "hooks/useWallet";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useHats } from "hooks/useHats";
 import {
+  useUploadHatsDetailsToIpfs,
+  useUploadImageFileToIpfs,
+} from "hooks/useIpfs";
+import { useActiveWallet } from "hooks/useWallet";
+import { type FC, useState } from "react";
+import type {
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { BasicButton } from "~/components/BasicButton";
+import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
+import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { InputDescription } from "~/components/input/InputDescription";
+import { InputImage } from "~/components/input/InputImage";
+import { InputName } from "~/components/input/InputName";
+import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>

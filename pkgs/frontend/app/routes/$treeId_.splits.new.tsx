@@ -10,7 +10,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
+import type { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
   useAddressesByNames,
@@ -20,32 +20,32 @@ import {
 import { useAssignableHats, useHats } from "hooks/useHats";
 import { useSplitsCreator } from "hooks/useSplitsCreator";
 import {
-  ChangeEvent,
-  FC,
+  type ChangeEvent,
+  type FC,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { HatsDetailSchama } from "types/hats";
+import {
+  type FieldArrayWithId,
+  type UseFieldArrayUpdate,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
+import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
-import { Address } from "viem";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
+import { PageHeader } from "~/components/PageHeader";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
-import { PageHeader } from "~/components/PageHeader";
+import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Field } from "~/components/ui/field";
-import {
-  FieldArrayWithId,
-  useFieldArray,
-  UseFieldArrayUpdate,
-  useForm,
-} from "react-hook-form";
-import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 
 interface RoleItemProps {
   update: UseFieldArrayUpdate<FormData, "roles">;
@@ -135,11 +135,11 @@ const RoleItem: FC<RoleItemProps> = ({
                       <Checkbox
                         colorPalette="blue"
                         checked={field.wearers.includes(
-                          name[0]?.address.toLowerCase() as Address
+                          name[0]?.address.toLowerCase() as Address,
                         )}
                         onChange={() =>
                           handleOnCheck(
-                            name[0]?.address.toLowerCase() as Address
+                            name[0]?.address.toLowerCase() as Address,
                           )
                         }
                       />
@@ -209,7 +209,7 @@ const SplitterNew: FC = () => {
 
   const baseHats = useMemo(() => {
     return hats.filter(
-      (h) => Number(h.levelAtLocalTree) == 2 && h.wearers?.length
+      (h) => Number(h.levelAtLocalTree) == 2 && h.wearers?.length,
     );
   }, [hats]);
 
@@ -262,7 +262,7 @@ const SplitterNew: FC = () => {
           ? [
               BigInt(
                 role.multiplier *
-                  10 ** String(role.multiplier).split(".")[1].length
+                  10 ** String(role.multiplier).split(".")[1].length,
               ),
               BigInt(10 ** String(role.multiplier).split(".")[1].length),
             ]
@@ -293,8 +293,8 @@ const SplitterNew: FC = () => {
         ([address, percentAllocation]) => ({
           address,
           percentAllocation,
-        })
-      )
+        }),
+      ),
     );
   };
 

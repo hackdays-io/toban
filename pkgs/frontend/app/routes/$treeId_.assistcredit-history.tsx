@@ -1,7 +1,7 @@
 import { Box, Heading, List, Text } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
-import { FC } from "react";
+import type { FC } from "react";
 import { abbreviateAddress } from "utils/wallet";
 import { StickyNav } from "~/components/StickyNav";
 

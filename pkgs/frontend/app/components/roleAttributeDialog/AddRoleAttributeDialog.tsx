@@ -1,7 +1,7 @@
 import { Button } from "@chakra-ui/react";
+import type { HatsDetailsAttributes } from "types/hats";
 import { DialogTrigger } from "../ui/dialog";
 import { BaseRoleAttributeDialog } from "./BaseRoleAttributeDialog";
-import { HatsDetailsAttributes } from "types/hats";
 
 const PlusButton = () => {
   return (

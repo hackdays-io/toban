@@ -1,25 +1,25 @@
-import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
-import { useCallback, useEffect, useState } from "react";
-import { Address, decodeEventLog, encodeFunctionData } from "viem";
-import {
-  FRACTION_TOKEN_ADDRESS,
-  fractionTokenBaseConfig,
-} from "./useContracts";
-import { useActiveWallet } from "./useWallet";
-import { publicClient } from "./useViem";
 import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react/hooks";
-import {
+import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
+import type {
   GetTransferFractionTokensQuery,
   GetTransferFractionTokensQueryVariables,
   TransferFractionToken_Filter,
 } from "gql/graphql";
+import { useCallback, useEffect, useState } from "react";
+import { type Address, decodeEventLog, encodeFunctionData } from "viem";
+import {
+  FRACTION_TOKEN_ADDRESS,
+  fractionTokenBaseConfig,
+} from "./useContracts";
+import { publicClient } from "./useViem";
+import { useActiveWallet } from "./useWallet";
 
 export const useTokenRecipients = (
   params: {
     wearer: Address;
     hatId: Address;
-  }[]
+  }[],
 ) => {
   const [recipients, setRecipients] = useState<
     {
@@ -44,7 +44,7 @@ export const useTokenRecipients = (
               hatId,
               assistants: (await getTokenRecipients({ tokenId })) || [],
             };
-          })
+          }),
         );
 
         const formattedRecipients = fetchedRecipients
@@ -64,7 +64,7 @@ export const useTokenRecipients = (
             [] as {
               assistant: Address;
               hatIds: Address[];
-            }[]
+            }[],
           );
 
         setRecipients(formattedRecipients);
@@ -82,7 +82,7 @@ export const useTokenRecipients = (
 export const useBalanceOfFractionToken = (
   holder: Address,
   address: Address,
-  hatId: bigint
+  hatId: bigint,
 ) => {
   const [balance, setBalance] = useState<bigint>();
 
@@ -137,7 +137,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    []
+    [],
   );
 
   /**
@@ -163,7 +163,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    []
+    [],
   );
 
   const mintInitialSupplyFractionToken = useCallback(
@@ -209,7 +209,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   /**
@@ -260,7 +260,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   /**
@@ -326,7 +326,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   return {
@@ -414,7 +414,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
       return txHash;
     },
-    [wallet, initialized, tokenId]
+    [wallet, initialized, tokenId],
   );
 
   return { isLoading, transferFractionToken };

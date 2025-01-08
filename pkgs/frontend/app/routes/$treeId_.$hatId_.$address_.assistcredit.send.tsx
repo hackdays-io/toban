@@ -21,17 +21,17 @@ import {
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
-import { NameData, TextRecords } from "namestone-sdk";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { type NameData, TextRecords } from "namestone-sdk";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
-import { Address } from "viem";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
+import { PageHeader } from "~/components/PageHeader";
 import { CommonInput } from "~/components/common/CommonInput";
 import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
-import { PageHeader } from "~/components/PageHeader";
 import { Field } from "~/components/ui/field";
 
 const AssistCreditSend: FC = () => {
@@ -42,7 +42,7 @@ const AssistCreditSend: FC = () => {
   const balanceOfToken = useBalanceOfFractionToken(
     me.identity?.address as Address,
     address as Address,
-    BigInt(hatId!)
+    BigInt(hatId!),
   );
 
   // 送信先取得
@@ -53,8 +53,7 @@ const AssistCreditSend: FC = () => {
     if (!tree || !tree.hats) return [];
     return tree.hats
       .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 0)
-      .map((h) => h.wearers)
-      .flat()
+      .flatMap((h) => h.wearers)
       .filter((w) => w)
       .map((w) => w!.id);
   }, [tree]);
@@ -85,14 +84,14 @@ const AssistCreditSend: FC = () => {
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
     BigInt(hatId!),
-    address as Address
+    address as Address,
   );
   const send = useCallback(async () => {
     if (!receiver || !hatId || !me || isLoading) return;
     try {
       const res = await transferFractionToken(
         receiver.address as Address,
-        BigInt(amount)
+        BigInt(amount),
       );
       res && navigate(`/${treeId}/${hatId}/${address}`);
     } catch (error) {

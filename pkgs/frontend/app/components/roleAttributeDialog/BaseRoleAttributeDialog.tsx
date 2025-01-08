@@ -1,18 +1,18 @@
-import { Box, VStack, Button } from "@chakra-ui/react";
-import {
-  DialogRoot,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogActionTrigger,
-} from "../ui/dialog";
-import { InputName } from "../input/InputName";
+import { Box, Button, VStack } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import type { HatsDetailsAttributes } from "types/hats";
 import { InputDescription } from "../input/InputDescription";
 import { InputLink } from "../input/InputLink";
-import { useEffect, useState } from "react";
-import { HatsDetailsAttributes } from "types/hats";
+import { InputName } from "../input/InputName";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+} from "../ui/dialog";
 
 const BUTTON_TEXT_MAP = {
   add: "Add",

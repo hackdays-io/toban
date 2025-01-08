@@ -1,19 +1,19 @@
-import { FC, useState, useEffect, useMemo, useCallback } from "react";
-import { Box, Button, Text, HStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Text } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import { Address } from "viem";
 import { useAddressesByNames } from "hooks/useENS";
-import { isValidEthAddress, abbreviateAddress } from "utils/wallet";
 import { useGetHat } from "hooks/useHats";
-import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { HatsDetailSchama } from "types/hats";
-import { RoleIcon } from "~/components/icon/RoleIcon";
-import { CommonInput } from "~/components/common/CommonInput";
-import { PageHeader } from "~/components/PageHeader";
-import { FaCircleCheck } from "react-icons/fa6";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
-import CommonButton from "~/components/common/CommonButton";
 import { useGetWorkspace } from "hooks/useWorkspace";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FaCircleCheck } from "react-icons/fa6";
+import type { HatsDetailSchama } from "types/hats";
+import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
+import type { Address } from "viem";
+import { PageHeader } from "~/components/PageHeader";
+import CommonButton from "~/components/common/CommonButton";
+import { CommonInput } from "~/components/common/CommonInput";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { RoleIcon } from "~/components/icon/RoleIcon";
 
 interface RoleDetailProps {
   imageUri?: string;
@@ -46,7 +46,7 @@ const AssignRole: FC = () => {
   const { data } = useGetWorkspace(treeId!);
   console.log(data);
   const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule(
-    data?.workspace?.hatsTimeFrameModule as Address
+    data?.workspace?.hatsTimeFrameModule as Address,
   );
 
   const { hat, isLoading } = useGetHat(hatId!);
@@ -95,7 +95,7 @@ const AssignRole: FC = () => {
       finalAddress,
       startDatetime
         ? BigInt(new Date(startDatetime as any).getTime() / 1000)
-        : BigInt(0)
+        : BigInt(0),
     );
   }, [hatId, resolvedAddress, inputValue, mintHat]);
 

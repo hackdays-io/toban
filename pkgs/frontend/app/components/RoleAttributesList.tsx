@@ -1,6 +1,6 @@
-import { FC } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import { HatsDetailsAttributes } from "types/hats";
+import type { FC } from "react";
+import type { HatsDetailsAttributes } from "types/hats";
 import { EditRoleAttributeDialog } from "~/components/roleAttributeDialog/EditRoleAttributeDialog";
 
 export const RoleAttributesList: FC<{

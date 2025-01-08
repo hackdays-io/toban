@@ -1,15 +1,15 @@
-import { Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
-import { FC, useMemo } from "react";
+import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { RoleTag } from "~/components/roles/RoleTag";
-import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
@@ -29,7 +29,7 @@ const WorkspaceMember: FC = () => {
           (h) =>
             h.levelAtLocalTree &&
             h.levelAtLocalTree >= 2 &&
-            h.wearers?.some(({ id }) => id === w.id)
+            h.wearers?.some(({ id }) => id === w.id),
         ),
       }));
   }, [tree]);
@@ -46,7 +46,7 @@ const WorkspaceMember: FC = () => {
         ...n,
         wearer: wearers.find((w) => w.id === n.address.toLowerCase()),
       })),
-    [wearers, wearersNames]
+    [wearers, wearersNames],
   );
 
   // hatIdとwearerのペアを取得
@@ -56,7 +56,7 @@ const WorkspaceMember: FC = () => {
       .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 2)
       .flatMap(
         ({ id, wearers }) =>
-          wearers?.map((w) => ({ hatId: id, wearer: w.id })) || []
+          wearers?.map((w) => ({ hatId: id, wearer: w.id })) || [],
       );
   }, [tree]);
 
@@ -68,7 +68,9 @@ const WorkspaceMember: FC = () => {
       id: assistant,
       hats: tree.hats!.filter(
         (h) =>
-          h.levelAtLocalTree && h.levelAtLocalTree >= 2 && hatIds.includes(h.id)
+          h.levelAtLocalTree &&
+          h.levelAtLocalTree >= 2 &&
+          hatIds.includes(h.id),
       ),
     }));
   }, [tree, recipients]);
@@ -76,7 +78,7 @@ const WorkspaceMember: FC = () => {
   // assistantsのidをメモ化
   const assistantsIds = useMemo(
     () => assistants.map(({ id }) => id),
-    [assistants]
+    [assistants],
   );
   // namestone
   const { names: assistantsNames } = useNamesByAddresses(assistantsIds);
@@ -87,10 +89,10 @@ const WorkspaceMember: FC = () => {
       assistantsNames.flat().map((n) => ({
         ...n,
         assistant: assistants.find(
-          (a) => a.id.toLowerCase() === n.address.toLowerCase()
+          (a) => a.id.toLowerCase() === n.address.toLowerCase(),
         ),
       })),
-    [assistants, assistantsNames]
+    [assistants, assistantsNames],
   );
 
   return (

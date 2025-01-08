@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { NameData, TextRecords } from "namestone-sdk";
 import axios from "axios";
+import type { NameData, TextRecords } from "namestone-sdk";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useActiveWallet } from "./useWallet";
 
 export const useActiveWalletIdentity = () => {
@@ -28,13 +28,13 @@ export const useNamesByAddresses = (addresses?: string[]) => {
         "/api/namestone/resolve-names",
         {
           params: { addresses: addresses.join(",") },
-        }
+        },
       );
       const unresolvedAddresses = addresses
         .filter((address) => {
           return !data.some(
             (nameData) =>
-              nameData[0]?.address.toLowerCase() === address.toLowerCase()
+              nameData[0]?.address.toLowerCase() === address.toLowerCase(),
           );
         })
         .map((address) => {
@@ -64,7 +64,7 @@ export const useAddressesByNames = (names?: string[], exactMatch?: boolean) => {
         "/api/namestone/resolve-addresses",
         {
           params: { names: resolveNames.join(","), exact_match: exactMatch },
-        }
+        },
       );
       setAddresses(data);
       return data as NameData[][];
@@ -99,7 +99,7 @@ export const useSetName = () => {
       }
       setIsLoading(false);
     },
-    []
+    [],
   );
 
   return { setName, isLoading };

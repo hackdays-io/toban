@@ -56,5 +56,5 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         )}
       </ChakraSlider.Root>
     );
-  }
+  },
 );

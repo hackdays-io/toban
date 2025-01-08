@@ -8,30 +8,30 @@ import path from "path";
  * @returns
  */
 export function getContractAddress(
-	chainId: string,
-	contractName: string
+  chainId: string,
+  contractName: string,
 ): string | undefined {
-	try {
-		// ファイルパスを構築
-		const filePath = path.join(
-			__dirname,
-			"../../",
-			"ignition",
-			"deployments",
-			`chain-${chainId}`,
-			"deployed_addresses.json"
-		);
+  try {
+    // ファイルパスを構築
+    const filePath = path.join(
+      __dirname,
+      "../../",
+      "ignition",
+      "deployments",
+      `chain-${chainId}`,
+      "deployed_addresses.json",
+    );
 
-		// JSONファイルの内容を読み込み
-		const fileContent = fs.readFileSync(filePath, "utf-8");
+    // JSONファイルの内容を読み込み
+    const fileContent = fs.readFileSync(filePath, "utf-8");
 
-		// JSONをオブジェクトにパース
-		const deployedAddresses = JSON.parse(fileContent);
+    // JSONをオブジェクトにパース
+    const deployedAddresses = JSON.parse(fileContent);
 
-		// 指定されたコントラクト名のアドレスを返す
-		return deployedAddresses[contractName];
-	} catch (error) {
-		console.error("Error reading contract address:", error);
-		return undefined;
-	}
+    // 指定されたコントラクト名のアドレスを返す
+    return deployedAddresses[contractName];
+  } catch (error) {
+    console.error("Error reading contract address:", error);
+    return undefined;
+  }
 }

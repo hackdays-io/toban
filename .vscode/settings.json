@@ -1,6 +1,6 @@
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "biomejs.biome",
   "[typescript]": {
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit"
@@ -8,5 +8,8 @@
   },
   "[plantuml]": {
     "editor.defaultFormatter": "jebbs.plantuml"
-  }
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true
 }

@@ -1,8 +1,8 @@
 import { Box, HStack, VStack, Text, Heading } from "@chakra-ui/react";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useHoldersWithBalance } from "hooks/useFractionToken";
-import { useTreeInfo } from "hooks/useHats";
+import { useHats, useTreeInfo } from "hooks/useHats";
 import {
   useActiveState,
   useDeactivate,
@@ -96,6 +96,7 @@ const RoleHolderDetails: FC = () => {
     [data]
   );
 
+  // HatsTimeFrameModule関連の情報をボタンクリックの後再取得できるようにカウンターを設置
   const [count, setCount] = useState(0);
   const { isActive, woreTime, wearingElapsedTime } = useActiveState(
     hatsTimeFrameModuleAddress,
@@ -104,12 +105,16 @@ const RoleHolderDetails: FC = () => {
     count
   );
 
+  // reactivate, deactivate, renounce
   const { reactivate, isLoading: isReactivating } = useReactivate(
     hatsTimeFrameModuleAddress
   );
   const { deactivate, isLoading: isDeactivating } = useDeactivate(
     hatsTimeFrameModuleAddress
   );
+  const { renounceHat, isLoading: isRenouncing } = useHats();
+
+  const navigate = useNavigate();
 
   if (!hat) return;
 
@@ -199,8 +204,17 @@ const RoleHolderDetails: FC = () => {
               {isReactivating ? "Reactivating..." : "Reactivate"}
             </BasicButton>
           )}
-          <BasicButton marginY={4} bgColor="red.600" onClick={() => {}}>
-            Revoke
+          {/* 現時点では表示されても実際にrevokeできるのはwearerのみ */}
+          <BasicButton
+            marginY={4}
+            bgColor="red.600"
+            onClick={async () => {
+              await renounceHat(BigInt(hatId || 0));
+              navigate(`/${treeId}/${hatId}`);
+            }}
+            disabled={isRenouncing}
+          >
+            {isRenouncing ? "Revoking..." : "Revoke"}
           </BasicButton>
         </>
       )}

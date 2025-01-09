@@ -114,12 +114,14 @@ export const ActiveState: FC<HolderDetailProps> = ({
       )}
       {formattedWoreTime && formattedWearingElapsedTime && (
         <Box>
-          <Text>
-            Role assigned on{" "}
-            <Text as="span" fontWeight="medium">
-              {formattedWoreTime}
+          {isActive && (
+            <Text>
+              Activated on{" "}
+              <Text as="span" fontWeight="medium">
+                {formattedWoreTime}
+              </Text>
             </Text>
-          </Text>
+          )}
           <Text>
             Active in{" "}
             <Text as="span" fontWeight="medium">

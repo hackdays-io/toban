@@ -5,12 +5,14 @@ import { GetWorkspaceQuery, GetWorkspaceQueryVariables } from "gql/graphql";
 const queryGetWorkspaces = gql(`
   query GetWorkspaces($where: Workspace_filter) {
     workspaces(where: $where) {
+      creator
       topHatId
       splitCreator
       id
       hatterHatId
       hatsTimeFrameModule
-      creator
+      blockTimestamp
+      blockNumber
     }
   }
 `);
@@ -24,6 +26,8 @@ const queryGetWorkspace = gql(`
       id
       splitCreator
       topHatId
+      blockTimestamp
+      blockNumber
     }
   }
 `);

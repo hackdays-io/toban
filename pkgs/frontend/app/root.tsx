@@ -9,7 +9,7 @@ import {
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { Box, Container } from "@chakra-ui/react";
+import { Container } from "@chakra-ui/react";
 import { Header } from "./components/Header";
 import { ApolloProvider } from "@apollo/client/react";
 import { goldskyClient } from "utils/apollo";

@@ -285,7 +285,7 @@ describe("FractionToken", () => {
       // FractionTokenをアップグレード
       const newFractionToken = await upgradeFractionToken(
         FractionToken.address,
-        "FractionTokenMockV2",
+        "FractionToken_Mock_v2",
         ["", 10000n, Hats.address, zeroAddress],
       );
 
@@ -298,7 +298,7 @@ describe("FractionToken", () => {
       // FractionTokenをアップグレード
       const newFractionToken = await upgradeFractionToken(
         FractionToken.address,
-        "FractionTokenMockV2",
+        "FractionToken_Mock_v2",
         ["", 10000n, Hats.address, zeroAddress],
       );
 
@@ -357,7 +357,7 @@ describe("FractionToken", () => {
       // FractionTokenをアップグレード
       const newFractionToken = await upgradeFractionToken(
         FractionToken.address,
-        "FractionTokenMockV2",
+        "FractionToken_Mock_v2",
         ["", 10000n, Hats.address, zeroAddress],
       );
 

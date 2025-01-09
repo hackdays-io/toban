@@ -1,18 +1,11 @@
-import {
-  type ConnectedWallet,
-  usePrivy,
-  useWallets,
-} from "@privy-io/react-auth";
+import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import {
   type SmartAccountClient,
   createSmartAccountClient,
 } from "permissionless";
-import {
-  toSimpleSmartAccount,
-  toThirdwebSmartAccount,
-} from "permissionless/accounts";
+import { toThirdwebSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   http,
   type Account,

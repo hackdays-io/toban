@@ -7,7 +7,7 @@ import { SplitsCreator } from "../SplitsCreator.sol";
 import { ISplitsCreator } from "../ISplitsCreator.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract SplitsCreatorFactoryMockV2 is OwnableUpgradeable {
+contract SplitsCreatorFactory_Mock_v2 is OwnableUpgradeable {
 	event SplitCreatorCreated(
 		address indexed creator,
 		address indexed splitCreator,
@@ -18,7 +18,7 @@ contract SplitsCreatorFactoryMockV2 is OwnableUpgradeable {
 	);
 
 	address public SPLITS_CREATOR_IMPLEMENTATION;
-	
+
 	address public BIG_BANG;
 
 	function initialize(

@@ -215,7 +215,7 @@ const SplitterNew: FC = () => {
 
   const [splitterName, setSplitterName] = useState<string>("");
   const _splitterName = useMemo(() => {
-    return [`${splitterName}.splitter`];
+    return [`${splitterName}.split`];
   }, [splitterName]);
   const { addresses } = useAddressesByNames(_splitterName, true);
   const availableName = useMemo(() => {
@@ -256,29 +256,32 @@ const SplitterNew: FC = () => {
   const calcParams = () => {
     const data = getValues();
 
-    return data.roles.map((role) => {
-      const [multiplierTop, multiplierBottom] = role.multiplier
-        ? String(role.multiplier).includes(".")
-          ? [
-              BigInt(
-                role.multiplier *
-                  10 ** String(role.multiplier).split(".")[1].length
-              ),
-              BigInt(10 ** String(role.multiplier).split(".")[1].length),
-            ]
-          : [BigInt(role.multiplier), BigInt(1)]
-        : [BigInt(1), BigInt(1)];
+    return data.roles
+      .filter((r) => r.active)
+      .map((role) => {
+        const [multiplierTop, multiplierBottom] = role.multiplier
+          ? String(role.multiplier).includes(".")
+            ? [
+                BigInt(
+                  role.multiplier *
+                    10 ** String(role.multiplier).split(".")[1].length
+                ),
+                BigInt(10 ** String(role.multiplier).split(".")[1].length),
+              ]
+            : [BigInt(role.multiplier), BigInt(1)]
+          : [BigInt(1), BigInt(1)];
 
-      return {
-        hatId: BigInt(role.hatId),
-        multiplierTop,
-        multiplierBottom,
-        wearers: role.wearers,
-      };
-    });
+        return {
+          hatId: BigInt(role.hatId),
+          multiplierTop,
+          multiplierBottom,
+          wearers: role.wearers,
+        };
+      });
   };
 
-  const handlePreview = async () => {
+  const handlePreview = useCallback(async () => {
+    if (!availableName) return;
     const params = calcParams();
     const res = await previewSplits(params);
 
@@ -296,7 +299,7 @@ const SplitterNew: FC = () => {
         })
       )
     );
-  };
+  }, [availableName]);
 
   const { setName } = useSetName();
   const handleCreateSplitter = async () => {
@@ -320,7 +323,7 @@ const SplitterNew: FC = () => {
 
   return (
     <Grid
-      minH="calc(100vh - 72px)"
+      minH="calc(100vh - 100px)"
       gridTemplateRows={preview ? "auto auto 1fr auto" : "auto auto 1fr auto"}
     >
       <PageHeader
@@ -388,7 +391,7 @@ const SplitterNew: FC = () => {
               ))}
             </List.Root>
           </Box>
-          <BasicButton onClick={handlePreview} mb={5}>
+          <BasicButton onClick={handlePreview} mb={5} disabled={!availableName}>
             プレビュー
           </BasicButton>
         </>

@@ -34,7 +34,7 @@ const Login: FC = () => {
   }, [userName, addresses]);
 
   const handleSubmit = async () => {
-    if (!wallet) return;
+    if (!wallet || !availableName) return;
 
     const params: {
       name: string;

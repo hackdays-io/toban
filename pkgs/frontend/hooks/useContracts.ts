@@ -15,9 +15,12 @@ export const hatsContractBaseConfig = {
   abi: HATS_ABI,
 };
 
-export const hatsTimeFrameContractBaseConfig = {
+export const hatsTimeFrameContractBaseConfig = (
+  hatsTimeFrameModuleAddress: Address
+) => ({
+  address: hatsTimeFrameModuleAddress,
   abi: HATS_TIME_FRAME_MODULE_ABI,
-};
+});
 
 export const fractionTokenBaseConfig = {
   address: FRACTION_TOKEN_ADDRESS as Address,

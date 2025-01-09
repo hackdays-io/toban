@@ -115,13 +115,12 @@ const WorkspaceMember: FC = () => {
                 </Text>
                 <HStack wrap="wrap" width="full" gap={2}>
                   {m.wearer?.hats?.map((h) => (
-                    <Link to={`/${treeId}/${h.id}/${m.address}`}>
+                    <Link key={h.id} to={`/${treeId}/${h.id}/${m.address}`}>
                       <HatsListItemParser
-                        key={h.id}
                         imageUri={h.imageUri}
                         detailUri={h.details}
                       >
-                        <RoleTag />
+                        <RoleTag bgColor="yellow.200" />
                       </HatsListItemParser>
                     </Link>
                   ))}

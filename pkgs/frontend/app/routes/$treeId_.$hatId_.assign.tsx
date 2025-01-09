@@ -1,4 +1,6 @@
 import { Box, Button, HStack, Text } from "@chakra-ui/react";
+import { FC, useState, useEffect, useMemo, useCallback } from "react";
+import { Box, Button, Text, HStack, Grid } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
 import { useAddressesByNames } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
@@ -100,43 +102,46 @@ const AssignRole: FC = () => {
   }, [hatId, resolvedAddress, inputValue, mintHat]);
 
   return (
-    <>
-      <PageHeader title="役割を割り当てる" />
+    <Grid gridTemplateRows="1fr auto" minH="calc(100vh - 100px)" pb={5}>
+      <Box>
+        <Box mb={5}>
+          <PageHeader title="役割を割り当てる" />
+        </Box>
+        <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
+          <RoleDetail />
+        </HatsListItemParser>
 
-      <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
-        <RoleDetail />
-      </HatsListItemParser>
+        {/* User name or address input */}
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
+            ユーザー名 or ウォレットアドレス
+          </Text>
+          <CommonInput
+            placeholder="ユーザー名 or ウォレットアドレス"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+          />
+          {resolvedAddress && !isValidEthAddress(inputValue) && (
+            <HStack mt={1} fontSize="sm" justifyContent="end" color="blue.300">
+              <FaCircleCheck />
+              <Text color="gray.500">{abbreviateAddress(resolvedAddress)}</Text>
+            </HStack>
+          )}
+        </Box>
 
-      {/* User name or address input */}
-      <Box mb={4}>
-        <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
-          ユーザー名 or ウォレットアドレス
-        </Text>
-        <CommonInput
-          placeholder="ユーザー名 or ウォレットアドレス"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-        />
-        {resolvedAddress && !isValidEthAddress(inputValue) && (
-          <HStack mt={1} fontSize="sm" justifyContent="end" color="blue.300">
-            <FaCircleCheck />
-            <Text color="gray.500">{abbreviateAddress(resolvedAddress)}</Text>
-          </HStack>
-        )}
-      </Box>
-
-      {/* Date input */}
-      <Box mb={4}>
-        <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
-          開始日
-        </Text>
-        <CommonInput
-          value={startDatetime!}
-          onChange={(e) => {
-            setStartDatetime(e.target.value);
-          }}
-          type="datetime-local"
-        />
+        {/* Date input */}
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
+            開始日
+          </Text>
+          <CommonInput
+            value={startDatetime!}
+            onChange={(e) => {
+              setStartDatetime(e.target.value);
+            }}
+            type="datetime-local"
+          />
+        </Box>
       </Box>
 
       {/* Assign Button */}
@@ -151,7 +156,7 @@ const AssignRole: FC = () => {
       >
         Assign
       </CommonButton>
-    </>
+    </Grid>
   );
 };
 

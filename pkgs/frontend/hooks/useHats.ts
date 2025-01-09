@@ -478,6 +478,32 @@ export const useHats = () => {
     [wallet],
   );
 
+  const renounceHat = useCallback(
+    async (hatId: bigint) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "renounceHat",
+          args: [hatId],
+        });
+
+        await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet]
+  );
+
   return {
     isLoading,
     getTreeInfo,
@@ -491,6 +517,7 @@ export const useHats = () => {
     mintHat,
     changeHatDetails,
     changeHatImageURI,
+    renounceHat,
   };
 };
 

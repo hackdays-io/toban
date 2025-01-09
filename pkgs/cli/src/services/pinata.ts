@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import path from "path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 const pinataPath = path.join(__dirname, "pinata.json");
 
 export interface Pinata {

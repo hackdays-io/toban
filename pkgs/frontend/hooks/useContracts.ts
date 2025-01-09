@@ -16,7 +16,7 @@ export const hatsContractBaseConfig = {
 };
 
 export const hatsTimeFrameContractBaseConfig = (
-  hatsTimeFrameModuleAddress: Address
+  hatsTimeFrameModuleAddress: Address,
 ) => ({
   address: hatsTimeFrameModuleAddress,
   abi: HATS_TIME_FRAME_MODULE_ABI,

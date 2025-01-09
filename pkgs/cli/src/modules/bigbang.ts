@@ -50,7 +50,7 @@ export const bigbang = async (params: {
       });
       return decodedLog.eventName === "Executed";
     } catch (error) {}
-  })!;
+  });
 
   stop();
 

@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 import jsonfile from "jsonfile";
 
 const BASE_PATH = "outputs";
@@ -38,7 +38,7 @@ const resetContractAddressesJson = ({ network }: { network: string }): void => {
       fileName,
       getFilePath({
         network: network,
-        basePath: `./tmp`,
+        basePath: "./tmp",
         suffix: strDate,
       }),
     );
@@ -59,15 +59,15 @@ const _updateJson = ({
 }: {
   group: string;
   name: string | null;
-  value: any;
-  obj: any;
+  value: Record<string, string> | string;
+  obj: Record<string, Record<string, string>>;
 }) => {
   if (obj[group] === undefined) obj[group] = {};
   if (name === null) {
-    obj[group] = value;
+    obj[group] = value as Record<string, string>;
   } else {
-    if (obj[group][name] === undefined) obj[group][name] = {};
-    obj[group][name] = value;
+    if (obj[group][name] === undefined) obj[group][name] = "";
+    obj[group][name] = JSON.stringify(value);
   }
 };
 
@@ -104,7 +104,7 @@ const writeValueToGroup = ({
   fileName,
 }: {
   group: string;
-  value: any;
+  value: Record<string, string> | string;
   fileName: string;
 }) => {
   try {

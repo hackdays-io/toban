@@ -1,6 +1,11 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
-import { type PublicClient, type WalletClient, decodeEventLog } from "viem";
+import {
+  type Address,
+  type PublicClient,
+  type WalletClient,
+  decodeEventLog,
+} from "viem";
 import {
   type Hats,
   type HatsModuleFactory,
@@ -9,11 +14,18 @@ import {
   deployHatsProtocol,
 } from "../helpers/deploy/Hats";
 
+const validateAddress = (client: WalletClient): Address => {
+  if (!client.account?.address) {
+    throw new Error("Wallet client account address is undefined");
+  }
+  return client.account.address;
+};
+
 describe("Hats", () => {
   let Hats: Hats;
 
   let address1: WalletClient;
-
+  let address1Validated: Address;
   let publicClient: PublicClient;
 
   before(async () => {
@@ -21,13 +33,14 @@ describe("Hats", () => {
     Hats = _Hats;
 
     [address1] = await viem.getWalletClients();
+    address1Validated = validateAddress(address1);
 
     publicClient = await viem.getPublicClient();
   });
 
   it("should mint top hat", async () => {
     await Hats.write.mintTopHat([
-      address1.account?.address!,
+      address1Validated,
       "Description",
       "https://test.com/tophat.png",
     ]);
@@ -52,7 +65,7 @@ describe("Hats", () => {
       hash: txHash,
     });
 
-    let firstLevelHatId!: bigint;
+    let firstLevelHatId: bigint | undefined;
 
     for (const log of receipt.logs) {
       try {
@@ -61,9 +74,14 @@ describe("Hats", () => {
           data: log.data,
           topics: log.topics,
         });
-        if (decodedLog.eventName == "HatCreated")
+        if (decodedLog.eventName === "HatCreated") {
           firstLevelHatId = decodedLog.args.id;
+        }
       } catch (error) {}
+    }
+
+    if (!firstLevelHatId) {
+      throw new Error("First level hat ID not found in transaction logs");
     }
 
     // 階層のチェック TopHat => FirstLevel
@@ -84,7 +102,7 @@ describe("Hats", () => {
       hash: txHash,
     });
 
-    let secondLevelHatId!: bigint;
+    let secondLevelHatId: bigint | undefined;
 
     for (const log of receipt.logs) {
       try {
@@ -93,9 +111,14 @@ describe("Hats", () => {
           data: log.data,
           topics: log.topics,
         });
-        if (decodedLog.eventName == "HatCreated")
+        if (decodedLog.eventName === "HatCreated") {
           secondLevelHatId = decodedLog.args.id;
+        }
       } catch (error) {}
+    }
+
+    if (!secondLevelHatId) {
+      throw new Error("Second level hat ID not found in transaction logs");
     }
 
     // 階層のチェック TopHat => FirstLevel => SecondLevel
@@ -108,6 +131,7 @@ describe("HatsModuleFactory", () => {
   let HatsModuleFactory: HatsModuleFactory;
 
   let address1: WalletClient;
+  let address1Validated: Address;
 
   before(async () => {
     const { Hats: _Hats } = await deployHatsProtocol();
@@ -118,6 +142,7 @@ describe("HatsModuleFactory", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     [address1] = await viem.getWalletClients();
+    address1Validated = validateAddress(address1);
   });
 
   it("factory", async () => {
@@ -130,7 +155,7 @@ describe("HatsModuleFactory", () => {
     const { HatsModule: HatsModuleImpl } = await deployEmptyHatsModule();
 
     await Hats.write.mintTopHat([
-      address1.account?.address!,
+      address1Validated,
       "Description",
       "https://test.com/tophat.png",
     ]);

@@ -294,11 +294,11 @@ export const useHats = () => {
           hatId: hatterHat.id,
         });
 
-        if (wearers!.length === 0) {
+        if (wearers?.length === 0) {
           throw new Error("No wearers found for hatter hat");
         }
 
-        return wearers![0].id;
+        return wearers?.[0].id;
       } catch (error) {
         console.error(
           "error occured when getting HatsTimeframeModuleAddress:",
@@ -309,7 +309,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [wallet],
+    [wallet, getTreeInfo, getWearersInfo],
   );
 
   /**
@@ -501,7 +501,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   return {
@@ -541,7 +541,7 @@ export const useGetHat = (hatId: string) => {
       setIsLoading(false);
     };
     fetch();
-  }, [hatId]);
+  }, [hatId, getHat]);
 
   return { hat, isLoading };
 };

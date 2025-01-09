@@ -54,7 +54,7 @@ const WorkspaceTop: FC = () => {
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
             .map((h) => (
-              <Link key={"allrole" + h.id} to={`/${treeId}/${h.id}`}>
+              <Link key={`allrole${h.id}`} to={`/${treeId}/${h.id}`}>
                 <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
                   <VRole iconSize="80px" />
                 </HatsListItemParser>

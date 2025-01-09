@@ -37,6 +37,7 @@
     "@openzeppelin/hardhat-upgrades": "^3.5.0",
     "@types/chai": "^4.2.0",
     "@types/chai-as-promised": "^7.1.6",
+    "@types/jsonfile": "^6.1.4",
     "@types/mocha": ">=9.1.0",
     "chai": "^4.2.0",
     "dotenv": "^16.4.5",

@@ -11,7 +11,6 @@ import type { Address } from "viem";
 export async function upgradeSplitsCreatorFacotry(
   contractAddress: string,
   contractName: string,
-  params: any[],
 ) {
   // 新しいコントラクトのファクトリーを取得
   const SplitsCreator_Mock_v2 = await ethers.getContractFactory(contractName);

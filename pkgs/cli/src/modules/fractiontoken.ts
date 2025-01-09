@@ -30,14 +30,17 @@ export const sendFractionToken = async (
   hatId: bigint,
   amount: bigint,
 ) => {
+  if (!walletClient.account) {
+    throw new Error("Wallet is not connected");
+  }
   const stop = startLoading();
-  const tokenId = await getTokenId(hatId, walletClient.account?.address!);
+  const tokenId = await getTokenId(hatId, walletClient.account.address);
 
   const { request } = await publicClient.simulateContract({
     ...fractionTokenBaseConfig,
     account: walletClient.account,
     functionName: "safeTransferFrom",
-    args: [walletClient.account?.address!, to, tokenId, amount, "" as any],
+    args: [walletClient.account.address, to, tokenId, amount, "0x"],
   });
   const transactionHash = await walletClient.writeContract(request);
 
@@ -60,8 +63,8 @@ export const sendFractionToken = async (
     console.log(
       decodeEventLog({
         abi: fractionTokenBaseConfig.abi,
-        data: log!.data,
-        topics: log!.topics,
+        data: log.data,
+        topics: log.topics,
       }),
     );
   }

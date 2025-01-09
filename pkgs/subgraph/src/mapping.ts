@@ -1,4 +1,4 @@
-import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { BigInt as GraphBigInt } from "@graphprotocol/graph-ts";
 import type { Executed } from "../generated/BigBang/BigBang";
 import type {
   InitialMint,
@@ -13,7 +13,7 @@ import {
 
 function hatIdToTreeId(hatId: string): string {
   const id = Number.parseInt(
-    "0x" + hatId.slice(2).padStart(64, "0").substring(0, 8),
+    `0x${hatId.slice(2).padStart(64, "0").substring(0, 8)}`,
   )
     .toString()
     .split(".")[0];
@@ -66,7 +66,7 @@ export function handleTransferSingle(ev: TransferSingle): void {
   transfer.tokenId = ev.params.id;
   transfer.amount = ev.params.value;
   transfer.workspaceId = "";
-  transfer.hatId = BigInt.fromString("0");
+  transfer.hatId = GraphBigInt.fromString("0");
   transfer.wearer = "";
   transfer.blockNumber = ev.block.number;
   transfer.blockTimestamp = ev.block.timestamp;

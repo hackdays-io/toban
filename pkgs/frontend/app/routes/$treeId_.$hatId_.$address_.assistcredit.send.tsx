@@ -42,7 +42,7 @@ const AssistCreditSend: FC = () => {
   const balanceOfToken = useBalanceOfFractionToken(
     me.identity?.address as Address,
     address as Address,
-    BigInt(hatId!),
+    BigInt(hatId ?? ""),
   );
 
   // 送信先取得
@@ -54,8 +54,8 @@ const AssistCreditSend: FC = () => {
     return tree.hats
       .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 0)
       .flatMap((h) => h.wearers)
-      .filter((w) => w)
-      .map((w) => w!.id);
+      .filter((w) => typeof w !== "undefined")
+      .map((w) => w.id);
   }, [tree]);
 
   const { names: defaultNames } = useNamesByAddresses(members);
@@ -72,18 +72,18 @@ const AssistCreditSend: FC = () => {
     } else {
       fetchAddresses([searchText]);
     }
-  }, [searchText, isSearchAddress]);
+  }, [searchText, isSearchAddress, fetchAddresses, fetchNames]);
 
   const users = useMemo(() => {
     return !searchText ? defaultNames : isSearchAddress ? names : addresses;
-  }, [defaultNames, names, addresses, isSearchAddress]);
+  }, [defaultNames, names, addresses, isSearchAddress, searchText]);
 
   // 送信先選択後
   const [receiver, setReceiver] = useState<NameData>();
   const [amount, setAmount] = useState<number>(0);
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
-    BigInt(hatId!),
+    BigInt(hatId ?? ""),
     address as Address,
   );
   const send = useCallback(async () => {
@@ -97,7 +97,17 @@ const AssistCreditSend: FC = () => {
     } catch (error) {
       console.error(error);
     }
-  }, [transferFractionToken, receiver, amount]);
+  }, [
+    transferFractionToken,
+    receiver,
+    amount,
+    treeId,
+    hatId,
+    me,
+    isLoading,
+    address,
+    navigate,
+  ]);
 
   return (
     <Grid
@@ -138,7 +148,10 @@ const AssistCreditSend: FC = () => {
 
           <List.Root listStyle="none" my={10} gap={3}>
             {users?.flat().map((user, index) => (
-              <List.Item key={index} onClick={() => setReceiver(user)}>
+              <List.Item
+                key={`${user.name}u`}
+                onClick={() => setReceiver(user)}
+              >
                 <HStack>
                   <UserIcon
                     userImageUrl={ipfs2https(user.text_records?.avatar)}

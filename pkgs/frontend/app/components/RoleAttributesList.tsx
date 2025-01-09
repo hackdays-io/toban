@@ -9,9 +9,9 @@ export const RoleAttributesList: FC<{
 }> = ({ items, setItems }) => {
   return (
     <Box w="100%" mt={2}>
-      {items.map((_, index) => (
+      {items.map((item, index) => (
         <Box
-          key={index}
+          key={`${item.label}-${index}`}
           minHeight="45px"
           mt={2}
           width="100%"

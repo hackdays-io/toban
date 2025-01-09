@@ -11,6 +11,11 @@ import {
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 
+interface HatsListItemChildProps {
+  imageUri?: string;
+  detail?: HatsDetailSchama;
+}
+
 interface HatsListItemParserProps {
   children: ReactNode;
   detailUri?: string;
@@ -42,7 +47,10 @@ export const HatsListItemParser: FC<HatsListItemParserProps> = (props) => {
     <>
       {Children.map(props.children, (child) =>
         isValidElement(child)
-          ? cloneElement(child, { imageUri: parsedImageUri, detail } as any)
+          ? cloneElement(child, {
+              imageUri: parsedImageUri,
+              detail,
+            } as HatsListItemChildProps)
           : child,
       )}
     </>

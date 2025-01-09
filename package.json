@@ -11,7 +11,8 @@
   },
   "workspaces": ["pkgs/*"],
   "scripts": {
-    "format": "npx biome check --write .",
+    "biome:format": "npx biome format --write .",
+    "biome:check": "npx biome check --apply .",
     "frontend": "yarn workspace frontend",
     "contract": "yarn workspace contract",
     "cli": "yarn workspace cli",

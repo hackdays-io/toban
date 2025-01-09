@@ -11,7 +11,7 @@ export default function Home(): JSX.Element {
     <Layout title={`${siteConfig.title}`} description="This is a Toban Docs">
       <main>
         <article>
-          <img src="img/banner.png" />
+          <img src="img/banner.png" alt="Toban Banner" />
         </article>
       </main>
     </Layout>

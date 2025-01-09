@@ -15,10 +15,10 @@ export const upgradeBigBang = async (
   // 新しいコントラクトのファクトリーを取得
   const BigBang_Mock_v2 = await ethers.getContractFactory(contractName);
   // アップグレードを実行
-  const _BigBang = (await upgrades.upgradeProxy(
+  const _BigBang = await upgrades.upgradeProxy(
     contractAddress,
     BigBang_Mock_v2,
-  )) as any;
+  );
 
   const address = _BigBang.target;
 

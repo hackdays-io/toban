@@ -11,7 +11,7 @@ import type { Address } from "viem";
 export const upgradeFractionToken = async (
   contractAddress: string,
   contractName: string,
-  params?: any[],
+  params?: unknown[],
 ) => {
   // 新しいコントラクトのファクトリーを取得
   const FractionToken = await ethers.getContractFactory(contractName);

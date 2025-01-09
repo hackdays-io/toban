@@ -21,7 +21,7 @@ const WorkspaceMember: FC = () => {
         <Heading pb={4}>Transaction History</Heading>
         <List.Root>
           {data?.transferFractionTokens.map((token) => (
-            <List.Item>
+            <List.Item key={token.id}>
               <Text>
                 {abbreviateAddress(token.from)} → {abbreviateAddress(token.to)}{" "}
                 : {token.amount}

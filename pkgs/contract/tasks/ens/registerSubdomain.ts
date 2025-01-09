@@ -7,15 +7,22 @@ import { registerSubdomain } from "../../helpers/ens/function";
  */
 task("registerSubdomain", "register subdomain")
   .addParam("label", "label for subdomain")
-  .setAction(async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
-    console.log(
-      "################################### [START] ###################################",
-    );
+  .setAction(
+    async (
+      taskArgs: {
+        label: string;
+      },
+      hre: HardhatRuntimeEnvironment,
+    ) => {
+      console.log(
+        "################################### [START] ###################################",
+      );
 
-    // call registerSubdomain method
-    await registerSubdomain(hre, taskArgs.label);
+      // call registerSubdomain method
+      await registerSubdomain(hre, taskArgs.label);
 
-    console.log(
-      "################################### [END] ###################################",
-    );
-  });
+      console.log(
+        "################################### [END] ###################################",
+      );
+    },
+  );

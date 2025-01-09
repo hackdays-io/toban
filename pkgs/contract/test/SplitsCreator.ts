@@ -194,7 +194,7 @@ describe("SplitsCreator Factory", () => {
   it("sohuld upgrade SplitsCreatorFactory", async () => {
     const newSplitsCreatorFactory = await upgradeSplitsCreatorFacotry(
       SplitsCreatorFactory.address,
-      "SplitsCreatorFactory_Mock_v2",
+      "SplitsCreatorFactoryMockV2",
       [],
     );
 

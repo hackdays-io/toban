@@ -6,11 +6,15 @@ import { formatEther } from "viem";
  * 【Task】get the balance of the account
  */
 task("getBalance", "getBalance").setAction(
-  async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
+  async (_taskArgs: Record<string, never>, hre: HardhatRuntimeEnvironment) => {
     console.log(
       "################################### [START] ###################################",
     );
     const [bobWalletClient] = await hre.viem.getWalletClients();
+
+    if (!bobWalletClient.account?.address) {
+      throw new Error("Wallet client account address is undefined");
+    }
 
     const publicClient = await hre.viem.getPublicClient();
     const bobBalance = await publicClient.getBalance({

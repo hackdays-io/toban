@@ -19,7 +19,7 @@ export const PageHeader: React.FC<Props> = ({ title, backLink }) => {
     } else {
       navigate(-1);
     }
-  }, [backLink]);
+  }, [backLink, navigate]);
 
   return (
     <HStack>

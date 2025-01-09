@@ -307,10 +307,7 @@ describe("BigBang", () => {
   describe("Upgrade Test", () => {
     it("upgrde", async () => {
       // BigBangをアップグレード
-      const newBigBang = await upgradeBigBang(
-        BigBang.address,
-        "BigBang_Mock_v2",
-      );
+      const newBigBang = await upgradeBigBang(BigBang.address, "BigBangMockV2");
 
       // upgrade後にしかないメソッドを実行
       const result = await newBigBang.read.testUpgradeFunction();
@@ -319,10 +316,7 @@ describe("BigBang", () => {
 
     it("should execute bigbang after upgrade", async () => {
       // BigBangをアップグレード
-      const newBigBang = await upgradeBigBang(
-        BigBang.address,
-        "BigBang_Mock_v2",
-      );
+      const newBigBang = await upgradeBigBang(BigBang.address, "BigBangMockV2");
 
       // SplitsCreatorFactoryにBigBangアドレスをセット
       SplitsCreatorFactory.write.setBigBang([newBigBang.address]);

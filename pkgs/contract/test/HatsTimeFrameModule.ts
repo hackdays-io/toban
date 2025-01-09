@@ -1,7 +1,8 @@
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { viem } from "hardhat";
-import { type PublicClient, type WalletClient, decodeEventLog } from "viem";
+import type { Address, PublicClient, WalletClient } from "viem";
+import { decodeEventLog } from "viem";
 import {
   type Hats,
   type HatsModuleFactory,
@@ -16,14 +17,22 @@ describe("HatsTimeFrameModule", () => {
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsTimeFrameModule: HatsTimeFrameModule;
-
   let address1: WalletClient;
   let address2: WalletClient;
+  let address1Validated: Address;
+  let address2Validated: Address;
 
   let topHatId: bigint;
-  let roleHatId!: bigint;
+  let roleHatId: bigint | undefined;
 
   let publicClient: PublicClient;
+
+  const validateAddress = (client: WalletClient): Address => {
+    if (!client.account?.address) {
+      throw new Error("Wallet client account address is undefined");
+    }
+    return client.account.address;
+  };
 
   before(async () => {
     const { Hats: _Hats } = await deployHatsProtocol();
@@ -37,9 +46,11 @@ describe("HatsTimeFrameModule", () => {
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     [address1, address2] = await viem.getWalletClients();
+    address1Validated = validateAddress(address1);
+    address2Validated = validateAddress(address2);
 
     await Hats.write.mintTopHat([
-      address1.account?.address!,
+      address1Validated,
       "Description",
       "https://test.com/tophat.png",
     ]);
@@ -91,7 +102,7 @@ describe("HatsTimeFrameModule", () => {
       hash: txHash,
     });
 
-    let hatterHatId!: bigint;
+    let hatterHatId: bigint | undefined;
 
     for (const log of receipt.logs) {
       const decodedLog = decodeEventLog({
@@ -102,6 +113,10 @@ describe("HatsTimeFrameModule", () => {
       if (decodedLog.eventName === "HatCreated") {
         hatterHatId = decodedLog.args.id;
       }
+    }
+
+    if (!hatterHatId) {
+      throw new Error("Hatter hat ID not found in transaction logs");
     }
 
     // Hatter HatをTimeFrameModuleにミント
@@ -135,18 +150,18 @@ describe("HatsTimeFrameModule", () => {
   });
 
   it("mint hat", async () => {
+    if (!roleHatId) {
+      throw new Error("Role hat ID is undefined");
+    }
+
     const initialTime = BigInt(await time.latest());
 
-    await HatsTimeFrameModule.write.mintHat([
-      roleHatId,
-      address1.account?.address!,
-      0n,
-    ]);
+    await HatsTimeFrameModule.write.mintHat([roleHatId, address1Validated, 0n]);
 
     const afterMintTime = BigInt(await time.latest());
 
     let woreTime = await HatsTimeFrameModule.read.getWoreTime([
-      address1.account?.address!,
+      address1Validated,
       roleHatId,
     ]);
 
@@ -159,7 +174,7 @@ describe("HatsTimeFrameModule", () => {
     let expectedElapsedTime = currentTime1 - woreTime;
 
     let elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1.account?.address!,
+      address1Validated,
       roleHatId,
     ]);
 
@@ -172,16 +187,13 @@ describe("HatsTimeFrameModule", () => {
     expectedElapsedTime = currentTime2 - woreTime;
 
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1.account?.address!,
+      address1Validated,
       roleHatId,
     ]);
 
     expect(elapsedTime).to.equal(expectedElapsedTime);
 
-    await HatsTimeFrameModule.write.deactivate([
-      roleHatId,
-      address1.account?.address!,
-    ]);
+    await HatsTimeFrameModule.write.deactivate([roleHatId, address1Validated]);
 
     const afterDeactivateTime = BigInt(await time.latest());
 
@@ -194,17 +206,14 @@ describe("HatsTimeFrameModule", () => {
 
     // Elapsed time should remain the same
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1.account?.address!,
+      address1Validated,
       roleHatId,
     ]);
 
     expect(elapsedTime).to.equal(expectedElapsedTime);
 
     // Reactivate the hat
-    await HatsTimeFrameModule.write.reactivate([
-      roleHatId,
-      address1.account?.address!,
-    ]);
+    await HatsTimeFrameModule.write.reactivate([roleHatId, address1Validated]);
 
     // Get woreTime after reactivation
     woreTime = BigInt(await time.latest());
@@ -217,7 +226,7 @@ describe("HatsTimeFrameModule", () => {
       totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
 
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1.account?.address!,
+      address1Validated,
       roleHatId,
     ]);
 
@@ -225,17 +234,21 @@ describe("HatsTimeFrameModule", () => {
   });
 
   it("mint hat previous time", async () => {
+    if (!roleHatId) {
+      throw new Error("Role hat ID is undefined");
+    }
+
     const initialTime = BigInt(await time.latest());
     await time.increaseTo(initialTime + 10000n);
 
     await HatsTimeFrameModule.write.mintHat([
       roleHatId,
-      address2.account?.address!,
+      address2Validated,
       initialTime + 5000n,
     ]);
 
     const woreTime = await HatsTimeFrameModule.read.getWoreTime([
-      address2.account?.address!,
+      address2Validated,
       roleHatId,
     ]);
 

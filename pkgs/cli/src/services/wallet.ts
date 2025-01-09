@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import path from "path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import type { Hex } from "viem";
 import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
 import { setWallet } from "../modules/viem";

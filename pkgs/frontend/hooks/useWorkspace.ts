@@ -40,7 +40,7 @@ export const useGetWorkspace = (workspaceId?: string) => {
     queryGetWorkspace,
     {
       variables: {
-        workspaceId: workspaceId!,
+        workspaceId: workspaceId ?? "",
       },
     },
   );

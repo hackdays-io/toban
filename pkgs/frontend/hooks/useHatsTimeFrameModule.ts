@@ -1,8 +1,8 @@
-import { useActiveWallet } from "./useWallet";
-import { Address } from "viem";
 import { useCallback, useEffect, useState } from "react";
-import { publicClient } from "./useViem";
+import type { Address } from "viem";
 import { hatsTimeFrameContractBaseConfig } from "./useContracts";
+import { publicClient } from "./useViem";
+import { useActiveWallet } from "./useWallet";
 
 export const useMintHatFromTimeFrameModule = (
   hatsTimeFrameModuleAddress: Address,
@@ -50,7 +50,7 @@ export const useReactivate = (hatsTimeFrameModuleAddress?: string) => {
       try {
         const txHash = await wallet?.writeContract({
           ...hatsTimeFrameContractBaseConfig(
-            hatsTimeFrameModuleAddress as Address
+            hatsTimeFrameModuleAddress as Address,
           ),
           functionName: "reactivate",
           args: [BigInt(hatId), wearer as Address],
@@ -65,7 +65,7 @@ export const useReactivate = (hatsTimeFrameModuleAddress?: string) => {
         setIsLoading(false);
       }
     },
-    [hatsTimeFrameModuleAddress, wallet]
+    [hatsTimeFrameModuleAddress, wallet],
   );
 
   return { reactivate, isLoading };
@@ -85,7 +85,7 @@ export const useDeactivate = (hatsTimeFrameModuleAddress?: string) => {
       try {
         const txHash = await wallet?.writeContract({
           ...hatsTimeFrameContractBaseConfig(
-            hatsTimeFrameModuleAddress as Address
+            hatsTimeFrameModuleAddress as Address,
           ),
           functionName: "deactivate",
           args: [BigInt(hatId), wearer as Address],
@@ -100,7 +100,7 @@ export const useDeactivate = (hatsTimeFrameModuleAddress?: string) => {
         setIsLoading(false);
       }
     },
-    [hatsTimeFrameModuleAddress, wallet]
+    [hatsTimeFrameModuleAddress, wallet],
   );
 
   return { deactivate, isLoading };
@@ -110,7 +110,7 @@ export const useActiveState = (
   hatsTimeFrameModuleAddress?: string,
   hatId?: string,
   wearer?: string,
-  count?: number
+  count?: number,
 ) => {
   const [activeState, setActiveState] = useState({
     isActive: false,
@@ -126,21 +126,21 @@ export const useActiveState = (
         const [isActive, woreTime, wearingElapsedTime] = await Promise.all([
           publicClient.readContract({
             ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address
+              hatsTimeFrameModuleAddress as Address,
             ),
             functionName: "isActive",
             args: [BigInt(hatId), wearer as Address],
           }),
           publicClient.readContract({
             ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address
+              hatsTimeFrameModuleAddress as Address,
             ),
             functionName: "getWoreTime",
             args: [wearer as Address, BigInt(hatId)],
           }),
           publicClient.readContract({
             ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address
+              hatsTimeFrameModuleAddress as Address,
             ),
             functionName: "getWearingElapsedTime",
             args: [wearer as Address, BigInt(hatId)],
@@ -158,7 +158,7 @@ export const useActiveState = (
     };
 
     fetch();
-  }, [hatsTimeFrameModuleAddress, hatId, wearer, count]);
+  }, [hatsTimeFrameModuleAddress, hatId, wearer]);
 
   return activeState;
 };
@@ -166,7 +166,7 @@ export const useActiveState = (
 export const useWearingElapsedTime = (
   hatsTimeFrameModuleAddress?: Address,
   hatId?: string,
-  wearers?: string[]
+  wearers?: string[],
 ) => {
   const [wearingElapsedTimeList, setWearingElapsedTimeList] = useState<
     {
@@ -185,15 +185,15 @@ export const useWearingElapsedTime = (
             const time = Number(
               await publicClient.readContract({
                 ...hatsTimeFrameContractBaseConfig(
-                  hatsTimeFrameModuleAddress as Address
+                  hatsTimeFrameModuleAddress as Address,
                 ),
                 functionName: "getWearingElapsedTime",
                 args: [w as Address, BigInt(hatId)],
-              })
+              }),
             );
 
             return { wearer: w, time };
-          })
+          }),
         );
 
         setWearingElapsedTimeList(list);

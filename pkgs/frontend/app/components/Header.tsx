@@ -43,9 +43,9 @@ export const Header = () => {
     const fetch = async () => {
       setWorkspaceName(undefined);
       const topHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
-      if (topHat) {
+      if (topHat?.details) {
         const { data } = await axios.get<HatsDetailSchama>(
-          ipfs2https(topHat.details)!,
+          ipfs2https(topHat.details) || "",
         );
         setWorkspaceName(data.data.name);
       }
@@ -72,7 +72,7 @@ export const Header = () => {
   const { identity } = useActiveWalletIdentity();
 
   const userImageUrl = useMemo(() => {
-    const avatar = identity?.text_records?.["avatar"];
+    const avatar = identity?.text_records?.avatar;
     return avatar ? ipfs2https(avatar) : undefined;
   }, [identity]);
 
@@ -116,7 +116,7 @@ export const Header = () => {
       {identity ? (
         <MenuRoot closeOnSelect={false}>
           <MenuTrigger asChild>
-            <button>
+            <button type="button">
               <UserIcon userImageUrl={userImageUrl} size="40px" />
             </button>
           </MenuTrigger>

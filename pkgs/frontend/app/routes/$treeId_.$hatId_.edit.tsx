@@ -64,7 +64,7 @@ const EditRole: FC = () => {
       }
     };
     fetchHat();
-  }, [hatId]);
+  }, [hatId, getHat, hat]);
 
   useEffect(() => {
     const setStates = async () => {
@@ -155,7 +155,7 @@ const EditRole: FC = () => {
       navigate(`/${treeId}/roles`);
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。" + error);
+      alert(`エラーが発生しました。${error}`);
     } finally {
       setIsLoading(false);
     }

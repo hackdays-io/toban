@@ -100,7 +100,7 @@ hatsCommands
         maxSupply,
         eligibility: eligibility as Address,
         toggle: toggle as Address,
-        mutable: mutable == "true",
+        mutable: mutable === "true",
         imageURI,
       });
 

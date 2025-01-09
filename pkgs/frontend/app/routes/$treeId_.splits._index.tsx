@@ -52,7 +52,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
   const [open, setOpen] = useState(false);
   const onOpen = useCallback(() => {
     setOpen(true);
-  }, [setOpen]);
+  }, []);
 
   const { copyToClipboardAction } = useCopyToClipboard(split.address);
 
@@ -141,7 +141,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
             my={4}
             borderTop="1px solid #868e96"
             role="presentation"
-          ></Box>
+          />
           <SplitRecipientsList recipients={consolidatedRecipients} />
         </Collapsible.Content>
       </Collapsible.Root>
@@ -198,7 +198,7 @@ const SplitsIndex: FC = () => {
                           n.address.toLowerCase() ===
                           split.address.toLowerCase(),
                       ),
-                    )?.[0]!
+                    )?.[0]
                   }
                 />
               ))}

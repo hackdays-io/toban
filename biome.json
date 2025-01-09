@@ -17,7 +17,13 @@
       "**/out",
       "**/target",
       "**/public",
-      "**/docs"
+      "**/docs",
+      "**/contract/artifacts",
+      "**/contract/cache",
+      "**/contract/test",
+      "**/subgraph/generated",
+      "**/subgraph/build",
+      "**/frontend/gql"
     ]
   },
   "formatter": {

@@ -94,7 +94,7 @@ const NewRole: FC = () => {
       navigate(`/${treeId}/roles`);
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。" + error);
+      alert(`エラーが発生しました。${error}`);
     } finally {
       setIsLoading(false);
     }

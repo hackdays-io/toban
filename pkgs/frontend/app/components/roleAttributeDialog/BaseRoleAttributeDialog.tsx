@@ -1,5 +1,5 @@
 import { Box, Button, VStack } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { HatsDetailsAttributes } from "types/hats";
 import { InputDescription } from "../input/InputDescription";
 import { InputLink } from "../input/InputLink";
@@ -60,17 +60,17 @@ export const BaseRoleAttributeDialog = ({
     setLink("");
   };
 
-  const setAttribute = (attribute: RoleAttribute) => {
+  const setAttribute = useCallback((attribute: RoleAttribute) => {
     setName(attribute.label);
     setDescription(attribute.description ?? "");
     setLink(attribute.link ?? "");
-  };
+  }, []);
 
   useEffect(() => {
     if (mode === "edit" && attribute) {
       setAttribute(attribute);
     }
-  }, [attribute, mode]);
+  }, [attribute, mode, setAttribute]);
 
   return (
     <>

@@ -2,10 +2,10 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
 import "@openzeppelin/hardhat-upgrades";
-import fs from "fs";
+import fs from "node:fs";
 import * as dotenv from "dotenv";
 import "hardhat-gas-reporter";
-import path from "path";
+import path from "node:path";
 import type { HardhatUserConfig } from "hardhat/config";
 
 dotenv.config();
@@ -22,14 +22,15 @@ const {
 const SKIP_LOAD = process.env.SKIP_LOAD === "true";
 if (!SKIP_LOAD) {
   const taskPaths = ["", "utils", "ens", "BigBang", "HatsTimeFrameModule"];
-  taskPaths.forEach((folder) => {
+  for (const folder of taskPaths) {
     const tasksPath = path.join(__dirname, "tasks", folder);
-    fs.readdirSync(tasksPath)
-      .filter((_path) => _path.includes(".ts"))
-      .forEach((task) => {
-        require(`${tasksPath}/${task}`);
-      });
-  });
+    const taskFiles = fs
+      .readdirSync(tasksPath)
+      .filter((_path) => _path.includes(".ts"));
+    for (const task of taskFiles) {
+      require(`${tasksPath}/${task}`);
+    }
+  }
 }
 
 const config: HardhatUserConfig = {
@@ -61,8 +62,8 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      sepolia: ETHERSCAN_API_KEY!,
-      holesky: ETHERSCAN_API_KEY!,
+      sepolia: ETHERSCAN_API_KEY ?? "",
+      holesky: ETHERSCAN_API_KEY ?? "",
     },
   },
   gasReporter: {

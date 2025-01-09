@@ -25,7 +25,7 @@ const WorkspaceMember: FC = () => {
       .filter((w, i, self) => self.findIndex((s) => s.id === w.id) === i)
       .map((w) => ({
         id: w.id,
-        hats: tree.hats!.filter(
+        hats: tree.hats?.filter(
           (h) =>
             h.levelAtLocalTree &&
             h.levelAtLocalTree >= 2 &&
@@ -66,7 +66,7 @@ const WorkspaceMember: FC = () => {
     if (!tree || !tree.hats) return [];
     return recipients.map(({ assistant, hatIds }) => ({
       id: assistant,
-      hats: tree.hats!.filter(
+      hats: tree.hats?.filter(
         (h) =>
           h.levelAtLocalTree &&
           h.levelAtLocalTree >= 2 &&
@@ -101,8 +101,8 @@ const WorkspaceMember: FC = () => {
       <Box mb={4}>
         <Heading pb={4}>Role Members</Heading>
         <VStack width="full" alignItems="start" gap={3}>
-          {members.map((m, i) => (
-            <HStack key={i} width="full">
+          {members.map((m) => (
+            <HStack key={`${m.name}m`} width="full">
               <UserIcon
                 userImageUrl={ipfs2https(m.text_records?.avatar)}
                 size={10}
@@ -135,8 +135,8 @@ const WorkspaceMember: FC = () => {
       <Box my={4}>
         <Heading py={4}>All Contributors</Heading>
         <VStack width="full" alignItems="start" gap={3}>
-          {assistantMembers.map((m, i) => (
-            <HStack key={`assistant_${i}`} width="full">
+          {assistantMembers.map((m) => (
+            <HStack key={`assistant_${m.name}`} width="full">
               <UserIcon
                 userImageUrl={ipfs2https(m.text_records?.avatar)}
                 size={10}

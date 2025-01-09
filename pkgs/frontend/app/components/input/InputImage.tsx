@@ -53,7 +53,7 @@ export const InputImage = ({
         display="none"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file && file.type.startsWith("image/")) {
+          if (file?.type?.startsWith("image/")) {
             setImageFile(file);
           } else {
             alert("画像ファイルを選択してください");

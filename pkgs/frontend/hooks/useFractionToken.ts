@@ -51,14 +51,14 @@ export const useTokenRecipients = (
           .filter((r) => !!r)
           .reduce(
             (acc, r) => {
-              r.assistants.forEach((a) => {
+              for (const a of r.assistants) {
                 const existing = acc.find((item) => item.assistant === a);
                 if (existing) {
                   existing.hatIds.push(r.hatId);
                 } else {
                   acc.push({ assistant: a, hatIds: [r.hatId] });
                 }
-              });
+              }
               return acc;
             },
             [] as {
@@ -102,10 +102,10 @@ export const useHoldersWithoutWearers = ({
             });
             if (!tokenId) return [];
             const recipients = (await getTokenRecipients({ tokenId }))?.filter(
-              (r) => r.toLowerCase() !== w.toLowerCase()
+              (r) => r.toLowerCase() !== w.toLowerCase(),
             );
             return recipients || [];
-          })
+          }),
         );
 
         setHolders(fetchedRecipients.flat());
@@ -285,7 +285,7 @@ export const useFractionToken = () => {
           } catch (error) {
             console.error("error occured when minting FractionToken:", error);
           }
-        })!;
+        });
 
         if (log) {
           const decodedLog = decodeEventLog({
@@ -336,7 +336,7 @@ export const useFractionToken = () => {
           } catch (error) {
             console.error("error occured when minting FractionToken:", error);
           }
-        })!;
+        });
 
         if (log) {
           const decodedLog = decodeEventLog({
@@ -402,7 +402,7 @@ export const useFractionToken = () => {
           } catch (error) {
             console.error("error occured when minting FractionToken:", error);
           }
-        })!;
+        });
 
         if (log) {
           const decodedLog = decodeEventLog({
@@ -453,7 +453,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
       }
     };
     fetch();
-  }, [hatId, wearer, getTokenId]);
+  }, [hatId, wearer, getTokenId, getTokenRecipients]);
 
   const transferFractionToken = useCallback(
     async (to: Address, amount: bigint) => {
@@ -462,7 +462,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
       setIsLoading(true);
 
-      let txHash;
+      let txHash: `0x${string}` | undefined = undefined;
       if (initialized) {
         try {
           txHash = await wallet.writeContract({
@@ -499,7 +499,9 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
           console.error(error);
           setIsLoading(false);
         } finally {
-          await publicClient.waitForTransactionReceipt({ hash: txHash! });
+          await publicClient.waitForTransactionReceipt({
+            hash: txHash ?? "0x",
+          });
           setIsLoading(false);
         }
       } else {
@@ -508,7 +510,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
       return txHash;
     },
-    [wallet, initialized, tokenId],
+    [wallet, initialized, tokenId, hatId, wearer],
   );
 
   return { isLoading, transferFractionToken };

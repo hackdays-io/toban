@@ -11,6 +11,7 @@ export const UserIcon = ({ userImageUrl, size = "full" }: UserIconProps) => {
     <CommonIcon
       imageUrl={userImageUrl}
       size={size}
+      borderRadius="full"
       fallbackIconComponent={
         <FaCircleUser
           style={{

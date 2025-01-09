@@ -379,6 +379,8 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
             functionName: "safeTransferFrom",
             args: [wallet.account.address, to, tokenId, amount, "0x"],
           });
+        } catch (_) {
+          setIsLoading(false);
         } finally {
           setIsLoading(false);
         }
@@ -404,6 +406,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
           });
         } catch (error) {
           console.error(error);
+          setIsLoading(false);
         } finally {
           await publicClient.waitForTransactionReceipt({ hash: txHash! });
           setIsLoading(false);

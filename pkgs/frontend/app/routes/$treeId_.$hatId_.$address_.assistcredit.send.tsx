@@ -103,7 +103,7 @@ const AssistCreditSend: FC = () => {
   return (
     <Grid
       gridTemplateRows={!receiver ? "auto auto auto 1fr" : "auto auto 1fr auto"}
-      minH="calc(100vh - 72px)"
+      minH="calc(100vh - 100px)"
     >
       <PageHeader
         title={

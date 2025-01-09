@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import { IHats } from "../../hats/src/Interfaces/IHats.sol";
 import { IHatsModuleFactory } from "../IHatsModuleFactory.sol";
 import { ISplitsCreatorFactory } from "../../splitscreator/ISplitsCreatorFactory.sol";
-import { HatsTimeFrameModule } from "../../timeframe/HatsTimeFrameModule.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
@@ -19,15 +18,19 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 
 	address public HatsTimeFrameModule_IMPL;
 
+    address public HatsHatCreatorModule_IMPL;
+
 	address public SplitsFactoryV2;
 
 	address public FractionToken;
 
 	event Executed(
+		address indexed creator,
 		address indexed owner,
 		uint256 indexed topHatId,
-		uint256 indexed hatterHatId,
+		uint256 hatterHatId,
 		address hatsTimeFrameModule,
+        address hatsHatCreatorModule,
 		address splitCreator
 	);
 
@@ -36,6 +39,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 	 * @param _hatsAddress Address of the hats protocol V1 contract.
 	 * @param _hatsModuleFactory Address of the hats module factory contract.
 	 * @param _hatsTimeFrameModule_IMPL Address of the hats time frame module implementation contract.
+	 * @param _hatsHatCreatorModule_IMPL Address of the hats hat creator module implementation contract.
 	 * @param _splitsCreatorFactory Address of the splits creator factory contract.
 	 * @param _splitFactoryV2 Address of the split factory V2 contract.
 	 * @param _fractionToken Address of the fraction token contract.
@@ -44,6 +48,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 		address _hatsAddress,
 		address _hatsModuleFactory,
 		address _hatsTimeFrameModule_IMPL,
+        address _hatsHatCreatorModule_IMPL,
 		address _splitsCreatorFactory,
 		address _splitFactoryV2,
 		address _fractionToken
@@ -52,6 +57,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 		Hats = IHats(_hatsAddress);
 		HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
 		HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
+        HatsHatCreatorModule_IMPL = _hatsHatCreatorModule_IMPL;
 		SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
 		SplitsFactoryV2 = _splitFactoryV2;
 		FractionToken = _fractionToken;
@@ -71,7 +77,9 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 		string calldata _topHatDetails,
 		string calldata _topHatImageURI,
 		string calldata _hatterHatDetails,
-		string calldata _hatterHatImageURI
+		string calldata _hatterHatImageURI,
+		address _eligibility,
+    	address _toggle
 	) external returns (uint256) {
 		// 1. TopHatのMint
 
@@ -102,6 +110,16 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 			0
 		);
 
+        // 4) HatsHatCreatorModuleのデプロイ
+        bytes memory initData = abi.encode(_owner);
+        address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
+            HatsHatCreatorModule_IMPL,
+            topHatId,
+            "",
+            initData,
+            0
+        );
+
 		// 5. HatsTimeFrameModuleにHatterHatをMint
 		Hats.mintHat(hatterHatId, hatsTimeFrameModule);
 
@@ -120,10 +138,12 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 			);
 
 		emit Executed(
+			msg.sender,
 			_owner,
 			topHatId,
 			hatterHatId,
 			hatsTimeFrameModule,
+            hatsHatCreatorModule,
 			splitCreator
 		);
 
@@ -160,10 +180,10 @@ contract BigBang_Mock_v2 is OwnableUpgradeable {
 		FractionToken = _fractionToken;
 	}
 
-	/**
-	 * 検証用に追加した関数
-	 */
-	function testUpgradeFunction() external pure returns (string memory) {
-		return "testUpgradeFunction";
-	}
+    /**
+     * @dev New function in the mock v2, to verify that we upgraded successfully
+     */
+    function testUpgradeFunction() external pure returns (string memory) {
+        return "testUpgradeFunction";
+    }
 }

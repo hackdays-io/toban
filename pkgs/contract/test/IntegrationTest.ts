@@ -33,6 +33,9 @@ import {
 	SplitsWarehouse,
 } from "../helpers/deploy/Splits";
 
+//store the HatsHatCreatorModule if needed
+let HatsHatCreatorModuleByBigBang: any;
+
 describe("IntegrationTest", () => {
 	let Hats: Hats;
 	let HatsModuleFactory: HatsModuleFactory;
@@ -46,13 +49,17 @@ describe("IntegrationTest", () => {
 	let BigBang: BigBang;
 	let HatsTimeFrameModuleByBigBang: HatsTimeFrameModule;
 	let SplitsCreatorByBigBang: SplitsCreator;
+
+	// tore any newly deployed "PullSplit" contract
 	let DeployedPullSplit: Awaited<ReturnType<typeof getPullSplitContract>>;
 
+	// Hat IDs
 	let topHatId: bigint;
 	let hatterHatId: bigint;
 	let hat1_id: bigint;
 	let hat2_id: bigint;
 
+	// Signers
 	let deployer: WalletClient;
 	let address1: WalletClient;
 	let address2: WalletClient;
@@ -60,32 +67,40 @@ describe("IntegrationTest", () => {
 
 	let publicClient: PublicClient;
 
+	// A helper to load "PullSplit" contract instance
 	const getPullSplitContract = async (address: Address) => {
 		return await viem.getContractAt("PullSplit", address);
 	};
 
+	// store "always-true" eligibility contract address
+	let alwaysTrueAddress: Address;
+
 	before(async () => {
+		// 1) Deploy Hats Protocol
 		const { Hats: _Hats } = await deployHatsProtocol();
 		Hats = _Hats;
 
+		// 2) Deploy HatsModuleFactory
 		const { HatsModuleFactory: _HatsModuleFactory } =
 			await deployHatsModuleFactory(Hats.address);
 		HatsModuleFactory = _HatsModuleFactory;
 
+		// 3) Deploy a time frame module impl
 		const { HatsTimeFrameModule: _HatsTimeFrameModule } =
 			await deployHatsTimeFrameModule();
 		HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
+		// 4) Deploy Splits protocol
 		const {
 			SplitsWarehouse: _SplitsWarehouse,
 			PullSplitsFactory: _PullSplitsFactory,
 			PushSplitsFactory: _PushSplitsFactory,
 		} = await deploySplitsProtocol();
-
 		SplitsWarehouse = _SplitsWarehouse;
 		PullSplitsFactory = _PullSplitsFactory;
 		PushSplitsFactory = _PushSplitsFactory;
 
+		// 5) Deploy FractionToken
 		const { FractionToken: _FractionToken } = await deployFractionToken(
 			"",
 			10000n,
@@ -93,17 +108,43 @@ describe("IntegrationTest", () => {
 		);
 		FractionToken = _FractionToken;
 
+		// 6) Deploy SplitsCreator + SplitsCreatorFactory
 		const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
 		SplitsCreator_IMPL = _SplitsCreator;
 
 		const { SplitsCreatorFactory: _SplitsCreatorFactory } =
 			await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
-
 		SplitsCreatorFactory = _SplitsCreatorFactory;
 
+		// 7) Grab signers
 		[deployer, address1, address2, address3] = await viem.getWalletClients();
 
+		// 8) Create a public client
 		publicClient = await viem.getPublicClient();
+
+		// 9) Deploy AlwaysTrueEligibility
+		const alwaysTrueAbi = [
+			{
+				inputs: [],
+				name: "getWearerStatus",
+				outputs: [
+					{ internalType: "uint256", name: "eligible", type: "uint256" },
+					{ internalType: "uint256", name: "standing", type: "uint256" },
+				],
+				stateMutability: "pure",
+				type: "function",
+			},
+		];
+		// Minimal "always true" EVM bytecode
+		const alwaysTrueBytecode =
+			"0x6080604052348015600f57600080fd5b5060a88061001e6000396000f3fe608060405260043610602f5760003560e01c806385c2f695146034575b600080fd5b603a60383660046072565b50600090565b60405190815260200160405180910390f35bfea26469706673582212205f7cddb93c2050d0744708673ebf9212f6b50ec884ad9b444eb50951fa268a6364736f6c634300080e0033";
+
+		const AlwaysTrueDeployment = await viem.deployContract({
+			abi: alwaysTrueAbi,
+			bytecode: alwaysTrueBytecode,
+			account: deployer.account!,
+		});
+		alwaysTrueAddress = AlwaysTrueDeployment.contractAddress!;
 	});
 
 	it("should deploy BigBang", async () => {
@@ -111,13 +152,13 @@ describe("IntegrationTest", () => {
 			hatsContractAddress: Hats.address,
 			hatsModuleFacotryAddress: HatsModuleFactory.address,
 			hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+			hatsHatCreatorModule_impl: zeroAddress, // or some valid address
 			splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
 			splitsFactoryV2Address: PullSplitsFactory.address,
 			fractionTokenAddress: FractionToken.address,
 		});
 
 		expect(_BigBang.address).to.not.be.undefined;
-
 		BigBang = _BigBang;
 	});
 
@@ -126,11 +167,13 @@ describe("IntegrationTest", () => {
 
 		const txHash = await BigBang.write.bigbang(
 			[
-				deployer.account?.address!,
+				deployer.account?.address!, // topHat owner
 				"tophatDetails",
 				"tophatURI",
 				"hatterhatDetails",
 				"hatterhatURI",
+				alwaysTrueAddress, // eligibility
+				alwaysTrueAddress, // toggle
 			],
 			{ account: deployer.account }
 		);
@@ -146,39 +189,44 @@ describe("IntegrationTest", () => {
 					data: log.data,
 					topics: log.topics,
 				});
-
 				if (decodedLog.eventName == "Executed") {
 					expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
-						deployer.account?.address!
+						deployer.account?.address!.toLowerCase()
 					);
 
 					const hatsTimeFrameModuleAddress =
 						decodedLog.args.hatsTimeFrameModule;
+					const hatsHatCreatorModuleAddress =
+						decodedLog.args.hatsHatCreatorModule;
 					const splitsCreatorAddress = decodedLog.args.splitCreator;
 
 					topHatId = decodedLog.args.topHatId;
 					hatterHatId = decodedLog.args.hatterHatId;
 
+					// retrieve via viem
 					HatsTimeFrameModuleByBigBang = await viem.getContractAt(
 						"HatsTimeFrameModule",
 						hatsTimeFrameModuleAddress
+					);
+					HatsHatCreatorModuleByBigBang = await viem.getContractAt(
+						"HatsHatCreatorModule",
+						hatsHatCreatorModuleAddress
 					);
 					SplitsCreatorByBigBang = await viem.getContractAt(
 						"SplitsCreator",
 						splitsCreatorAddress
 					);
 
+					// check some function calls
 					const getWoreTime =
 						await HatsTimeFrameModuleByBigBang.read.getWoreTime([
 							deployer.account?.address!,
 							0n,
 						]);
-
 					expect(getWoreTime).to.equal(0n);
 
 					const CheckHatsTimeFrameModule =
 						await SplitsCreatorByBigBang.read.HATS_TIME_FRAME_MODULE();
-
 					expect(CheckHatsTimeFrameModule).to.equal(hatsTimeFrameModuleAddress);
 				}
 			} catch (error) {}
@@ -186,7 +234,7 @@ describe("IntegrationTest", () => {
 	});
 
 	it("should create hat1", async () => {
-		let txHash = await Hats.write.createHat([
+		const txHash = await Hats.write.createHat([
 			hatterHatId,
 			"Role Hat",
 			10,
@@ -195,11 +243,9 @@ describe("IntegrationTest", () => {
 			true,
 			"",
 		]);
-
-		let receipt = await publicClient.waitForTransactionReceipt({
+		const receipt = await publicClient.waitForTransactionReceipt({
 			hash: txHash,
 		});
-
 		for (const log of receipt.logs) {
 			const decodedLog = decodeEventLog({
 				abi: Hats.abi,
@@ -218,24 +264,21 @@ describe("IntegrationTest", () => {
 			address1.account?.address!,
 			0n,
 		]);
-
 		expect(
 			await Hats.read.balanceOf([address1.account?.address!, hat1_id])
-		).equal(BigInt(1));
+		).to.equal(1n);
 
 		await HatsTimeFrameModuleByBigBang.write.mintHat([
 			hat1_id,
 			address2.account?.address!,
 			0n,
 		]);
-
 		expect(
 			await Hats.read.balanceOf([address2.account?.address!, hat1_id])
-		).equal(BigInt(1));
+		).to.equal(1n);
 	});
 
 	it("should mint FractionToken", async () => {
-		// address1,address2にtokenをmint
 		await FractionToken.write.mintInitialSupply([
 			hat1_id,
 			address1.account?.address!,
@@ -247,7 +290,6 @@ describe("IntegrationTest", () => {
 			0n,
 		]);
 
-		// Check balance for address1
 		let balance1 = await FractionToken.read.balanceOf([
 			address1.account?.address!,
 			address1.account?.address!,
@@ -255,7 +297,6 @@ describe("IntegrationTest", () => {
 		]);
 		expect(balance1).to.equal(10000n);
 
-		// Check balance for address2
 		let balance2 = await FractionToken.read.balanceOf([
 			address2.account?.address!,
 			address2.account?.address!,
@@ -263,7 +304,6 @@ describe("IntegrationTest", () => {
 		]);
 		expect(balance2).to.equal(10000n);
 
-		// Check that address3 has no balance yet
 		let balance3 = await FractionToken.read.balanceOf([
 			address3.account?.address!,
 			address2.account?.address!,
@@ -278,7 +318,6 @@ describe("IntegrationTest", () => {
 			address1.account?.address!,
 		]);
 
-		// address1のtokenの一部をaddress3に移動
 		await FractionToken.write.safeTransferFrom(
 			[
 				address1.account?.address!,
@@ -294,7 +333,6 @@ describe("IntegrationTest", () => {
 
 		let balance: bigint;
 
-		// address1のbalance
 		balance = await FractionToken.read.balanceOf([
 			address1.account?.address!,
 			address1.account?.address!,
@@ -302,7 +340,6 @@ describe("IntegrationTest", () => {
 		]);
 		expect(balance).to.equal(9000n);
 
-		// address2のbalance
 		balance = await FractionToken.read.balanceOf([
 			address2.account?.address!,
 			address2.account?.address!,
@@ -310,7 +347,6 @@ describe("IntegrationTest", () => {
 		]);
 		expect(balance).to.equal(10000n);
 
-		// address3のbalance
 		balance = await FractionToken.read.balanceOf([
 			address3.account?.address!,
 			address1.account?.address!,
@@ -371,17 +407,14 @@ describe("IntegrationTest", () => {
 			account: deployer.account!,
 			to: DeployedPullSplit.address,
 			value: parseEther("1"),
-			chain: undefined,
 		});
 
 		const beforeAddress1Balance = await publicClient.getBalance({
 			address: address1.account?.address!,
 		});
-
 		const beforeAddress2Balance = await publicClient.getBalance({
 			address: address2.account?.address!,
 		});
-
 		const beforeAddress3Balance = await publicClient.getBalance({
 			address: address3.account?.address!,
 		});
@@ -422,7 +455,6 @@ describe("IntegrationTest", () => {
 				account: address1.account,
 			}
 		);
-
 		await SplitsWarehouse.write.withdraw(
 			[
 				address2.account?.address as `0x${string}`,
@@ -432,7 +464,6 @@ describe("IntegrationTest", () => {
 				account: address2.account,
 			}
 		);
-
 		await SplitsWarehouse.write.withdraw(
 			[
 				address3.account?.address as `0x${string}`,
@@ -446,11 +477,9 @@ describe("IntegrationTest", () => {
 		const afterAddress1Balance = await publicClient.getBalance({
 			address: address1.account?.address!,
 		});
-
 		const afterAddress2Balance = await publicClient.getBalance({
 			address: address2.account?.address!,
 		});
-
 		const afterAddress3Balance = await publicClient.getBalance({
 			address: address3.account?.address!,
 		});

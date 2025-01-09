@@ -20,13 +20,11 @@ type InitializedFractionToken @entity {
 
 type TransferFractionToken @entity {
   id: ID!
-  from: String!
-  to: String!
-  tokenId: BigInt!
-  amount: BigInt!
   workspaceId: ID!
+  holderAddress: String!
   hatId: BigInt!
   wearer: String!
-  blockTimestamp: BigInt!
-  blockNumber: BigInt!
+  tokenId: BigInt!
+  balance: BigInt!
+  updatedAt: BigInt!
 }

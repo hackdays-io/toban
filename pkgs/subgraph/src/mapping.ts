@@ -59,15 +59,14 @@ export function handleTransferSingle(ev: TransferSingle): void {
 	);
 
 	let transfer = new TransferFractionToken(id);
-	transfer.from = ev.params.from.toHex();
-	transfer.to = ev.params.to.toHex();
-	transfer.tokenId = ev.params.id;
-	transfer.amount = ev.params.value;
+	transfer.id = `${ev.address}${ev.params.id}`;
 	transfer.workspaceId = "";
+	transfer.holderAddress = ev.params.from.toHex();
 	transfer.hatId = BigInt.fromString("0");
 	transfer.wearer = "";
-	transfer.blockNumber = ev.block.number;
-	transfer.blockTimestamp = ev.block.timestamp;
+	transfer.tokenId = ev.params.id;
+	transfer.balance = ev.params.value; // TODO: 送金前の残高から送金額のvalueを引く
+	transfer.updatedAt = ev.block.timestamp;
 
 	if (initializedFractionToken) {
 		transfer.workspaceId = initializedFractionToken.workspaceId;

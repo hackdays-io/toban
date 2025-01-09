@@ -1,9 +1,9 @@
 import { BIGBANG_ABI } from "abi/bigbang";
 import { useCallback, useState } from "react";
-import { Address, parseEventLogs } from "viem";
+import { type Address, parseEventLogs } from "viem";
 import { BIGBANG_ADDRESS } from "./useContracts";
-import { useActiveWallet } from "./useWallet";
 import { publicClient } from "./useViem";
+import { useActiveWallet } from "./useWallet";
 
 /**
  * BigBang 向けの React Hooks
@@ -61,7 +61,7 @@ export const useBigBang = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   return { bigbang, isLoading };

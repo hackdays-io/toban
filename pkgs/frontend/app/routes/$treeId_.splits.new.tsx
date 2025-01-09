@@ -10,7 +10,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
+import type { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
   useAddressesByNames,
@@ -20,32 +20,32 @@ import {
 import { useAssignableHats, useHats } from "hooks/useHats";
 import { useSplitsCreator } from "hooks/useSplitsCreator";
 import {
-  ChangeEvent,
-  FC,
+  type ChangeEvent,
+  type FC,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { HatsDetailSchama } from "types/hats";
+import {
+  type FieldArrayWithId,
+  type UseFieldArrayUpdate,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
+import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
-import { Address } from "viem";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
+import { PageHeader } from "~/components/PageHeader";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
-import { PageHeader } from "~/components/PageHeader";
+import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Field } from "~/components/ui/field";
-import {
-  FieldArrayWithId,
-  useFieldArray,
-  UseFieldArrayUpdate,
-  useForm,
-} from "react-hook-form";
-import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 
 interface RoleItemProps {
   update: UseFieldArrayUpdate<FormData, "roles">;
@@ -130,16 +130,16 @@ const RoleItem: FC<RoleItemProps> = ({
               <Stack rowGap={5}>
                 {names
                   .filter((name) => name.length > 0)
-                  .map((name, index) => (
-                    <HStack columnGap={3} key={index + name[0]?.address}>
+                  .map((name) => (
+                    <HStack columnGap={3} key={name[0]?.address}>
                       <Checkbox
                         colorPalette="blue"
                         checked={field.wearers.includes(
-                          name[0]?.address.toLowerCase() as Address
+                          name[0]?.address.toLowerCase() as Address,
                         )}
                         onChange={() =>
                           handleOnCheck(
-                            name[0]?.address.toLowerCase() as Address
+                            name[0]?.address.toLowerCase() as Address,
                           )
                         }
                       />
@@ -209,7 +209,7 @@ const SplitterNew: FC = () => {
 
   const baseHats = useMemo(() => {
     return hats.filter(
-      (h) => Number(h.levelAtLocalTree) == 2 && h.wearers?.length
+      (h) => Number(h.levelAtLocalTree) === 2 && h.wearers?.length,
     );
   }, [hats]);
 
@@ -224,7 +224,9 @@ const SplitterNew: FC = () => {
     return addresses?.[0]?.length === 0;
   }, [splitterName, addresses]);
 
-  const { createSplits, previewSplits, isLoading } = useSplitsCreator(treeId!);
+  const { createSplits, previewSplits, isLoading } = useSplitsCreator(
+    treeId ?? "",
+  );
 
   const { control, getValues } = useForm<FormData>();
   const { fields, insert, update } = useFieldArray({
@@ -234,7 +236,7 @@ const SplitterNew: FC = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      if (fields.length == 0) {
+      if (fields.length === 0) {
         for (let index = 0; index < baseHats.length; index++) {
           const hat = baseHats[index];
           insert(index, {
@@ -248,12 +250,12 @@ const SplitterNew: FC = () => {
       }
     };
     fetch();
-  }, [baseHats, fields.length]);
+  }, [baseHats, fields.length, insert]);
 
   const [preview, setPreview] =
     useState<{ address: Address; percentAllocation: number }[]>();
 
-  const calcParams = () => {
+  const calcParams = useCallback(() => {
     const data = getValues();
 
     return data.roles
@@ -264,7 +266,7 @@ const SplitterNew: FC = () => {
             ? [
                 BigInt(
                   role.multiplier *
-                    10 ** String(role.multiplier).split(".")[1].length
+                    10 ** String(role.multiplier).split(".")[1].length,
                 ),
                 BigInt(10 ** String(role.multiplier).split(".")[1].length),
               ]
@@ -278,7 +280,7 @@ const SplitterNew: FC = () => {
           wearers: role.wearers,
         };
       });
-  };
+  }, [getValues]);
 
   const handlePreview = useCallback(async () => {
     if (!availableName) return;
@@ -296,10 +298,10 @@ const SplitterNew: FC = () => {
         ([address, percentAllocation]) => ({
           address,
           percentAllocation,
-        })
-      )
+        }),
+      ),
     );
-  }, [availableName]);
+  }, [availableName, previewSplits, calcParams]);
 
   const { setName } = useSetName();
   const handleCreateSplitter = async () => {
@@ -312,7 +314,7 @@ const SplitterNew: FC = () => {
       const address = res?.find((res) => res.eventName === "SplitsCreated")
         ?.args.split;
       if (address) {
-        await setName({ name: `${splitterName}.split`, address: address! });
+        await setName({ name: `${splitterName}.split`, address: address });
       }
 
       navigate(`/${treeId}/splits`);
@@ -375,7 +377,7 @@ const SplitterNew: FC = () => {
             <List.Root listStyle="none" mb={10}>
               {fields.map((field, index) => (
                 <HatsListItemParser
-                  key={index}
+                  key={field.hatId}
                   detailUri={field.hat.details}
                   imageUri={field.hat.imageUri}
                 >
@@ -384,7 +386,7 @@ const SplitterNew: FC = () => {
                     fieldIndex={index}
                     field={field}
                     wearers={
-                      baseHats.find((h) => h.id == field.hatId)?.wearers || []
+                      baseHats.find((h) => h.id === field.hatId)?.wearers || []
                     }
                   />
                 </HatsListItemParser>

@@ -1,7 +1,7 @@
 import { Box, Heading, List, Text } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
-import { FC } from "react";
+import type { FC } from "react";
 import { abbreviateAddress } from "utils/wallet";
 import { StickyNav } from "~/components/StickyNav";
 
@@ -21,7 +21,7 @@ const WorkspaceMember: FC = () => {
         <Heading pb={4}>Transaction History</Heading>
         <List.Root>
           {data?.transferFractionTokens.map((token) => (
-            <List.Item>
+            <List.Item key={token.id}>
               <Text>
                 {abbreviateAddress(token.from)} → {abbreviateAddress(token.to)}{" "}
                 : {token.amount}

@@ -1,19 +1,19 @@
-import { Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useHoldersWithoutWearers } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { FC, useMemo } from "react";
+import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
-import { Address } from "viem";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
+import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { HatDetail, RoleName } from "~/components/roles/HolderDetail";
-import { StickyNav } from "~/components/StickyNav";
 
 const RoleDetails: FC = () => {
   const { treeId, hatId } = useParams();
@@ -28,7 +28,7 @@ const RoleDetails: FC = () => {
   const wearers = useMemo(() => hat?.wearers, [hat]);
   const wearerIds = useMemo(
     () => wearers?.map(({ id }) => id.toLowerCase()) || [],
-    [wearers]
+    [wearers],
   );
 
   // wearer
@@ -42,7 +42,7 @@ const RoleDetails: FC = () => {
   const assistantMembers = useMemo(
     () =>
       holdersWithoutWearers.filter((h) => !wearerIds.includes(h.toLowerCase())),
-    [holdersWithoutWearers, wearerIds]
+    [holdersWithoutWearers, wearerIds],
   );
   const { names: holderNames } = useNamesByAddresses(assistantMembers);
 
@@ -50,12 +50,12 @@ const RoleDetails: FC = () => {
   const { data } = useGetWorkspace(treeId);
   const hatsTimeFrameModuleAddress = useMemo(
     () => data?.workspace?.hatsTimeFrameModule,
-    [data]
+    [data],
   );
   const timeList = useWearingElapsedTime(
     hatsTimeFrameModuleAddress as Address,
     hatId,
-    wearerIds
+    wearerIds,
   );
 
   const navigate = useNavigate();
@@ -85,9 +85,9 @@ const RoleDetails: FC = () => {
       </HStack>
 
       <VStack width="full" alignItems="start" gap={3} paddingY={4}>
-        {wearerNames.flat().map((n, idx) => (
+        {wearerNames.flat().map((n) => (
           <HStack
-            key={idx + "w"}
+            key={`${n.name}w`}
             width="full"
             onClick={() => navigate(`/${treeId}/${hatId}/${n.address}`)}
           >
@@ -105,8 +105,8 @@ const RoleDetails: FC = () => {
                 {Math.floor(
                   (timeList.find(
                     ({ wearer }) =>
-                      wearer.toLowerCase() === n.address.toLowerCase()
-                  )?.time || 0) / 86400
+                      wearer.toLowerCase() === n.address.toLowerCase(),
+                  )?.time || 0) / 86400,
                 )}{" "}
                 days
               </Text>
@@ -123,8 +123,8 @@ const RoleDetails: FC = () => {
           </HStack>
         ))}
 
-        {holderNames.flat().map((n, idx) => (
-          <HStack key={idx + "h"} width="full">
+        {holderNames.flat().map((n) => (
+          <HStack key={`${n.name}h`} width="full">
             <UserIcon
               userImageUrl={ipfs2https(n.text_records?.avatar)}
               size={10}

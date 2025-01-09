@@ -1,25 +1,25 @@
-import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import { createSmartAccountClient, SmartAccountClient } from "permissionless";
+import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import {
-  toSimpleSmartAccount,
-  toThirdwebSmartAccount,
-} from "permissionless/accounts";
+  type SmartAccountClient,
+  createSmartAccountClient,
+} from "permissionless";
+import { toThirdwebSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Account,
-  Address,
+  http,
+  type Account,
+  type Address,
+  type CustomTransport,
+  type Transport,
+  type WalletClient,
   createWalletClient,
   custom,
-  CustomTransport,
-  http,
-  Transport,
-  WalletClient,
 } from "viem";
 import {
+  type SmartAccount,
+  type SmartAccountImplementation,
   entryPoint07Address,
-  SmartAccount,
-  SmartAccountImplementation,
 } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
 
@@ -32,7 +32,7 @@ export const pimlicoUrl = `https://api.pimlico.io/v2/${
  * Pimlico client
  */
 export const pimlicoClient = createPimlicoClient({
-  transport: http(pimlicoUrl) as any,
+  transport: http(pimlicoUrl),
   entryPoint: {
     address: entryPoint07Address,
     version: "0.7",
@@ -60,7 +60,7 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
     const create = async () => {
       setClient(undefined);
       const embeddedWallet = wallets.find(
-        (wallet) => wallet.connectorType === "embedded"
+        (wallet) => wallet.connectorType === "embedded",
       );
       const owner = await embeddedWallet?.getEthereumProvider();
       if (!owner) return;
@@ -68,7 +68,7 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
       // We are using thirdweb smart account
       const smartAccount = await toThirdwebSmartAccount({
         owner,
-        client: publicClient as any,
+        client: publicClient,
         entryPoint: {
           address: entryPoint07Address,
           version: "0.7",
@@ -77,8 +77,8 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
 
       const smartAccountClient = createSmartAccountClient({
         account: smartAccount,
-        chain: currentChain as any,
-        bundlerTransport: http(pimlicoUrl) as any,
+        chain: currentChain,
+        bundlerTransport: http(pimlicoUrl),
         paymaster: pimlicoClient,
         userOperation: {
           estimateFeesPerGas: async () => {
@@ -87,7 +87,7 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
         },
       });
 
-      setClient(smartAccountClient as any);
+      setClient(smartAccountClient);
     };
     create();
   }, [wallets]);
@@ -138,7 +138,7 @@ export const useActiveWallet = () => {
   const wallet = useMemo(() => {
     if (isConnectingEmbeddedWallet && !smartWalletClient) return;
     return smartWalletClient ? smartWalletClient : walletClient;
-  }, [walletClient, smartWalletClient]);
+  }, [walletClient, smartWalletClient, isConnectingEmbeddedWallet]);
 
   return { wallet, isSmartWallet, isConnectingEmbeddedWallet };
 };

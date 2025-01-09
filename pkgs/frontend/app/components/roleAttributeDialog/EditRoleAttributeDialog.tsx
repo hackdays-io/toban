@@ -1,8 +1,8 @@
 import { Button } from "@chakra-ui/react";
+import { GrEdit } from "react-icons/gr";
+import type { HatsDetailsAttributes } from "types/hats";
 import { DialogTrigger } from "../ui/dialog";
 import { BaseRoleAttributeDialog } from "./BaseRoleAttributeDialog";
-import { HatsDetailsAttributes } from "types/hats";
-import { GrEdit } from "react-icons/gr";
 
 const PencilButton = () => {
   return (

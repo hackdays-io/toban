@@ -1,4 +1,8 @@
-import { ActionFunction, data, LoaderFunction } from "@remix-run/node";
+import {
+  type ActionFunction,
+  type LoaderFunction,
+  data,
+} from "@remix-run/node";
 import NameStone, { NameData } from "namestone-sdk";
 
 const ns = new NameStone(import.meta.env.VITE_NAMESTONE_API_KEY);
@@ -9,15 +13,16 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const searchParams = new URL(request.url).searchParams;
 
   switch (action) {
-    case "resolve-names":
+    case "resolve-names": {
       const addresses = searchParams.get("addresses");
       if (!addresses) return [];
 
       const resolvedNames = await Promise.all(
-        addresses.split(",").map((address) => ns.getNames({ domain, address }))
+        addresses.split(",").map((address) => ns.getNames({ domain, address })),
       );
       return resolvedNames;
-    case "resolve-addresses":
+    }
+    case "resolve-addresses": {
       const names = searchParams.get("names");
       if (!names) return [];
 
@@ -28,11 +33,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           ns.searchNames({
             domain,
             name,
-            exact_match: exactMatch === "true" ? 1 : (0 as any),
-          })
-        )
+            exact_match: (exactMatch === "true" ? 1 : 0) as unknown as boolean,
+          }),
+        ),
       );
       return resolvedAddresses;
+    }
     default:
       throw data({ message: "Not Found" }, 404);
   }
@@ -44,10 +50,11 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   if (method === "POST") {
     switch (action) {
-      case "set-name":
+      case "set-name": {
         const { name, address, text_records } = await request.json();
         await ns.setName({ domain, name, address, text_records });
         return { message: "OK" };
+      }
       default:
         throw data({ message: "Not Found" }, 404);
     }

@@ -1,22 +1,22 @@
-import { FC, useMemo } from "react";
-import { HatsDetailSchama } from "types/hats";
-import { RoleIcon } from "../icon/RoleIcon";
 import {
   Box,
-  Heading,
   HStack,
+  Heading,
   Icon,
   List,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import { Link } from "@remix-run/react";
-import { UserIcon } from "../icon/UserIcon";
-import { ipfs2https } from "utils/ipfs";
-import { FaChevronLeft, FaLink } from "react-icons/fa6";
-import { abbreviateAddress } from "utils/wallet";
 import dayjs from "dayjs";
+import { type FC, useMemo } from "react";
+import { FaChevronLeft, FaLink } from "react-icons/fa6";
+import type { HatsDetailSchama } from "types/hats";
+import { ipfs2https } from "utils/ipfs";
+import { abbreviateAddress } from "utils/wallet";
 import { PageHeader } from "../PageHeader";
+import { RoleIcon } from "../icon/RoleIcon";
+import { UserIcon } from "../icon/UserIcon";
 
 interface HolderDetailProps {
   detail?: HatsDetailSchama;
@@ -158,7 +158,7 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
 
         <Box>
           <Heading fontSize="lg">役割</Heading>
-          {(detail?.data.responsabilities?.length ?? 0 > 0) ? (
+          {(detail?.data.responsabilities?.length ?? 0) > 0 ? (
             <List.Root pl={5} listStyle="disc">
               {detail?.data.responsabilities?.map((r) => (
                 <List.Item key={r.label}>
@@ -183,7 +183,7 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
 
         <Box>
           <Heading fontSize="lg">権限</Heading>
-          {(detail?.data.authorities?.length ?? 0 > 0) ? (
+          {(detail?.data.authorities?.length ?? 0) > 0 ? (
             <List.Root pl={5} listStyle="disc">
               {detail?.data.authorities?.map((a) => (
                 <List.Item key={a.label}>

@@ -14,7 +14,7 @@ const hydrate = () => {
             <RemixBrowser />
           </ChakraProvider>
         </ClientCacheProvider>
-      </StrictMode>
+      </StrictMode>,
     );
   });
 };

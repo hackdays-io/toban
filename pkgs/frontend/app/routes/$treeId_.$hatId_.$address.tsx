@@ -1,4 +1,4 @@
-import { Box, HStack, VStack, Text, Heading } from "@chakra-ui/react";
+import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useHoldersWithBalance } from "hooks/useFractionToken";
@@ -10,10 +10,11 @@ import {
 } from "hooks/useHatsTimeFrameModule";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { FC, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { BasicButton } from "~/components/BasicButton";
+import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import {
@@ -21,7 +22,6 @@ import {
   HatDetail,
   RoleNameWithWearer,
 } from "~/components/roles/HolderDetail";
-import { StickyNav } from "~/components/StickyNav";
 
 const RoleHolderDetails: FC = () => {
   const { treeId, hatId, address } = useParams();
@@ -68,14 +68,14 @@ const RoleHolderDetails: FC = () => {
             wearerIcon: wearerNames.flat()[0].text_records?.avatar,
           }
         : {},
-    [wearerNames]
+    [wearerNames],
   );
 
   // holderをbalanceとともに取得
   const holdersWithBalance = useHoldersWithBalance({ wearer: address, hatId });
   const holders = useMemo(
     () => holdersWithBalance.map(({ holder }) => holder),
-    [holdersWithBalance]
+    [holdersWithBalance],
   );
   const { names: holderNames } = useNamesByAddresses(holders);
   const holderDetail = useMemo(
@@ -83,17 +83,17 @@ const RoleHolderDetails: FC = () => {
       holderNames.flat().map((n) => ({
         ...n,
         balance: holdersWithBalance.find(
-          ({ holder }) => holder.toLowerCase() === n.address.toLowerCase()
+          ({ holder }) => holder.toLowerCase() === n.address.toLowerCase(),
         )?.balance,
       })),
-    [holdersWithBalance, holderNames]
+    [holdersWithBalance, holderNames],
   );
 
   // HatsTimeFrameModuleのアドレスを取得
   const { data } = useGetWorkspace(treeId);
   const hatsTimeFrameModuleAddress = useMemo(
     () => data?.workspace?.hatsTimeFrameModule,
-    [data]
+    [data],
   );
 
   // HatsTimeFrameModule関連の情報をボタンクリックの後再取得できるようにカウンターを設置
@@ -102,15 +102,15 @@ const RoleHolderDetails: FC = () => {
     hatsTimeFrameModuleAddress,
     hatId,
     address,
-    count
+    count,
   );
 
   // reactivate, deactivate, renounce
   const { reactivate, isLoading: isReactivating } = useReactivate(
-    hatsTimeFrameModuleAddress
+    hatsTimeFrameModuleAddress,
   );
   const { deactivate, isLoading: isDeactivating } = useDeactivate(
-    hatsTimeFrameModuleAddress
+    hatsTimeFrameModuleAddress,
   );
   const { renounceHat, isLoading: isRenouncing } = useHats();
 
@@ -151,8 +151,8 @@ const RoleHolderDetails: FC = () => {
             No holders
           </Text>
         ) : (
-          holderDetail.map((h, idx) => (
-            <HStack key={idx} width="full">
+          holderDetail.map((h) => (
+            <HStack key={`${h.name}h`} width="full">
               <UserIcon
                 userImageUrl={ipfs2https(h.text_records?.avatar)}
                 size={10}

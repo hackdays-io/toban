@@ -1,19 +1,19 @@
-import { FC, useState, useEffect, useMemo, useCallback } from "react";
-import { Box, Button, Text, HStack, Grid } from "@chakra-ui/react";
+import { Box, Grid, HStack, Text } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import { Address } from "viem";
 import { useAddressesByNames } from "hooks/useENS";
-import { isValidEthAddress, abbreviateAddress } from "utils/wallet";
 import { useGetHat } from "hooks/useHats";
-import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { HatsDetailSchama } from "types/hats";
-import { RoleIcon } from "~/components/icon/RoleIcon";
-import { CommonInput } from "~/components/common/CommonInput";
-import { PageHeader } from "~/components/PageHeader";
-import { FaCircleCheck } from "react-icons/fa6";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
-import CommonButton from "~/components/common/CommonButton";
 import { useGetWorkspace } from "hooks/useWorkspace";
+import { type FC, useCallback, useEffect, useState } from "react";
+import { FaCircleCheck } from "react-icons/fa6";
+import type { HatsDetailSchama } from "types/hats";
+import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
+import type { Address } from "viem";
+import { PageHeader } from "~/components/PageHeader";
+import CommonButton from "~/components/common/CommonButton";
+import { CommonInput } from "~/components/common/CommonInput";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { RoleIcon } from "~/components/icon/RoleIcon";
 
 interface RoleDetailProps {
   imageUri?: string;
@@ -43,13 +43,12 @@ const AssignRole: FC = () => {
   const [resolvedAddress, setResolvedAddress] = useState<Address>();
   const [startDatetime, setStartDatetime] = useState<string>("");
 
-  const { data } = useGetWorkspace(treeId!);
-  console.log(data);
+  const { data } = useGetWorkspace(treeId ?? "");
   const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule(
-    data?.workspace?.hatsTimeFrameModule as Address
+    data?.workspace?.hatsTimeFrameModule as Address,
   );
 
-  const { hat, isLoading } = useGetHat(hatId!);
+  const { hat, isLoading } = useGetHat(hatId ?? "");
 
   // Name resolution
   const { addresses, fetchAddresses } = useAddressesByNames(undefined, true);
@@ -71,7 +70,7 @@ const AssignRole: FC = () => {
     // If we got a resolved result
     if (addresses && addresses.length > 0 && addresses[0].length > 0) {
       const resolved = addresses[0][0];
-      if (resolved && resolved.address) {
+      if (resolved?.address) {
         setResolvedAddress(resolved.address as Address);
       }
     }
@@ -94,10 +93,10 @@ const AssignRole: FC = () => {
       BigInt(hatId),
       finalAddress,
       startDatetime
-        ? BigInt(new Date(startDatetime as any).getTime() / 1000)
-        : BigInt(0)
+        ? BigInt(new Date(startDatetime).getTime() / 1000)
+        : BigInt(0),
     );
-  }, [hatId, resolvedAddress, inputValue, mintHat]);
+  }, [hatId, resolvedAddress, inputValue, startDatetime, mintHat]);
 
   return (
     <Grid gridTemplateRows="1fr auto" minH="calc(100vh - 100px)" pb={5}>
@@ -133,7 +132,7 @@ const AssignRole: FC = () => {
             開始日
           </Text>
           <CommonInput
-            value={startDatetime!}
+            value={startDatetime || ""}
             onChange={(e) => {
               setStartDatetime(e.target.value);
             }}

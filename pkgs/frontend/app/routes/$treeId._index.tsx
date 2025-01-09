@@ -9,13 +9,13 @@ import {
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
-import { FC } from "react";
+import type { FC } from "react";
 import { FaPlus } from "react-icons/fa6";
-import { MyRole } from "~/components/roles/MyRole";
+import { StickyNav } from "~/components/StickyNav";
 import { CommonButton } from "~/components/common/CommonButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { MyRole } from "~/components/roles/MyRole";
 import { VRole } from "~/components/roles/VRole";
-import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceTop: FC = () => {
   const { wallet } = useActiveWallet();
@@ -54,7 +54,7 @@ const WorkspaceTop: FC = () => {
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
             .map((h) => (
-              <Link key={"allrole" + h.id} to={`/${treeId}/${h.id}`}>
+              <Link key={`allrole${h.id}`} to={`/${treeId}/${h.id}`}>
                 <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
                   <VRole iconSize="80px" />
                 </HatsListItemParser>

@@ -1,6 +1,6 @@
 import { Box, Grid, GridItem, Icon, IconButton } from "@chakra-ui/react";
 import { Link, useParams } from "@remix-run/react";
-import { FC } from "react";
+import type { FC } from "react";
 import { GoHomeFill } from "react-icons/go";
 import { MdCallSplit } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";

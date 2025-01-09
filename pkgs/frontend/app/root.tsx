@@ -1,4 +1,7 @@
+import { ApolloProvider } from "@apollo/client/react";
+import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
+import { PrivyProvider } from "@privy-io/react-auth";
 import {
   Links,
   Meta,
@@ -6,13 +9,10 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import { goldskyClient } from "utils/apollo";
+import { Header } from "./components/Header";
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { Container } from "@chakra-ui/react";
-import { Header } from "./components/Header";
-import { ApolloProvider } from "@apollo/client/react";
-import { goldskyClient } from "utils/apollo";
 
 interface LayoutProps extends React.PropsWithChildren {}
 

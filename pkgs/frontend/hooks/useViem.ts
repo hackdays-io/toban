@@ -1,4 +1,4 @@
-import { createPublicClient, http } from "viem";
+import { http, createPublicClient } from "viem";
 import { base, mainnet, optimism, sepolia } from "viem/chains";
 
 export const chainId = Number(import.meta.env.VITE_CHAIN_ID) || 1;

@@ -2,8 +2,8 @@ import { Box, Flex, Grid, Input, Text } from "@chakra-ui/react";
 import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import { TextRecords } from "namestone-sdk";
-import { FC, useMemo, useState } from "react";
+import type { TextRecords } from "namestone-sdk";
+import { type FC, useMemo, useState } from "react";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -42,13 +42,13 @@ const Login: FC = () => {
       text_records: TextRecords;
     } = {
       name: userName,
-      address: wallet.account?.address!,
+      address: wallet.account?.address,
       text_records: {},
     };
 
     if (imageFile) {
       const res = await uploadImageFileToIpfs();
-      params.text_records.avatar = res?.ipfsUri!;
+      if (res) params.text_records.avatar = res.ipfsUri;
     }
 
     await setName(params);
@@ -74,7 +74,7 @@ const Login: FC = () => {
               display="none"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file && file.type.startsWith("image/")) {
+                if (file?.type.startsWith("image/")) {
                   setImageFile(file);
                 } else {
                   alert("画像ファイルを選択してください");

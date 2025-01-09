@@ -5,8 +5,8 @@ import CommonButton from "~/components/common/CommonButton";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Toban" },
+    { name: "description", content: "Welcome to Toban!" },
   ];
 };
 

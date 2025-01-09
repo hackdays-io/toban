@@ -1,5 +1,6 @@
 import { withEmotionCache } from "@emotion/react";
 import {
+  data,
   Links,
   Meta,
   Outlet,
@@ -9,12 +10,24 @@ import {
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { Container } from "@chakra-ui/react";
 import { Header } from "./components/Header";
 import { ApolloProvider } from "@apollo/client/react";
+import { Container } from "@chakra-ui/react";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { goldskyClient } from "utils/apollo";
+import i18nServer, { localeCookie } from "./config/i18n.server";
 
 interface LayoutProps extends React.PropsWithChildren {}
+
+export const handle = { i18n: ["translation"] };
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const locale = await i18nServer.getLocale(request);
+  return data(
+    { locale },
+    { headers: { "Set-Cookie": await localeCookie.serialize(locale) } }
+  );
+}
 
 export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   const { children } = props;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, FC } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";
 import { UserIcon } from "./icon/UserIcon";
@@ -28,7 +28,7 @@ enum HeaderType {
   WorkspaceAndUserIcons = "WorkspaceAndUserIcons",
 }
 
-export const Header = () => {
+export const Header: FC = () => {
   const [headerType, setHeaderType] = useState<HeaderType>(
     HeaderType.NonHeader
   );

@@ -10,7 +10,7 @@ import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/O
 /**
  * Upgradableになっている確認するための検証用BigBangコントラクト
  */
-contract BigBangMockV2 is OwnableUpgradeable {
+contract BigBang_Mock_v2 is OwnableUpgradeable {
 	IHats public Hats;
 
 	IHatsModuleFactory public HatsModuleFactory;

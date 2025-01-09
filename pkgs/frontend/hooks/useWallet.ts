@@ -1,13 +1,9 @@
+import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
+import { createSmartAccountClient, SmartAccountClient } from "permissionless";
 import {
-  type ConnectedWallet,
-  usePrivy,
-  useWallets,
-} from "@privy-io/react-auth";
-import {
-  type SmartAccountClient,
-  createSmartAccountClient,
-} from "permissionless";
-import { toSimpleSmartAccount } from "permissionless/accounts";
+  toSimpleSmartAccount,
+  toThirdwebSmartAccount,
+} from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -69,7 +65,8 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
       const owner = await embeddedWallet?.getEthereumProvider();
       if (!owner) return;
 
-      const smartAccount = await toSimpleSmartAccount({
+      // We are using thirdweb smart account
+      const smartAccount = await toThirdwebSmartAccount({
         owner,
         client: publicClient as any,
         entryPoint: {

@@ -22,6 +22,7 @@ export const CommonIcon = ({
 
   return (
     <Box
+      as="span"
       height={size}
       width={size}
       display="flex"

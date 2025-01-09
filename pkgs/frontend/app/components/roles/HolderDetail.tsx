@@ -155,7 +155,12 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
         {(detail?.data.responsabilities?.length ?? 0 > 0) ? (
           <List.Root>
             {detail?.data.responsabilities?.map((r) => (
-              <List.Item key={r.label}>{r.label}</List.Item>
+              <List.Item key={r.label}>
+                <Box as="span" paddingX={2} bgColor="blue.100">
+                  {r.label}
+                </Box>{" "}
+                <Text>{r.description}</Text>
+              </List.Item>
             ))}
           </List.Root>
         ) : (
@@ -169,7 +174,12 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
         {(detail?.data.authorities?.length ?? 0 > 0) ? (
           <List.Root>
             {detail?.data.authorities?.map((a) => (
-              <List.Item key={a.label}>{a.label}</List.Item>
+              <List.Item key={a.label}>
+                <Box as="span" paddingX={2} bgColor="yellow.100">
+                  {a.label}
+                </Box>{" "}
+                {a.description}
+              </List.Item>
             ))}
           </List.Root>
         ) : (

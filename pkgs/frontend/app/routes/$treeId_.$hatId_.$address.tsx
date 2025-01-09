@@ -137,17 +137,11 @@ const RoleHolderDetails: FC = () => {
       </HatsListItemParser>
 
       <HStack paddingTop={8} justifyContent="space-between">
-        <Heading size="2xl">Assist Credit Holders</Heading>
+        <Heading size="lg">アシストクレジット</Heading>
         <Link to={`/${treeId}/${hatId}/${address}/assistcredit/send`}>
-          <Box
-            marginRight={4}
-            paddingX={3}
-            paddingY={1}
-            rounded="md"
-            bgColor="yellow.400"
-          >
-            Send
-          </Box>
+          <BasicButton minH={5} size="xs" bgColor="yellow.400">
+            誰かに送る
+          </BasicButton>
         </Link>
       </HStack>
 
@@ -182,7 +176,7 @@ const RoleHolderDetails: FC = () => {
           {isActive ? (
             <BasicButton
               marginTop={8}
-              bgColor="red.400"
+              bgColor="red.200"
               onClick={async () => {
                 await deactivate(hatId, address);
                 setCount(count + 1);
@@ -207,7 +201,8 @@ const RoleHolderDetails: FC = () => {
           {/* 現時点では表示されても実際にrevokeできるのはwearerのみ */}
           <BasicButton
             marginY={4}
-            bgColor="red.600"
+            bgColor="red.400"
+            color="white"
             onClick={async () => {
               await renounceHat(BigInt(hatId || 0));
               navigate(`/${treeId}/${hatId}`);

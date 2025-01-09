@@ -1,13 +1,22 @@
 import { FC, useMemo } from "react";
 import { HatsDetailSchama } from "types/hats";
 import { RoleIcon } from "../icon/RoleIcon";
-import { Box, Heading, HStack, Icon, List, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  HStack,
+  Icon,
+  List,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import { Link } from "@remix-run/react";
 import { UserIcon } from "../icon/UserIcon";
 import { ipfs2https } from "utils/ipfs";
 import { FaChevronLeft, FaLink } from "react-icons/fa6";
 import { abbreviateAddress } from "utils/wallet";
 import dayjs from "dayjs";
+import { PageHeader } from "../PageHeader";
 
 interface HolderDetailProps {
   detail?: HatsDetailSchama;
@@ -23,53 +32,42 @@ interface HolderDetailProps {
 }
 
 export const RoleName: FC<HolderDetailProps> = ({ detail, treeId }) => (
-  <Link to={`/${treeId}`}>
-    <HStack paddingBottom={4} alignItems="baseline">
-      <Icon fontSize={18}>
-        <FaChevronLeft />
-      </Icon>
-      {detail?.data.name ? (
-        <Heading size="2xl">{detail.data.name}</Heading>
+  <PageHeader
+    title={
+      detail?.data.name ? (
+        detail.data.name
       ) : (
-        <Heading size="2xl" fontStyle="italic" color="gray.400">
+        <Box as="span" fontStyle="italic" color="gray.400">
           No name
-        </Heading>
-      )}
-    </HStack>
-  </Link>
+        </Box>
+      )
+    }
+  />
 );
 
 export const RoleNameWithWearer: FC<HolderDetailProps> = ({
   detail,
-  treeId,
-  hatId,
   wearerId,
   wearerName,
   wearerIcon,
 }) => (
-  <Link to={`/${treeId}/${hatId}`}>
-    <HStack paddingBottom={4} alignItems="baseline" flexWrap="wrap">
-      <Icon fontSize={18}>
-        <FaChevronLeft />
-      </Icon>
-      {detail?.data.name ? (
-        <>
-          <Heading size="2xl">{detail.data.name}</Heading>
-          <Icon fontSize={18}>
-            <FaLink />
-          </Icon>
-          <UserIcon userImageUrl={ipfs2https(wearerIcon)} size={8} />
-          <Heading size="2xl">
-            {wearerName ? wearerName : abbreviateAddress(wearerId || "")}
-          </Heading>
-        </>
+  <PageHeader
+    title={
+      detail?.data.name ? (
+        <HStack>
+          <Box fontWeight="bold" fontSize="lg" mr={3}>
+            {detail.data.name}
+          </Box>
+          <UserIcon userImageUrl={ipfs2https(wearerIcon)} size={5} />
+          {wearerName ? wearerName : abbreviateAddress(wearerId || "")}
+        </HStack>
       ) : (
-        <Heading size="2xl" fontStyle="italic" color="gray.400">
+        <Box as="span" fontStyle="italic" color="gray.400">
           No name
-        </Heading>
-      )}
-    </HStack>
-  </Link>
+        </Box>
+      )
+    }
+  />
 );
 
 export const ActiveState: FC<HolderDetailProps> = ({
@@ -88,7 +86,7 @@ export const ActiveState: FC<HolderDetailProps> = ({
   }, [wearingElapsedTime]);
 
   return (
-    <HStack marginBottom={6}>
+    <HStack mt={4} mb={6}>
       {isActive ? (
         <Box
           width="fit"
@@ -97,6 +95,7 @@ export const ActiveState: FC<HolderDetailProps> = ({
           rounded="md"
           bgColor="blue.400"
           fontWeight="medium"
+          fontSize="sm"
         >
           Active
         </Box>
@@ -108,12 +107,13 @@ export const ActiveState: FC<HolderDetailProps> = ({
           rounded="md"
           bgColor="gray.200"
           fontWeight="medium"
+          fontSize="sm"
         >
           Inactive
         </Box>
       )}
       {formattedWoreTime && formattedWearingElapsedTime && (
-        <Box>
+        <Box fontSize="sm">
           {isActive && (
             <Text>
               Activated on{" "}
@@ -136,68 +136,76 @@ export const ActiveState: FC<HolderDetailProps> = ({
 
 export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
   <Box>
-    <Box float="left" paddingRight={4}>
-      <RoleIcon size={100} roleImageUrl={imageUri} />
-    </Box>
-    <Box>
-      <Box paddingY={2}>
-        <Heading>Description</Heading>
-        {detail?.data.description ? (
-          <Text>{detail.data.description}</Text>
-        ) : (
-          <Text fontStyle="italic" color="gray.400">
-            No description
-          </Text>
-        )}
+    <HStack alignItems="start" my={4} columnGap={4}>
+      <Box>
+        <RoleIcon roleImageUrl={imageUri} size={20} />
       </Box>
-      <Box paddingY={2} clear="both">
-        <Heading>Responsibilities</Heading>
-        {(detail?.data.responsabilities?.length ?? 0 > 0) ? (
-          <List.Root>
-            {detail?.data.responsabilities?.map((r) => (
-              <List.Item key={r.label}>
-                <Box as="span" paddingX={2} bgColor="blue.100">
-                  {r.label}
-                </Box>{" "}
-                {r.description}{" "}
-                {r.link && (
-                  <Box as="span" color="blue.500">
-                    <Link to={r.link}>...Link</Link>
-                  </Box>
-                )}
-              </List.Item>
-            ))}
-          </List.Root>
-        ) : (
-          <Text fontStyle="italic" color="gray.400">
-            No responsibilities
+      <VStack gap={4} alignItems="start">
+        <Box>
+          <Heading fontSize="lg">説明</Heading>
+
+          <Text fontSize="sm" color="gray.600">
+            {detail?.data.description ? (
+              detail.data.description
+            ) : (
+              <Text as="span" fontStyle="italic" color="gray.400" fontSize="md">
+                No responsibilities
+              </Text>
+            )}
+            {detail?.data.description}
           </Text>
-        )}
-      </Box>
-      <Box paddingY={2} clear="both">
-        <Heading>Authorities</Heading>
-        {(detail?.data.authorities?.length ?? 0 > 0) ? (
-          <List.Root>
-            {detail?.data.authorities?.map((a) => (
-              <List.Item key={a.label}>
-                <Box as="span" paddingX={2} bgColor="yellow.100">
-                  {a.label}
-                </Box>{" "}
-                {a.description}{" "}
-                {a.link && (
-                  <Box as="span" color="blue.500">
-                    <Link to={a.link}>...Link</Link>
-                  </Box>
-                )}
-              </List.Item>
-            ))}
-          </List.Root>
-        ) : (
-          <Text fontStyle="italic" color="gray.400">
-            No authorities
-          </Text>
-        )}
-      </Box>
-    </Box>
+        </Box>
+
+        <Box>
+          <Heading fontSize="lg">役割</Heading>
+          {(detail?.data.responsabilities?.length ?? 0 > 0) ? (
+            <List.Root pl={5} listStyle="disc">
+              {detail?.data.responsabilities?.map((r) => (
+                <List.Item key={r.label}>
+                  <Text fontWeight="bold">{r.label}</Text>
+                  <Text fontSize="sm">{r.description}</Text>
+                  {r.link && (
+                    <Box fontSize="sm" as="span" color="blue.500">
+                      <Link target="_blank" to={r.link}>
+                        リンク
+                      </Link>
+                    </Box>
+                  )}
+                </List.Item>
+              ))}
+            </List.Root>
+          ) : (
+            <Text fontStyle="italic" color="gray.400" fontSize="md">
+              No responsibilities
+            </Text>
+          )}
+        </Box>
+
+        <Box>
+          <Heading fontSize="lg">権限</Heading>
+          {(detail?.data.authorities?.length ?? 0 > 0) ? (
+            <List.Root pl={5} listStyle="disc">
+              {detail?.data.authorities?.map((a) => (
+                <List.Item key={a.label}>
+                  <Text fontWeight="bold">{a.label}</Text>
+                  <Text fontSize="sm">{a.description}</Text>
+                  {a.link && (
+                    <Box fontSize="sm" as="span" color="blue.500">
+                      <Link target="_blank" to={a.link}>
+                        リンク
+                      </Link>
+                    </Box>
+                  )}
+                </List.Item>
+              ))}
+            </List.Root>
+          ) : (
+            <Text fontStyle="italic" color="gray.400" fontSize="md">
+              No authorities
+            </Text>
+          )}
+        </Box>
+      </VStack>
+    </HStack>
   </Box>
 );

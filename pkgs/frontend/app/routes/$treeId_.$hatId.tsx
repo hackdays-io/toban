@@ -1,5 +1,5 @@
 import { Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useHoldersWithoutWearers } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
@@ -8,6 +8,7 @@ import { useGetWorkspace } from "hooks/useWorkspace";
 import { FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -26,7 +27,7 @@ const RoleDetails: FC = () => {
 
   const wearers = useMemo(() => hat?.wearers, [hat]);
   const wearerIds = useMemo(
-    () => wearers?.map(({ id }) => id) || [],
+    () => wearers?.map(({ id }) => id.toLowerCase()) || [],
     [wearers]
   );
 
@@ -38,7 +39,12 @@ const RoleDetails: FC = () => {
     hatId,
     wearers: wearerIds,
   });
-  const { names: holderNames } = useNamesByAddresses(holdersWithoutWearers);
+  const assistantMembers = useMemo(
+    () =>
+      holdersWithoutWearers.filter((h) => !wearerIds.includes(h.toLowerCase())),
+    [holdersWithoutWearers, wearerIds]
+  );
+  const { names: holderNames } = useNamesByAddresses(assistantMembers);
 
   // 各wearerのWearingElapsedTimeを取得
   const { data } = useGetWorkspace(treeId);
@@ -47,7 +53,7 @@ const RoleDetails: FC = () => {
     [data]
   );
   const timeList = useWearingElapsedTime(
-    hatsTimeFrameModuleAddress,
+    hatsTimeFrameModuleAddress as Address,
     hatId,
     wearerIds
   );
@@ -63,7 +69,21 @@ const RoleDetails: FC = () => {
         <HatDetail />
       </HatsListItemParser>
 
-      <Heading>Members</Heading>
+      <HStack justifyContent="space-between">
+        <Heading size="lg">貢献メンバー</Heading>
+
+        <Link to={`/${treeId}/${hatId}/assign`}>
+          <BasicButton
+            fontWeight="bold"
+            minH={5}
+            size="xs"
+            bgColor="yellow.400"
+          >
+            役割をわたす
+          </BasicButton>
+        </Link>
+      </HStack>
+
       <VStack width="full" alignItems="start" gap={3} paddingY={4}>
         {wearerNames.flat().map((n, idx) => (
           <HStack
@@ -87,15 +107,22 @@ const RoleDetails: FC = () => {
                     ({ wearer }) =>
                       wearer.toLowerCase() === n.address.toLowerCase()
                   )?.time || 0) / 86400
-                )}
+                )}{" "}
                 days
               </Text>
             </VStack>
-            <Box paddingX={2} paddingY={1} rounded="md" bgColor="yellow.400">
-              Role Holder
+            <Box
+              fontSize="xs"
+              paddingX={2}
+              paddingY={1}
+              rounded="md"
+              bgColor="yellow.200"
+            >
+              役割保持者
             </Box>
           </HStack>
         ))}
+
         {holderNames.flat().map((n, idx) => (
           <HStack key={idx + "h"} width="full">
             <UserIcon
@@ -107,19 +134,18 @@ const RoleDetails: FC = () => {
                 ? `${n.name} (${abbreviateAddress(n.address)})`
                 : abbreviateAddress(n.address)}
             </Text>
-            <Box paddingX={2} paddingY={1} rounded="md" bgColor="blue.400">
+            <Box
+              fontSize="xs"
+              paddingX={2}
+              paddingY={1}
+              rounded="md"
+              bgColor="blue.200"
+            >
               Assist
             </Box>
           </HStack>
         ))}
       </VStack>
-
-      <BasicButton
-        marginY={4}
-        onClick={() => navigate(`/${treeId}/${hatId}/assign`)}
-      >
-        Assign Member
-      </BasicButton>
 
       <StickyNav />
     </Box>

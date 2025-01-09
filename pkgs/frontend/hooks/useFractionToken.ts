@@ -147,16 +147,16 @@ export const useHoldersWithBalance = ({
         if (!tokenId) return;
         const holders = [...((await getTokenRecipients({ tokenId })) || [])];
 
-        const holdersWithBalance = await Promise.all(
-          holders.map(async (holder) => {
-            const balance = await publicClient.readContract({
-              ...fractionTokenBaseConfig,
-              functionName: "balanceOf",
-              args: [wearer as Address, holder, BigInt(hatId)],
-            });
-            return { holder, balance };
-          })
-        );
+        const balances = await publicClient.readContract({
+          ...fractionTokenBaseConfig,
+          functionName: "balanceOfBatch",
+          args: [holders, holders.map(() => BigInt(tokenId))],
+        });
+
+        const holdersWithBalance = holders.map((holder, index) => ({
+          holder,
+          balance: balances[index],
+        }));
 
         setHolders(holdersWithBalance);
       } catch (error) {

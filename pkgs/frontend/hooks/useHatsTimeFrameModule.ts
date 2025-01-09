@@ -164,7 +164,7 @@ export const useActiveState = (
 };
 
 export const useWearingElapsedTime = (
-  hatsTimeFrameModuleAddress?: string,
+  hatsTimeFrameModuleAddress?: Address,
   hatId?: string,
   wearers?: string[]
 ) => {

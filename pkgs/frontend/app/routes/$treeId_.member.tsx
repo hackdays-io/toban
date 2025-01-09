@@ -118,7 +118,7 @@ const WorkspaceMember: FC = () => {
                         imageUri={h.imageUri}
                         detailUri={h.details}
                       >
-                        <RoleTag />
+                        <RoleTag bgColor="yellow.200" />
                       </HatsListItemParser>
                     </Link>
                   ))}

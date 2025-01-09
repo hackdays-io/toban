@@ -159,7 +159,12 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
                 <Box as="span" paddingX={2} bgColor="blue.100">
                   {r.label}
                 </Box>{" "}
-                <Text>{r.description}</Text>
+                {r.description}{" "}
+                {r.link && (
+                  <Box as="span" color="blue.500">
+                    <Link to={r.link}>...Link</Link>
+                  </Box>
+                )}
               </List.Item>
             ))}
           </List.Root>
@@ -178,7 +183,12 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
                 <Box as="span" paddingX={2} bgColor="yellow.100">
                   {a.label}
                 </Box>{" "}
-                {a.description}
+                {a.description}{" "}
+                {a.link && (
+                  <Box as="span" color="blue.500">
+                    <Link to={a.link}>...Link</Link>
+                  </Box>
+                )}
               </List.Item>
             ))}
           </List.Root>

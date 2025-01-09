@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useMemo } from "react";
 import { HatsDetailSchama } from "types/hats";
 import { RoleIcon } from "../icon/RoleIcon";
 import { Box, Heading, HStack, Icon, List, Text } from "@chakra-ui/react";
@@ -7,6 +7,7 @@ import { UserIcon } from "../icon/UserIcon";
 import { ipfs2https } from "utils/ipfs";
 import { FaChevronLeft, FaLink } from "react-icons/fa6";
 import { abbreviateAddress } from "utils/wallet";
+import dayjs from "dayjs";
 
 interface HolderDetailProps {
   detail?: HatsDetailSchama;
@@ -16,6 +17,9 @@ interface HolderDetailProps {
   wearerId?: string;
   wearerName?: string;
   wearerIcon?: string;
+  isActive?: boolean;
+  woreTime?: number;
+  wearingElapsedTime?: number;
 }
 
 export const RoleName: FC<HolderDetailProps> = ({ detail, treeId }) => (
@@ -44,7 +48,7 @@ export const RoleNameWithWearer: FC<HolderDetailProps> = ({
   wearerIcon,
 }) => (
   <Link to={`/${treeId}/${hatId}`}>
-    <HStack paddingBottom={4} alignItems="baseline">
+    <HStack paddingBottom={4} alignItems="baseline" flexWrap="wrap">
       <Icon fontSize={18}>
         <FaChevronLeft />
       </Icon>
@@ -56,7 +60,7 @@ export const RoleNameWithWearer: FC<HolderDetailProps> = ({
           </Icon>
           <UserIcon userImageUrl={ipfs2https(wearerIcon)} size={8} />
           <Heading size="2xl">
-            {wearerName ? wearerName : abbreviateAddress(wearerId || "0x")}
+            {wearerName ? wearerName : abbreviateAddress(wearerId || "")}
           </Heading>
         </>
       ) : (
@@ -68,7 +72,67 @@ export const RoleNameWithWearer: FC<HolderDetailProps> = ({
   </Link>
 );
 
-export const HolderDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
+export const ActiveState: FC<HolderDetailProps> = ({
+  isActive,
+  woreTime,
+  wearingElapsedTime,
+}) => {
+  const formattedWoreTime = useMemo(() => {
+    if (!woreTime) return;
+    return dayjs.unix(woreTime).format("YYYY/MM/DD");
+  }, [woreTime]);
+
+  const formattedWearingElapsedTime = useMemo(() => {
+    if (!wearingElapsedTime) return;
+    return Math.floor(wearingElapsedTime / 86400);
+  }, [wearingElapsedTime]);
+
+  return (
+    <HStack marginBottom={6}>
+      {isActive ? (
+        <Box
+          width="fit"
+          paddingX={4}
+          paddingY={2}
+          rounded="md"
+          bgColor="blue.400"
+          fontWeight="medium"
+        >
+          Active
+        </Box>
+      ) : (
+        <Box
+          width="fit"
+          paddingX={4}
+          paddingY={2}
+          rounded="md"
+          bgColor="gray.200"
+          fontWeight="medium"
+        >
+          Inactive
+        </Box>
+      )}
+      {formattedWoreTime && formattedWearingElapsedTime && (
+        <Box>
+          <Text>
+            Role assigned on{" "}
+            <Text as="span" fontWeight="medium">
+              {formattedWoreTime}
+            </Text>
+          </Text>
+          <Text>
+            Active in{" "}
+            <Text as="span" fontWeight="medium">
+              {formattedWearingElapsedTime}days
+            </Text>
+          </Text>
+        </Box>
+      )}
+    </HStack>
+  );
+};
+
+export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
   <Box>
     <Box float="left" paddingRight={4}>
       <RoleIcon size={100} roleImageUrl={imageUri} />
@@ -115,5 +179,3 @@ export const HolderDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
     </Box>
   </Box>
 );
-
-export default HolderDetail;

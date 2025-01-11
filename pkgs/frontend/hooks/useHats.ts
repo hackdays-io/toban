@@ -221,7 +221,7 @@ export const useHats = () => {
     [getWearerInfo],
   );
 
-  const getHat = async (hatId: string) => {
+  const getHat = useCallback(async (hatId: string) => {
     const hat = await hatsSubgraphClient.getHat({
       chainId: currentChain.id,
       hatId: BigInt(hatId),
@@ -241,7 +241,7 @@ export const useHats = () => {
     });
 
     return hat;
-  };
+  }, []);
 
   const getWorkspacesList = useCallback(
     async (params: { walletAddress: string }) => {

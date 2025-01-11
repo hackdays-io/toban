@@ -3,7 +3,7 @@ import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import type { TextRecords } from "namestone-sdk";
-import { type FC, useMemo, useState } from "react";
+import { type FC, useCallback, useMemo, useState } from "react";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -30,34 +30,45 @@ const Login: FC = () => {
   const availableName = useMemo(() => {
     if (!userName) return false;
 
-    return addresses?.[0]?.length === 0;
+    return addresses[0].length === 0;
   }, [userName, addresses]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!wallet || !availableName) return;
 
-    const params: {
-      name: string;
-      address: string;
-      text_records: TextRecords;
-    } = {
-      name: userName,
-      address: wallet.account?.address,
-      text_records: {},
-    };
+    try {
+      const params: {
+        name: string;
+        address: string;
+        text_records: TextRecords;
+      } = {
+        name: userName,
+        address: wallet.account?.address,
+        text_records: {},
+      };
 
-    if (imageFile) {
-      const res = await uploadImageFileToIpfs();
-      if (res) params.text_records.avatar = res.ipfsUri;
+      if (imageFile) {
+        const res = await uploadImageFileToIpfs();
+        if (res) params.text_records.avatar = res.ipfsUri;
+      }
+
+      await setName(params);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      window.location.href = "/workspace";
     }
-
-    await setName(params);
-
-    window.location.href = "/workspace";
-  };
+  }, [
+    availableName,
+    imageFile,
+    setName,
+    uploadImageFileToIpfs,
+    userName,
+    wallet,
+  ]);
 
   return (
-    <Grid gridTemplateRows="1fr auto" h="100vh">
+    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
         <Box w="100%">
           <Flex

@@ -221,7 +221,7 @@ const SplitterNew: FC = () => {
   const availableName = useMemo(() => {
     if (!splitterName) return false;
 
-    return addresses?.[0]?.length === 0;
+    return addresses[0].length === 0;
   }, [splitterName, addresses]);
 
   const { createSplits, previewSplits, isLoading } = useSplitsCreator(

@@ -52,6 +52,19 @@ export const action: ActionFunction = async ({ request, params }) => {
     switch (action) {
       case "set-name": {
         const { name, address, text_records } = await request.json();
+
+        // Check if name is already taken
+        const existingNames = await ns.searchNames({
+          domain,
+          name,
+          exact_match: true,
+        });
+
+        // If name exists and is owned by a different address, throw error
+        if (existingNames.length > 0) {
+          throw data({ message: "Name is already taken" }, 409);
+        }
+
         await ns.setName({ domain, name, address, text_records });
         return { message: "OK" };
       }

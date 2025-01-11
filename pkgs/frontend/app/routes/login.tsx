@@ -43,7 +43,7 @@ const Login: FC = () => {
   }, [wallet, navigate, fetchNames]);
 
   return (
-    <Grid gridTemplateRows="1fr auto" h="100vh">
+    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
         <Box>
           <Box width="160px">

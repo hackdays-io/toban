@@ -30,7 +30,7 @@ const Login: FC = () => {
   const availableName = useMemo(() => {
     if (!userName) return false;
 
-    return addresses[0].length === 0;
+    return addresses?.[0]?.length === 0;
   }, [userName, addresses]);
 
   const handleSubmit = useCallback(async () => {

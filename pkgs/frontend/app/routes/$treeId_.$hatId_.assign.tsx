@@ -1,5 +1,5 @@
 import { Box, Grid, HStack, Text } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useAddressesByNames } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
@@ -50,6 +50,8 @@ const AssignRole: FC = () => {
 
   const { hat, isLoading } = useGetHat(hatId ?? "");
 
+  const navigate = useNavigate();
+
   // Name resolution
   const { addresses, fetchAddresses } = useAddressesByNames(undefined, true);
 
@@ -96,7 +98,17 @@ const AssignRole: FC = () => {
         ? BigInt(new Date(startDatetime).getTime() / 1000)
         : BigInt(0),
     );
-  }, [hatId, resolvedAddress, inputValue, startDatetime, mintHat]);
+
+    navigate(`/${treeId}/${hatId}`);
+  }, [
+    treeId,
+    hatId,
+    resolvedAddress,
+    inputValue,
+    startDatetime,
+    navigate,
+    mintHat,
+  ]);
 
   return (
     <Grid gridTemplateRows="1fr auto" minH="calc(100vh - 100px)" pb={5}>

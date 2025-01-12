@@ -5,6 +5,7 @@ import type {
   GetTransferFractionTokensQuery,
   GetTransferFractionTokensQueryVariables,
   TransferFractionToken_Filter,
+  TransferFractionToken_OrderBy,
 } from "gql/graphql";
 import { useCallback, useEffect, useState } from "react";
 import { type Address, decodeEventLog, encodeFunctionData } from "viem";
@@ -521,8 +522,8 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 /////////////////////////////////////
 
 const queryGetTransferFractionTokens = gql(`
-  query GetTransferFractionTokens($where: TransferFractionToken_filter = {}) {
-    transferFractionTokens(where: $where) {
+  query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, , $first: Int = 10) {
+    transferFractionTokens(where: $where, orderBy: $orderBy, first: $first) {
       amount
       from
       to
@@ -539,6 +540,8 @@ const queryGetTransferFractionTokens = gql(`
 
 export const useGetTransferFractionTokens = (params: {
   where?: TransferFractionToken_Filter;
+  orderBy?: TransferFractionToken_OrderBy;
+  first?: number;
 }) => {
   const result = useQuery<
     GetTransferFractionTokensQuery,
@@ -546,6 +549,8 @@ export const useGetTransferFractionTokens = (params: {
   >(queryGetTransferFractionTokens, {
     variables: {
       where: params.where,
+      orderBy: params.orderBy,
+      first: params.first,
     },
   });
 

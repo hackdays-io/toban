@@ -1,6 +1,7 @@
 import {
   AspectRatio,
   Box,
+  HStack,
   Heading,
   SimpleGrid,
   Text,
@@ -30,8 +31,15 @@ const WorkspaceTop: FC = () => {
   return (
     <>
       <Box my={4}>
-        <Heading pb={4}>直近のアクティビティ</Heading>
-        {treeId && <AssistCreditHistory treeId={treeId} />}
+        <HStack justify="space-between" alignItems="center" pb={4}>
+          <Heading>直近のアクティビティ</Heading>
+          <Link to={`/${treeId}/assistcredit-history`}>
+            <CommonButton size="xs" bgColor="blue.400">
+              もっと見る
+            </CommonButton>
+          </Link>
+        </HStack>
+        {treeId && <AssistCreditHistory limit={3} treeId={treeId} />}
       </Box>
 
       {/* My roles */}

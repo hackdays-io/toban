@@ -95,7 +95,7 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
   });
 
   return (
-    <VStack rowGap={3}>
+    <VStack rowGap={4}>
       {data?.transferFractionTokens.map((token) => (
         <AssistCreditItem
           key={`th_${token.id}`}

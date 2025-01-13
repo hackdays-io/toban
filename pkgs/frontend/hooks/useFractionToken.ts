@@ -524,7 +524,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
 const queryGetTransferFractionTokens = gql(`
   query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
-    transferFractionTokens(where: $where, orderBy: $orderBy, first: $first) {
+    transferFractionTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
       amount
       from
       to

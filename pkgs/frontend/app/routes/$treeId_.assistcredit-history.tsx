@@ -8,7 +8,7 @@ const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
 
   return (
-    <Box my={4}>
+    <Box mb={4}>
       <PageHeader
         title={
           <Heading size="lg" fontWeight="bold">

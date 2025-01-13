@@ -4,6 +4,7 @@ import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import type {
   GetTransferFractionTokensQuery,
   GetTransferFractionTokensQueryVariables,
+  OrderDirection,
   TransferFractionToken_Filter,
   TransferFractionToken_OrderBy,
 } from "gql/graphql";
@@ -522,7 +523,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 /////////////////////////////////////
 
 const queryGetTransferFractionTokens = gql(`
-  query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, , $first: Int = 10) {
+  query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
     transferFractionTokens(where: $where, orderBy: $orderBy, first: $first) {
       amount
       from
@@ -541,6 +542,7 @@ const queryGetTransferFractionTokens = gql(`
 export const useGetTransferFractionTokens = (params: {
   where?: TransferFractionToken_Filter;
   orderBy?: TransferFractionToken_OrderBy;
+  orderDirection?: OrderDirection;
   first?: number;
 }) => {
   const result = useQuery<
@@ -550,6 +552,7 @@ export const useGetTransferFractionTokens = (params: {
     variables: {
       where: params.where,
       orderBy: params.orderBy,
+      orderDirection: params.orderDirection,
       first: params.first,
     },
   });

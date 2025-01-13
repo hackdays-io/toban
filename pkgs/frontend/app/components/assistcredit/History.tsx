@@ -1,5 +1,5 @@
 import { Box, HStack, Text, VStack } from "@chakra-ui/react";
-import { TransferFractionToken_OrderBy } from "gql/graphql";
+import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useGetHat } from "hooks/useHats";
@@ -91,6 +91,7 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
       workspaceId: treeId,
     },
     orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
     first: limit,
   });
 

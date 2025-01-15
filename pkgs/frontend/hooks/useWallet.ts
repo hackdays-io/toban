@@ -98,15 +98,18 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
 export const useAccountClient = (wallets: ConnectedWallet[]) => {
   const [client, setClient] =
     useState<WalletClient<CustomTransport, typeof currentChain, Account>>();
+  const [wallet, setWallet] = useState<ConnectedWallet>();
 
   useEffect(() => {
     const create = async () => {
       setClient(undefined);
+      setWallet(undefined);
+
       if (!wallets[0]) return;
       const wallet = wallets[0];
+      setWallet(wallet);
 
       const provider = await wallet.getEthereumProvider();
-
       const walletClient = createWalletClient({
         chain: currentChain,
         transport: custom(provider),
@@ -119,12 +122,13 @@ export const useAccountClient = (wallets: ConnectedWallet[]) => {
     create();
   }, [wallets]);
 
-  return client;
+  return { client, wallet };
 };
 
 export const useActiveWallet = () => {
   const { wallets } = useWallets();
-  const walletClient = useAccountClient(wallets);
+  const { client: walletClient, wallet: connectedWallet } =
+    useAccountClient(wallets);
   const smartWalletClient = useSmartAccountClient(wallets);
 
   const isConnectingEmbeddedWallet = useMemo(() => {
@@ -140,5 +144,5 @@ export const useActiveWallet = () => {
     return smartWalletClient ? smartWalletClient : walletClient;
   }, [walletClient, smartWalletClient, isConnectingEmbeddedWallet]);
 
-  return { wallet, isSmartWallet, isConnectingEmbeddedWallet };
+  return { wallet, connectedWallet, isSmartWallet, isConnectingEmbeddedWallet };
 };

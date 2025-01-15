@@ -9,8 +9,10 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import { currentChain } from "hooks/useViem";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
+import { SwitchNetwork } from "./components/SwitchNetwork";
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
 
@@ -49,11 +51,21 @@ export default function App() {
       <PrivyProvider
         appId={import.meta.env.VITE_PRIVY_APP_ID}
         config={{
+          appearance: {
+            walletList: ["coinbase_wallet"],
+          },
           embeddedWallets: {
             createOnLogin: "users-without-wallets",
           },
+          externalWallets: {
+            coinbaseWallet: {
+              connectionOptions: "smartWalletOnly",
+            },
+          },
+          supportedChains: [currentChain],
         }}
       >
+        <SwitchNetwork />
         <ChakraProvider>
           <Container
             bg="#fffdf8"

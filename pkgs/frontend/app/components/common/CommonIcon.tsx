@@ -32,6 +32,7 @@ export const CommonIcon = ({
       borderRadius={borderRadius}
       flexShrink={0}
       overflow="hidden"
+      backgroundColor={showFallbackIcon ? "gray.300" : "transparent"}
     >
       {!showFallbackIcon ? (
         <Image

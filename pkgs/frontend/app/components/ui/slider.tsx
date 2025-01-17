@@ -34,19 +34,19 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           <ChakraSlider.Track>
             <ChakraSlider.Range />
           </ChakraSlider.Track>
-          {value?.map((_, index) => (
-            <ChakraSlider.Thumb key={index} index={index}>
+          {value?.map((val, index) => (
+            <ChakraSlider.Thumb key={`${val}`} index={index}>
               <ChakraSlider.HiddenInput />
             </ChakraSlider.Thumb>
           ))}
         </ChakraSlider.Control>
         {marks?.length && (
           <ChakraSlider.MarkerGroup>
-            {marks.map((mark, index) => {
+            {marks.map((mark) => {
               const value = typeof mark === "number" ? mark : mark.value;
               const label = typeof mark === "number" ? undefined : mark.label;
               return (
-                <ChakraSlider.Marker key={index} value={value}>
+                <ChakraSlider.Marker key={value} value={value}>
                   <ChakraSlider.MarkerIndicator />
                   {label}
                 </ChakraSlider.Marker>
@@ -56,5 +56,5 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         )}
       </ChakraSlider.Root>
     );
-  }
+  },
 );

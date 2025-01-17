@@ -13,16 +13,16 @@ export function createEmotion() {
 
     let stylesHTML = "";
 
-    styles.forEach(({ key, ids, css }) => {
+    for (const { key, ids, css } of styles) {
       const emotionKey = `${key} ${ids.join(" ")}`;
       const newStyleTag = `<style data-emotion="${emotionKey}">${css}</style>`;
       stylesHTML = `${stylesHTML}${newStyleTag}`;
-    });
+    }
 
     // add the emotion style tags after the insertion point meta tag
     const markup = html.replace(
       /<meta(\s)*name="emotion-insertion-point"(\s)*content="emotion-insertion-point"(\s)*\/>/,
-      `<meta name="emotion-insertion-point" content="emotion-insertion-point"/>${stylesHTML}`
+      `<meta name="emotion-insertion-point" content="emotion-insertion-point"/>${stylesHTML}`,
     );
 
     return markup;
@@ -32,7 +32,7 @@ export function createEmotion() {
     return renderToString(
       <CacheProvider value={cache}>
         <ChakraProvider>{element}</ChakraProvider>
-      </CacheProvider>
+      </CacheProvider>,
     );
   }
 

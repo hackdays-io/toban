@@ -1,19 +1,19 @@
-import { FC, useState, useEffect, useMemo, useCallback } from "react";
-import { Box, Button, Text, HStack } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
-import { Address } from "viem";
+import { Box, Grid, HStack, Text } from "@chakra-ui/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useAddressesByNames } from "hooks/useENS";
-import { isValidEthAddress, abbreviateAddress } from "utils/wallet";
 import { useGetHat } from "hooks/useHats";
-import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { HatsDetailSchama } from "types/hats";
-import { RoleIcon } from "~/components/icon/RoleIcon";
-import { CommonInput } from "~/components/common/CommonInput";
-import { PageHeader } from "~/components/PageHeader";
-import { FaCircleCheck } from "react-icons/fa6";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
-import CommonButton from "~/components/common/CommonButton";
 import { useGetWorkspace } from "hooks/useWorkspace";
+import { type FC, useCallback, useEffect, useState } from "react";
+import { FaCircleCheck } from "react-icons/fa6";
+import type { HatsDetailSchama } from "types/hats";
+import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
+import type { Address } from "viem";
+import { PageHeader } from "~/components/PageHeader";
+import CommonButton from "~/components/common/CommonButton";
+import { CommonInput } from "~/components/common/CommonInput";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { RoleIcon } from "~/components/icon/RoleIcon";
 
 interface RoleDetailProps {
   imageUri?: string;
@@ -43,13 +43,14 @@ const AssignRole: FC = () => {
   const [resolvedAddress, setResolvedAddress] = useState<Address>();
   const [startDatetime, setStartDatetime] = useState<string>("");
 
-  const { data } = useGetWorkspace(treeId!);
-  console.log(data);
+  const { data } = useGetWorkspace(treeId ?? "");
   const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule(
-    data?.workspace?.hatsTimeFrameModule as Address
+    data?.workspace?.hatsTimeFrameModule as Address,
   );
 
-  const { hat, isLoading } = useGetHat(hatId!);
+  const { hat, isLoading } = useGetHat(hatId ?? "");
+
+  const navigate = useNavigate();
 
   // Name resolution
   const { addresses, fetchAddresses } = useAddressesByNames(undefined, true);
@@ -71,7 +72,7 @@ const AssignRole: FC = () => {
     // If we got a resolved result
     if (addresses && addresses.length > 0 && addresses[0].length > 0) {
       const resolved = addresses[0][0];
-      if (resolved && resolved.address) {
+      if (resolved?.address) {
         setResolvedAddress(resolved.address as Address);
       }
     }
@@ -94,49 +95,62 @@ const AssignRole: FC = () => {
       BigInt(hatId),
       finalAddress,
       startDatetime
-        ? BigInt(new Date(startDatetime as any).getTime() / 1000)
-        : BigInt(0)
+        ? BigInt(new Date(startDatetime).getTime() / 1000)
+        : BigInt(0),
     );
-  }, [hatId, resolvedAddress, inputValue, mintHat]);
+
+    navigate(`/${treeId}/${hatId}`);
+  }, [
+    treeId,
+    hatId,
+    resolvedAddress,
+    inputValue,
+    startDatetime,
+    navigate,
+    mintHat,
+  ]);
 
   return (
-    <>
-      <PageHeader title="役割を割り当てる" />
+    <Grid gridTemplateRows="1fr auto" minH="calc(100vh - 100px)" pb={5}>
+      <Box>
+        <Box mb={5}>
+          <PageHeader title="役割を割り当てる" />
+        </Box>
+        <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
+          <RoleDetail />
+        </HatsListItemParser>
 
-      <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
-        <RoleDetail />
-      </HatsListItemParser>
+        {/* User name or address input */}
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
+            ユーザー名 or ウォレットアドレス
+          </Text>
+          <CommonInput
+            placeholder="ユーザー名 or ウォレットアドレス"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+          />
+          {resolvedAddress && !isValidEthAddress(inputValue) && (
+            <HStack mt={1} fontSize="sm" justifyContent="end" color="blue.300">
+              <FaCircleCheck />
+              <Text color="gray.500">{abbreviateAddress(resolvedAddress)}</Text>
+            </HStack>
+          )}
+        </Box>
 
-      {/* User name or address input */}
-      <Box mb={4}>
-        <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
-          ユーザー名 or ウォレットアドレス
-        </Text>
-        <CommonInput
-          placeholder="ユーザー名 or ウォレットアドレス"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-        />
-        {resolvedAddress && !isValidEthAddress(inputValue) && (
-          <HStack mt={1} fontSize="sm" justifyContent="end" color="blue.300">
-            <FaCircleCheck />
-            <Text color="gray.500">{abbreviateAddress(resolvedAddress)}</Text>
-          </HStack>
-        )}
-      </Box>
-
-      {/* Date input */}
-      <Box mb={4}>
-        <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
-          開始日
-        </Text>
-        <CommonInput
-          value={startDatetime!}
-          onChange={(e) => {
-            setStartDatetime(e.target.value);
-          }}
-          type="datetime-local"
-        />
+        {/* Date input */}
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="medium" mb={1} color="gray.600">
+            開始日
+          </Text>
+          <CommonInput
+            value={startDatetime || ""}
+            onChange={(e) => {
+              setStartDatetime(e.target.value);
+            }}
+            type="datetime-local"
+          />
+        </Box>
       </Box>
 
       {/* Assign Button */}
@@ -151,7 +165,7 @@ const AssignRole: FC = () => {
       >
         Assign
       </CommonButton>
-    </>
+    </Grid>
   );
 };
 

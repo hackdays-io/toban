@@ -6,14 +6,14 @@ import Layout from "@theme/Layout";
  * @returns
  */
 export default function Home(): JSX.Element {
-	const { siteConfig } = useDocusaurusContext();
-	return (
-		<Layout title={`${siteConfig.title}`} description="This is a Toban Docs">
-			<main>
-				<article>
-					<img src="img/banner.png" />
-				</article>
-			</main>
-		</Layout>
-	);
+  const { siteConfig } = useDocusaurusContext();
+  return (
+    <Layout title={`${siteConfig.title}`} description="This is a Toban Docs">
+      <main>
+        <article>
+          <img src="img/banner.png" alt="Toban Banner" />
+        </article>
+      </main>
+    </Layout>
+  );
 }

@@ -1,6 +1,6 @@
-import { FC } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import { HatsDetailsAttributes } from "types/hats";
+import type { FC } from "react";
+import type { HatsDetailsAttributes } from "types/hats";
 import { EditRoleAttributeDialog } from "~/components/roleAttributeDialog/EditRoleAttributeDialog";
 
 export const RoleAttributesList: FC<{
@@ -9,9 +9,9 @@ export const RoleAttributesList: FC<{
 }> = ({ items, setItems }) => {
   return (
     <Box w="100%" mt={2}>
-      {items.map((_, index) => (
+      {items.map((item, index) => (
         <Box
-          key={index}
+          key={`${item.label}-${index}`}
           minHeight="45px"
           mt={2}
           width="100%"

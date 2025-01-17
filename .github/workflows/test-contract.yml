@@ -29,6 +29,10 @@ jobs:
         run: yarn install
         working-directory: ./pkgs/contract
 
+      - name: Lint Check
+        run: yarn lint
+        working-directory: ./pkgs/contract
+
       - name: Run Hardhat tests
         run: |
           npx hardhat test > ./test-results.txt

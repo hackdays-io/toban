@@ -1,19 +1,19 @@
-import { FC, useState } from "react";
 import { Box, Grid } from "@chakra-ui/react";
-import { BasicButton } from "~/components/BasicButton";
+import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { useNavigate } from "@remix-run/react";
+import { useBigBang } from "hooks/useBigBang";
 import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
-import { useNavigate } from "@remix-run/react";
-import { useBigBang } from "hooks/useBigBang";
 import { useActiveWallet } from "hooks/useWallet";
-import { Address } from "viem";
-import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { type FC, useState } from "react";
+import type { Address } from "viem";
+import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
+import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
-import { InputDescription } from "~/components/input/InputDescription";
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");

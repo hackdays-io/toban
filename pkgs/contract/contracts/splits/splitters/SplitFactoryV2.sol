@@ -7,7 +7,7 @@ import { SplitV2Lib } from "../libraries/SplitV2.sol";
 import { Nonces } from "../utils/Nonces.sol";
 import { SplitWalletV2 } from "./SplitWalletV2.sol";
 
-import "hardhat/console.sol";
+
 
 /**
  * @title SplitFactoryV2

@@ -1,6 +1,6 @@
 import { HStack, Text, VStack } from "@chakra-ui/react";
-import { FC } from "react";
-import { HatsDetailSchama } from "types/hats";
+import type { FC } from "react";
+import type { HatsDetailSchama } from "types/hats";
 import { RoleIcon } from "../icon/RoleIcon";
 
 interface BasicRoleProps {
@@ -15,9 +15,9 @@ export const RoleTag: FC<BasicRoleProps> = ({
   bgColor = "yellow.400",
 }) => {
   return (
-    <HStack rounded="md" backgroundColor={bgColor} gap={1}>
+    <HStack rounded="md" backgroundColor={bgColor} gap={1} overflow="hidden">
       <RoleIcon size="30px" roleImageUrl={imageUri} borderRadius="md" />
-      <Text pl={1} pr={2}>
+      <Text pl={1} pr={2} fontSize="sm">
         {detail?.data?.name}
       </Text>
     </HStack>

@@ -1,18 +1,18 @@
-import { Box, VStack, Button } from "@chakra-ui/react";
-import {
-  DialogRoot,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogActionTrigger,
-} from "../ui/dialog";
-import { InputName } from "../input/InputName";
+import { Box, Button, VStack } from "@chakra-ui/react";
+import { useCallback, useEffect, useState } from "react";
+import type { HatsDetailsAttributes } from "types/hats";
 import { InputDescription } from "../input/InputDescription";
 import { InputLink } from "../input/InputLink";
-import { useEffect, useState } from "react";
-import { HatsDetailsAttributes } from "types/hats";
+import { InputName } from "../input/InputName";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+} from "../ui/dialog";
 
 const BUTTON_TEXT_MAP = {
   add: "Add",
@@ -60,17 +60,17 @@ export const BaseRoleAttributeDialog = ({
     setLink("");
   };
 
-  const setAttribute = (attribute: RoleAttribute) => {
+  const setAttribute = useCallback((attribute: RoleAttribute) => {
     setName(attribute.label);
     setDescription(attribute.description ?? "");
     setLink(attribute.link ?? "");
-  };
+  }, []);
 
   useEffect(() => {
     if (mode === "edit" && attribute) {
       setAttribute(attribute);
     }
-  }, [attribute, mode]);
+  }, [attribute, mode, setAttribute]);
 
   return (
     <>

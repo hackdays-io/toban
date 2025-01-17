@@ -1,37 +1,25 @@
-import { Box, Heading, List, Text } from "@chakra-ui/react";
+import { Box, Heading } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import { useGetTransferFractionTokens } from "hooks/useFractionToken";
-import { FC } from "react";
-import { abbreviateAddress } from "utils/wallet";
-import { StickyNav } from "~/components/StickyNav";
+import type { FC } from "react";
+import { PageHeader } from "~/components/PageHeader";
+import { AssistCreditHistory } from "~/components/assistcredit/History";
 
 const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
 
-  const { data } = useGetTransferFractionTokens({
-    where: {
-      workspaceId: treeId,
-    },
-  });
-
   return (
-    <>
-      {/* Members */}
-      <Box mb={4}>
-        <Heading pb={4}>Transaction History</Heading>
-        <List.Root>
-          {data?.transferFractionTokens.map((token) => (
-            <List.Item>
-              <Text>
-                {abbreviateAddress(token.from)} → {abbreviateAddress(token.to)}{" "}
-                : {token.amount}
-              </Text>
-            </List.Item>
-          ))}
-        </List.Root>
+    <Box mb={4}>
+      <PageHeader
+        title={
+          <Heading size="lg" fontWeight="bold">
+            アクティビティ一覧
+          </Heading>
+        }
+      />
+      <Box mt={5}>
+        {treeId && <AssistCreditHistory treeId={treeId} limit={100} />}
       </Box>
-      <StickyNav />
-    </>
+    </Box>
   );
 };
 

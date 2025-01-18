@@ -34,45 +34,37 @@ enum HeaderType {
 // ネットワーク切り替えコンポーネントを作成
 const NetworkSwitcher = ({
   switchToChain,
-  connectedChainId,
 }: {
   switchToChain: (chain: Chain) => Promise<boolean>;
-  connectedChainId?: number;
 }) => {
-  const isWrongNetwork =
-    connectedChainId && connectedChainId !== currentChain.id;
-
   return (
     <MenuItem value="network" display="block">
       <Text fontWeight="bold" mb={2}>
         Network
       </Text>
-      {isWrongNetwork ? (
-        <>
-          <Text color="red.500" fontSize="sm" mb={2}>
-            ⚠️ 異なるネットワークに接続されています
-          </Text>
-          <CommonButton
-            key={currentChain.id}
-            onClick={() => switchToChain(currentChain)}
-            w="100%"
-            mb={1}
-            colorScheme="red"
-          >
-            {currentChain.name}に切り替える
-          </CommonButton>
-        </>
-      ) : (
+      {/* チェーン切り替えボタンを表示 */}
+      {/* {supportedChains.map((chain) => (
         <CommonButton
-          key={currentChain.id}
-          onClick={() => switchToChain(currentChain)}
+          key={chain.id}
+          onClick={() => switchToChain(chain)}
           w="100%"
           mb={1}
-          variant="solid"
+          variant={chain.id === currentChain.id ? "solid" : "outline"}
         >
-          {currentChain.name}
+          {chain.name}
         </CommonButton>
-      )}
+      ))} */}
+
+      {/* 現在のチェーンを表示 */}
+      <CommonButton
+        key={currentChain.id}
+        onClick={() => switchToChain(currentChain)}
+        w="100%"
+        mb={1}
+        variant={"solid"}
+      >
+        {currentChain.name}
+      </CommonButton>
     </MenuItem>
   );
 };
@@ -145,10 +137,6 @@ export const Header = () => {
 
   const { switchToChain } = useSwitchNetwork();
 
-  const connectedChainId = wallets[0]
-    ? Number(wallets[0].chainId.split(":")[1])
-    : undefined;
-
   return headerType !== HeaderType.NonHeader ? (
     <Flex justifyContent="space-between" w="100%" py={3}>
       <Box display="flex" height="48px" flex="1" alignItems="center">
@@ -189,10 +177,7 @@ export const Header = () => {
               </Text>
               <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
             </MenuItem>
-            <NetworkSwitcher
-              switchToChain={switchToChain}
-              connectedChainId={connectedChainId}
-            />
+            <NetworkSwitcher switchToChain={switchToChain} />
             <MenuItem value="logout" onClick={handleLogout}>
               Logout
             </MenuItem>
@@ -201,25 +186,12 @@ export const Header = () => {
       ) : (
         <MenuRoot closeOnSelect={false}>
           <MenuTrigger asChild>
-            <CommonButton
-              w="auto"
-              my="auto"
-              colorScheme={
-                connectedChainId && connectedChainId !== currentChain.id
-                  ? "red"
-                  : undefined
-              }
-            >
-              {connectedChainId && connectedChainId !== currentChain.id
-                ? "⚠️ ネットワークを切り替えてください"
-                : currentChain.name}
+            <CommonButton w="auto" my="auto">
+              {currentChain.name}
             </CommonButton>
           </MenuTrigger>
           <MenuContent>
-            <NetworkSwitcher
-              switchToChain={switchToChain}
-              connectedChainId={connectedChainId}
-            />
+            <NetworkSwitcher switchToChain={switchToChain} />
             <MenuItem value="logout" onClick={handleLogout}>
               Logout
             </MenuItem>

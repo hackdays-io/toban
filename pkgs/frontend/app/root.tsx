@@ -9,7 +9,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import { currentChain } from "hooks/useViem";
+import { currentChain, supportedChains } from "hooks/useViem";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
 import { SwitchNetwork } from "./components/SwitchNetwork";

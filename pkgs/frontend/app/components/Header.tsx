@@ -4,11 +4,14 @@ import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
 import axios from "axios";
 import { useActiveWalletIdentity } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
+import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { useEffect, useMemo, useState } from "react";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import type { Chain } from "viem";
+import { useSwitchNetwork } from "./SwitchNetwork";
 import CommonButton from "./common/CommonButton";
 import { UserIcon } from "./icon/UserIcon";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";
@@ -27,6 +30,52 @@ enum HeaderType {
   UserIconOnly = "UserIconOnly",
   WorkspaceAndUserIcons = "WorkspaceAndUserIcons",
 }
+
+// ネットワーク切り替えコンポーネントを作成
+const NetworkSwitcher = ({
+  switchToChain,
+  connectedChainId,
+}: {
+  switchToChain: (chain: Chain) => Promise<boolean>;
+  connectedChainId?: number;
+}) => {
+  const isWrongNetwork =
+    connectedChainId && connectedChainId !== currentChain.id;
+
+  return (
+    <MenuItem value="network" display="block">
+      <Text fontWeight="bold" mb={2}>
+        Network
+      </Text>
+      {isWrongNetwork ? (
+        <>
+          <Text color="red.500" fontSize="sm" mb={2}>
+            ⚠️ 異なるネットワークに接続されています
+          </Text>
+          <CommonButton
+            key={currentChain.id}
+            onClick={() => switchToChain(currentChain)}
+            w="100%"
+            mb={1}
+            colorScheme="red"
+          >
+            {currentChain.name}に切り替える
+          </CommonButton>
+        </>
+      ) : (
+        <CommonButton
+          key={currentChain.id}
+          onClick={() => switchToChain(currentChain)}
+          w="100%"
+          mb={1}
+          variant="solid"
+        >
+          {currentChain.name}
+        </CommonButton>
+      )}
+    </MenuItem>
+  );
+};
 
 export const Header = () => {
   const [headerType, setHeaderType] = useState<HeaderType>(
@@ -76,17 +125,29 @@ export const Header = () => {
     return avatar ? ipfs2https(avatar) : undefined;
   }, [identity]);
 
-  const handleLogout = () => {
-    if (isSmartWallet) {
-      logout();
-    } else {
-      if (wallets.find((w) => w.connectorType === "injected")) {
-        alert("ウォレット拡張機能から切断してください。");
+  // ログアウトハンドラー
+  const handleLogout = async () => {
+    try {
+      if (isSmartWallet) {
+        await logout();
       } else {
-        Promise.all(wallets.map((wallet) => wallet.disconnect()));
+        if (wallets.find((w) => w.connectorType === "injected")) {
+          alert("ウォレット拡張機能から切断してください。");
+          return;
+        }
+        await Promise.all(wallets.map((wallet) => wallet.disconnect()));
+        navigate("/login");
       }
+    } catch (error) {
+      console.error("ログアウトに失敗しました:", error);
     }
   };
+
+  const { switchToChain } = useSwitchNetwork();
+
+  const connectedChainId = wallets[0]
+    ? Number(wallets[0].chainId.split(":")[1])
+    : undefined;
 
   return headerType !== HeaderType.NonHeader ? (
     <Flex justifyContent="space-between" w="100%" py={3}>
@@ -128,20 +189,42 @@ export const Header = () => {
               </Text>
               <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
             </MenuItem>
+            <NetworkSwitcher
+              switchToChain={switchToChain}
+              connectedChainId={connectedChainId}
+            />
             <MenuItem value="logout" onClick={handleLogout}>
               Logout
             </MenuItem>
           </MenuContent>
         </MenuRoot>
       ) : (
-        <CommonButton
-          onClick={() => {
-            navigate("/login");
-          }}
-          w="auto"
-        >
-          Login
-        </CommonButton>
+        <MenuRoot closeOnSelect={false}>
+          <MenuTrigger asChild>
+            <CommonButton
+              w="auto"
+              my="auto"
+              colorScheme={
+                connectedChainId && connectedChainId !== currentChain.id
+                  ? "red"
+                  : undefined
+              }
+            >
+              {connectedChainId && connectedChainId !== currentChain.id
+                ? "⚠️ ネットワークを切り替えてください"
+                : currentChain.name}
+            </CommonButton>
+          </MenuTrigger>
+          <MenuContent>
+            <NetworkSwitcher
+              switchToChain={switchToChain}
+              connectedChainId={connectedChainId}
+            />
+            <MenuItem value="logout" onClick={handleLogout}>
+              Logout
+            </MenuItem>
+          </MenuContent>
+        </MenuRoot>
       )}
     </Flex>
   ) : (

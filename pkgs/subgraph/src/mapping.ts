@@ -1,6 +1,6 @@
 import { BigInt as GraphBigInt } from "@graphprotocol/graph-ts";
-import type { Executed } from "../generated/BigBang/BigBang";
-import type {
+import { Executed } from "../generated/BigBang/BigBang";
+import {
   InitialMint,
   TransferSingle,
 } from "../generated/FractionToken/FractionToken";

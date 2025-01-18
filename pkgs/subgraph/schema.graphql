@@ -30,3 +30,14 @@ type TransferFractionToken @entity {
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }
+
+type FractionTokenBalance @entity {
+  id: ID!
+  workspaceId: ID!
+  holderAddress: String!
+  hatId: BigInt!
+  wearer: String!
+  tokenId: BigInt!
+  balance: BigInt!
+  updatedAt: BigInt!
+}

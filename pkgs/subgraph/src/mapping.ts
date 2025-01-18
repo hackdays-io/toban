@@ -5,6 +5,7 @@ import {
   TransferSingle,
 } from "../generated/FractionToken/FractionToken";
 import {
+  FractionTokenBalance,
   InitializedFractionToken,
   TransferFractionToken,
   Workspace,
@@ -77,4 +78,22 @@ export function handleTransferSingle(ev: TransferSingle): void {
   }
 
   transfer.save();
+}
+
+export function getBalance(ev: TransferSingle): GraphBigInt {
+  const id =
+  ev.transaction.hash.toHex() +
+  ev.params.id.toHex() +
+  ev.params.from.toHex() +
+  ev.params.to.toHex();
+
+  const balance = new FractionTokenBalance(id);
+  balance.workspaceId = "";
+  balance.holderAddress = ev.params.from.toHex();
+  balance.hatId = GraphBigInt.fromString("0");
+  balance.wearer = "";
+  balance.tokenId = ev.params.id;
+  balance.balance = GraphBigInt.fromString("0");
+  balance.updatedAt = ev.block.timestamp;
+  return balance ? balance.balance : GraphBigInt.fromString("0");
 }

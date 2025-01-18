@@ -144,6 +144,23 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     yarn document start
     ```
 
+- ### subgraph
+
+  - #### **goldsky login**
+
+    ```bash
+    goldsky login
+    ```
+
+  - #### **deploy subgraph to sepolia**
+
+    ```bash
+    yarn subgraph prepare:sepolia
+    yarn subgraph codegen
+    yarn subgraph build
+    yarn subgraph deploy:sepolia
+    ```
+
 - ### frontend
 
   - #### **build frontend**

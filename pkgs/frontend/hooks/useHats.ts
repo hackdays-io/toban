@@ -6,7 +6,6 @@ import {
 } from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
-import useSWR from "swr";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
 import { type Address, parseEventLogs } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
@@ -36,52 +35,28 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
   },
 });
 
-export const useTreeInfo = (treeId?: number) => {
-  const { data, error, isLoading } = useSWR(
-    treeId ? ["treeInfo", treeId] : null,
-    async ([_, treeId]) => {
-      try {
-        const response = await getTreeInfo(treeId);
-        return response;
-      } catch (error) {
-        console.error("Error fetching tree info:", error);
-        return null;
-      }
-    },
-  );
+export const useTreeInfo = (treeId: number) => {
+  const [treeInfo, setTreeInfo] = useState<Tree>();
 
-  return {
-    treeInfo: data,
-    isLoading,
-    error,
-  };
-};
+  const { getTreeInfo } = useHats();
 
-export const useWearerInfo = (address?: string) => {
-  const { data, error, isLoading } = useSWR(
-    address ? ["wearerInfo", address] : null,
-    async ([_, address]) => {
-      try {
-        const response = await getWearerInfo(address);
-        return response;
-      } catch (error) {
-        if (error instanceof SubgraphWearerNotExistError) {
-          // ユーザーがまだHatsを持っていない場合は空の配列を返す
-          return {
-            wearerStatic: [],
-            wearerDynamic: [],
-          };
-        }
-        throw error;
-      }
-    },
-  );
+  useEffect(() => {
+    const fetch = async () => {
+      setTreeInfo(undefined);
+      if (!treeId) return;
 
-  return {
-    wearerInfo: data,
-    isLoading,
-    error,
-  };
+      const tree = await getTreeInfo({
+        treeId: treeId,
+      });
+      if (!tree) return;
+
+      setTreeInfo(tree);
+    };
+
+    fetch();
+  }, [treeId, getTreeInfo]);
+
+  return treeInfo;
 };
 
 /**

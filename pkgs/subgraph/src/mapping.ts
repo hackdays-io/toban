@@ -4,7 +4,6 @@ import type {
   InitialMint,
   TransferSingle,
 } from "../generated/FractionToken/FractionToken";
-
 import {
   InitializedFractionToken,
   TransferFractionToken,

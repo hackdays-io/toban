@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { HatsDetailSchama, HatsDetailsData } from "types/hats";
-import { ipfsUploadJson, ipfsUploadFile } from "utils/ipfs";
+import type { HatsDetailSchama, HatsDetailsData } from "types/hats";
+import { ipfsUploadFile, ipfsUploadJson } from "utils/ipfs";
 
 export const useUploadMetadataToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const uploadMetadataToIpfs = async (
-    metadata: object
+    metadata: object,
   ): Promise<{ ipfsCid: string; ipfsUri: string } | null> => {
     setIsLoading(true);
     setError(null);
@@ -25,7 +25,7 @@ export const useUploadMetadataToIpfs = () => {
       return { ipfsCid, ipfsUri };
     } catch (err) {
       setError(
-        err instanceof Error ? err : new Error("Unknown error occurred")
+        err instanceof Error ? err : new Error("Unknown error occurred"),
       );
       return null;
     } finally {
@@ -93,7 +93,7 @@ export const useUploadImageFileToIpfs = () => {
       return { ipfsCid, ipfsUri };
     } catch (err) {
       setError(
-        err instanceof Error ? err : new Error("Unknown error occurred")
+        err instanceof Error ? err : new Error("Unknown error occurred"),
       );
       return null;
     } finally {

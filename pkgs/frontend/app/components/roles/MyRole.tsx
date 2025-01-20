@@ -1,9 +1,9 @@
 import { HStack, Image, Text, VStack } from "@chakra-ui/react";
 import { useNavigate } from "@remix-run/react";
-import { FC } from "react";
-import { HatsDetailSchama } from "types/hats";
-import { RoleIcon } from "../icon/RoleIcon";
+import type { FC } from "react";
+import type { HatsDetailSchama } from "types/hats";
 import CommonButton from "../common/CommonButton";
+import { RoleIcon } from "../icon/RoleIcon";
 
 interface MyRoleProps {
   detail?: HatsDetailSchama;
@@ -26,14 +26,14 @@ export const MyRole: FC<MyRoleProps> = (params) => {
         <CommonButton
           onClick={() => navigate(`/${treeId}/${hatId}/${address}`)}
         >
-          See Detail
+          詳細をみる
         </CommonButton>
         <CommonButton
           onClick={() =>
             navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`)
           }
         >
-          Transfer Assist Credit
+          アシストクレジットを送る
         </CommonButton>
       </VStack>
     </HStack>

@@ -1,5 +1,5 @@
-import { useState, useEffect, ReactNode } from "react";
 import { Box, Image } from "@chakra-ui/react";
+import { type ReactNode, useEffect, useState } from "react";
 
 interface CommonIconProps {
   imageUrl: string | undefined;
@@ -22,6 +22,7 @@ export const CommonIcon = ({
 
   return (
     <Box
+      as="span"
       height={size}
       width={size}
       display="flex"
@@ -31,6 +32,7 @@ export const CommonIcon = ({
       borderRadius={borderRadius}
       flexShrink={0}
       overflow="hidden"
+      backgroundColor={showFallbackIcon ? "gray.300" : "transparent"}
     >
       {!showFallbackIcon ? (
         <Image

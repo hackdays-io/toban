@@ -1,24 +1,24 @@
-import { FC, useState } from "react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { Box, Text } from "@chakra-ui/react";
-import { InputImage } from "~/components/input/InputImage";
-import {
-  useUploadImageFileToIpfs,
-  useUploadHatsDetailsToIpfs,
-} from "hooks/useIpfs";
-import { ContentContainer } from "~/components/ContentContainer";
-import { InputName } from "~/components/input/InputName";
-import { InputDescription } from "~/components/input/InputDescription";
-import { BasicButton } from "~/components/BasicButton";
-import { useActiveWallet } from "hooks/useWallet";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useHats } from "hooks/useHats";
 import {
+  useUploadHatsDetailsToIpfs,
+  useUploadImageFileToIpfs,
+} from "hooks/useIpfs";
+import { useActiveWallet } from "hooks/useWallet";
+import { type FC, useCallback, useState } from "react";
+import type {
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { BasicButton } from "~/components/BasicButton";
+import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
+import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { InputDescription } from "~/components/input/InputDescription";
+import { InputImage } from "~/components/input/InputImage";
+import { InputName } from "~/components/input/InputName";
+import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
@@ -47,12 +47,12 @@ const NewRole: FC = () => {
   const { getTreeInfo } = useHats();
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!wallet) {
       alert("ウォレットを接続してください。");
       return;
     }
-    if (!roleName || !roleDescription || !imageFile) {
+    if (!roleName) {
       alert("全ての項目を入力してください。");
       return;
     }
@@ -79,26 +79,33 @@ const NewRole: FC = () => {
       const hatterHatId = treeInfo?.hats?.[1]?.id;
       if (!hatterHatId) throw new Error("Hat ID is required");
 
-      console.log("resUploadHatsDetails", resUploadHatsDetails);
-      console.log("resUploadImage", resUploadImage);
-      console.log("hatterHatId", hatterHatId);
-
       const parsedLog = await createHat({
         parentHatId: BigInt(hatterHatId),
         details: resUploadHatsDetails?.ipfsUri,
         imageURI: resUploadImage?.ipfsUri,
       });
-      if (!parsedLog) throw new Error("Failed to create hat transaction");
-      console.log("parsedLog", parsedLog);
-
-      navigate(`/${treeId}/roles`);
+      const log = parsedLog?.find((log) => log.eventName === "HatCreated");
+      if (!log) throw new Error("Failed to create hat transaction");
+      setTimeout(() => {
+        navigate(`/${treeId}/0x00000${log.args.id?.toString(16)}`);
+      });
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。" + error);
-    } finally {
-      setIsLoading(false);
+      alert(`エラーが発生しました。${error}`);
     }
-  };
+  }, [
+    authorities,
+    createHat,
+    navigate,
+    responsibilities,
+    roleName,
+    roleDescription,
+    treeId,
+    uploadHatsDetailsToIpfs,
+    uploadImageFileToIpfs,
+    wallet,
+    getTreeInfo,
+  ]);
 
   return (
     <>
@@ -113,7 +120,7 @@ const NewRole: FC = () => {
             mt={6}
           />
         </ContentContainer>
-        <SectionHeading>Responsibilities</SectionHeading>
+        <SectionHeading>役割</SectionHeading>
         <ContentContainer>
           <RoleAttributesList
             items={responsibilities}
@@ -125,7 +132,7 @@ const NewRole: FC = () => {
             setAttributes={setResponsibilities}
           />
         </ContentContainer>
-        <SectionHeading>Authorities</SectionHeading>
+        <SectionHeading>権限</SectionHeading>
         <ContentContainer>
           <RoleAttributesList items={authorities} setItems={setAuthorities} />
           <AddRoleAttributeDialog
@@ -144,13 +151,7 @@ const NewRole: FC = () => {
         >
           <BasicButton
             onClick={handleSubmit}
-            disabled={
-              !roleName ||
-              !roleDescription ||
-              !imageFile ||
-              responsibilities.length === 0 ||
-              authorities.length === 0
-            }
+            disabled={!roleName}
             loading={isLoading}
           >
             作成

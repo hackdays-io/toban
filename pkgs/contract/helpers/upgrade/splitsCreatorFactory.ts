@@ -1,5 +1,5 @@
 import { ethers, upgrades, viem } from "hardhat";
-import { Address } from "viem";
+import type { Address } from "viem";
 
 /**
  * SplitsCreatorFactory Contractをアップグレードするメソッド
@@ -9,9 +9,8 @@ import { Address } from "viem";
  * @returns
  */
 export async function upgradeSplitsCreatorFacotry(
-  contractAddress: string ,
+  contractAddress: string,
   contractName: string,
-  params: any[]
 ) {
   // 新しいコントラクトのファクトリーを取得
   const SplitsCreator_Mock_v2 = await ethers.getContractFactory(contractName);
@@ -19,7 +18,7 @@ export async function upgradeSplitsCreatorFacotry(
   // アップグレードを実行
   const _SplitsCreatorFactory = await upgrades.upgradeProxy(
     contractAddress,
-    SplitsCreator_Mock_v2
+    SplitsCreator_Mock_v2,
   );
 
   // 新しいアドレスを取得
@@ -28,7 +27,7 @@ export async function upgradeSplitsCreatorFacotry(
   // create a new instance of the contract
   const newSplitsCreatorFactory = await viem.getContractAt(
     contractName,
-    address as Address
+    address as Address,
   );
 
   return newSplitsCreatorFactory;

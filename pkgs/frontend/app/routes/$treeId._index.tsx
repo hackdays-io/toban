@@ -1,6 +1,7 @@
 import {
   AspectRatio,
   Box,
+  HStack,
   Heading,
   SimpleGrid,
   Text,
@@ -9,13 +10,14 @@ import {
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
-import { FC } from "react";
+import type { FC } from "react";
 import { FaPlus } from "react-icons/fa6";
-import { MyRole } from "~/components/roles/MyRole";
+import { StickyNav } from "~/components/StickyNav";
+import { AssistCreditHistory } from "~/components/assistcredit/History";
 import { CommonButton } from "~/components/common/CommonButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { MyRole } from "~/components/roles/MyRole";
 import { VRole } from "~/components/roles/VRole";
-import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceTop: FC = () => {
   const { wallet } = useActiveWallet();
@@ -28,9 +30,21 @@ const WorkspaceTop: FC = () => {
 
   return (
     <>
+      <Box my={4}>
+        <HStack justify="space-between" alignItems="center" pb={4}>
+          <Heading>直近のアクティビティ</Heading>
+          <Link to={`/${treeId}/assistcredit-history`}>
+            <CommonButton size="xs" bgColor="blue.400">
+              もっと見る
+            </CommonButton>
+          </Link>
+        </HStack>
+        {treeId && <AssistCreditHistory limit={3} treeId={treeId} />}
+      </Box>
+
       {/* My roles */}
-      <Box mb={4}>
-        <Heading pb={4}>My Roles</Heading>
+      <Box my={4}>
+        <Heading py={4}>自分の役割</Heading>
         <VStack>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
@@ -49,12 +63,12 @@ const WorkspaceTop: FC = () => {
 
       {/* All roles */}
       <Box my={4}>
-        <Heading py={4}>All Roles</Heading>
+        <Heading py={4}>役割一覧</Heading>
         <SimpleGrid columns={4} gap={4}>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
             .map((h) => (
-              <Link key={"allrole" + h.id} to={`/${treeId}/${h.id}`}>
+              <Link key={`allrole${h.id}`} to={`/${treeId}/${h.id}`}>
                 <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
                   <VRole iconSize="80px" />
                 </HatsListItemParser>

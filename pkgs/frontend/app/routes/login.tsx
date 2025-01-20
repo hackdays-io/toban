@@ -1,9 +1,9 @@
-import { Box, Text, Float, Grid, Flex } from "@chakra-ui/react";
+import { Box, Flex, Float, Grid, Text } from "@chakra-ui/react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useActiveWallet } from "hooks/useWallet";
-import { FC, useCallback, useEffect } from "react";
+import { type FC, useCallback, useEffect } from "react";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonIcon } from "~/components/common/CommonIcon";
 
@@ -22,13 +22,15 @@ const Login: FC = () => {
     } else {
       Promise.all(wallets.map((wallet) => wallet.disconnect()));
     }
-  }, [wallets, isSmartWallet]);
+  }, [wallets, isSmartWallet, logout]);
 
   useEffect(() => {
     const afterLogin = async () => {
       if (!wallet) return;
 
-      const names = await fetchNames([wallet.account?.address!]);
+      const address = wallet.account?.address;
+      if (!address) return;
+      const names = await fetchNames([address]);
 
       if (names?.[0].length === 0) {
         navigate("/signup");
@@ -38,10 +40,10 @@ const Login: FC = () => {
     };
 
     afterLogin();
-  }, [wallet, navigate]);
+  }, [wallet, navigate, fetchNames]);
 
   return (
-    <Grid gridTemplateRows="1fr auto" h="100vh">
+    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
         <Box>
           <Box width="160px">

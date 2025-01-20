@@ -18,7 +18,7 @@ contract SplitsCreatorFactory_Mock_v2 is OwnableUpgradeable {
 	);
 
 	address public SPLITS_CREATOR_IMPLEMENTATION;
-	
+
 	address public BIG_BANG;
 
 	function initialize(

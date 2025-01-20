@@ -48,7 +48,7 @@ const hydrate = async () => {
             </I18nextProvider>
           </ChakraProvider>
         </ClientCacheProvider>
-      </StrictMode>
+      </StrictMode>,
     );
   });
 };

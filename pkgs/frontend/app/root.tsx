@@ -1,4 +1,7 @@
+import { ApolloProvider } from "@apollo/client/react";
+import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
+import { PrivyProvider } from "@privy-io/react-auth";
 import {
   data,
   Links,
@@ -7,10 +10,13 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import { currentChain } from "hooks/useViem";
+import { goldskyClient } from "utils/apollo";
+import { Header } from "./components/Header";
+import { SwitchNetwork } from "./components/SwitchNetwork";
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { Header } from "./components/Header";
 import { ApolloProvider } from "@apollo/client/react";
 import { Container } from "@chakra-ui/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
@@ -62,11 +68,21 @@ export default function App() {
       <PrivyProvider
         appId={import.meta.env.VITE_PRIVY_APP_ID}
         config={{
+          appearance: {
+            walletList: ["coinbase_wallet"],
+          },
           embeddedWallets: {
             createOnLogin: "users-without-wallets",
           },
+          externalWallets: {
+            coinbaseWallet: {
+              connectionOptions: "smartWalletOnly",
+            },
+          },
+          supportedChains: [currentChain],
         }}
       >
+        <SwitchNetwork />
         <ChakraProvider>
           <Container
             bg="#fffdf8"

@@ -1,9 +1,9 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { useNamesByAddresses } from "hooks/useENS";
-import { FC, useMemo } from "react";
-import { UserIcon } from "../icon/UserIcon";
+import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import { UserIcon } from "../icon/UserIcon";
 
 interface SplitRecipientsListProps {
   recipients: { address: string; percentAllocation: number }[];
@@ -25,7 +25,7 @@ export const SplitRecipientsList: FC<SplitRecipientsListProps> = ({
     <Box>
       {recipients.map((recipient) => {
         const name = names.find(
-          (name) => name[0]?.address === recipient.address
+          (name) => name[0]?.address === recipient.address,
         )?.[0];
         return (
           <Flex key={recipient.address} mb={3} alignItems="center" gap={2}>

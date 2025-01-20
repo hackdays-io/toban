@@ -1,4 +1,4 @@
-import { CacheProvider, EmotionCache } from "@emotion/react";
+import { CacheProvider, type EmotionCache } from "@emotion/react";
 import {
   createContext,
   useContext,
@@ -34,7 +34,7 @@ export function ClientCacheProvider({ children }: ClientCacheProviderProps) {
         setCache(createEmotionCache());
       },
     }),
-    []
+    [],
   );
 
   return (
@@ -58,12 +58,12 @@ export function useInjectStyles(cache: EmotionCache) {
 
     const tags = cache.sheet.tags;
     cache.sheet.flush();
-    tags.forEach((tag) => {
+    for (const tag of tags) {
       const sheet = cache.sheet as unknown as {
         _insertTag: (tag: HTMLStyleElement) => void;
       };
       sheet._insertTag(tag);
-    });
+    }
 
     styles.reset();
     injectRef.current = false;

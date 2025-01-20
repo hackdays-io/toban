@@ -5,7 +5,7 @@ import { hatsSubgraphClient } from "../src/modules/hatsProtocol";
  * HatsProtocolの機能を試すためのスクリプト
  */
 const main = async () => {
-	/*
+  /*
 	// hatの情報を取得する。
 	const hat = await hatsSubgraphClient.getHat({
 		chainId: optimism.id,
@@ -34,29 +34,29 @@ const main = async () => {
 	console.log(hat);
 	*/
 
-	// ツリー情報を全て取得する。
-	const tree = await hatsSubgraphClient.getTree({
-		chainId: optimism.id,
-		treeId: 163,
-		props: {
-			hats: {
-				props: {
-					prettyId: true,
-					status: true,
-					createdAt: true,
-					details: true,
-					maxSupply: true,
-					eligibility: true,
-					imageUri: true,
-					toggle: true,
-					levelAtLocalTree: true,
-					currentSupply: true,
-				},
-			},
-		},
-	});
+  // ツリー情報を全て取得する。
+  const tree = await hatsSubgraphClient.getTree({
+    chainId: optimism.id,
+    treeId: 163,
+    props: {
+      hats: {
+        props: {
+          prettyId: true,
+          status: true,
+          createdAt: true,
+          details: true,
+          maxSupply: true,
+          eligibility: true,
+          imageUri: true,
+          toggle: true,
+          levelAtLocalTree: true,
+          currentSupply: true,
+        },
+      },
+    },
+  });
 
-	console.log(tree);
+  console.log(tree);
 };
 
 main().catch(console.error);

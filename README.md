@@ -40,6 +40,10 @@ Core features are
 
 These solutions were combined with ideas from [Hats Protocol](https://www.hatsprotocol.xyz/), [Splits](https://splits.org), and [Protocol Guild](https://protocol-guild.readthedocs.io/en/latest/).
 
+## Live
+
+[toban.onrender.com](https://toban.onrender.com/)
+
 ## Document
 
 [GitHub Pages Toban](https://hackdays-io.github.io/toban/)
@@ -138,6 +142,23 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
     ```bash
     yarn document start
+    ```
+
+- ### subgraph
+
+  - #### **goldsky login**
+
+    ```bash
+    goldsky login
+    ```
+
+  - #### **deploy subgraph to sepolia**
+
+    ```bash
+    yarn subgraph prepare:sepolia
+    yarn subgraph codegen
+    yarn subgraph build
+    yarn subgraph deploy:sepolia
     ```
 
 - ### frontend

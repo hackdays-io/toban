@@ -1,13 +1,17 @@
 import { hatIdToTreeId, treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
-import { Hat, HatsSubgraphClient, Tree } from "@hatsprotocol/sdk-v1-subgraph";
+import {
+  type Hat,
+  HatsSubgraphClient,
+  type Tree,
+} from "@hatsprotocol/sdk-v1-subgraph";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
-import { Address, decodeEventLog } from "viem";
+import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { type Address, parseEventLogs } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
-import { useActiveWallet } from "./useWallet";
 import { currentChain, publicClient } from "./useViem";
-import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { useActiveWallet } from "./useWallet";
 
 // ###############################################################
 // Read with subgraph
@@ -134,7 +138,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   /**
@@ -179,7 +183,7 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   const getTreesInfoByWearer = useCallback(
@@ -195,8 +199,8 @@ export const useHats = () => {
           wearer.currentHats.map((hat) => {
             const treeId = hatIdToTreeId(BigInt(hat.id));
             return treeId;
-          })
-        )
+          }),
+        ),
       );
 
       const treesInfo = await hatsSubgraphClient.getTreesByIds({
@@ -214,10 +218,10 @@ export const useHats = () => {
 
       return treesInfo;
     },
-    [getWearerInfo]
+    [getWearerInfo],
   );
 
-  const getHat = async (hatId: string) => {
+  const getHat = useCallback(async (hatId: string) => {
     const hat = await hatsSubgraphClient.getHat({
       chainId: currentChain.id,
       hatId: BigInt(hatId),
@@ -237,7 +241,7 @@ export const useHats = () => {
     });
 
     return hat;
-  };
+  }, []);
 
   const getWorkspacesList = useCallback(
     async (params: { walletAddress: string }) => {
@@ -257,11 +261,11 @@ export const useHats = () => {
             name: detailsJson?.data.name,
             imageUrl: imageHttps,
           };
-        })
+        }),
       );
       return workspacesList;
     },
-    [getTreesInfoByWearer]
+    [getTreesInfoByWearer],
   );
 
   /**
@@ -280,7 +284,7 @@ export const useHats = () => {
           treeId,
         });
         const hatterHat = tree?.hats?.find(
-          (hat: Hat) => hat.levelAtLocalTree === 1
+          (hat: Hat) => hat.levelAtLocalTree === 1,
         );
         if (!hatterHat) {
           throw new Error("Hatter hat not found");
@@ -290,22 +294,22 @@ export const useHats = () => {
           hatId: hatterHat.id,
         });
 
-        if (wearers!.length === 0) {
+        if (wearers?.length === 0) {
           throw new Error("No wearers found for hatter hat");
         }
 
-        return wearers![0].id;
+        return wearers?.[0].id;
       } catch (error) {
         console.error(
           "error occured when getting HatsTimeframeModuleAddress:",
-          error
+          error,
         );
         return null;
       } finally {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet, getTreeInfo, getWearersInfo],
   );
 
   /**
@@ -352,35 +356,21 @@ export const useHats = () => {
           hash: txHash,
         });
 
-        const log = receipt.logs.find((log) => {
-          try {
-            const decodedLog = decodeEventLog({
-              abi: HATS_ABI,
-              data: log.data,
-              topics: log.topics,
-            });
-            return decodedLog.eventName === "HatCreated";
-          } catch (error) {
-            console.error("error occured when creating Hats :", error);
-          }
-        })!;
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatCreated",
+          logs: receipt.logs,
+          strict: false,
+        });
 
-        if (log) {
-          const decodedLog = decodeEventLog({
-            abi: HATS_ABI,
-            data: log.data,
-            topics: log.topics,
-          });
-          console.log({ decodedLog });
-        }
-        return txHash;
+        return parsedLog;
       } catch (error) {
         console.error("error occured when creating Hats:", error);
       } finally {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
   );
 
   /**
@@ -415,7 +405,103 @@ export const useHats = () => {
         setIsLoading(false);
       }
     },
-    [wallet]
+    [wallet],
+  );
+
+  const changeHatDetails = useCallback(
+    async (params: { hatId: bigint; newDetails: string }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "changeHatDetails",
+          args: [params.hatId, params.newDetails],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatDetailsChanged",
+          logs: receipt.logs,
+          strict: false,
+        });
+
+        return parsedLog;
+      } catch (error) {
+        console.error("error occured when creating Hats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet],
+  );
+
+  const changeHatImageURI = useCallback(
+    async (params: { hatId: bigint; newImageURI: string }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "changeHatImageURI",
+          args: [params.hatId, params.newImageURI],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatImageURIChanged",
+          logs: receipt.logs,
+          strict: false,
+        });
+
+        return parsedLog;
+      } catch (error) {
+        console.error("error occured when creating Hats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet],
+  );
+
+  const renounceHat = useCallback(
+    async (hatId: bigint) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "renounceHat",
+          args: [hatId],
+        });
+
+        await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet],
   );
 
   return {
@@ -429,6 +515,9 @@ export const useHats = () => {
     getHatsTimeframeModuleAddress,
     createHat,
     mintHat,
+    changeHatDetails,
+    changeHatImageURI,
+    renounceHat,
   };
 };
 
@@ -452,7 +541,7 @@ export const useGetHat = (hatId: string) => {
       setIsLoading(false);
     };
     fetch();
-  }, [hatId]);
+  }, [hatId, getHat]);
 
   return { hat, isLoading };
 };

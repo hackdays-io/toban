@@ -2,8 +2,8 @@ import { Box, Flex, Grid, Input, Text } from "@chakra-ui/react";
 import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import { TextRecords } from "namestone-sdk";
-import { FC, useMemo, useState } from "react";
+import type { TextRecords } from "namestone-sdk";
+import { type FC, useCallback, useMemo, useState } from "react";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -33,31 +33,42 @@ const Login: FC = () => {
     return addresses?.[0]?.length === 0;
   }, [userName, addresses]);
 
-  const handleSubmit = async () => {
-    if (!wallet) return;
+  const handleSubmit = useCallback(async () => {
+    if (!wallet || !availableName) return;
 
-    const params: {
-      name: string;
-      address: string;
-      text_records: TextRecords;
-    } = {
-      name: userName,
-      address: wallet.account?.address!,
-      text_records: {},
-    };
+    try {
+      const params: {
+        name: string;
+        address: string;
+        text_records: TextRecords;
+      } = {
+        name: userName,
+        address: wallet.account?.address,
+        text_records: {},
+      };
 
-    if (imageFile) {
-      const res = await uploadImageFileToIpfs();
-      params.text_records.avatar = res?.ipfsUri!;
+      if (imageFile) {
+        const res = await uploadImageFileToIpfs();
+        if (res) params.text_records.avatar = res.ipfsUri;
+      }
+
+      await setName(params);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      window.location.href = "/workspace";
     }
-
-    await setName(params);
-
-    window.location.href = "/workspace";
-  };
+  }, [
+    availableName,
+    imageFile,
+    setName,
+    uploadImageFileToIpfs,
+    userName,
+    wallet,
+  ]);
 
   return (
-    <Grid gridTemplateRows="1fr auto" h="100vh">
+    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
         <Box w="100%">
           <Flex
@@ -74,7 +85,7 @@ const Login: FC = () => {
               display="none"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file && file.type.startsWith("image/")) {
+                if (file?.type.startsWith("image/")) {
                   setImageFile(file);
                 } else {
                   alert("画像ファイルを選択してください");

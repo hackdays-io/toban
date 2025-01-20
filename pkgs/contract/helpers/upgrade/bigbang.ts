@@ -1,5 +1,5 @@
 import { ethers, upgrades, viem } from "hardhat";
-import { Address } from "viem";
+import type { Address } from "viem";
 
 /**
  * BigBang Contractをアップグレードするメソッド
@@ -9,23 +9,23 @@ import { Address } from "viem";
  * @returns
  */
 export const upgradeBigBang = async (
-	contractAddress: string,
-	contractName: string
+  contractAddress: string,
+  contractName: string,
 ) => {
-	// 新しいコントラクトのファクトリーを取得
-	const BigBang_Mock_v2 = await ethers.getContractFactory(contractName);
-	// アップグレードを実行
-	const _BigBang = (await upgrades.upgradeProxy(
-		contractAddress,
-		BigBang_Mock_v2
-	)) as any;
+  // 新しいコントラクトのファクトリーを取得
+  const BigBang_Mock_v2 = await ethers.getContractFactory(contractName);
+  // アップグレードを実行
+  const _BigBang = await upgrades.upgradeProxy(
+    contractAddress,
+    BigBang_Mock_v2,
+  );
 
-	const address = _BigBang.target;
+  const address = _BigBang.target;
 
-	//console.log("upgraded address:", address);
+  //console.log("upgraded address:", address);
 
-	// create a new instance of the contract
-	const newBigBang = await viem.getContractAt(contractName, address as Address);
+  // create a new instance of the contract
+  const newBigBang = await viem.getContractAt(contractName, address as Address);
 
-	return newBigBang;
+  return newBigBang;
 };

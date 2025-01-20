@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { NameData, TextRecords } from "namestone-sdk";
 import axios from "axios";
+import type { NameData, TextRecords } from "namestone-sdk";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useActiveWallet } from "./useWallet";
 
 export const useActiveWalletIdentity = () => {
   const { wallet } = useActiveWallet();
 
   const address = useMemo(() => {
-    return [wallet?.account?.address!];
+    if (!wallet) return [];
+    return [wallet.account.address];
   }, [wallet]);
   const { names } = useNamesByAddresses(address);
 
@@ -28,13 +29,13 @@ export const useNamesByAddresses = (addresses?: string[]) => {
         "/api/namestone/resolve-names",
         {
           params: { addresses: addresses.join(",") },
-        }
+        },
       );
       const unresolvedAddresses = addresses
         .filter((address) => {
           return !data.some(
             (nameData) =>
-              nameData[0]?.address.toLowerCase() === address.toLowerCase()
+              nameData[0]?.address.toLowerCase() === address.toLowerCase(),
           );
         })
         .map((address) => {
@@ -58,25 +59,28 @@ export const useNamesByAddresses = (addresses?: string[]) => {
 export const useAddressesByNames = (names?: string[], exactMatch?: boolean) => {
   const [addresses, setAddresses] = useState<NameData[][]>([]);
 
-  const fetchAddresses = useCallback(async (resolveNames: string[]) => {
-    try {
-      const { data } = await axios.get<NameData[][]>(
-        "/api/namestone/resolve-addresses",
-        {
-          params: { names: resolveNames.join(","), exact_match: exactMatch },
-        }
-      );
-      setAddresses(data);
-      return data as NameData[][];
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
+  const fetchAddresses = useCallback(
+    async (resolveNames: string[]) => {
+      try {
+        const { data } = await axios.get<NameData[][]>(
+          "/api/namestone/resolve-addresses",
+          {
+            params: { names: resolveNames.join(","), exact_match: exactMatch },
+          },
+        );
+        setAddresses(data);
+        return data as NameData[][];
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [exactMatch],
+  );
 
   useEffect(() => {
     if (!names || names.length === 0 || names.includes("")) return;
     fetchAddresses(names);
-  }, [names]);
+  }, [names, fetchAddresses]);
 
   return { addresses, fetchAddresses };
 };
@@ -99,7 +103,7 @@ export const useSetName = () => {
       }
       setIsLoading(false);
     },
-    []
+    [],
   );
 
   return { setName, isLoading };

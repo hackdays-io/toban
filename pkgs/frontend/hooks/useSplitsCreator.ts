@@ -1,11 +1,11 @@
+import type { Split } from "@0xsplits/splits-sdk";
 import { SPLITS_CREATOR_ABI } from "abi/splits";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AbiItemArgs, Address, parseEventLogs } from "viem";
-import { useActiveWallet } from "./useWallet";
-import { currentChain, publicClient } from "./useViem";
-import { useGetWorkspace } from "./useWorkspace";
 import { splitsDataClient } from "utils/splits";
-import { Split } from "@0xsplits/splits-sdk";
+import { type AbiItemArgs, type Address, parseEventLogs } from "viem";
+import { currentChain, publicClient } from "./useViem";
+import { useActiveWallet } from "./useWallet";
+import { useGetWorkspace } from "./useWorkspace";
 
 /**
  * Splits creator 用 React hooks
@@ -21,7 +21,7 @@ export const useSplitsCreator = (treeId: string) => {
   }, [data?.workspace?.splitCreator]);
 
   const previewSplits = async (
-    args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "preview">[0]
+    args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "preview">[0],
   ) => {
     const res = await publicClient.readContract({
       address: splitsCreatorAddress,
@@ -72,7 +72,7 @@ export const useSplitsCreator = (treeId: string) => {
         setIsLoading(false);
       }
     },
-    [splitsCreatorAddress, wallet]
+    [splitsCreatorAddress, wallet],
   );
 
   return {

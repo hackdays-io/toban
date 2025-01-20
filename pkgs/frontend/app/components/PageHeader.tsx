@@ -1,6 +1,6 @@
-import { HStack, IconButton, Text } from "@chakra-ui/react";
+import { Box, HStack, IconButton } from "@chakra-ui/react";
 import { useNavigate } from "@remix-run/react";
-import { ReactNode, useCallback } from "react";
+import { type ReactNode, useCallback } from "react";
 import { FaChevronLeft } from "react-icons/fa6";
 
 interface Props {
@@ -19,7 +19,7 @@ export const PageHeader: React.FC<Props> = ({ title, backLink }) => {
     } else {
       navigate(-1);
     }
-  }, [backLink]);
+  }, [backLink, navigate]);
 
   return (
     <HStack>
@@ -31,7 +31,7 @@ export const PageHeader: React.FC<Props> = ({ title, backLink }) => {
       >
         <FaChevronLeft />
       </IconButton>
-      <Text>{title}</Text>
+      <Box>{title}</Box>
     </HStack>
   );
 };

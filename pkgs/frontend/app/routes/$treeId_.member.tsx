@@ -1,15 +1,15 @@
-import { Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
-import { FC, useMemo } from "react";
+import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { RoleTag } from "~/components/roles/RoleTag";
-import { StickyNav } from "~/components/StickyNav";
 
 const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
@@ -25,11 +25,11 @@ const WorkspaceMember: FC = () => {
       .filter((w, i, self) => self.findIndex((s) => s.id === w.id) === i)
       .map((w) => ({
         id: w.id,
-        hats: tree.hats!.filter(
+        hats: tree.hats?.filter(
           (h) =>
             h.levelAtLocalTree &&
             h.levelAtLocalTree >= 2 &&
-            h.wearers?.some(({ id }) => id === w.id)
+            h.wearers?.some(({ id }) => id === w.id),
         ),
       }));
   }, [tree]);
@@ -46,7 +46,7 @@ const WorkspaceMember: FC = () => {
         ...n,
         wearer: wearers.find((w) => w.id === n.address.toLowerCase()),
       })),
-    [wearers, wearersNames]
+    [wearers, wearersNames],
   );
 
   // hatIdとwearerのペアを取得
@@ -56,7 +56,7 @@ const WorkspaceMember: FC = () => {
       .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 2)
       .flatMap(
         ({ id, wearers }) =>
-          wearers?.map((w) => ({ hatId: id, wearer: w.id })) || []
+          wearers?.map((w) => ({ hatId: id, wearer: w.id })) || [],
       );
   }, [tree]);
 
@@ -66,9 +66,11 @@ const WorkspaceMember: FC = () => {
     if (!tree || !tree.hats) return [];
     return recipients.map(({ assistant, hatIds }) => ({
       id: assistant,
-      hats: tree.hats!.filter(
+      hats: tree.hats?.filter(
         (h) =>
-          h.levelAtLocalTree && h.levelAtLocalTree >= 2 && hatIds.includes(h.id)
+          h.levelAtLocalTree &&
+          h.levelAtLocalTree >= 2 &&
+          hatIds.includes(h.id),
       ),
     }));
   }, [tree, recipients]);
@@ -76,7 +78,7 @@ const WorkspaceMember: FC = () => {
   // assistantsのidをメモ化
   const assistantsIds = useMemo(
     () => assistants.map(({ id }) => id),
-    [assistants]
+    [assistants],
   );
   // namestone
   const { names: assistantsNames } = useNamesByAddresses(assistantsIds);
@@ -87,10 +89,10 @@ const WorkspaceMember: FC = () => {
       assistantsNames.flat().map((n) => ({
         ...n,
         assistant: assistants.find(
-          (a) => a.id.toLowerCase() === n.address.toLowerCase()
+          (a) => a.id.toLowerCase() === n.address.toLowerCase(),
         ),
       })),
-    [assistants, assistantsNames]
+    [assistants, assistantsNames],
   );
 
   return (
@@ -99,8 +101,8 @@ const WorkspaceMember: FC = () => {
       <Box mb={4}>
         <Heading pb={4}>Role Members</Heading>
         <VStack width="full" alignItems="start" gap={3}>
-          {members.map((m, i) => (
-            <HStack key={i} width="full">
+          {members.map((m) => (
+            <HStack key={`${m.name}m`} width="full">
               <UserIcon
                 userImageUrl={ipfs2https(m.text_records?.avatar)}
                 size={10}
@@ -113,13 +115,12 @@ const WorkspaceMember: FC = () => {
                 </Text>
                 <HStack wrap="wrap" width="full" gap={2}>
                   {m.wearer?.hats?.map((h) => (
-                    <Link to={`/${treeId}/${h.id}/${m.address}`}>
+                    <Link key={h.id} to={`/${treeId}/${h.id}/${m.address}`}>
                       <HatsListItemParser
-                        key={h.id}
                         imageUri={h.imageUri}
                         detailUri={h.details}
                       >
-                        <RoleTag />
+                        <RoleTag bgColor="yellow.200" />
                       </HatsListItemParser>
                     </Link>
                   ))}
@@ -134,8 +135,8 @@ const WorkspaceMember: FC = () => {
       <Box my={4}>
         <Heading py={4}>All Contributors</Heading>
         <VStack width="full" alignItems="start" gap={3}>
-          {assistantMembers.map((m, i) => (
-            <HStack key={`assistant_${i}`} width="full">
+          {assistantMembers.map((m) => (
+            <HStack key={`assistant_${m.name}`} width="full">
               <UserIcon
                 userImageUrl={ipfs2https(m.text_records?.avatar)}
                 size={10}

@@ -1,26 +1,25 @@
-import { FC, useState } from "react";
-import { Box, Float, Grid, Input, Text } from "@chakra-ui/react";
-import { HiOutlinePlus } from "react-icons/hi2";
-import { CommonInput } from "~/components/common/CommonInput";
-import { BasicButton } from "~/components/BasicButton";
-import { CommonTextArea } from "~/components/common/CommonTextarea";
+import { Box, Grid } from "@chakra-ui/react";
+import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { useNavigate } from "@remix-run/react";
+import { useBigBang } from "hooks/useBigBang";
 import {
-  useUploadMetadataToIpfs,
+  useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
-import { useNavigate } from "@remix-run/react";
-import { CommonIcon } from "~/components/common/CommonIcon";
-import { useBigBang } from "hooks/useBigBang";
 import { useActiveWallet } from "hooks/useWallet";
-import { Address } from "viem";
-import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
+import { type FC, useState } from "react";
+import type { Address } from "viem";
+import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
+import { InputDescription } from "~/components/input/InputDescription";
+import { InputImage } from "~/components/input/InputImage";
+import { InputName } from "~/components/input/InputName";
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { uploadMetadataToIpfs } = useUploadMetadataToIpfs();
+  const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { bigbang } = useBigBang();
@@ -39,13 +38,11 @@ const WorkspaceNew: FC = () => {
     setIsLoading(true);
 
     try {
-      const resUploadMetadata = await uploadMetadataToIpfs({
+      const resUploadMetadata = await uploadHatsDetailsToIpfs({
         name,
         description,
-        responsibilities: "",
-        authorities: "",
-        eligibility: true,
-        toggle: true,
+        responsabilities: [],
+        authorities: [],
       });
       if (!resUploadMetadata)
         throw new Error("Failed to upload metadata to ipfs");
@@ -82,34 +79,6 @@ const WorkspaceNew: FC = () => {
     }
   };
 
-  const EmptyImage = () => {
-    return (
-      <Box
-        borderRadius="3xl"
-        border="1px solid"
-        borderColor="#1e1e1e"
-        bg="#e9ecef"
-        p={5}
-        w={200}
-        h={200}
-      >
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          w="33%"
-          mx="auto"
-          mt={9}
-          mb={1}
-        >
-          <HiOutlinePlus size="full" />
-        </Box>
-        <Text textAlign="center">画像を選択</Text>
-      </Box>
-    );
-  };
-
   return (
     <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Box w="100%">
@@ -121,43 +90,13 @@ const WorkspaceNew: FC = () => {
           mt={10}
           alignItems="center"
         >
-          <Box as="label" cursor="pointer" m="100px auto 40px">
-            <Input
-              type="file"
-              accept="image/*"
-              display="none"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && file.type.startsWith("image/")) {
-                  setImageFile(file);
-                } else {
-                  alert("画像ファイルを選択してください");
-                }
-              }}
-            />
-            <CommonIcon
-              imageUrl={imageFile ? URL.createObjectURL(imageFile) : undefined}
-              fallbackIconComponent={<EmptyImage />}
-              size={200}
-              borderRadius="3xl"
-            />
-          </Box>
-          <Box w="100%" mt={8}>
-            <CommonInput
-              minHeight="45px"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Box>
-          <Box minH="100px" w="100%" mt={6}>
-            <CommonTextArea
-              minHeight="125px"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </Box>
+          <InputImage imageFile={imageFile} setImageFile={setImageFile} />
+          <InputName name={name} setName={setName} />
+          <InputDescription
+            description={description}
+            setDescription={setDescription}
+            mt={6}
+          />
         </Box>
       </Box>
       <BasicButton

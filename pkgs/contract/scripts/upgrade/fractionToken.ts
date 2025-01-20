@@ -10,28 +10,28 @@ dotenv.config();
  * @returns
  */
 const upgrade = async () => {
-	console.log(
-		"##################################### [Upgrade START] #####################################"
-	);
+  console.log(
+    "##################################### [Upgrade START] #####################################",
+  );
 
-	// FractionTokenコントラクトの各アドレスをjsonファイルから取得してくる。
-	const {
-		contracts: { FractionToken },
-	} = loadDeployedContractAddresses(network.name);
+  // FractionTokenコントラクトの各アドレスをjsonファイルから取得してくる。
+  const {
+    contracts: { FractionToken },
+  } = loadDeployedContractAddresses(network.name);
 
-	// FractionTokenコントラクトをアップグレードする
-	const newFractionToken = await upgradeFractionToken(
-		FractionToken,
-		"FractionToken" // ここにアップグレード後のFractionTokenのコントラクト名を指定する。
-	);
+  // FractionTokenコントラクトをアップグレードする
+  const newFractionToken = await upgradeFractionToken(
+    FractionToken,
+    "FractionToken", // ここにアップグレード後のFractionTokenのコントラクト名を指定する。
+  );
 
-	console.log("upgrded address:", newFractionToken.address);
+  console.log("upgrded address:", newFractionToken.address);
 
-	console.log(
-		"##################################### [Upgrade END] #####################################"
-	);
+  console.log(
+    "##################################### [Upgrade END] #####################################",
+  );
 
-	return;
+  return;
 };
 
 upgrade();

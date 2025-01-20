@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type MouseEvent } from "react";
+import type { Split } from "@0xsplits/splits-sdk";
 import {
   Box,
   Collapsible,
@@ -8,21 +8,21 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { Link, useParams } from "@remix-run/react";
-import { FC, useCallback, useState } from "react";
-import { CommonButton } from "~/components/common/CommonButton";
-import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
-import { useCopyToClipboard } from "hooks/useCopyToClipboard";
-import { useGetWorkspace } from "hooks/useWorkspace";
-import { useSplitsCreatorRelatedSplits } from "hooks/useSplitsCreator";
-import { Address } from "viem";
-import { Split } from "@0xsplits/splits-sdk";
-import { abbreviateAddress } from "utils/wallet";
-import { currentChain, publicClient } from "hooks/useViem";
 import dayjs from "dayjs";
-import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
-import { StickyNav } from "~/components/StickyNav";
+import { useCopyToClipboard } from "hooks/useCopyToClipboard";
 import { useNamesByAddresses } from "hooks/useENS";
-import { NameData } from "namestone-sdk";
+import { useSplitsCreatorRelatedSplits } from "hooks/useSplitsCreator";
+import { currentChain, publicClient } from "hooks/useViem";
+import { useGetWorkspace } from "hooks/useWorkspace";
+import type { NameData } from "namestone-sdk";
+import { type MouseEvent, useEffect, useMemo } from "react";
+import { type FC, useCallback, useState } from "react";
+import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
+import { abbreviateAddress } from "utils/wallet";
+import type { Address } from "viem";
+import { StickyNav } from "~/components/StickyNav";
+import { CommonButton } from "~/components/common/CommonButton";
+import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 
 interface SplitInfoItemProps {
   split: Split;
@@ -40,7 +40,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
           (acc[address] || 0) + Number(recipient.percentAllocation);
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
 
     return Object.entries(consolidated).map(([address, percentAllocation]) => ({
@@ -52,7 +52,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
   const [open, setOpen] = useState(false);
   const onOpen = useCallback(() => {
     setOpen(true);
-  }, [setOpen]);
+  }, []);
 
   const { copyToClipboardAction } = useCopyToClipboard(split.address);
 
@@ -61,7 +61,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
       event.preventDefault();
       copyToClipboardAction();
     },
-    [copyToClipboardAction]
+    [copyToClipboardAction],
   );
 
   useEffect(() => {
@@ -71,7 +71,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
       });
 
       setCreatedTime(
-        dayjs(Number(data.timestamp) * 1000).format("YYYY/MM/DD HH:mm:ss")
+        dayjs(Number(data.timestamp) * 1000).format("YYYY/MM/DD HH:mm:ss"),
       );
     };
     fetch();
@@ -141,7 +141,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
             my={4}
             borderTop="1px solid #868e96"
             role="presentation"
-          ></Box>
+          />
           <SplitRecipientsList recipients={consolidatedRecipients} />
         </Collapsible.Content>
       </Collapsible.Root>
@@ -196,9 +196,9 @@ const SplitsIndex: FC = () => {
                       name.some(
                         (n) =>
                           n.address.toLowerCase() ===
-                          split.address.toLowerCase()
-                      )
-                    )?.[0]!
+                          split.address.toLowerCase(),
+                      ),
+                    )?.[0]
                   }
                 />
               ))}

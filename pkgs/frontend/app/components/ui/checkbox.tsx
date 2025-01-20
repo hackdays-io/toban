@@ -21,5 +21,5 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         )}
       </ChakraCheckbox.Root>
     );
-  }
+  },
 );

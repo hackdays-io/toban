@@ -21,17 +21,17 @@ import {
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
-import { NameData, TextRecords } from "namestone-sdk";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { type NameData, TextRecords } from "namestone-sdk";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
-import { Address } from "viem";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
+import { PageHeader } from "~/components/PageHeader";
 import { CommonInput } from "~/components/common/CommonInput";
 import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
-import { PageHeader } from "~/components/PageHeader";
 import { Field } from "~/components/ui/field";
 
 const AssistCreditSend: FC = () => {
@@ -42,7 +42,7 @@ const AssistCreditSend: FC = () => {
   const balanceOfToken = useBalanceOfFractionToken(
     me.identity?.address as Address,
     address as Address,
-    BigInt(hatId!)
+    BigInt(hatId ?? ""),
   );
 
   // 送信先取得
@@ -53,10 +53,9 @@ const AssistCreditSend: FC = () => {
     if (!tree || !tree.hats) return [];
     return tree.hats
       .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 0)
-      .map((h) => h.wearers)
-      .flat()
-      .filter((w) => w)
-      .map((w) => w!.id);
+      .flatMap((h) => h.wearers)
+      .filter((w) => typeof w !== "undefined")
+      .map((w) => w.id);
   }, [tree]);
 
   const { names: defaultNames } = useNamesByAddresses(members);
@@ -73,37 +72,47 @@ const AssistCreditSend: FC = () => {
     } else {
       fetchAddresses([searchText]);
     }
-  }, [searchText, isSearchAddress]);
+  }, [searchText, isSearchAddress, fetchAddresses, fetchNames]);
 
   const users = useMemo(() => {
     return !searchText ? defaultNames : isSearchAddress ? names : addresses;
-  }, [defaultNames, names, addresses, isSearchAddress]);
+  }, [defaultNames, names, addresses, isSearchAddress, searchText]);
 
   // 送信先選択後
   const [receiver, setReceiver] = useState<NameData>();
   const [amount, setAmount] = useState<number>(0);
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
-    BigInt(hatId!),
-    address as Address
+    BigInt(hatId ?? ""),
+    address as Address,
   );
   const send = useCallback(async () => {
     if (!receiver || !hatId || !me || isLoading) return;
     try {
       const res = await transferFractionToken(
         receiver.address as Address,
-        BigInt(amount)
+        BigInt(amount),
       );
       res && navigate(`/${treeId}/${hatId}/${address}`);
     } catch (error) {
       console.error(error);
     }
-  }, [transferFractionToken, receiver, amount]);
+  }, [
+    transferFractionToken,
+    receiver,
+    amount,
+    treeId,
+    hatId,
+    me,
+    isLoading,
+    address,
+    navigate,
+  ]);
 
   return (
     <Grid
       gridTemplateRows={!receiver ? "auto auto auto 1fr" : "auto auto 1fr auto"}
-      minH="calc(100vh - 72px)"
+      minH="calc(100vh - 100px)"
     >
       <PageHeader
         title={
@@ -139,7 +148,10 @@ const AssistCreditSend: FC = () => {
 
           <List.Root listStyle="none" my={10} gap={3}>
             {users?.flat().map((user, index) => (
-              <List.Item key={index} onClick={() => setReceiver(user)}>
+              <List.Item
+                key={`${user.name}u`}
+                onClick={() => setReceiver(user)}
+              >
                 <HStack>
                   <UserIcon
                     userImageUrl={ipfs2https(user.text_records?.avatar)}

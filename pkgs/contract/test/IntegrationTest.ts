@@ -1,36 +1,36 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
 import {
-	Address,
-	decodeEventLog,
-	parseEther,
-	PublicClient,
-	WalletClient,
-	zeroAddress,
+  type Address,
+  type PublicClient,
+  type WalletClient,
+  decodeEventLog,
+  parseEther,
+  zeroAddress,
 } from "viem";
 import BigBangJson from "../artifacts/contracts/bigbang/BigBang.sol/BigBang.json";
-import { BigBang, deployBigBang } from "../helpers/deploy/BigBang";
+import { type BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
-	deployFractionToken,
-	FractionToken,
+  type FractionToken,
+  deployFractionToken,
 } from "../helpers/deploy/FractionToken";
 import {
-	deployHatsModuleFactory,
-	deployHatsProtocol,
-	deployHatsTimeFrameModule,
-	Hats,
-	HatsModuleFactory,
-	HatsTimeFrameModule,
+  type Hats,
+  type HatsModuleFactory,
+  type HatsTimeFrameModule,
+  deployHatsModuleFactory,
+  deployHatsProtocol,
+  deployHatsTimeFrameModule,
 } from "../helpers/deploy/Hats";
 import {
-	deploySplitsCreator,
-	deploySplitsCreatorFactory,
-	deploySplitsProtocol,
-	PullSplitsFactory,
-	PushSplitsFactory,
-	SplitsCreator,
-	SplitsCreatorFactory,
-	SplitsWarehouse,
+  type PullSplitsFactory,
+  type PushSplitsFactory,
+  type SplitsCreator,
+  type SplitsCreatorFactory,
+  type SplitsWarehouse,
+  deploySplitsCreator,
+  deploySplitsCreatorFactory,
+  deploySplitsProtocol,
 } from "../helpers/deploy/Splits";
 
 //store the HatsHatCreatorModule if needed
@@ -65,7 +65,7 @@ describe("IntegrationTest", () => {
 	let address2: WalletClient;
 	let address3: WalletClient;
 
-	let publicClient: PublicClient;
+  let publicClient: PublicClient;
 
 	// A helper to load "PullSplit" contract instance
 	const getPullSplitContract = async (address: Address) => {
@@ -162,8 +162,8 @@ describe("IntegrationTest", () => {
 		BigBang = _BigBang;
 	});
 
-	it("should execute bigbang", async () => {
-		SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+  it("should execute bigbang", async () => {
+    SplitsCreatorFactory.write.setBigBang([BigBang.address]);
 
 		const txHash = await BigBang.write.bigbang(
 			[
@@ -178,9 +178,9 @@ describe("IntegrationTest", () => {
 			{ account: deployer.account }
 		);
 
-		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: txHash,
-		});
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
 
 		for (const log of receipt.logs) {
 			try {
@@ -200,8 +200,8 @@ describe("IntegrationTest", () => {
 						decodedLog.args.hatsHatCreatorModule;
 					const splitsCreatorAddress = decodedLog.args.splitCreator;
 
-					topHatId = decodedLog.args.topHatId;
-					hatterHatId = decodedLog.args.hatterHatId;
+          topHatId = decodedLog.args.topHatId;
+          hatterHatId = decodedLog.args.hatterHatId;
 
 					// retrieve via viem
 					HatsTimeFrameModuleByBigBang = await viem.getContractAt(
@@ -312,11 +312,11 @@ describe("IntegrationTest", () => {
 		expect(balance3).to.equal(0n);
 	});
 
-	it("should transfer and burn tokens", async () => {
-		const tokenId = await FractionToken.read.getTokenId([
-			hat1_id,
-			address1.account?.address!,
-		]);
+  it("should transfer and burn tokens", async () => {
+    const tokenId = await FractionToken.read.getTokenId([
+      hat1_id,
+      address1.account?.address!,
+    ]);
 
 		await FractionToken.write.safeTransferFrom(
 			[
@@ -331,7 +331,7 @@ describe("IntegrationTest", () => {
 			}
 		);
 
-		let balance: bigint;
+    let balance: bigint;
 
 		balance = await FractionToken.read.balanceOf([
 			address1.account?.address!,
@@ -355,52 +355,52 @@ describe("IntegrationTest", () => {
 		expect(balance).to.equal(1000n);
 	});
 
-	it("should create PullSplits contract", async () => {
-		// address1とaddress2に50%ずつ配分するSplitを作成
-		const tx = await SplitsCreatorByBigBang.write.create([
-			[
-				{
-					hatId: hat1_id,
-					wearers: [address1.account?.address!, address2.account?.address!],
-					multiplierBottom: 1n,
-					multiplierTop: 1n,
-				},
-			],
-		]);
+  it("should create PullSplits contract", async () => {
+    // address1とaddress2に50%ずつ配分するSplitを作成
+    const tx = await SplitsCreatorByBigBang.write.create([
+      [
+        {
+          hatId: hat1_id,
+          wearers: [address1.account?.address!, address2.account?.address!],
+          multiplierBottom: 1n,
+          multiplierTop: 1n,
+        },
+      ],
+    ]);
 
-		const receipt = await publicClient.waitForTransactionReceipt({
-			hash: tx,
-		});
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: tx,
+    });
 
-		let splitAddress!: Address;
-		let shareHolders!: readonly Address[];
-		let allocations!: readonly bigint[];
-		let totalAllocation!: bigint;
+    let splitAddress!: Address;
+    let shareHolders!: readonly Address[];
+    let allocations!: readonly bigint[];
+    let totalAllocation!: bigint;
 
-		for (const log of receipt.logs) {
-			try {
-				const decodedLog = decodeEventLog({
-					abi: SplitsCreatorByBigBang.abi,
-					data: log.data,
-					topics: log.topics,
-				});
-				if (decodedLog.eventName == "SplitsCreated") {
-					splitAddress = decodedLog.args.split;
-					shareHolders = decodedLog.args.shareHolders;
-					allocations = decodedLog.args.allocations;
-					totalAllocation = decodedLog.args.totalAllocation;
-				}
-			} catch (error) {
-				shareHolders = [];
-				allocations = [];
-				totalAllocation = 0n;
-			}
-		}
+    for (const log of receipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: SplitsCreatorByBigBang.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName == "SplitsCreated") {
+          splitAddress = decodedLog.args.split;
+          shareHolders = decodedLog.args.shareHolders;
+          allocations = decodedLog.args.allocations;
+          totalAllocation = decodedLog.args.totalAllocation;
+        }
+      } catch (error) {
+        shareHolders = [];
+        allocations = [];
+        totalAllocation = 0n;
+      }
+    }
 
-		expect(shareHolders.length).to.equal(3);
-		expect(allocations.length).to.equal(3);
+    expect(shareHolders.length).to.equal(3);
+    expect(allocations.length).to.equal(3);
 
-		DeployedPullSplit = await viem.getContractAt("PullSplit", splitAddress);
+    DeployedPullSplit = await viem.getContractAt("PullSplit", splitAddress);
 
 		// Splitコントラクトに1ETH送金
 		await deployer.sendTransaction({
@@ -419,31 +419,31 @@ describe("IntegrationTest", () => {
 			address: address3.account?.address!,
 		});
 
-		expect(Number(beforeAddress1Balance))
-			.gt(Number(parseEther("9999")))
-			.lt(Number(parseEther("10001")));
-		expect(Number(beforeAddress2Balance))
-			.gt(Number(parseEther("9999")))
-			.lt(Number(parseEther("10001")));
-		expect(Number(beforeAddress3Balance))
-			.gt(Number(parseEther("9999")))
-			.lt(Number(parseEther("10001")));
+    expect(Number(beforeAddress1Balance))
+      .gt(Number(parseEther("9999")))
+      .lt(Number(parseEther("10001")));
+    expect(Number(beforeAddress2Balance))
+      .gt(Number(parseEther("9999")))
+      .lt(Number(parseEther("10001")));
+    expect(Number(beforeAddress3Balance))
+      .gt(Number(parseEther("9999")))
+      .lt(Number(parseEther("10001")));
 
-		await DeployedPullSplit.write.distribute(
-			[
-				{
-					recipients: shareHolders,
-					allocations: allocations,
-					totalAllocation: totalAllocation,
-					distributionIncentive: 0,
-				},
-				"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-				deployer.account?.address!,
-			],
-			{
-				account: deployer.account!,
-			}
-		);
+    await DeployedPullSplit.write.distribute(
+      [
+        {
+          recipients: shareHolders,
+          allocations: allocations,
+          totalAllocation: totalAllocation,
+          distributionIncentive: 0,
+        },
+        "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        deployer.account?.address!,
+      ],
+      {
+        account: deployer.account!,
+      },
+    );
 
 		// withdrawを実行
 		await SplitsWarehouse.write.withdraw(
@@ -484,19 +484,19 @@ describe("IntegrationTest", () => {
 			address: address3.account?.address!,
 		});
 
-		// withdrawのガス代を引いて大体0.45ETH増えているはず
-		expect(Number(afterAddress1Balance) - Number(beforeAddress1Balance))
-			.gt(449900000000000000)
-			.lt(450100000000000000);
+    // withdrawのガス代を引いて大体0.45ETH増えているはず
+    expect(Number(afterAddress1Balance) - Number(beforeAddress1Balance))
+      .gt(449900000000000000)
+      .lt(450100000000000000);
 
-		// withdrawのガス代を引いて大体0.5ETH増えているはず
-		expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance))
-			.gt(499900000000000000)
-			.lt(500100000000000000);
+    // withdrawのガス代を引いて大体0.5ETH増えているはず
+    expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance))
+      .gt(499900000000000000)
+      .lt(500100000000000000);
 
-		// 0.05ETH増えているはず
-		expect(Number(afterAddress3Balance) - Number(beforeAddress3Balance))
-			.gt(49900000000000000)
-			.lt(50100000000000000);
-	});
+    // 0.05ETH増えているはず
+    expect(Number(afterAddress3Balance) - Number(beforeAddress3Balance))
+      .gt(49900000000000000)
+      .lt(50100000000000000);
+  });
 });

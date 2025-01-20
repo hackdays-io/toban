@@ -1,7 +1,7 @@
+import { type FC, useEffect, useState } from "react";
 import { MdOutlineBadge } from "react-icons/md";
-import { CommonIcon } from "../common/CommonIcon";
-import { FC, useEffect, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
+import { CommonIcon } from "../common/CommonIcon";
 
 interface RoleIconProps {
   roleImageUrl?: string;

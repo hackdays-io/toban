@@ -1,5 +1,5 @@
 import { ethers, upgrades, viem } from "hardhat";
-import { Address } from "viem";
+import type { Address } from "viem";
 
 export type BigBang = Awaited<ReturnType<typeof deployBigBang>>["BigBang"];
 
@@ -12,7 +12,7 @@ export const deployBigBang = async (params: {
 	splitsFactoryV2Address: Address;
 	fractionTokenAddress: Address;
 }) => {
-	/*
+  /*
 	const BigBang = await viem.deployContract("BigBang", [
 		params.trustedForwarder,
 		params.hatsContractAddress,
@@ -42,11 +42,11 @@ export const deployBigBang = async (params: {
 		}
 	);
 
-	await _BigBang.waitForDeployment();
-	const address = await _BigBang.getAddress();
+  await _BigBang.waitForDeployment();
+  const address = await _BigBang.getAddress();
 
-	// create a new instance of the contract
-	const BigBang = await viem.getContractAt("BigBang", address as Address);
+  // create a new instance of the contract
+  const BigBang = await viem.getContractAt("BigBang", address as Address);
 
-	return { BigBang };
+  return { BigBang };
 };

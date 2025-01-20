@@ -1,6 +1,6 @@
+import { Icon } from "@chakra-ui/react";
 import { FaPeopleGroup } from "react-icons/fa6";
 import { CommonIcon } from "../common/CommonIcon";
-import { Icon } from "@chakra-ui/react";
 
 interface WorkspaceIconProps {
   workspaceImageUrl?: string | undefined;

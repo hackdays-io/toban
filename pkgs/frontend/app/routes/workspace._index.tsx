@@ -1,12 +1,12 @@
-import { FC, useEffect, useMemo, useState } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
-import { BasicButton } from "~/components/BasicButton";
 import { Link, useNavigate } from "@remix-run/react";
 import { useActiveWallet } from "hooks/useWallet";
-import { useHats } from "../../hooks/useHats";
-import { Address } from "viem";
+import { type FC, useEffect, useMemo, useState } from "react";
+import type { Address } from "viem";
+import { BasicButton } from "~/components/BasicButton";
 import { CommonDialog } from "~/components/common/CommonDialog";
+import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
+import { useHats } from "../../hooks/useHats";
 
 const WorkspaceCard: FC<{
   treeId: string;

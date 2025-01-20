@@ -128,8 +128,8 @@ export const Header = () => {
           return;
         }
         await Promise.all(wallets.map((wallet) => wallet.disconnect()));
-        navigate("/login");
       }
+      navigate("/login");
     } catch (error) {
       console.error("ログアウトに失敗しました:", error);
     }

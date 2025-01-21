@@ -144,7 +144,7 @@ describe("HatsHatCreatorModule", () => {
       let checkCreateHatAuthority;
 
       checkCreateHatAuthority = await HatsHatCreatorModule.read.createHatAuthorities([address1Validated]);
-      expect(checkCreateHatAuthority).to.be.false;
+      expect(checkCreateHatAuthority).to.be.true;
 
       checkCreateHatAuthority = await HatsHatCreatorModule.read.createHatAuthorities([address2Validated]);
       expect(checkCreateHatAuthority).to.be.false;
@@ -266,7 +266,7 @@ describe("HatsHatCreatorModule", () => {
     it("should fail when revoking authority from unauthorized address", async () => {
       // 権限を持っていないアドレスからの剥奪試行
       await expect(
-        HatsHatCreatorModule.write.revokeCreateHatAuthority([address1Validated])
+        HatsHatCreatorModule.write.revokeCreateHatAuthority([address3Validated])
       ).to.be.rejectedWith("Not granted");
     });
   });

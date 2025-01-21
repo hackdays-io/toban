@@ -26,6 +26,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     function _setUp(bytes calldata _initData) internal override {
         address _owner = abi.decode(_initData, (address));
         _transferOwnership(_owner);
+        createHatAuthorities[_owner] = true;
     }
 
     /**

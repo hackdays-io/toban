@@ -29,6 +29,7 @@ contract BigBang is OwnableUpgradeable {
 		uint256 indexed topHatId,
 		uint256 hatterHatId,
 		address hatsTimeFrameModule,
+		address hatsHatCreatorModule,
 		address splitCreator
 	);
 
@@ -141,6 +142,7 @@ contract BigBang is OwnableUpgradeable {
 			topHatId,
 			hatterHatId,
 			hatsTimeFrameModule,
+			hatsHatCreatorModule,
 			splitCreator
 		);
 

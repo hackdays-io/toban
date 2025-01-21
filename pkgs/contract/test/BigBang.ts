@@ -3,6 +3,7 @@ import { viem } from "hardhat";
 import {
   type PublicClient,
   type WalletClient,
+  Address,
   decodeEventLog,
   zeroAddress,
 } from "viem";
@@ -15,9 +16,11 @@ import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
+  type HatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
+  deployHatsHatCreatorModule,
 } from "../helpers/deploy/Hats";
 import {
   type PullSplitsFactory,
@@ -35,6 +38,7 @@ describe("BigBang", () => {
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
+  let HatsHatCreatorModule_IMPL: HatsHatCreatorModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
@@ -58,6 +62,10 @@ describe("BigBang", () => {
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
       await deployHatsTimeFrameModule();
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
+
+    const { HatsHatCreatorModule: _HatsHatCreatorModule } =
+      await deployHatsHatCreatorModule("0x0000000000000000000000000000000000000001"); // zero address 以外のアドレスを仮に渡す
+    HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     const {
       SplitsWarehouse: _SplitsWarehouse,
@@ -93,6 +101,7 @@ describe("BigBang", () => {
       hatsContractAddress: Hats.address,
       hatsModuleFacotryAddress: HatsModuleFactory.address,
       hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+      hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
       splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
       splitsFactoryV2Address: PullSplitsFactory.address,
       fractionTokenAddress: FractionToken.address,

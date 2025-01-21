@@ -7,6 +7,7 @@ export const deployBigBang = async (params: {
   hatsContractAddress: Address;
   hatsModuleFacotryAddress: Address;
   hatsTimeFrameModule_impl: Address;
+  hatsHatCreatorModule_impl: Address;
   splitsCreatorFactoryAddress: Address;
   splitsFactoryV2Address: Address;
   fractionTokenAddress: Address;
@@ -30,6 +31,7 @@ export const deployBigBang = async (params: {
       params.hatsContractAddress,
       params.hatsModuleFacotryAddress,
       params.hatsTimeFrameModule_impl,
+      params.hatsHatCreatorModule_impl,
       params.splitsCreatorFactoryAddress,
       params.splitsFactoryV2Address,
       params.fractionTokenAddress,

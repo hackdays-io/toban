@@ -15,6 +15,10 @@ export type HatsTimeFrameModule = Awaited<
   ReturnType<typeof deployHatsTimeFrameModule>
 >["HatsTimeFrameModule"];
 
+export type HatsHatCreatorModule = Awaited<
+  ReturnType<typeof deployHatsHatCreatorModule>
+>["HatsHatCreatorModule"];
+
 export const deployHatsProtocol = async () => {
   const Hats = await viem.deployContract("Hats", ["test", "https://test.com"]);
 
@@ -42,4 +46,13 @@ export const deployHatsTimeFrameModule = async (version = "0.0.0") => {
   ]);
 
   return { HatsTimeFrameModule };
+};
+
+export const deployHatsHatCreatorModule = async (tmpOwner: Address, version = "0.0.0") => {
+  const HatsHatCreatorModule = await viem.deployContract("HatsHatCreatorModule", [
+    version,
+    tmpOwner,
+  ]);
+
+  return { HatsHatCreatorModule };
 };

@@ -45,13 +45,15 @@ export const deploySplitsProtocol = async () => {
 export const deploySplitsCreatorFactory = async (
   splitsCreatorImpl: Address,
 ) => {
+  const [deployer] = await ethers.getSigners();
+
   const splitsCreatorFactory = await ethers.getContractFactory(
     "SplitsCreatorFactory",
   );
 
   const _SplitsCreatorFactory = await upgrades.deployProxy(
     splitsCreatorFactory,
-    [splitsCreatorImpl],
+    [deployer.address, splitsCreatorImpl],
     {
       initializer: "initialize",
     },

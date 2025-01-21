@@ -11,6 +11,7 @@ export const deployBigBang = async (params: {
   splitsFactoryV2Address: Address;
   fractionTokenAddress: Address;
 }) => {
+  const [deployer] = await ethers.getSigners();
   /*
 	const BigBang = await viem.deployContract("BigBang", [
 		params.trustedForwarder,
@@ -27,6 +28,7 @@ export const deployBigBang = async (params: {
   const _BigBang = await upgrades.deployProxy(
     bigBang,
     [
+      deployer.address,
       params.hatsContractAddress,
       params.hatsModuleFacotryAddress,
       params.hatsTimeFrameModule_impl,

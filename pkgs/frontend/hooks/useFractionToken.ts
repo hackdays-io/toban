@@ -465,6 +465,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
       setIsLoading(true);
 
       let txHash: `0x${string}` | undefined = undefined;
+      let error: string | undefined = undefined;
       if (initialized) {
         try {
           txHash = await wallet.writeContract({
@@ -472,8 +473,8 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
             functionName: "safeTransferFrom",
             args: [wallet.account.address, to, tokenId, amount, "0x"],
           });
-        } catch (_) {
-          setIsLoading(false);
+        } catch {
+          error = "アシストクレジットの送信に失敗しました";
         } finally {
           setIsLoading(false);
         }
@@ -499,7 +500,6 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
           });
         } catch (error) {
           console.error(error);
-          setIsLoading(false);
         } finally {
           await publicClient.waitForTransactionReceipt({
             hash: txHash ?? "0x",
@@ -507,10 +507,11 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
           setIsLoading(false);
         }
       } else {
-        console.error("FractionToken is not initialized");
+        setIsLoading(false);
+        error = "この役割についてあなたはアシストクレジットの送信ができません";
       }
 
-      return txHash;
+      return { txHash, error };
     },
     [wallet, initialized, tokenId, hatId, wearer],
   );

@@ -3,13 +3,20 @@ import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import {
+  type ClientLoaderFunctionArgs,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  data,
+  useLoaderData,
 } from "@remix-run/react";
 import { currentChain } from "hooks/useViem";
+import { useEffect } from "react";
+import { ToastContainer, toast as notify } from "react-toastify";
+import toastStyles from "react-toastify/ReactToastify.css?url";
+import { getToast } from "remix-toast";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
 import { SwitchNetwork } from "./components/SwitchNetwork";
@@ -45,7 +52,26 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   );
 });
 
+// Add the toast stylesheet
+export const links = () => [{ rel: "stylesheet", href: toastStyles }];
+// Implemented from above
+export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
+  const { toast, headers } = await getToast(request);
+  return data({ toast }, { headers });
+};
+
 export default function App() {
+  const {
+    data: { toast },
+  } = useLoaderData<typeof loader>();
+  // Hook to show the toasts
+  useEffect(() => {
+    if (toast) {
+      // notify on a toast message
+      notify(toast.message, { type: toast.type });
+    }
+  }, [toast]);
+
   return (
     <ApolloProvider client={goldskyClient}>
       <PrivyProvider
@@ -77,6 +103,7 @@ export default function App() {
             <Header />
             <Outlet />
           </Container>
+          <ToastContainer />
         </ChakraProvider>
       </PrivyProvider>
     </ApolloProvider>

@@ -18,6 +18,8 @@ import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
+  type HatsHatCreatorModule,
+  deployHatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
@@ -37,6 +39,7 @@ describe("IntegrationTest", () => {
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
+  let HatsHatCreatorModule_IMPL: HatsHatCreatorModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
@@ -45,6 +48,7 @@ describe("IntegrationTest", () => {
   let FractionToken: FractionToken;
   let BigBang: BigBang;
   let HatsTimeFrameModuleByBigBang: HatsTimeFrameModule;
+  let HatsHatCreatorModuleByBigBang: HatsHatCreatorModule;
   let SplitsCreatorByBigBang: SplitsCreator;
   let DeployedPullSplit: Awaited<ReturnType<typeof getPullSplitContract>>;
 
@@ -75,6 +79,10 @@ describe("IntegrationTest", () => {
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
       await deployHatsTimeFrameModule();
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
+
+    const { HatsHatCreatorModule: _HatsHatCreatorModule } =
+      await deployHatsHatCreatorModule("0x0000000000000000000000000000000000000001");  // zero address 以外のアドレスを仮に渡す
+    HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     const {
       SplitsWarehouse: _SplitsWarehouse,
@@ -111,6 +119,7 @@ describe("IntegrationTest", () => {
       hatsContractAddress: Hats.address,
       hatsModuleFacotryAddress: HatsModuleFactory.address,
       hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+      hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
       splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
       splitsFactoryV2Address: PullSplitsFactory.address,
       fractionTokenAddress: FractionToken.address,
@@ -122,7 +131,7 @@ describe("IntegrationTest", () => {
   });
 
   it("should execute bigbang", async () => {
-    SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+    await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
 
     const txHash = await BigBang.write.bigbang(
       [
@@ -154,6 +163,7 @@ describe("IntegrationTest", () => {
 
           const hatsTimeFrameModuleAddress =
             decodedLog.args.hatsTimeFrameModule;
+          const hatsHatCreatorModuleAddress = decodedLog.args.hatsHatCreatorModule;
           const splitsCreatorAddress = decodedLog.args.splitCreator;
 
           topHatId = decodedLog.args.topHatId;
@@ -163,6 +173,11 @@ describe("IntegrationTest", () => {
             "HatsTimeFrameModule",
             hatsTimeFrameModuleAddress,
           );
+          HatsHatCreatorModuleByBigBang = await viem.getContractAt(
+            "HatsHatCreatorModule",
+            hatsHatCreatorModuleAddress,
+          );
+
           SplitsCreatorByBigBang = await viem.getContractAt(
             "SplitsCreator",
             splitsCreatorAddress,
@@ -186,7 +201,7 @@ describe("IntegrationTest", () => {
   });
 
   it("should create hat1", async () => {
-    const txHash = await Hats.write.createHat([
+    const txHash = await HatsHatCreatorModuleByBigBang.write.createHat([
       hatterHatId,
       "Role Hat",
       10,

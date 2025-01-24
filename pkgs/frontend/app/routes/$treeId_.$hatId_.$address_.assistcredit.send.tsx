@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Flex,
   Float,
   Grid,
@@ -24,6 +25,7 @@ import { useTreeInfo } from "hooks/useHats";
 import { type NameData, TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
+import { toast } from "react-toastify";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
@@ -93,7 +95,9 @@ const AssistCreditSend: FC = () => {
         receiver.address as Address,
         BigInt(amount),
       );
-      res && navigate(`/${treeId}/${hatId}/${address}`);
+      console.log(res);
+      res?.error && toast.error(res.error);
+      res?.txHash && navigate(`/${treeId}/${hatId}/${address}`);
     } catch (error) {
       console.error(error);
     }
@@ -110,117 +114,121 @@ const AssistCreditSend: FC = () => {
   ]);
 
   return (
-    <Grid
-      gridTemplateRows={!receiver ? "auto auto auto 1fr" : "auto auto 1fr auto"}
-      minH="calc(100vh - 100px)"
-    >
-      <PageHeader
-        title={
-          receiver
-            ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
-            : "アシストクレジット送信"
+    <>
+      <Grid
+        gridTemplateRows={
+          !receiver ? "auto auto auto 1fr" : "auto auto 1fr auto"
         }
-        backLink={
-          receiver &&
-          (() => {
-            setReceiver(undefined);
-            setAmount(0);
-          })
-        }
-      />
+        minH="calc(100vh - 100px)"
+      >
+        <PageHeader
+          title={
+            receiver
+              ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
+              : "アシストクレジット送信"
+          }
+          backLink={
+            receiver &&
+            (() => {
+              setReceiver(undefined);
+              setAmount(0);
+            })
+          }
+        />
 
-      <HStack my={2}>
-        <RoleIcon size="50px" />
-        <Text>掃除当番（残高: {balanceOfToken?.toLocaleString()}）</Text>
-      </HStack>
+        <HStack my={2}>
+          <RoleIcon size="50px" />
+          <Text>掃除当番（残高: {balanceOfToken?.toLocaleString()}）</Text>
+        </HStack>
 
-      {!receiver ? (
-        <>
-          <Field label="ユーザー名 or ウォレットアドレスで検索">
-            <CommonInput
-              value={searchText}
-              onChange={(e) => {
-                setSearchText(e.target.value);
-              }}
-              placeholder="ユーザー名 or ウォレットアドレス"
-            />
-          </Field>
+        {!receiver ? (
+          <>
+            <Field label="ユーザー名 or ウォレットアドレスで検索">
+              <CommonInput
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                }}
+                placeholder="ユーザー名 or ウォレットアドレス"
+              />
+            </Field>
 
-          <List.Root listStyle="none" my={10} gap={3}>
-            {users?.flat().map((user, index) => (
-              <List.Item
-                key={`${user.name}u`}
-                onClick={() => setReceiver(user)}
-              >
-                <HStack>
+            <List.Root listStyle="none" my={10} gap={3}>
+              {users?.flat().map((user, index) => (
+                <List.Item
+                  key={`${user.name}u`}
+                  onClick={() => setReceiver(user)}
+                >
+                  <HStack>
+                    <UserIcon
+                      userImageUrl={ipfs2https(user.text_records?.avatar)}
+                      size={10}
+                    />
+                    <Text lineBreak="anywhere">
+                      {user.name
+                        ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
+                        : user.address}
+                    </Text>
+                  </HStack>
+                </List.Item>
+              ))}
+            </List.Root>
+          </>
+        ) : (
+          <>
+            <Field label="送信量" alignItems="center" justifyContent="center">
+              <Input
+                p={2}
+                pb={4}
+                fontSize="60px"
+                size="2xl"
+                border="none"
+                borderBottom="2px solid"
+                borderRadius="0"
+                w="auto"
+                type="number"
+                textAlign="center"
+                min={0}
+                max={9999}
+                style={{
+                  WebkitAppearance: "none",
+                }}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+              />
+            </Field>
+
+            <Flex width="100%" flexDirection="column" alignItems="center">
+              <HStack columnGap={3} mb={4}>
+                <Box textAlign="center">
                   <UserIcon
-                    userImageUrl={ipfs2https(user.text_records?.avatar)}
                     size={10}
+                    userImageUrl={ipfs2https(me.identity?.text_records?.avatar)}
                   />
-                  <Text lineBreak="anywhere">
-                    {user.name
-                      ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
-                      : user.address}
+                  <Text fontSize="xs">{me.identity?.name}</Text>
+                </Box>
+                <VStack textAlign="center">
+                  <Text>{amount}</Text>
+                  <FaArrowRight size="20px" />
+                </VStack>
+                <Box>
+                  <UserIcon
+                    size={10}
+                    userImageUrl={ipfs2https(receiver.text_records?.avatar)}
+                  />
+                  <Text fontSize="xs">
+                    {receiver.name || abbreviateAddress(receiver.address)}
                   </Text>
-                </HStack>
-              </List.Item>
-            ))}
-          </List.Root>
-        </>
-      ) : (
-        <>
-          <Field label="送信量" alignItems="center" justifyContent="center">
-            <Input
-              p={2}
-              pb={4}
-              fontSize="60px"
-              size="2xl"
-              border="none"
-              borderBottom="2px solid"
-              borderRadius="0"
-              w="auto"
-              type="number"
-              textAlign="center"
-              min={0}
-              max={9999}
-              style={{
-                WebkitAppearance: "none",
-              }}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-            />
-          </Field>
-
-          <Flex width="100%" flexDirection="column" alignItems="center">
-            <HStack columnGap={3} mb={4}>
-              <Box textAlign="center">
-                <UserIcon
-                  size={10}
-                  userImageUrl={ipfs2https(me.identity?.text_records?.avatar)}
-                />
-                <Text fontSize="xs">{me.identity?.name}</Text>
-              </Box>
-              <VStack textAlign="center">
-                <Text>{amount}</Text>
-                <FaArrowRight size="20px" />
-              </VStack>
-              <Box>
-                <UserIcon
-                  size={10}
-                  userImageUrl={ipfs2https(receiver.text_records?.avatar)}
-                />
-                <Text fontSize="xs">
-                  {receiver.name || abbreviateAddress(receiver.address)}
-                </Text>
-              </Box>
-            </HStack>
-            <BasicButton loading={isLoading} onClick={send} mb={5}>
-              送信
-            </BasicButton>
-          </Flex>
-        </>
-      )}
-    </Grid>
+                </Box>
+              </HStack>
+              <BasicButton loading={isLoading} onClick={send} mb={5}>
+                送信
+              </BasicButton>
+            </Flex>
+          </>
+        )}
+      </Grid>
+    </>
   );
 };
 

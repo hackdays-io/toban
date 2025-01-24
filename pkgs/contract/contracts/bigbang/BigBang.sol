@@ -44,6 +44,7 @@ contract BigBang is OwnableUpgradeable {
      * @param _fractionToken Address of the fraction token contract.
      */
     function initialize(
+        address _initialOwner,
         address _hatsAddress,
         address _hatsModuleFactory,
         address _hatsTimeFrameModule_IMPL,
@@ -52,7 +53,7 @@ contract BigBang is OwnableUpgradeable {
         address _splitFactoryV2,
         address _fractionToken
     ) public initializer {
-        __Ownable_init(_msgSender());
+        __Ownable_init(_initialOwner);
         Hats = IHats(_hatsAddress);
         HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
         HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
@@ -116,7 +117,7 @@ contract BigBang is OwnableUpgradeable {
             0
         );
 
-        // 5. TopHatにHatsTimeFrameModuleとHatsHatCreatorModuleをアタッチ
+        // 5. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
         hatIds[1] = hatterHatId;

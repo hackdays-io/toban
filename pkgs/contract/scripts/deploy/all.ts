@@ -3,7 +3,10 @@ import { network } from "hardhat";
 import { type Address, zeroAddress } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
-import { deployHatsTimeFrameModule } from "../../helpers/deploy/Hats";
+import {
+  deployHatsHatCreatorModule,
+  deployHatsTimeFrameModule,
+} from "../../helpers/deploy/Hats";
 import {
   deploySplitsCreator,
   deploySplitsCreatorFactory,
@@ -30,6 +33,9 @@ const deployAll = async () => {
   } = loadDeployedContractAddresses(network.name);
 
   const { HatsTimeFrameModule } = await deployHatsTimeFrameModule();
+  const { HatsHatCreatorModule } = await deployHatsHatCreatorModule(
+    "0x0000000000000000000000000000000000000001", // zero address 以外のアドレスを仮に渡す
+  );
 
   const { FractionToken } = await deployFractionToken(
     "",
@@ -47,6 +53,7 @@ const deployAll = async () => {
     hatsContractAddress: Hats as Address,
     hatsModuleFacotryAddress: HatsModuleFactory as Address,
     hatsTimeFrameModule_impl: HatsTimeFrameModule.address,
+    hatsHatCreatorModule_impl: HatsHatCreatorModule.address,
     splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
     splitsFactoryV2Address: PullSplitsFactory as Address,
     fractionTokenAddress: FractionToken.address,

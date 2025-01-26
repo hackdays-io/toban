@@ -7,8 +7,9 @@ import {ISplitsCreatorFactory} from "../splitscreator/ISplitsCreatorFactory.sol"
 import {HatsTimeFrameModule} from "../timeframe/HatsTimeFrameModule.sol";
 import {HatsHatCreatorModule} from "../hatcreator/HatsHatCreatorModule.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract BigBang is OwnableUpgradeable {
+contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
     IHats public Hats;
 
     IHatsModuleFactory public HatsModuleFactory;
@@ -190,4 +191,8 @@ contract BigBang is OwnableUpgradeable {
     function setFractionToken(address _fractionToken) external onlyOwner {
         FractionToken = _fractionToken;
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }

@@ -12,8 +12,13 @@ import {
 } from "../helpers/deploy/FractionToken";
 import { type Hats, deployHatsProtocol } from "../helpers/deploy/Hats";
 import { upgradeFractionToken } from "../helpers/upgrade/fractionToken";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 
 describe("FractionToken", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let FractionToken: FractionToken;
 
@@ -40,6 +45,9 @@ describe("FractionToken", () => {
   };
 
   before(async () => {
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
+
     // Hatsコントラクトをデプロイする。
     const { Hats: _Hats } = await deployHatsProtocol();
     Hats = _Hats;
@@ -49,6 +57,7 @@ describe("FractionToken", () => {
       "",
       10000n,
       Hats.address,
+      Create2Deployer.address,
     );
     FractionToken = _FractionToken;
 
@@ -283,11 +292,12 @@ describe("FractionToken", () => {
   describe("Upgrade Test", () => {
     it("upgrade", async () => {
       // FractionTokenをアップグレード
-      const newFractionToken = await upgradeFractionToken(
-        FractionToken.address,
-        "FractionToken_Mock_v2",
-        ["", 10000n, Hats.address, zeroAddress],
-      );
+      const { UpgradedFractionToken: newFractionToken } =
+        await upgradeFractionToken(
+          FractionToken.address,
+          "FractionToken_Mock_v2",
+          Create2Deployer.address,
+        );
 
       // upgrade後にしかないメソッドを実行
       const result = await newFractionToken.read.testUpgradeFunction();
@@ -296,11 +306,12 @@ describe("FractionToken", () => {
 
     it("should mint, transfer and burn tokens after upgrade", async () => {
       // FractionTokenをアップグレード
-      const newFractionToken = await upgradeFractionToken(
-        FractionToken.address,
-        "FractionToken_Mock_v2",
-        ["", 10000n, Hats.address, zeroAddress],
-      );
+      const { UpgradedFractionToken: newFractionToken } =
+        await upgradeFractionToken(
+          FractionToken.address,
+          "FractionToken_Mock_v2",
+          Create2Deployer.address,
+        );
 
       // get token id
       const tokenId = await newFractionToken.read.getTokenId([
@@ -355,15 +366,16 @@ describe("FractionToken", () => {
 
     it("should fail to mint a token after upgrade", async () => {
       // FractionTokenをアップグレード
-      const newFractionToken = await upgradeFractionToken(
-        FractionToken.address,
-        "FractionToken_Mock_v2",
-        ["", 10000n, Hats.address, zeroAddress],
-      );
+      const { UpgradedFractionToken: newFractionToken } =
+        await upgradeFractionToken(
+          FractionToken.address,
+          "FractionToken_Mock_v2",
+          Create2Deployer.address,
+        );
 
       // 権限のない人にtokenはmintできない
       await newFractionToken.write
-        .mintInitialSupply([hatId, address4Validated], {
+        .mintInitialSupply([hatId, address4Validated, 0n], {
           account: address1.account,
         })
         .catch((error: any) => {
@@ -374,7 +386,7 @@ describe("FractionToken", () => {
 
       // tokenは二度mintできない
       await newFractionToken.write
-        .mintInitialSupply([hatId, address2Validated], {
+        .mintInitialSupply([hatId, address2Validated, 0n], {
           account: address1.account,
         })
         .catch((error: any) => {

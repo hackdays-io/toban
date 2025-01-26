@@ -34,8 +34,13 @@ import {
   deploySplitsCreatorFactory,
   deploySplitsProtocol,
 } from "../helpers/deploy/Splits";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 
 describe("IntegrationTest", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
@@ -69,6 +74,9 @@ describe("IntegrationTest", () => {
   };
 
   before(async () => {
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     Hats = _Hats;
 
@@ -77,11 +85,15 @@ describe("IntegrationTest", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule();
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const { HatsHatCreatorModule: _HatsHatCreatorModule } =
-      await deployHatsHatCreatorModule("0x0000000000000000000000000000000000000001");  // zero address 以外のアドレスを仮に渡す
+      await deployHatsHatCreatorModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      ); // zero address 以外のアドレスを仮に渡す
     HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     const {
@@ -98,14 +110,20 @@ describe("IntegrationTest", () => {
       "",
       10000n,
       Hats.address,
+      Create2Deployer.address,
     );
     FractionToken = _FractionToken;
 
-    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
+    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
+      Create2Deployer.address,
+    );
     SplitsCreator_IMPL = _SplitsCreator;
 
     const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-      await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+      await deploySplitsCreatorFactory(
+        SplitsCreator_IMPL.address,
+        Create2Deployer.address,
+      );
 
     SplitsCreatorFactory = _SplitsCreatorFactory;
 
@@ -115,15 +133,18 @@ describe("IntegrationTest", () => {
   });
 
   it("should deploy BigBang", async () => {
-    const { BigBang: _BigBang } = await deployBigBang({
-      hatsContractAddress: Hats.address,
-      hatsModuleFacotryAddress: HatsModuleFactory.address,
-      hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
-      hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
-      splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
-      splitsFactoryV2Address: PullSplitsFactory.address,
-      fractionTokenAddress: FractionToken.address,
-    });
+    const { BigBang: _BigBang } = await deployBigBang(
+      {
+        hatsContractAddress: Hats.address,
+        hatsModuleFacotryAddress: HatsModuleFactory.address,
+        hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+        hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
+        splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
+        splitsFactoryV2Address: PullSplitsFactory.address,
+        fractionTokenAddress: FractionToken.address,
+      },
+      Create2Deployer.address,
+    );
 
     expect(_BigBang.address).to.not.be.undefined;
 
@@ -163,7 +184,8 @@ describe("IntegrationTest", () => {
 
           const hatsTimeFrameModuleAddress =
             decodedLog.args.hatsTimeFrameModule;
-          const hatsHatCreatorModuleAddress = decodedLog.args.hatsHatCreatorModule;
+          const hatsHatCreatorModuleAddress =
+            decodedLog.args.hatsHatCreatorModule;
           const splitsCreatorAddress = decodedLog.args.splitCreator;
 
           topHatId = decodedLog.args.topHatId;

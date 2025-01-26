@@ -1,5 +1,6 @@
-import { ethers, upgrades, viem } from "hardhat";
+import { ethers, viem } from "hardhat";
 import type { Address } from "viem";
+import { baseSalt, deployContract_Create2 } from "../deploy/Create2Factory";
 
 /**
  * BigBang Contractをアップグレードするメソッド
@@ -9,23 +10,30 @@ import type { Address } from "viem";
  * @returns
  */
 export const upgradeBigBang = async (
-  contractAddress: string,
-  contractName: string,
+  contractAddress: Address,
+  contractName: "BigBang_Mock_v2",
+  create2DeployerAddress?: string,
 ) => {
-  // 新しいコントラクトのファクトリーを取得
-  const BigBang_Mock_v2 = await ethers.getContractFactory(contractName);
-  // アップグレードを実行
-  const _BigBang = await upgrades.upgradeProxy(
-    contractAddress,
-    BigBang_Mock_v2,
+  const UpgradedBigBangFactory = await ethers.getContractFactory(contractName);
+  const UpgradedBigBang_ImplTx =
+    await UpgradedBigBangFactory.getDeployTransaction();
+  const UpgradedBigBang_ImplAddress = await deployContract_Create2(
+    baseSalt,
+    UpgradedBigBang_ImplTx.data || "0x",
+    ethers.keccak256(UpgradedBigBang_ImplTx.data),
+    `${contractName}_Implementation`,
+    create2DeployerAddress,
   );
 
-  const address = _BigBang.target;
+  const UpgradedBigBang = await viem.getContractAt(
+    contractName,
+    contractAddress,
+  );
 
-  //console.log("upgraded address:", address);
+  await UpgradedBigBang.write.upgradeToAndCall([
+    UpgradedBigBang_ImplAddress,
+    "0x",
+  ]);
 
-  // create a new instance of the contract
-  const newBigBang = await viem.getContractAt(contractName, address as Address);
-
-  return newBigBang;
+  return { UpgradedBigBang };
 };

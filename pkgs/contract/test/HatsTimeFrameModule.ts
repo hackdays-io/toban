@@ -11,8 +11,13 @@ import {
   deployHatsProtocol,
   deployHatsTimeFrameModule,
 } from "../helpers/deploy/Hats";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 
 describe("HatsTimeFrameModule", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
@@ -35,11 +40,13 @@ describe("HatsTimeFrameModule", () => {
   };
 
   before(async () => {
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
     const { Hats: _Hats } = await deployHatsProtocol();
     const { HatsModuleFactory: _HatsModuleFactory } =
       await deployHatsModuleFactory(_Hats.address);
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule();
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
 
     Hats = _Hats;
     HatsModuleFactory = _HatsModuleFactory;
@@ -86,7 +93,7 @@ describe("HatsTimeFrameModule", () => {
 
     expect(
       (await HatsTimeFrameModule.read.IMPLEMENTATION()).toLowerCase(),
-    ).equal(HatsTimeFrameModule_IMPL.address);
+    ).equal(HatsTimeFrameModule_IMPL.address.toLowerCase());
 
     // Hatter Hatを作成
     let txHash = await Hats.write.createHat([

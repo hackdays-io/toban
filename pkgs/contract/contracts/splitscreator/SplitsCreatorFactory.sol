@@ -6,8 +6,9 @@ import {LibClone} from "solady/src/utils/LibClone.sol";
 import {SplitsCreator} from "./SplitsCreator.sol";
 import {ISplitsCreator} from "./ISplitsCreator.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract SplitsCreatorFactory is OwnableUpgradeable {
+contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
     event SplitCreatorCreated(
         address indexed creator,
         address indexed splitCreator,
@@ -126,4 +127,8 @@ contract SplitsCreatorFactory is OwnableUpgradeable {
                 )
             );
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }

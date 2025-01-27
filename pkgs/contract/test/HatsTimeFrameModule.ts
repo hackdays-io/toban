@@ -2,7 +2,7 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { viem } from "hardhat";
 import type { Address, PublicClient, WalletClient } from "viem";
-import { decodeEventLog } from "viem";
+import { decodeEventLog, encodeAbiParameters } from "viem";
 import {
   type Hats,
   type HatsModuleFactory,
@@ -46,7 +46,11 @@ describe("HatsTimeFrameModule", () => {
     const { HatsModuleFactory: _HatsModuleFactory } =
       await deployHatsModuleFactory(_Hats.address);
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      );
 
     Hats = _Hats;
     HatsModuleFactory = _HatsModuleFactory;
@@ -70,12 +74,16 @@ describe("HatsTimeFrameModule", () => {
   });
 
   it("deploy time frame module", async () => {
+    const initData = encodeAbiParameters(
+      [{ type: "address" }],
+      [address1Validated],
+    );
     // HatsModuleインスタンスをデプロイ
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      "0x",
+      initData,
       BigInt(0),
     ]);
 
@@ -260,5 +268,31 @@ describe("HatsTimeFrameModule", () => {
     ]);
 
     expect(woreTime).to.equal(initialTime + 5000n);
+  });
+
+  it("renouce hat", async () => {
+    if (!roleHatId) {
+      throw new Error("Role hat ID is undefined");
+    }
+
+    expect(await Hats.read.balanceOf([address1Validated, roleHatId])).to.equal(
+      1n,
+    );
+
+    await HatsTimeFrameModule.write.renounce([roleHatId, address1Validated]);
+
+    expect(await Hats.read.balanceOf([address1Validated, roleHatId])).to.equal(
+      0n,
+    );
+    expect(
+      await Hats.read.balanceOf([HatsTimeFrameModule.address, roleHatId]),
+    ).to.equal(0n);
+
+    const woreTime = await HatsTimeFrameModule.read.getWoreTime([
+      address1Validated,
+      roleHatId,
+    ]);
+
+    expect(woreTime).to.equal(0n);
   });
 });

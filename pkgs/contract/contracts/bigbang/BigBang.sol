@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {IHatsModuleFactory} from "./IHatsModuleFactory.sol";
 import {ISplitsCreatorFactory} from "../splitscreator/ISplitsCreatorFactory.sol";
-import {HatsTimeFrameModule} from "../timeframe/HatsTimeFrameModule.sol";
-import {HatsHatCreatorModule} from "../hatcreator/HatsHatCreatorModule.sol";
+import {HatsTimeFrameModule} from "../hatsmodules/timeframe/HatsTimeFrameModule.sol";
+import {HatsHatCreatorModule} from "../hatsmodules/hatcreator/HatsHatCreatorModule.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -114,7 +114,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             HatsTimeFrameModule_IMPL,
             topHatId,
             "",
-            "",
+            abi.encode(_owner), // ownerを初期化データとして渡す
             0
         );
 

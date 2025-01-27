@@ -56,7 +56,7 @@ export const deploySplitsCreatorFactory = async (
 
   const splitsCreatorFactoryImplTx =
     await splitsCreatorFactory.getDeployTransaction();
-  const splitsCreatorFactoryImplAddress = await deployContract_Create2(
+  const SplitsCreatorFactoryImplAddress = await deployContract_Create2(
     baseSalt,
     splitsCreatorFactoryImplTx.data || "0x",
     ethers.keccak256(splitsCreatorFactoryImplTx.data),
@@ -64,15 +64,15 @@ export const deploySplitsCreatorFactory = async (
     create2DeployerAddress,
   );
 
-  const splitsCreatorFactoryInitData =
+  const SplitsCreatorFactoryInitData =
     splitsCreatorFactory.interface.encodeFunctionData("initialize", [
       deployer.address,
       splitsCreatorImpl,
     ]);
   const UpgradeProxy = await ProxyFactory();
   const splitsCreatorFactoryProxyTx = await UpgradeProxy.getDeployTransaction(
-    splitsCreatorFactoryImplAddress,
-    splitsCreatorFactoryInitData,
+    SplitsCreatorFactoryImplAddress,
+    SplitsCreatorFactoryInitData,
   );
   const splitsCreatorFactoryAddress = await deployContract_Create2(
     baseSalt,
@@ -88,7 +88,11 @@ export const deploySplitsCreatorFactory = async (
     splitsCreatorFactoryAddress as Address,
   );
 
-  return { SplitsCreatorFactory };
+  return {
+    SplitsCreatorFactory,
+    SplitsCreatorFactoryImplAddress,
+    SplitsCreatorFactoryInitData,
+  };
 };
 
 export const deploySplitsCreator = async (create2DeployerAddress?: string) => {

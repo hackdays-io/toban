@@ -1,10 +1,7 @@
-import { ethers, upgrades, viem } from "hardhat";
+import { ethers, viem } from "hardhat";
 import type { Address } from "viem";
 import { baseSalt, deployContract_Create2 } from "./Create2Factory";
-import {
-  ProxyFactory,
-  TransparentUpgradeableProxyFactory,
-} from "./Upgradeable";
+import { ProxyFactory } from "./Upgradeable";
 
 export type BigBang = Awaited<ReturnType<typeof deployBigBang>>["BigBang"];
 
@@ -64,5 +61,5 @@ export const deployBigBang = async (
     BigBangAddress as Address,
   );
 
-  return { BigBang };
+  return { BigBang, BigBangImplAddress, BigBangInitData };
 };

@@ -6,6 +6,7 @@ import {
   type PublicClient,
   type WalletClient,
   decodeEventLog,
+  encodeAbiParameters,
   keccak256,
   parseEther,
   zeroAddress,
@@ -71,7 +72,11 @@ describe("SplitsCreator Factory", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const {
@@ -110,11 +115,16 @@ describe("SplitsCreator Factory", () => {
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
 
+    const initData = encodeAbiParameters(
+      [{ type: "address" }],
+      [address1.account?.address!],
+    );
+
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      "0x",
+      initData,
       BigInt(0),
     ]);
 
@@ -266,7 +276,11 @@ describe("CreateSplit", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const {
@@ -307,11 +321,16 @@ describe("CreateSplit", () => {
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
 
+    const initData = encodeAbiParameters(
+      [{ type: "address" }],
+      [address1.account?.address!],
+    );
+
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      "0x",
+      initData,
       BigInt(0),
     ]);
 

@@ -37,7 +37,7 @@ export const deployContract_Create2 = async (
   code: string,
   hash: string,
   name: string,
-  create2Deployer: string = create2DeployerAddress,
+  create2Deployer = create2DeployerAddress,
 ) => {
   const computedAddress: Address = await computeAddress(
     salt,

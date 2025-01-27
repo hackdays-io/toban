@@ -42,6 +42,7 @@ export const deployEmptyHatsModule = async () => {
 };
 
 export const deployHatsTimeFrameModule = async (
+  tmpOwner: Address,
   version = "0.0.0",
   create2DeployerAddress?: string,
 ) => {
@@ -49,7 +50,7 @@ export const deployHatsTimeFrameModule = async (
     "HatsTimeFrameModule",
   );
   const HatsTimeFrameModuleTx =
-    await HatsTimeFrameModuleFactory.getDeployTransaction(version);
+    await HatsTimeFrameModuleFactory.getDeployTransaction(version, tmpOwner);
   const HatsTimeFrameModuleAddress = await deployContract_Create2(
     baseSalt,
     HatsTimeFrameModuleTx.data || "0x",

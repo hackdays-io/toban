@@ -85,7 +85,11 @@ describe("IntegrationTest", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const { HatsHatCreatorModule: _HatsHatCreatorModule } =

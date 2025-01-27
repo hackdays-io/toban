@@ -53,5 +53,5 @@ export const deployFractionToken = async (
     FractionTokenAddress as Address,
   );
 
-  return { FractionToken };
+  return { FractionToken, FractionTokenImplAddress, FractionTokenInitData };
 };

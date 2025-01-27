@@ -62,25 +62,15 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 | ContractAddress                            | Name                    | Memo |
 | ------------------------------------------ | ----------------------- | ---- |
-| 0x5d7a64Cc808294C516076d371685ed4E6aDd6337 | BigBang                 |      |
-| 0xb8f7ca7a5b1e457b8735884419e114f90d53e1d5 | FractionToken           |      |
-| 0x8da1c0864962c5e26c99cf839b0dc48e39104568 | SplitsCreatorFactory    |      |
-| 0xda9fbab4436e4124cd6ee6864d4b46d0dd412414 | SplitsCreatorIMPL       |      |
-| 0xd4a66507ea8c8382fa8474ed6cae4163676a434a | HatsTimeFrameModuleIMPL |      |
+| 0x3E70d10aCdcC14B6C31DA26DcC195a6EDf1C2c16 | BigBang                 |      |
+| 0x54889278bf4F16ACAa3CC1402C987A6C42a5308B | FractionToken           |      |
+| 0x2b44c1F5B0D2a6a39F83effbF48aA09C833EBe12 | SplitsCreatorFactory    |      |
+| 0x09b853E0945d1c86af10b5665472501bD5F6627c | SplitsCreatorIMPL       |      |
+| 0x808996331ADD2715854e31e3dd4f9a736DE23604 | HatsTimeFrameModuleIMPL |      |
+| 0xbE24C4270B65f68E22CD2e58eD7A61eAF36240a0 | HatsHatCreatorModuleIMPL |      |
 | 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                    |      |
 | 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory       |      |
 | 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory       |      |
-
-### Holesky
-
-| ContractAddress                            | Name                 | Memo |
-| ------------------------------------------ | -------------------- | ---- |
-| 0xa55410b75578c8941a76249c18c72167459253c7 | BigBang              |      |
-| 0x143a4605b682ec096274cef9fde5b3c077498942 | FractionToken        |      |
-| 0xea4ee24c8411a71a7ce2cd676e1f17ebe18c2a98 | SplitsCreatorFactory |      |
-| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                 |      |
-| 0xfE661c01891172046feE16D3a57c3Cf456729efA | HatsModuleFactory    |      |
-| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory    |      |
 
 ## How to work
 

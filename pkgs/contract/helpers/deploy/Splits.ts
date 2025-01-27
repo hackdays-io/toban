@@ -60,7 +60,7 @@ export const deploySplitsCreatorFactory = async (
     baseSalt,
     splitsCreatorFactoryImplTx.data || "0x",
     ethers.keccak256(splitsCreatorFactoryImplTx.data),
-    "SplitsCreatorFactory",
+    "SplitsCreatorFactory_Implementation",
     create2DeployerAddress,
   );
 

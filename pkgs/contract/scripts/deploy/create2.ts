@@ -78,7 +78,11 @@ const deploy = async () => {
 
   console.log(
     "HatsTimeframeModule module:\n",
-    `npx hardhat verify ${hatsTimeFrameModuleAddress} 1.0.0 --network ${network.name}\n`,
+    `npx hardhat verify ${hatsTimeFrameModuleAddress} 1.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+  );
+  console.log(
+    "HatsHatCreatorModule module:\n",
+    `npx hardhat verify ${hatsHatCreatorModuleAddress} 1.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
   );
   console.log(
     "FractionToken:\n",

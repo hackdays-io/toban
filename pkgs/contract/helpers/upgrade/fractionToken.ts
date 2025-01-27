@@ -1,5 +1,6 @@
-import { ethers, upgrades, viem } from "hardhat";
+import { ethers, viem } from "hardhat";
 import type { Address } from "viem";
+import { baseSalt, deployContract_Create2 } from "../deploy/Create2Factory";
 
 /**
  * FractionToken Contractをアップグレードするメソッド
@@ -9,28 +10,33 @@ import type { Address } from "viem";
  * @returns
  */
 export const upgradeFractionToken = async (
-  contractAddress: string,
-  contractName: string,
+  contractAddress: Address,
+  contractName: "FractionToken_Mock_v2",
+  create2DeployerAddress?: string,
   params?: unknown[],
 ) => {
   // 新しいコントラクトのファクトリーを取得
-  const FractionToken = await ethers.getContractFactory(contractName);
-
-  // アップグレードを実行
-  const _FractionToken = await upgrades.upgradeProxy(
-    contractAddress,
-    FractionToken,
+  const UpgradedFractionTokenFactory =
+    await ethers.getContractFactory(contractName);
+  const UpgradedFractionToken_ImplTx =
+    await UpgradedFractionTokenFactory.getDeployTransaction();
+  const UpgradedFractionToken_ImplAddress = await deployContract_Create2(
+    baseSalt,
+    UpgradedFractionToken_ImplTx.data || "0x",
+    ethers.keccak256(UpgradedFractionToken_ImplTx.data),
+    `${contractName}_Implementation`,
+    create2DeployerAddress,
   );
 
-  const address = _FractionToken.target;
-
-  //console.log("upgraded address:", address);
-
-  // create a new instance of the contract
-  const newFractionToken = await viem.getContractAt(
+  const UpgradedFractionToken = await viem.getContractAt(
     contractName,
-    address as Address,
+    contractAddress,
   );
 
-  return newFractionToken;
+  await UpgradedFractionToken.write.upgradeToAndCall([
+    UpgradedFractionToken_ImplAddress,
+    "0x",
+  ]);
+
+  return { UpgradedFractionToken };
 };

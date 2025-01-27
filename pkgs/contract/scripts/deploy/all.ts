@@ -4,8 +4,8 @@ import { type Address, zeroAddress } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import {
-  deployHatsTimeFrameModule,
   deployHatsHatCreatorModule,
+  deployHatsTimeFrameModule,
 } from "../../helpers/deploy/Hats";
 import {
   deploySplitsCreator,

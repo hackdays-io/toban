@@ -33,8 +33,13 @@ import {
   deploySplitsProtocol,
 } from "../helpers/deploy/Splits";
 import { upgradeBigBang } from "../helpers/upgrade/bigbang";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 
 describe("BigBang", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
@@ -48,10 +53,14 @@ describe("BigBang", () => {
   let BigBang: BigBang;
 
   let address1: WalletClient;
-  let relayer: WalletClient;
   let publicClient: PublicClient;
 
   before(async () => {
+    [address1] = await viem.getWalletClients();
+
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     Hats = _Hats;
 
@@ -60,11 +69,19 @@ describe("BigBang", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule();
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        undefined,
+        Create2Deployer.address,
+      );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const { HatsHatCreatorModule: _HatsHatCreatorModule } =
-      await deployHatsHatCreatorModule("0x0000000000000000000000000000000000000001"); // zero address 以外のアドレスを仮に渡す
+      await deployHatsHatCreatorModule(
+        "0x0000000000000000000000000000000000000001",
+        undefined,
+        Create2Deployer.address,
+      ); // zero address 以外のアドレスを仮に渡す
     HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     const {
@@ -81,31 +98,39 @@ describe("BigBang", () => {
       "",
       10000n,
       Hats.address,
+      Create2Deployer.address,
     );
     FractionToken = _FractionToken;
 
-    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
+    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
+      Create2Deployer.address,
+    );
     SplitsCreator_IMPL = _SplitsCreator;
 
     const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-      await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+      await deploySplitsCreatorFactory(
+        SplitsCreator_IMPL.address,
+        Create2Deployer.address,
+      );
 
     SplitsCreatorFactory = _SplitsCreatorFactory;
 
-    [address1, relayer] = await viem.getWalletClients();
     publicClient = await viem.getPublicClient();
   });
 
   it("should deploy BigBang", async () => {
-    const { BigBang: _BigBang } = await deployBigBang({
-      hatsContractAddress: Hats.address,
-      hatsModuleFacotryAddress: HatsModuleFactory.address,
-      hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
-      hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
-      splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
-      splitsFactoryV2Address: PullSplitsFactory.address,
-      fractionTokenAddress: FractionToken.address,
-    });
+    const { BigBang: _BigBang } = await deployBigBang(
+      {
+        hatsContractAddress: Hats.address,
+        hatsModuleFacotryAddress: HatsModuleFactory.address,
+        hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+        hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
+        splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
+        splitsFactoryV2Address: PullSplitsFactory.address,
+        fractionTokenAddress: FractionToken.address,
+      },
+      Create2Deployer.address,
+    );
 
     expect(_BigBang.address).to.not.be.undefined;
 
@@ -235,7 +260,7 @@ describe("BigBang", () => {
     const ownerAccount = address1.account;
 
     expect((await BigBang.read.HatsTimeFrameModule_IMPL()).toLowerCase()).equal(
-      oldHatsTimeFrameModuleAddress,
+      oldHatsTimeFrameModuleAddress.toLowerCase(),
     );
 
     await BigBang.write.setHatsTimeFrameModuleImpl(
@@ -246,7 +271,7 @@ describe("BigBang", () => {
     );
 
     expect((await BigBang.read.HatsTimeFrameModule_IMPL()).toLowerCase()).equal(
-      newHatsTimeFrameModuleAddress,
+      newHatsTimeFrameModuleAddress.toLowerCase(),
     );
 
     await BigBang.write.setHatsTimeFrameModuleImpl(
@@ -257,7 +282,7 @@ describe("BigBang", () => {
     );
 
     expect((await BigBang.read.HatsTimeFrameModule_IMPL()).toLowerCase()).equal(
-      oldHatsTimeFrameModuleAddress,
+      oldHatsTimeFrameModuleAddress.toLowerCase(),
     );
   });
 
@@ -267,7 +292,7 @@ describe("BigBang", () => {
     const ownerAccount = address1.account;
 
     expect((await BigBang.read.SplitsFactoryV2()).toLowerCase()).equal(
-      oldSplitsFactoryV2Address,
+      oldSplitsFactoryV2Address.toLowerCase(),
     );
 
     await BigBang.write.setSplitsFactoryV2([newSplitsFactoryV2Address], {
@@ -275,7 +300,7 @@ describe("BigBang", () => {
     });
 
     expect((await BigBang.read.SplitsFactoryV2()).toLowerCase()).equal(
-      newSplitsFactoryV2Address,
+      newSplitsFactoryV2Address.toLowerCase(),
     );
 
     await BigBang.write.setSplitsFactoryV2([oldSplitsFactoryV2Address], {
@@ -283,7 +308,7 @@ describe("BigBang", () => {
     });
 
     expect((await BigBang.read.SplitsFactoryV2()).toLowerCase()).equal(
-      oldSplitsFactoryV2Address,
+      oldSplitsFactoryV2Address.toLowerCase(),
     );
   });
 
@@ -292,21 +317,25 @@ describe("BigBang", () => {
     const newFractionTokenAddress = address1.account?.address!;
     const ownerAccount = address1.account;
 
-    expect(await BigBang.read.FractionToken()).equal(oldFractionTokenAddress);
+    expect((await BigBang.read.FractionToken()).toLowerCase()).equal(
+      oldFractionTokenAddress.toLowerCase(),
+    );
 
     await BigBang.write.setFractionToken([newFractionTokenAddress], {
       account: ownerAccount,
     });
 
     expect((await BigBang.read.FractionToken()).toLowerCase()).equal(
-      newFractionTokenAddress,
+      newFractionTokenAddress.toLowerCase(),
     );
 
     await BigBang.write.setFractionToken([oldFractionTokenAddress], {
       account: ownerAccount,
     });
 
-    expect(await BigBang.read.FractionToken()).equal(oldFractionTokenAddress);
+    expect((await BigBang.read.FractionToken()).toLowerCase()).equal(
+      oldFractionTokenAddress.toLowerCase(),
+    );
   });
 
   /**
@@ -316,27 +345,29 @@ describe("BigBang", () => {
   describe("Upgrade Test", () => {
     it("upgrde", async () => {
       // BigBangをアップグレード
-      const newBigBang = await upgradeBigBang(
+      const { UpgradedBigBang } = await upgradeBigBang(
         BigBang.address,
         "BigBang_Mock_v2",
+        Create2Deployer.address,
       );
 
       // upgrade後にしかないメソッドを実行
-      const result = await newBigBang.read.testUpgradeFunction();
+      const result = await UpgradedBigBang.read.testUpgradeFunction();
       expect(result).to.equal("testUpgradeFunction");
     });
 
     it("should execute bigbang after upgrade", async () => {
       // BigBangをアップグレード
-      const newBigBang = await upgradeBigBang(
+      const { UpgradedBigBang } = await upgradeBigBang(
         BigBang.address,
         "BigBang_Mock_v2",
+        Create2Deployer.address,
       );
 
       // SplitsCreatorFactoryにBigBangアドレスをセット
-      SplitsCreatorFactory.write.setBigBang([newBigBang.address]);
+      SplitsCreatorFactory.write.setBigBang([UpgradedBigBang.address]);
 
-      const txHash = await newBigBang.write.bigbang(
+      const txHash = await UpgradedBigBang.write.bigbang(
         [
           address1.account?.address!,
           "tophatDetails",
@@ -354,7 +385,7 @@ describe("BigBang", () => {
       for (const log of receipt.logs) {
         try {
           const decodedLog: any = decodeEventLog({
-            abi: newBigBang.abi as any,
+            abi: UpgradedBigBang.abi as any,
             data: log.data,
             topics: log.topics,
           });

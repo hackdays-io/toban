@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IHatsHatCreatorModule} from "./IHatsHatCreatorModule.sol";
-import {HatsModule} from "../hats/module/HatsModule.sol";
+import {HatsModule} from "../../hats/module/HatsModule.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
@@ -34,7 +34,9 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to check
      * @return bool Whether the address has authority
      */
-    function hasCreateHatAuthority(address authority) public view returns (bool) {
+    function hasCreateHatAuthority(
+        address authority
+    ) public view returns (bool) {
         return createHatAuthorities[authority];
     }
 
@@ -83,14 +85,15 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     ) external returns (uint256) {
         require(hasCreateHatAuthority(msg.sender), "Not authorized");
 
-        return HATS().createHat(
-            _admin,
-            _details,
-            _maxSupply,
-            _eligibility,
-            _toggle,
-            _mutable,
-            _imageURI
-        );
+        return
+            HATS().createHat(
+                _admin,
+                _details,
+                _maxSupply,
+                _eligibility,
+                _toggle,
+                _mutable,
+                _imageURI
+            );
     }
 }

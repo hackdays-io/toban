@@ -1,5 +1,6 @@
-import { viem } from "hardhat";
+import { ethers, viem } from "hardhat";
 import { type Address, zeroAddress } from "viem";
+import { baseSalt, deployContract_Create2 } from "./Create2Factory";
 
 export type Hats = Awaited<ReturnType<typeof deployHatsProtocol>>["Hats"];
 
@@ -40,19 +41,54 @@ export const deployEmptyHatsModule = async () => {
   return { HatsModule };
 };
 
-export const deployHatsTimeFrameModule = async (version = "0.0.0") => {
-  const HatsTimeFrameModule = await viem.deployContract("HatsTimeFrameModule", [
-    version,
-  ]);
+export const deployHatsTimeFrameModule = async (
+  tmpOwner: Address,
+  version = "0.0.0",
+  create2DeployerAddress?: string,
+) => {
+  const HatsTimeFrameModuleFactory = await ethers.getContractFactory(
+    "HatsTimeFrameModule",
+  );
+  const HatsTimeFrameModuleTx =
+    await HatsTimeFrameModuleFactory.getDeployTransaction(version, tmpOwner);
+  const HatsTimeFrameModuleAddress = await deployContract_Create2(
+    baseSalt,
+    HatsTimeFrameModuleTx.data || "0x",
+    ethers.keccak256(HatsTimeFrameModuleTx.data),
+    "HatsTimeFrameModule",
+    create2DeployerAddress,
+  );
+
+  const HatsTimeFrameModule = await viem.getContractAt(
+    "HatsTimeFrameModule",
+    HatsTimeFrameModuleAddress as Address,
+  );
 
   return { HatsTimeFrameModule };
 };
 
-export const deployHatsHatCreatorModule = async (tmpOwner: Address, version = "0.0.0") => {
-  const HatsHatCreatorModule = await viem.deployContract("HatsHatCreatorModule", [
-    version,
-    tmpOwner,
-  ]);
+export const deployHatsHatCreatorModule = async (
+  tmpOwner: Address,
+  version = "0.0.0",
+  create2DeployerAddress?: string,
+) => {
+  const HatsHatCreatorModuleFactory = await ethers.getContractFactory(
+    "HatsHatCreatorModule",
+  );
+  const HatsHatCreatorModuleTx =
+    await HatsHatCreatorModuleFactory.getDeployTransaction(version, tmpOwner);
+  const HatsHatCreatorModuleAddress = await deployContract_Create2(
+    baseSalt,
+    HatsHatCreatorModuleTx.data || "0x",
+    ethers.keccak256(HatsHatCreatorModuleTx.data),
+    "HatsHatCreatorModule",
+    create2DeployerAddress,
+  );
+
+  const HatsHatCreatorModule = await viem.getContractAt(
+    "HatsHatCreatorModule",
+    HatsHatCreatorModuleAddress as Address,
+  );
 
   return { HatsHatCreatorModule };
 };

@@ -10,8 +10,13 @@ import {
   deployHatsProtocol,
   deployHatsHatCreatorModule,
 } from "../helpers/deploy/Hats";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 
 describe("HatsHatCreatorModule", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsHatCreatorModule_IMPL: HatsHatCreatorModule;
@@ -37,6 +42,9 @@ describe("HatsHatCreatorModule", () => {
   };
 
   before(async () => {
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     const { HatsModuleFactory: _HatsModuleFactory } =
       await deployHatsModuleFactory(_Hats.address);
@@ -60,8 +68,12 @@ describe("HatsHatCreatorModule", () => {
     );
 
     const { HatsHatCreatorModule: _HatsHatCreatorModule } =
-      await deployHatsHatCreatorModule(address1Validated);
-      HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
+      await deployHatsHatCreatorModule(
+        address1Validated,
+        "0.0.0",
+        Create2Deployer.address,
+      );
+    HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     publicClient = await viem.getPublicClient();
   });
@@ -70,8 +82,8 @@ describe("HatsHatCreatorModule", () => {
     it("deploy hat creator module", async () => {
       // オーナーアドレスをエンコード
       const initData = encodeAbiParameters(
-        [{ type: 'address' }],
-        [address1Validated]
+        [{ type: "address" }],
+        [address1Validated],
       );
 
       // HatsModuleインスタンスをデプロイ
@@ -97,7 +109,7 @@ describe("HatsHatCreatorModule", () => {
 
       expect(
         (await HatsHatCreatorModule.read.IMPLEMENTATION()).toLowerCase(),
-      ).equal(HatsHatCreatorModule_IMPL.address);
+      ).equal(HatsHatCreatorModule_IMPL.address.toLowerCase());
 
       // Hatter Hatを作成
       let txHash = await Hats.write.createHat([
@@ -128,7 +140,7 @@ describe("HatsHatCreatorModule", () => {
       if (!_hatterHatId) {
         throw new Error("Hatter hat ID not found in transaction logs");
       } else {
-        hatterHatId = _hatterHatId
+        hatterHatId = _hatterHatId;
       }
 
       // Hatter HatをHatCreatorModuleにミント
@@ -143,13 +155,22 @@ describe("HatsHatCreatorModule", () => {
     it("check createHatAuthorities are false", async () => {
       let checkCreateHatAuthority;
 
-      checkCreateHatAuthority = await HatsHatCreatorModule.read.createHatAuthorities([address1Validated]);
+      checkCreateHatAuthority =
+        await HatsHatCreatorModule.read.createHatAuthorities([
+          address1Validated,
+        ]);
       expect(checkCreateHatAuthority).to.be.true;
 
-      checkCreateHatAuthority = await HatsHatCreatorModule.read.createHatAuthorities([address2Validated]);
+      checkCreateHatAuthority =
+        await HatsHatCreatorModule.read.createHatAuthorities([
+          address2Validated,
+        ]);
       expect(checkCreateHatAuthority).to.be.false;
 
-      checkCreateHatAuthority = await HatsHatCreatorModule.read.createHatAuthorities([address3Validated]);
+      checkCreateHatAuthority =
+        await HatsHatCreatorModule.read.createHatAuthorities([
+          address3Validated,
+        ]);
       expect(checkCreateHatAuthority).to.be.false;
     });
 
@@ -162,7 +183,7 @@ describe("HatsHatCreatorModule", () => {
       // HatsHatCreatorModuleがHatterHatを所有しているか確認
       const isWearer = await Hats.read.isWearerOfHat([
         HatsHatCreatorModule.address,
-        hatterHatId
+        hatterHatId,
       ]);
       expect(isWearer).to.be.true;
     });
@@ -178,7 +199,7 @@ describe("HatsHatCreatorModule", () => {
 
       await HatsHatCreatorModule.write.grantCreateHatAuthority(
         [address2Validated],
-        { account: address1.account }
+        { account: address1.account },
       );
 
       hasAuthority = await HatsHatCreatorModule.read.hasCreateHatAuthority([
@@ -194,7 +215,9 @@ describe("HatsHatCreatorModule", () => {
       ]);
       expect(hasAuthority).to.be.true;
 
-      await HatsHatCreatorModule.write.revokeCreateHatAuthority([address2Validated]);
+      await HatsHatCreatorModule.write.revokeCreateHatAuthority([
+        address2Validated,
+      ]);
 
       hasAuthority = await HatsHatCreatorModule.read.hasCreateHatAuthority([
         address2Validated,
@@ -206,7 +229,9 @@ describe("HatsHatCreatorModule", () => {
   describe("create hat with authority", () => {
     it("create hat with authority", async () => {
       // 権限を付与
-      await HatsHatCreatorModule.write.grantCreateHatAuthority([address2Validated]);
+      await HatsHatCreatorModule.write.grantCreateHatAuthority([
+        address2Validated,
+      ]);
 
       // 権限を持つアドレスからのhat作成
       const hatDetails = "Test Hat";
@@ -217,8 +242,16 @@ describe("HatsHatCreatorModule", () => {
       const imageURI = "https://test.com/hat.png";
 
       const createHatTx = await HatsHatCreatorModule.write.createHat(
-        [hatterHatId, hatDetails, maxSupply, eligibility, toggle, mutable, imageURI],
-        { account: address2.account }
+        [
+          hatterHatId,
+          hatDetails,
+          maxSupply,
+          eligibility,
+          toggle,
+          mutable,
+          imageURI,
+        ],
+        { account: address2.account },
       );
 
       const receipt = await publicClient.waitForTransactionReceipt({
@@ -242,8 +275,8 @@ describe("HatsHatCreatorModule", () => {
             true,
             "https://test.com/hat.png",
           ],
-          { account: address3.account }
-        )
+          { account: address3.account },
+        ),
       ).to.be.rejectedWith("Not authorized");
     });
 
@@ -252,21 +285,23 @@ describe("HatsHatCreatorModule", () => {
       await expect(
         HatsHatCreatorModule.write.grantCreateHatAuthority([
           "0x0000000000000000000000000000000000000000",
-        ])
+        ]),
       ).to.be.rejectedWith("Invalid address");
     });
 
     it("should fail when granting authority to already authorized address", async () => {
       // 既に権限を持っているアドレスへの権限付与試行
       await expect(
-        HatsHatCreatorModule.write.grantCreateHatAuthority([address2Validated])
+        HatsHatCreatorModule.write.grantCreateHatAuthority([address2Validated]),
       ).to.be.rejectedWith("Already granted");
     });
 
     it("should fail when revoking authority from unauthorized address", async () => {
       // 権限を持っていないアドレスからの剥奪試行
       await expect(
-        HatsHatCreatorModule.write.revokeCreateHatAuthority([address3Validated])
+        HatsHatCreatorModule.write.revokeCreateHatAuthority([
+          address3Validated,
+        ]),
       ).to.be.rejectedWith("Not granted");
     });
   });

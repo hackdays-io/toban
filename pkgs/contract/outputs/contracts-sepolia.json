@@ -3,10 +3,16 @@
     "Hats": "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137",
     "HatsModuleFactory": "0x0a3f85fa597B6a967271286aA0724811acDF5CD9",
     "PullSplitsFactory": "0x80f1B766817D04870f115fEBbcCADF8DBF75E017",
-    "BigBang": "0x08B4c53b98f46B14E2AD00189C2Aa3b9F3d0c8f3",
-    "FractionToken": "0xd921517fdF141d97C289bDb9686f51A1375dCc69",
-    "SplitsCreatorFactory": "0xbe985Fdd213d85d72C82cf34774C5D830e806FcB",
-    "SplitsCreator": "0x6b5d2e27ff74e9adf4d23aebb9efb52867823583",
-    "HatsTimeFrameModule": "0x9878f0905bcea0c2380be801f24dd5654f9b678f"
+    "BigBang": "\"0x3E70d10aCdcC14B6C31DA26DcC195a6EDf1C2c16\"",
+    "FractionToken": "\"0x54889278bf4F16ACAa3CC1402C987A6C42a5308B\"",
+    "SplitsCreatorFactory": "\"0x2b44c1F5B0D2a6a39F83effbF48aA09C833EBe12\"",
+    "SplitsCreator": "\"0x09b853E0945d1c86af10b5665472501bD5F6627c\"",
+    "HatsTimeFrameModule": "\"0x808996331ADD2715854e31e3dd4f9a736DE23604\"",
+    "ProxyAdmin": "\"0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8\""
+  },
+  "implementations": {
+    "FractionToken_Implementation": "\"0x7F096Ba747bEAfFd61c4f5BEAeD4756fd767cc7e\"",
+    "SplitsCreatorFactory_Implementation": "\"0xfD82EeaE18133F9629Ee220Cf35d06951bccEf51\"",
+    "BigBang_Implementation": "\"0x8F7FaFBabdAD34Fb88785E4a07fef68F2aDb470E\""
   }
 }

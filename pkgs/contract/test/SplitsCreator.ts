@@ -6,6 +6,7 @@ import {
   type PublicClient,
   type WalletClient,
   decodeEventLog,
+  encodeAbiParameters,
   keccak256,
   parseEther,
   zeroAddress,
@@ -34,8 +35,13 @@ import {
 } from "../helpers/deploy/Splits";
 import { upgradeSplitsCreatorFacotry } from "../helpers/upgrade/splitsCreatorFactory";
 import { sqrt } from "../helpers/util/sqrt";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 
 describe("SplitsCreator Factory", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
@@ -55,6 +61,9 @@ describe("SplitsCreator Factory", () => {
   let topHatId: bigint;
 
   before(async () => {
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     Hats = _Hats;
 
@@ -63,7 +72,11 @@ describe("SplitsCreator Factory", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule();
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const {
@@ -80,10 +93,13 @@ describe("SplitsCreator Factory", () => {
       "",
       10000n,
       Hats.address,
+      Create2Deployer.address,
     );
     FractionToken = _FractionToken;
 
-    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
+    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
+      Create2Deployer.address,
+    );
     SplitsCreator_IMPL = _SplitsCreator;
 
     [address1, bigBangAddress, newImplementation] =
@@ -99,11 +115,16 @@ describe("SplitsCreator Factory", () => {
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
 
+    const initData = encodeAbiParameters(
+      [{ type: "address" }],
+      [address1.account?.address!],
+    );
+
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      "0x",
+      initData,
       BigInt(0),
     ]);
 
@@ -123,7 +144,10 @@ describe("SplitsCreator Factory", () => {
 
   it("Should deploy SplitsCreatorFactory", async () => {
     const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-      await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+      await deploySplitsCreatorFactory(
+        SplitsCreator_IMPL.address,
+        Create2Deployer.address,
+      );
 
     SplitsCreatorFactory = _SplitsCreatorFactory;
 
@@ -192,11 +216,12 @@ describe("SplitsCreator Factory", () => {
   });
 
   it("sohuld upgrade SplitsCreatorFactory", async () => {
-    const newSplitsCreatorFactory = await upgradeSplitsCreatorFacotry(
-      SplitsCreatorFactory.address,
-      "SplitsCreatorFactory_Mock_v2",
-      [],
-    );
+    const { UpgradedSplitsCreatorFactory: newSplitsCreatorFactory } =
+      await upgradeSplitsCreatorFacotry(
+        SplitsCreatorFactory.address,
+        "SplitsCreatorFactory_Mock_v2",
+        Create2Deployer.address,
+      );
 
     /**
      * upgrade後にしかないメソッドを実行
@@ -208,6 +233,7 @@ describe("SplitsCreator Factory", () => {
 });
 
 describe("CreateSplit", () => {
+  let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
@@ -239,6 +265,9 @@ describe("CreateSplit", () => {
   let publicClient: PublicClient;
 
   before(async () => {
+    const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
+    Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     Hats = _Hats;
 
@@ -247,7 +276,11 @@ describe("CreateSplit", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule();
+      await deployHatsTimeFrameModule(
+        "0x0000000000000000000000000000000000000001",
+        "0.0.0",
+        Create2Deployer.address,
+      );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const {
@@ -264,10 +297,13 @@ describe("CreateSplit", () => {
       "",
       10000n,
       Hats.address,
+      Create2Deployer.address,
     );
     FractionToken = _FractionToken;
 
-    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator();
+    const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
+      Create2Deployer.address,
+    );
     SplitsCreator_IMPL = _SplitsCreator;
 
     [address1, address2, address3, address4, bigBangAddress] =
@@ -285,11 +321,16 @@ describe("CreateSplit", () => {
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
 
+    const initData = encodeAbiParameters(
+      [{ type: "address" }],
+      [address1.account?.address!],
+    );
+
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      "0x",
+      initData,
       BigInt(0),
     ]);
 
@@ -307,7 +348,10 @@ describe("CreateSplit", () => {
     );
 
     const { SplitsCreatorFactory: _SplitsCreatorFactory } =
-      await deploySplitsCreatorFactory(SplitsCreator_IMPL.address);
+      await deploySplitsCreatorFactory(
+        SplitsCreator_IMPL.address,
+        Create2Deployer.address,
+      );
 
     SplitsCreatorFactory = _SplitsCreatorFactory;
 

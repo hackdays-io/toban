@@ -37,7 +37,8 @@
     "enabled": true,
     "rules": {
       "recommended": true
-    }
+    },
+    "ignore": ["**/subgraph/src/**", "**/contract/test/**"]
   },
   "javascript": {
     "formatter": {

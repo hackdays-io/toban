@@ -1,226 +1,246 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import { ERC1155SupplyUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
-import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import { IHats } from "../../hats/src/Interfaces/IHats.sol";
+import {IHats} from "../../hats/src/Interfaces/IHats.sol";
+import {IFractionToken} from "../IFractionToken.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import {ERC1155SupplyUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
+import {MulticallUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract FractionToken_Mock_v2 is
-	ERC1155Upgradeable,
-	ERC1155SupplyUpgradeable,
-	MulticallUpgradeable
+    ERC1155Upgradeable,
+    ERC1155SupplyUpgradeable,
+    MulticallUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    IFractionToken
 {
-	uint256 public TOKEN_SUPPLY;
+    uint256 public TOKEN_SUPPLY;
 
-	mapping(uint256 => address[]) private tokenRecipients;
+    mapping(uint256 => address[]) private tokenRecipients;
 
-	IHats private hatsContract;
+    IHats private hatsContract;
 
-	function initialize(
-		string memory _uri,
-		uint256 _tokenSupply,
-		address _hatsAddress
-	) public initializer {
-		__ERC1155_init(_uri);
-		hatsContract = IHats(_hatsAddress);
-		TOKEN_SUPPLY = _tokenSupply;
-	}
+    function initialize(
+        address _initialOwner,
+        uint256 _tokenSupply,
+        address _hatsAddress,
+        string memory _uri
+    ) public initializer {
+        __ERC1155_init(_uri);
+        __Ownable_init(_initialOwner);
+        hatsContract = IHats(_hatsAddress);
+        TOKEN_SUPPLY = _tokenSupply;
+    }
 
-	function mintInitialSupply(uint256 hatId, address account) public {
-		require(
-			_hasHatRole(account, hatId),
-			"This account does not have the role"
-		);
+    function mintInitialSupply(
+        uint256 hatId,
+        address account,
+        uint256 amount
+    ) public {
+        require(
+            _hasHatRole(account, hatId),
+            "This account does not have the role"
+        );
 
-		require(
-			_hasHatAuthority(hatId),
-			"This msg.sender does not have the authority"
-		);
+        require(
+            msg.sender == account || _hasHatAuthority(hatId),
+            "This msg.sender does not have the authority"
+        );
 
-		uint256 tokenId = getTokenId(hatId, account);
+        uint256 tokenId = getTokenId(hatId, account);
 
-		require(
-			!_containsRecipient(tokenId, account),
-			"This account has already received"
-		);
+        require(
+            !_containsRecipient(tokenId, account),
+            "This account has already received"
+        );
 
-		_mint(account, tokenId, TOKEN_SUPPLY, "");
+        uint256 initialAmount = amount > 0 ? amount : TOKEN_SUPPLY;
+        _mint(account, tokenId, initialAmount, "");
 
-		if (!_containsRecipient(tokenId, account)) {
-			tokenRecipients[tokenId].push(account);
-		}
-	}
+        tokenRecipients[tokenId].push(account);
 
-	function mint(uint256 hatId, address account, uint256 amount) public {
-		uint256 tokenId = getTokenId(hatId, account);
+        emit InitialMint(account, hatId, tokenId);
+    }
 
-		require(
-			tokenRecipients[tokenId].length > 0,
-			"This account has not received the initial supply"
-		);
+    function mint(uint256 hatId, address account, uint256 amount) public {
+        uint256 tokenId = getTokenId(hatId, account);
 
-		require(
-			_msgSender() == tokenRecipients[tokenId][0],
-			"Only the first recipient can additionally mint"
-		);
+        require(
+            tokenRecipients[tokenId].length > 0,
+            "This account has not received the initial supply"
+        );
 
-		_mint(account, tokenId, amount, "");
-	}
+        require(
+            _msgSender() == tokenRecipients[tokenId][0],
+            "Only the first recipient can additionally mint"
+        );
 
-	function burn(
-		address from,
-		address wearer,
-		uint256 hatId,
-		uint256 value
-	) public {
-		uint256 tokenId = getTokenId(hatId, wearer);
+        _mint(account, tokenId, amount, "");
+    }
 
-		require(
-			_msgSender() == from || _hasHatAuthority(hatId),
-			"Not authorized"
-		);
+    function burn(
+        address from,
+        address wearer,
+        uint256 hatId,
+        uint256 value
+    ) public {
+        uint256 tokenId = getTokenId(hatId, wearer);
 
-		_burn(from, tokenId, value);
-	}
+        require(
+            _msgSender() == from || _hasHatAuthority(hatId),
+            "Not authorized"
+        );
 
-	function safeTransferFrom(
-		address from,
-		address to,
-		uint256 tokenId,
-		uint256 amount,
-		bytes memory data
-	) public override {
-		super.safeTransferFrom(from, to, tokenId, amount, data);
+        _burn(from, tokenId, value);
+    }
 
-		if (!_containsRecipient(tokenId, to)) {
-			tokenRecipients[tokenId].push(to);
-		}
-	}
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 amount,
+        bytes memory data
+    ) public override(ERC1155Upgradeable, IERC1155) {
+        super.safeTransferFrom(from, to, tokenId, amount, data);
 
-	function safeBatchTransferFrom(
-		address from,
-		address to,
-		uint256[] memory tokenIds,
-		uint256[] memory amounts,
-		bytes memory data
-	) public override {
-		super.safeBatchTransferFrom(from, to, tokenIds, amounts, data);
+        if (!_containsRecipient(tokenId, to)) {
+            tokenRecipients[tokenId].push(to);
+        }
+    }
 
-		for (uint256 i = 0; i < tokenIds.length; i++) {
-			if (!_containsRecipient(tokenIds[i], to)) {
-				tokenRecipients[tokenIds[i]].push(to);
-			}
-		}
-	}
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        bytes memory data
+    ) public override(ERC1155Upgradeable, IERC1155) {
+        super.safeBatchTransferFrom(from, to, tokenIds, amounts, data);
 
-	function getTokenRecipients(
-		uint256 tokenId
-	) public view returns (address[] memory) {
-		return tokenRecipients[tokenId];
-	}
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            if (!_containsRecipient(tokenIds[i], to)) {
+                tokenRecipients[tokenIds[i]].push(to);
+            }
+        }
+    }
 
-	function getTokenId(
-		uint256 hatId,
-		address account
-	) public pure returns (uint256) {
-		return uint256(keccak256(abi.encodePacked(hatId, account)));
-	}
+    function getTokenRecipients(
+        uint256 tokenId
+    ) public view returns (address[] memory) {
+        return tokenRecipients[tokenId];
+    }
 
-	function _containsRecipient(
-		uint256 tokenId,
-		address recipient
-	) private view returns (bool) {
-		address[] memory recipients = tokenRecipients[tokenId];
-		for (uint256 i = 0; i < recipients.length; i++) {
-			if (recipients[i] == recipient) {
-				return true;
-			}
-		}
-		return false;
-	}
+    function getTokenId(
+        uint256 hatId,
+        address account
+    ) public pure returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(hatId, account)));
+    }
 
-	function _hasHatRole(
-		address wearer,
-		uint256 hatId
-	) private view returns (bool) {
-		uint256 balance = hatsContract.balanceOf(wearer, hatId);
-		return balance > 0;
-	}
+    function _containsRecipient(
+        uint256 tokenId,
+        address recipient
+    ) private view returns (bool) {
+        address[] memory recipients = tokenRecipients[tokenId];
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (recipients[i] == recipient) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	function _hasHatAuthority(uint256 hatId) private view returns (bool) {
-		uint32 hatLevel = hatsContract.getHatLevel(hatId);
+    function _hasHatRole(
+        address wearer,
+        uint256 hatId
+    ) private view returns (bool) {
+        uint256 balance = hatsContract.balanceOf(wearer, hatId);
+        return balance > 0;
+    }
 
-		uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);
-		if (_hasHatRole(_msgSender(), parentHatId)) return true;
+    function _hasHatAuthority(uint256 hatId) private view returns (bool) {
+        uint32 hatLevel = hatsContract.getHatLevel(hatId);
 
-		uint256 topHatId = hatsContract.getAdminAtLevel(hatId, 0);
-		if (_hasHatRole(_msgSender(), topHatId)) return true;
+        uint256 parentHatId = hatsContract.getAdminAtLevel(hatId, hatLevel - 1);
+        if (_hasHatRole(_msgSender(), parentHatId)) return true;
 
-		return false;
-	}
+        uint256 topHatId = hatsContract.getAdminAtLevel(hatId, 0);
+        if (_hasHatRole(_msgSender(), topHatId)) return true;
 
-	function balanceOf(
-		address account,
-		address wearer,
-		uint256 hatId
-	) public view returns (uint256) {
-		uint256 tokenId = getTokenId(hatId, wearer);
+        return false;
+    }
 
-		if (
-			_hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)
-		) {
-			return TOKEN_SUPPLY;
-		}
+    function balanceOf(
+        address account,
+        address wearer,
+        uint256 hatId
+    ) public view returns (uint256) {
+        uint256 tokenId = getTokenId(hatId, wearer);
 
-		uint256 erc1155Balance = super.balanceOf(account, tokenId);
-		return erc1155Balance;
-	}
+        if (
+            _hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)
+        ) {
+            return TOKEN_SUPPLY;
+        }
 
-	function balanceOfBatch(
-		address[] memory accounts,
-		address[] memory wearers,
-		uint256[] memory hatIds
-	) public view returns (uint256[] memory) {
-		uint256[] memory balances = new uint256[](accounts.length);
+        uint256 erc1155Balance = super.balanceOf(account, tokenId);
+        return erc1155Balance;
+    }
 
-		for (uint256 i = 0; i < accounts.length; i++) {
-			balances[i] = balanceOf(accounts[i], wearers[i], hatIds[i]);
-		}
+    function balanceOfBatch(
+        address[] memory accounts,
+        address[] memory wearers,
+        uint256[] memory hatIds
+    ) public view returns (uint256[] memory) {
+        uint256[] memory balances = new uint256[](accounts.length);
 
-		return balances;
-	}
+        for (uint256 i = 0; i < accounts.length; i++) {
+            balances[i] = balanceOf(accounts[i], wearers[i], hatIds[i]);
+        }
 
-	function uri(
-		uint256 tokenId
-	) public view override(ERC1155Upgradeable) returns (string memory) {
-		return super.uri(tokenId);
-	}
+        return balances;
+    }
 
-	function _contextSuffixLength()
-		internal
-		view
-		virtual
-		override(ContextUpgradeable)
-		returns (uint256)
-	{
-		return super._contextSuffixLength();
-	}
+    function totalSupply(
+        address wearer,
+        uint256 hatId
+    ) public view returns (uint256) {
+        uint256 tokenId = getTokenId(hatId, wearer);
 
-	function _update(
-		address from,
-		address to,
-		uint256[] memory ids,
-		uint256[] memory values
-	) internal virtual override(ERC1155Upgradeable, ERC1155SupplyUpgradeable) {
-		super._update(from, to, ids, values);
-	}
+        if (tokenRecipients[tokenId].length == 0) {
+            return TOKEN_SUPPLY;
+        }
 
-	/**
-	 * 検証用に追加した関数
-	 */
-	function testUpgradeFunction() external pure returns (string memory) {
-		return "testUpgradeFunction";
-	}
+        return super.totalSupply(tokenId);
+    }
+
+    function uri(
+        uint256 tokenId
+    ) public view override(ERC1155Upgradeable) returns (string memory) {
+        return super.uri(tokenId);
+    }
+
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal virtual override(ERC1155Upgradeable, ERC1155SupplyUpgradeable) {
+        super._update(from, to, ids, values);
+    }
+
+    /**
+     * 検証用に追加した関数
+     */
+    function testUpgradeFunction() external pure returns (string memory) {
+        return "testUpgradeFunction";
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }

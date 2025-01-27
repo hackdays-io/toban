@@ -1,5 +1,7 @@
-import { ethers, upgrades, viem } from "hardhat";
+import { ethers, viem } from "hardhat";
 import type { Address } from "viem";
+import { baseSalt, deployContract_Create2 } from "./Create2Factory";
+import { ProxyFactory } from "./Upgradeable";
 
 export type SplitsWarehouse = Awaited<
   ReturnType<typeof deploySplitsProtocol>
@@ -44,33 +46,71 @@ export const deploySplitsProtocol = async () => {
 
 export const deploySplitsCreatorFactory = async (
   splitsCreatorImpl: Address,
+  create2DeployerAddress?: string,
 ) => {
+  const [deployer] = await ethers.getSigners();
+
   const splitsCreatorFactory = await ethers.getContractFactory(
     "SplitsCreatorFactory",
   );
 
-  const _SplitsCreatorFactory = await upgrades.deployProxy(
-    splitsCreatorFactory,
-    [splitsCreatorImpl],
-    {
-      initializer: "initialize",
-    },
+  const splitsCreatorFactoryImplTx =
+    await splitsCreatorFactory.getDeployTransaction();
+  const SplitsCreatorFactoryImplAddress = await deployContract_Create2(
+    baseSalt,
+    splitsCreatorFactoryImplTx.data || "0x",
+    ethers.keccak256(splitsCreatorFactoryImplTx.data),
+    "SplitsCreatorFactory",
+    create2DeployerAddress,
   );
 
-  await _SplitsCreatorFactory.waitForDeployment();
-  const address = await _SplitsCreatorFactory.getAddress();
+  const SplitsCreatorFactoryInitData =
+    splitsCreatorFactory.interface.encodeFunctionData("initialize", [
+      deployer.address,
+      splitsCreatorImpl,
+    ]);
+  const UpgradeProxy = await ProxyFactory();
+  const splitsCreatorFactoryProxyTx = await UpgradeProxy.getDeployTransaction(
+    SplitsCreatorFactoryImplAddress,
+    SplitsCreatorFactoryInitData,
+  );
+  const splitsCreatorFactoryAddress = await deployContract_Create2(
+    baseSalt,
+    splitsCreatorFactoryProxyTx.data || "0x",
+    ethers.keccak256(splitsCreatorFactoryProxyTx.data),
+    "SplitsCreatorFactory",
+    create2DeployerAddress,
+  );
 
   // create a new instance of the contract
   const SplitsCreatorFactory = await viem.getContractAt(
     "SplitsCreatorFactory",
-    address as Address,
+    splitsCreatorFactoryAddress as Address,
   );
 
-  return { SplitsCreatorFactory };
+  return {
+    SplitsCreatorFactory,
+    SplitsCreatorFactoryImplAddress,
+    SplitsCreatorFactoryInitData,
+  };
 };
 
-export const deploySplitsCreator = async () => {
-  const SplitsCreator = await viem.deployContract("SplitsCreator");
+export const deploySplitsCreator = async (create2DeployerAddress?: string) => {
+  const SplitsCreatorFactory = await ethers.getContractFactory("SplitsCreator");
+
+  const splitsCreatorTx = await SplitsCreatorFactory.getDeployTransaction();
+  const splitsCreatorAddress = await deployContract_Create2(
+    baseSalt,
+    splitsCreatorTx.data || "0x",
+    ethers.keccak256(splitsCreatorTx.data),
+    "SplitsCreator",
+    create2DeployerAddress,
+  );
+
+  const SplitsCreator = await viem.getContractAt(
+    "SplitsCreator",
+    splitsCreatorAddress as Address,
+  );
 
   return { SplitsCreator };
 };

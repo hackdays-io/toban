@@ -1,5 +1,6 @@
 import { ethers, upgrades, viem } from "hardhat";
 import type { Address } from "viem";
+import { baseSalt, deployContract_Create2 } from "../deploy/Create2Factory";
 
 /**
  * SplitsCreatorFactory Contractをアップグレードするメソッド
@@ -9,26 +10,32 @@ import type { Address } from "viem";
  * @returns
  */
 export async function upgradeSplitsCreatorFacotry(
-  contractAddress: string,
-  contractName: string,
+  contractAddress: Address,
+  contractName: "SplitsCreatorFactory_Mock_v2",
+  create2DeployerAddress?: string,
 ) {
   // 新しいコントラクトのファクトリーを取得
-  const SplitsCreator_Mock_v2 = await ethers.getContractFactory(contractName);
-
-  // アップグレードを実行
-  const _SplitsCreatorFactory = await upgrades.upgradeProxy(
-    contractAddress,
-    SplitsCreator_Mock_v2,
+  const UpgradedSplitsCreatorFactory_Factory =
+    await ethers.getContractFactory(contractName);
+  const UpgradedSplitsCreatorFactory_ImplTx =
+    await UpgradedSplitsCreatorFactory_Factory.getDeployTransaction();
+  const UpgradedSplitsCreatorFactory_ImplAddress = await deployContract_Create2(
+    baseSalt,
+    UpgradedSplitsCreatorFactory_ImplTx.data || "0x",
+    ethers.keccak256(UpgradedSplitsCreatorFactory_ImplTx.data),
+    `${contractName}_Implementation`,
+    create2DeployerAddress,
   );
 
-  // 新しいアドレスを取得
-  const address = _SplitsCreatorFactory.target;
-
-  // create a new instance of the contract
-  const newSplitsCreatorFactory = await viem.getContractAt(
+  const UpgradedSplitsCreatorFactory = await viem.getContractAt(
     contractName,
-    address as Address,
+    contractAddress,
   );
 
-  return newSplitsCreatorFactory;
+  await UpgradedSplitsCreatorFactory.write.upgradeToAndCall([
+    UpgradedSplitsCreatorFactory_ImplAddress,
+    "0x",
+  ]);
+
+  return { UpgradedSplitsCreatorFactory };
 }

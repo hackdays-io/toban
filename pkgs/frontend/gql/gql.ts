@@ -15,8 +15,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 const documents = {
     "\n  query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {\n    transferFractionTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {\n      amount\n      from\n      to\n      tokenId\n      blockNumber\n      blockTimestamp\n      hatId\n      id\n      wearer\n      workspaceId\n    }\n  }\n": types.GetTransferFractionTokensDocument,
-    "\n  query GetWorkspaces($where: Workspace_filter) {\n    workspaces(where: $where) {\n      creator\n      topHatId\n      splitCreator\n      id\n      hatterHatId\n      hatsTimeFrameModule\n      blockTimestamp\n      blockNumber\n    }\n  }\n": types.GetWorkspacesDocument,
-    "\n  query GetWorkspace($workspaceId: ID!) {\n    workspace(id: $workspaceId) {\n      creator\n      hatsTimeFrameModule\n      hatterHatId\n      id\n      splitCreator\n      topHatId\n      blockTimestamp\n      blockNumber\n    }\n  }\n": types.GetWorkspaceDocument,
+    "\n  query GetWorkspaces($where: Workspace_filter) {\n    workspaces(where: $where) {\n      creator\n      topHatId\n      splitCreator\n      id\n      hatterHatId\n      hatsTimeFrameModule\n      hatsHatCreatorModule\n      blockTimestamp\n      blockNumber\n    }\n  }\n": types.GetWorkspacesDocument,
+    "\n  query GetWorkspace($workspaceId: ID!) {\n    workspace(id: $workspaceId) {\n      creator\n      hatsTimeFrameModule\n      hatsHatCreatorModule\n      hatterHatId\n      id\n      splitCreator\n      topHatId\n      blockTimestamp\n      blockNumber\n    }\n  }\n": types.GetWorkspaceDocument,
 };
 
 /**
@@ -40,11 +40,11 @@ export function graphql(source: "\n  query GetTransferFractionTokens($where: Tra
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetWorkspaces($where: Workspace_filter) {\n    workspaces(where: $where) {\n      creator\n      topHatId\n      splitCreator\n      id\n      hatterHatId\n      hatsTimeFrameModule\n      blockTimestamp\n      blockNumber\n    }\n  }\n"): (typeof documents)["\n  query GetWorkspaces($where: Workspace_filter) {\n    workspaces(where: $where) {\n      creator\n      topHatId\n      splitCreator\n      id\n      hatterHatId\n      hatsTimeFrameModule\n      blockTimestamp\n      blockNumber\n    }\n  }\n"];
+export function graphql(source: "\n  query GetWorkspaces($where: Workspace_filter) {\n    workspaces(where: $where) {\n      creator\n      topHatId\n      splitCreator\n      id\n      hatterHatId\n      hatsTimeFrameModule\n      hatsHatCreatorModule\n      blockTimestamp\n      blockNumber\n    }\n  }\n"): (typeof documents)["\n  query GetWorkspaces($where: Workspace_filter) {\n    workspaces(where: $where) {\n      creator\n      topHatId\n      splitCreator\n      id\n      hatterHatId\n      hatsTimeFrameModule\n      hatsHatCreatorModule\n      blockTimestamp\n      blockNumber\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetWorkspace($workspaceId: ID!) {\n    workspace(id: $workspaceId) {\n      creator\n      hatsTimeFrameModule\n      hatterHatId\n      id\n      splitCreator\n      topHatId\n      blockTimestamp\n      blockNumber\n    }\n  }\n"): (typeof documents)["\n  query GetWorkspace($workspaceId: ID!) {\n    workspace(id: $workspaceId) {\n      creator\n      hatsTimeFrameModule\n      hatterHatId\n      id\n      splitCreator\n      topHatId\n      blockTimestamp\n      blockNumber\n    }\n  }\n"];
+export function graphql(source: "\n  query GetWorkspace($workspaceId: ID!) {\n    workspace(id: $workspaceId) {\n      creator\n      hatsTimeFrameModule\n      hatsHatCreatorModule\n      hatterHatId\n      id\n      splitCreator\n      topHatId\n      blockTimestamp\n      blockNumber\n    }\n  }\n"): (typeof documents)["\n  query GetWorkspace($workspaceId: ID!) {\n    workspace(id: $workspaceId) {\n      creator\n      hatsTimeFrameModule\n      hatsHatCreatorModule\n      hatterHatId\n      id\n      splitCreator\n      topHatId\n      blockTimestamp\n      blockNumber\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

@@ -14,6 +14,7 @@ const queryGetWorkspaces = gql(`
       id
       hatterHatId
       hatsTimeFrameModule
+      hatsHatCreatorModule
       blockTimestamp
       blockNumber
     }
@@ -25,6 +26,7 @@ const queryGetWorkspace = gql(`
     workspace(id: $workspaceId) {
       creator
       hatsTimeFrameModule
+      hatsHatCreatorModule
       hatterHatId
       id
       splitCreator

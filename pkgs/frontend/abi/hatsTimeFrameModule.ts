@@ -6,6 +6,11 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
         name: "_version",
         type: "string",
       },
+      {
+        internalType: "address",
+        name: "_tmpOwner",
+        type: "address",
+      },
     ],
     stateMutability: "nonpayable",
     type: "constructor",
@@ -21,6 +26,28 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
     type: "error",
   },
   {
+    inputs: [
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+    ],
+    name: "OwnableInvalidOwner",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "OwnableUnauthorizedAccount",
+    type: "error",
+  },
+  {
     anonymous: false,
     inputs: [
       {
@@ -31,6 +58,51 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
       },
     ],
     name: "Initialized",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "OperationAuthorityGranted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "OperationAuthorityRevoked",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferred",
     type: "event",
   },
   {
@@ -150,6 +222,38 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "grantOperationAuthority",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "hasOperationAuthority",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "hatId",
     outputs: [
@@ -212,6 +316,38 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
   {
     inputs: [
       {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "operationAuthorities",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "hatId",
         type: "uint256",
@@ -223,6 +359,44 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
       },
     ],
     name: "reactivate",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "hatId",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "wearer",
+        type: "address",
+      },
+    ],
+    name: "renounce",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "revokeOperationAuthority",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -262,6 +436,19 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {

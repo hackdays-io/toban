@@ -433,6 +433,7 @@ export type Workspace = {
   blockNumber: Scalars['BigInt']['output'];
   blockTimestamp: Scalars['BigInt']['output'];
   creator: Scalars['String']['output'];
+  hatsHatCreatorModule: Scalars['String']['output'];
   hatsTimeFrameModule: Scalars['String']['output'];
   hatterHatId: Scalars['BigInt']['output'];
   id: Scalars['ID']['output'];
@@ -480,6 +481,26 @@ export type Workspace_Filter = {
   creator_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   creator_starts_with?: InputMaybe<Scalars['String']['input']>;
   creator_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_contains?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_ends_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_gt?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_gte?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  hatsHatCreatorModule_lt?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_lte?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_contains?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  hatsHatCreatorModule_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_starts_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   hatsTimeFrameModule?: InputMaybe<Scalars['String']['input']>;
   hatsTimeFrameModule_contains?: InputMaybe<Scalars['String']['input']>;
   hatsTimeFrameModule_contains_nocase?: InputMaybe<Scalars['String']['input']>;
@@ -551,6 +572,7 @@ export enum Workspace_OrderBy {
   BlockNumber = 'blockNumber',
   BlockTimestamp = 'blockTimestamp',
   Creator = 'creator',
+  HatsHatCreatorModule = 'hatsHatCreatorModule',
   HatsTimeFrameModule = 'hatsTimeFrameModule',
   HatterHatId = 'hatterHatId',
   Id = 'id',
@@ -609,16 +631,16 @@ export type GetWorkspacesQueryVariables = Exact<{
 }>;
 
 
-export type GetWorkspacesQuery = { __typename?: 'Query', workspaces: Array<{ __typename?: 'Workspace', creator: string, topHatId: any, splitCreator: string, id: string, hatterHatId: any, hatsTimeFrameModule: string, blockTimestamp: any, blockNumber: any }> };
+export type GetWorkspacesQuery = { __typename?: 'Query', workspaces: Array<{ __typename?: 'Workspace', creator: string, topHatId: any, splitCreator: string, id: string, hatterHatId: any, hatsTimeFrameModule: string, hatsHatCreatorModule: string, blockTimestamp: any, blockNumber: any }> };
 
 export type GetWorkspaceQueryVariables = Exact<{
   workspaceId: Scalars['ID']['input'];
 }>;
 
 
-export type GetWorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', creator: string, hatsTimeFrameModule: string, hatterHatId: any, id: string, splitCreator: string, topHatId: any, blockTimestamp: any, blockNumber: any } | null };
+export type GetWorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', creator: string, hatsTimeFrameModule: string, hatsHatCreatorModule: string, hatterHatId: any, id: string, splitCreator: string, topHatId: any, blockTimestamp: any, blockNumber: any } | null };
 
 
 export const GetTransferFractionTokensDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTransferFractionTokens"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferFractionToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferFractionToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"transferFractionTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"to"}},{"kind":"Field","name":{"kind":"Name","value":"tokenId"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}}]}}]} as unknown as DocumentNode<GetTransferFractionTokensQuery, GetTransferFractionTokensQueryVariables>;
-export const GetWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Workspace_filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspacesQuery, GetWorkspacesQueryVariables>;
-export const GetWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspace"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspaceQuery, GetWorkspaceQueryVariables>;
+export const GetWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Workspace_filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatsHatCreatorModule"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspacesQuery, GetWorkspacesQueryVariables>;
+export const GetWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspace"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatsHatCreatorModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspaceQuery, GetWorkspaceQueryVariables>;

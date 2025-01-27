@@ -29,6 +29,7 @@ export function handleExecuted(ev: Executed): void {
   workspace.topHatId = ev.params.topHatId;
   workspace.hatterHatId = ev.params.hatterHatId;
   workspace.hatsTimeFrameModule = ev.params.hatsTimeFrameModule.toHex();
+  workspace.hatsHatCreatorModule = ev.params.hatsHatCreatorModule.toHex();
   workspace.splitCreator = ev.params.splitCreator.toHex();
   workspace.blockTimestamp = ev.block.timestamp;
   workspace.blockNumber = ev.block.number;

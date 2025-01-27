@@ -4,6 +4,7 @@ type Workspace @entity {
   topHatId: BigInt!
   hatterHatId: BigInt!
   hatsTimeFrameModule: String!
+  hatsHatCreatorModule: String!
   splitCreator: String!
   blockTimestamp: BigInt!
   blockNumber: BigInt!

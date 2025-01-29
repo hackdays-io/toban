@@ -25,8 +25,8 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      */
     function _setUp(bytes calldata _initData) internal override {
         address _owner = abi.decode(_initData, (address));
+        _grantCreateHatAuthority(_owner);
         _transferOwnership(_owner);
-        createHatAuthorities[_owner] = true;
     }
 
     /**
@@ -45,11 +45,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to grant authority to
      */
     function grantCreateHatAuthority(address authority) external onlyOwner {
-        require(authority != address(0), "Invalid address");
-        require(!hasCreateHatAuthority(authority), "Already granted");
-
-        createHatAuthorities[authority] = true;
-        emit CreateHatAuthorityGranted(authority);
+        _grantCreateHatAuthority(authority);
     }
 
     /**
@@ -57,10 +53,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to revoke authority from
      */
     function revokeCreateHatAuthority(address authority) external onlyOwner {
-        require(hasCreateHatAuthority(authority), "Not granted");
-
-        createHatAuthorities[authority] = false;
-        emit CreateHatAuthorityRevoked(authority);
+        _revokeCreateHatAuthority(authority);
     }
 
     /**
@@ -95,5 +88,30 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
                 _mutable,
                 _imageURI
             );
+    }
+
+    // Internal Functions
+
+    /**
+     * @dev Grants hat creation authority to an address
+     * @param authority The address to grant authority to
+     */
+    function _grantCreateHatAuthority(address authority) internal {
+        require(authority != address(0), "Invalid address");
+        require(!hasCreateHatAuthority(authority), "Already granted");
+
+        createHatAuthorities[authority] = true;
+        emit CreateHatAuthorityGranted(authority);
+    }
+
+    /**
+     * @dev Revokes hat creation authority from an address
+     * @param authority The address to revoke authority from
+     */
+    function _revokeCreateHatAuthority(address authority) internal {
+        require(hasCreateHatAuthority(authority), "Not granted");
+
+        createHatAuthorities[authority] = false;
+        emit CreateHatAuthorityRevoked(authority);
     }
 }

@@ -3,9 +3,43 @@ type Workspace @entity {
   creator: String!
   topHatId: BigInt!
   hatterHatId: BigInt!
-  hatsTimeFrameModule: String!
-  hatsHatCreatorModule: String!
+  hatsTimeFrameModule: HatsTimeFrameModule
+  hatsHatCreatorModule: HatsHatCreatorModule
   splitCreator: String!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type HatsTimeFrameModule @entity {
+  id: ID!
+  workspaceId: ID!
+  authorities: [HatsTimeFrameModuleAuthority!]!
+    @derivedFrom(field: "hatsTimeFrameModule")
+}
+
+type HatsTimeFrameModuleAuthority @entity {
+  id: ID!
+  workspaceId: ID!
+  hatsTimeFrameModule: HatsTimeFrameModule!
+  address: String!
+  authorised: Boolean!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type HatsHatCreatorModule @entity {
+  id: ID!
+  workspaceId: ID!
+  authorities: [HatsHatCreatorModuleAuthority!]!
+    @derivedFrom(field: "hatsHatCreatorModule")
+}
+
+type HatsHatCreatorModuleAuthority @entity {
+  id: ID!
+  workspaceId: ID!
+  hatsHatCreatorModule: HatsHatCreatorModule!
+  address: String!
+  authorised: Boolean!
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }

@@ -1,4 +1,4 @@
-import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Heading, Spinner, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useHoldersWithBalance } from "hooks/useFractionToken";
@@ -7,12 +7,14 @@ import {
   useActiveState,
   useDeactivate,
   useReactivate,
+  useRenounceHatFromTimeFrameModule,
 } from "hooks/useHatsTimeFrameModule";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
@@ -36,26 +38,26 @@ const RoleHolderDetails: FC = () => {
     return tree.hats.find((h) => h.id === hatId);
   }, [tree, hatId]);
 
-  // ログインユーザーがこのhatの上位のhatのholderであるか
+  // HatsTimeFrameModuleのアドレスを取得
+  const { data } = useGetWorkspace(treeId);
+  const hatsTimeFrameModuleAuthorities = useMemo(() => {
+    return data?.workspace?.hatsTimeFrameModule?.authorities?.filter(
+      (a) => a.authorised === true,
+    );
+  }, [data]);
+  const hatsTimeFrameModuleAddress = useMemo(
+    () => data?.workspace?.hatsTimeFrameModule?.id,
+    [data],
+  );
+
+  // ログインユーザーがこのhatの権限を持っているかどうか
   const isAuthorised = useMemo(() => {
-    if (!me || !hat?.levelAtLocalTree) return false;
+    if (!me) return false;
 
-    if (hat.wearers?.some((w) => w.id.toLowerCase() === me.toLowerCase()))
-      return true;
-
-    for (let i = 0; i < hat.levelAtLocalTree; i++) {
-      const parentHatId = hat.id.slice(0, 10 + 4 * i) + "0".repeat(56 - 4 * i);
-
-      if (
-        tree?.hats
-          ?.find((h) => h.id === parentHatId)
-          ?.wearers?.some((w) => w.id.toLowerCase() === me.toLowerCase())
-      )
-        return true;
-    }
-
-    return false;
-  }, [me, tree, hat]);
+    return hatsTimeFrameModuleAuthorities?.some(
+      (a) => a.address.toLowerCase() === me.toLowerCase(),
+    );
+  }, [me, hatsTimeFrameModuleAuthorities]);
 
   // wearerの名前とアイコンを取得
   const addresses = useMemo(() => (address ? [address] : undefined), [address]);
@@ -89,13 +91,6 @@ const RoleHolderDetails: FC = () => {
     [holdersWithBalance, holderNames],
   );
 
-  // HatsTimeFrameModuleのアドレスを取得
-  const { data } = useGetWorkspace(treeId);
-  const hatsTimeFrameModuleAddress = useMemo(
-    () => data?.workspace?.hatsTimeFrameModule,
-    [data],
-  );
-
   // HatsTimeFrameModule関連の情報をボタンクリックの後再取得できるようにカウンターを設置
   const [count, setCount] = useState(0);
   const { isActive, woreTime, wearingElapsedTime } = useActiveState(
@@ -112,7 +107,8 @@ const RoleHolderDetails: FC = () => {
   const { deactivate, isLoading: isDeactivating } = useDeactivate(
     hatsTimeFrameModuleAddress,
   );
-  const { renounceHat, isLoading: isRenouncing } = useHats();
+  const { renounceHat, isLoading: isRenouncing } =
+    useRenounceHatFromTimeFrameModule(hatsTimeFrameModuleAddress as Address);
 
   const navigate = useNavigate();
 
@@ -182,8 +178,9 @@ const RoleHolderDetails: FC = () => {
                 setCount(count + 1);
               }}
               disabled={isDeactivating}
+              loading={isDeactivating}
             >
-              {isDeactivating ? "Deactivating..." : "Deactivate"}
+              一時休止
             </BasicButton>
           ) : (
             <BasicButton
@@ -204,12 +201,18 @@ const RoleHolderDetails: FC = () => {
             bgColor="red.400"
             color="white"
             onClick={async () => {
-              await renounceHat(BigInt(hatId || 0));
+              try {
+                await renounceHat(BigInt(hatId || 0), address as Address);
+              } catch (error) {
+                console.error(error);
+                return;
+              }
               navigate(`/${treeId}/${hatId}`);
             }}
             disabled={isRenouncing}
+            loading={isRenouncing}
           >
-            {isRenouncing ? "Revoking..." : "Revoke"}
+            役割を剥奪
           </BasicButton>
         </>
       )}

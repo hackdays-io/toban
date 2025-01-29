@@ -45,7 +45,7 @@ const AssignRole: FC = () => {
 
   const { data } = useGetWorkspace(treeId ?? "");
   const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule(
-    data?.workspace?.hatsTimeFrameModule as Address,
+    data?.workspace?.hatsTimeFrameModule?.id as Address,
   );
 
   const { hat, isLoading } = useGetHat(hatId ?? "");

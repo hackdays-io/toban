@@ -207,3 +207,38 @@ export const useWearingElapsedTime = (
 
   return wearingElapsedTimeList;
 };
+
+export const useRenounceHatFromTimeFrameModule = (
+  hatsTimeFrameModuleAddress: Address,
+) => {
+  const { wallet } = useActiveWallet();
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const renounceHat = useCallback(
+    async (hatId: bigint, wearer: Address) => {
+      if (!wallet || !hatId || !wearer) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet?.writeContract({
+          ...hatsTimeFrameContractBaseConfig(hatsTimeFrameModuleAddress),
+          functionName: "renounce",
+          args: [hatId, wearer],
+        });
+
+        await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+      } catch (error) {
+        throw new Error("Failed to renounce hat");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [hatsTimeFrameModuleAddress, wallet],
+  );
+
+  return { renounceHat, isLoading };
+};

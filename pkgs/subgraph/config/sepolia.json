@@ -28,5 +28,41 @@
         }
       ]
     }
+  ],
+  "hatsModuleContracts": [
+    {
+      "file": "HatsHatCreatorModule",
+      "entities": [
+        { "name": "CreateHatAuthorityGranted" },
+        { "name": "CreateHatAuthorityRevoked" }
+      ],
+      "handlers": [
+        {
+          "event": "CreateHatAuthorityGranted(indexed address)",
+          "handler": "handleCreateHatAuthorityGranted"
+        },
+        {
+          "event": "CreateHatAuthorityRevoked(indexed address)",
+          "handler": "handleCreateHatAuthorityRevoked"
+        }
+      ]
+    },
+    {
+      "file": "HatsTimeFrameModule",
+      "entities": [
+        { "name": "OperationAuthorityGranted" },
+        { "name": "OperationAuthorityRevoked" }
+      ],
+      "handlers": [
+        {
+          "event": "OperationAuthorityGranted(indexed address)",
+          "handler": "handleOperationAuthorityGranted"
+        },
+        {
+          "event": "OperationAuthorityRevoked(indexed address)",
+          "handler": "handleOperationAuthorityRevoked"
+        }
+      ]
+    }
   ]
 }

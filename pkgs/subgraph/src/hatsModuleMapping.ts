@@ -32,6 +32,7 @@ export function handleOperationAuthorityGranted(
       `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
     );
     authority.workspaceId = module.workspaceId;
+    authority.hatsTimeFrameModule = module.id;
     authority.address = ev.params.authority.toHex();
     authority.authorised = true;
     authority.blockNumber = ev.block.number;
@@ -59,6 +60,7 @@ export function handleOperationAuthorityRevoked(
       `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
     );
     authority.workspaceId = module.workspaceId;
+    authority.hatsTimeFrameModule = module.id;
     authority.address = ev.params.authority.toHex();
     authority.authorised = false;
     authority.blockNumber = ev.block.number;
@@ -86,6 +88,7 @@ export function handleCreateHatAuthorityGranted(
       `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
     );
     authority.workspaceId = module.workspaceId;
+    authority.hatsHatCreatorModule = module.id;
     authority.address = ev.params.authority.toHex();
     authority.authorised = true;
     authority.blockNumber = ev.block.number;
@@ -113,6 +116,7 @@ export function handleCreateHatAuthorityRevoked(
       `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
     );
     authority.workspaceId = module.workspaceId;
+    authority.hatsHatCreatorModule = module.id;
     authority.address = ev.params.authority.toHex();
     authority.authorised = false;
     authority.blockNumber = ev.block.number;

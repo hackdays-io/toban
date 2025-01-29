@@ -13,8 +13,12 @@ const queryGetWorkspaces = gql(`
       splitCreator
       id
       hatterHatId
-      hatsTimeFrameModule
-      hatsHatCreatorModule
+      hatsTimeFrameModule {
+        id
+      }
+      hatsHatCreatorModule {
+        id
+      }
       blockTimestamp
       blockNumber
     }
@@ -24,15 +28,35 @@ const queryGetWorkspaces = gql(`
 const queryGetWorkspace = gql(`
   query GetWorkspace($workspaceId: ID!) {
     workspace(id: $workspaceId) {
+      blockNumber
+      blockTimestamp
       creator
-      hatsTimeFrameModule
-      hatsHatCreatorModule
       hatterHatId
       id
       splitCreator
       topHatId
-      blockTimestamp
-      blockNumber
+      hatsHatCreatorModule {
+        id
+        authorities {
+          address
+          authorised
+          blockNumber
+          blockTimestamp
+          id
+          workspaceId
+        }
+      }
+      hatsTimeFrameModule {
+        id
+        authorities {
+          address
+          authorised
+          blockNumber
+          blockTimestamp
+          id
+          workspaceId
+        }
+      }
     }
   }
 `);

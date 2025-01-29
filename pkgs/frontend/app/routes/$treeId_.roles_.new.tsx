@@ -1,16 +1,19 @@
 import { Box, Text } from "@chakra-ui/react";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useHats } from "hooks/useHats";
+import { useCreateHatFromHatCreatorModule } from "hooks/useHatsHatCreatorModule";
 import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
+import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useCallback, useState } from "react";
 import type {
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
@@ -42,7 +45,10 @@ const NewRole: FC = () => {
   >([]);
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
-  const { createHat } = useHats();
+  const { data: workspace } = useGetWorkspace(treeId);
+  const { createHat, isLoading: isCreating } = useCreateHatFromHatCreatorModule(
+    workspace?.workspace?.hatsHatCreatorModule?.id as Address,
+  );
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { getTreeInfo } = useHats();
   const navigate = useNavigate();

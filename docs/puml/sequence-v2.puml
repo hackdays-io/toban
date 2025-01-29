@@ -97,6 +97,11 @@ Hats --> FractionToken: 確認完了
 FractionToken --> communityOwner: ミント完了
 deactivate FractionToken
 
+note right of FractionToken
+  FractionTokenの初期ミントは初回送金時にMultiCallを使っても良い
+  フロントエンドではそうしている
+end note
+
 communityOwner -> FractionToken: FractionTokenを user2 に初期供給量ミントする\n(tokenIdはRole Hat 2のIDと user2 のアドレスのハッシュ値)
 activate FractionToken
 FractionToken -> Hats: Hat保有を確認

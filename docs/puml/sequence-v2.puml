@@ -1,0 +1,159 @@
+@startuml
+
+actor "communityOwner" as communityOwner
+actor "user1" as user1
+actor "user2" as user2
+participant "BigBang" as BigBang
+participant "Hats" as Hats
+participant "HatsModuleFactory" as HatsModuleFactory
+participant "HatsTimeFrameModule" as HatsTimeFrameModule
+participant "HatsHatCreatorModule" as HatsHatCreatorModule
+participant "FractionToken" as FractionToken
+participant "SplitsCreatorFactory" as SplitsCreatorFactory
+participant "SplitsCreator" as SplitsCreator
+participant "PullSplitsFactory" as PullSplitsFactory
+participant "PullSplit" as PullSplit
+participant "SplitsWarehouse" as SplitsWarehouse
+
+' プロジェクト初期化フェーズ
+communityOwner -> BigBang: プロジェクトを作成する\n(bigbang()を実行)
+activate BigBang
+
+BigBang -> Hats: TopHatをミントする
+activate Hats
+Hats --> BigBang: TopHat作成完了
+deactivate Hats
+
+BigBang -> Hats: HatterHatを作成する
+activate Hats
+Hats --> BigBang: HatterHat作成完了
+deactivate Hats
+
+BigBang -> HatsModuleFactory: TimeFrameModuleを作成する
+activate HatsModuleFactory
+HatsModuleFactory -> HatsTimeFrameModule: TimeFrameModuleをデプロイする
+HatsTimeFrameModule --> HatsModuleFactory: デプロイ完了
+HatsModuleFactory --> BigBang: モジュール作成完了
+deactivate HatsModuleFactory
+
+BigBang -> HatsModuleFactory: HatCreatorModuleを作成する
+activate HatsModuleFactory
+HatsModuleFactory -> HatsHatCreatorModule: HatCreatorModuleをデプロイする
+HatsHatCreatorModule --> HatsModuleFactory: デプロイ完了
+HatsModuleFactory --> BigBang: モジュール作成完了
+deactivate HatsModuleFactory
+
+BigBang -> SplitsCreatorFactory: SplitsCreatorを作成する
+activate SplitsCreatorFactory
+SplitsCreatorFactory -> SplitsCreator: SplitsCreatorをデプロイする
+SplitsCreator --> SplitsCreatorFactory: デプロイ完了
+SplitsCreatorFactory --> BigBang: 作成完了
+deactivate SplitsCreatorFactory
+
+BigBang --> communityOwner: プロジェクト作成完了
+deactivate BigBang
+
+' Role Hat作成フェーズ
+communityOwner -> HatsHatCreatorModule: Role Hat 1を作成する
+activate HatsHatCreatorModule
+HatsHatCreatorModule -> Hats: Role Hat 1を作成する
+Hats --> HatsHatCreatorModule: 作成完了
+HatsHatCreatorModule --> communityOwner: 作成完了
+deactivate HatsHatCreatorModule
+
+communityOwner -> HatsHatCreatorModule: Role Hat 2を作成する
+activate HatsHatCreatorModule
+HatsHatCreatorModule -> Hats: Role Hat 2を作成する
+Hats --> HatsHatCreatorModule: 作成完了
+HatsHatCreatorModule --> communityOwner: 作成完了
+deactivate HatsHatCreatorModule
+
+' Hat着用フェーズ
+communityOwner -> HatsTimeFrameModule: Role Hat 1を address1 にミントする
+activate HatsTimeFrameModule
+HatsTimeFrameModule -> Hats: Role Hat 1を address1 にミントする
+activate Hats
+Hats --> HatsTimeFrameModule: ミント完了
+deactivate Hats
+HatsTimeFrameModule -> HatsTimeFrameModule: Role Hatの着用開始時間を記録する
+HatsTimeFrameModule --> communityOwner: ミント完了
+deactivate HatsTimeFrameModule
+
+communityOwner -> HatsTimeFrameModule: Role Hat 2を user2 にミントする
+activate HatsTimeFrameModule
+HatsTimeFrameModule -> Hats: Role Hat 2を user2 にミントする
+activate Hats
+Hats --> HatsTimeFrameModule: ミント完了
+deactivate Hats
+HatsTimeFrameModule -> HatsTimeFrameModule: Role Hatの着用開始時間を記録する
+HatsTimeFrameModule --> communityOwner: ミント完了
+deactivate HatsTimeFrameModule
+
+' FractionTokenの初期ミントフェーズ
+communityOwner -> FractionToken: FractionTokenを user1 に初期供給量ミントする\n(tokenIdはRole Hat 1のIDと user1 のアドレスのハッシュ値)
+activate FractionToken
+FractionToken -> Hats: Hat保有を確認
+Hats --> FractionToken: 確認完了
+FractionToken --> communityOwner: ミント完了
+deactivate FractionToken
+
+communityOwner -> FractionToken: FractionTokenを user2 に初期供給量ミントする\n(tokenIdはRole Hat 2のIDと user2 のアドレスのハッシュ値)
+activate FractionToken
+FractionToken -> Hats: Hat保有を確認
+Hats --> FractionToken: 確認完了
+FractionToken --> communityOwner: ミント完了
+deactivate FractionToken
+
+' トークン移転フェーズ
+user1 -> FractionToken: user1 のFractionTokenを一部 user2 に送金する
+activate FractionToken
+FractionToken -> FractionToken: 残高チェック
+FractionToken --> user1: 送金完了
+deactivate FractionToken
+
+' Split作成・分配フェーズ
+communityOwner -> SplitsCreator: Splitを作成する
+activate SplitsCreator
+
+SplitsCreator -> HatsTimeFrameModule: 各アドレスの着用時間を取得
+HatsTimeFrameModule --> SplitsCreator: 着用時間情報
+
+SplitsCreator -> FractionToken: FractionTokenの残高情報を取得
+FractionToken --> SplitsCreator: 残高情報
+
+SplitsCreator -> SplitsCreator: 着用時間と残高から\n分配比率を計算
+
+SplitsCreator -> PullSplitsFactory: PullSplitsコントラクトを作成
+activate PullSplitsFactory
+PullSplitsFactory -> PullSplit: コントラクトをデプロイ
+PullSplit --> PullSplitsFactory: デプロイ完了
+PullSplitsFactory --> SplitsCreator: 作成完了
+deactivate PullSplitsFactory
+
+SplitsCreator --> communityOwner: Split作成完了
+deactivate SplitsCreator
+
+' 分配実行フェーズ
+communityOwner -> PullSplit: ETHまたはERC20を送金
+communityOwner -> PullSplit: 分配を実行
+activate PullSplit
+PullSplit -> PullSplit: 分配情報を検証
+PullSplit -> SplitsWarehouse: 各アドレスの残高を更新
+PullSplit --> user1: 分配完了
+PullSplit --> user2: 分配完了
+deactivate PullSplit
+
+' 引き出しフェーズ
+user1 -> SplitsWarehouse: 引き出し実行
+activate SplitsWarehouse
+SplitsWarehouse -> SplitsWarehouse: ERC6909X残高をburn
+SplitsWarehouse -> user1: ETH/ERC20を送金
+deactivate SplitsWarehouse
+
+user2 -> SplitsWarehouse: 引き出し実行
+activate SplitsWarehouse
+SplitsWarehouse -> SplitsWarehouse: ERC6909X残高をburn
+SplitsWarehouse -> user2: ETH/ERC20を送金
+deactivate SplitsWarehouse
+
+@enduml

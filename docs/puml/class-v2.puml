@@ -1,0 +1,207 @@
+@startuml
+
+abstract ERC1155{
+  # _balanceOf
+  ---
+}
+
+abstract ERC2771Context {
+  - _trustedForwarder: address
+  ---
+}
+
+abstract ERC1155Upgradeable {
+  ---
+  + トークンを移転する
+  + 複数トークンを移転する
+}
+
+abstract ERC1155SupplyUpgradeable {
+  ---
+  + 総供給量を取得する
+}
+
+abstract OwnableUpgradeable {
+  - _owner: address
+  ---
+  + オーナーを変更する
+}
+
+abstract UUPSUpgradeable {
+  ---
+  # アップグレードを許可する
+}
+
+class HatsIdUtilities{
+  + linkedTreeAdmins: mapping
+  ---
+}
+
+class Hats {
+  + _hats: mapping
+  ---
+  + TopHat をミントする
+  + Hat を作成する
+  + Hat をミントする
+  + Hat を移転する
+  + Hat を放棄する
+  + Hat のレベルを取得する
+  + 指定レベルの管理者を取得する
+}
+
+struct Hat {
+  eligibility: address
+  maxSupply: uint32
+  supply: uint32
+  lastHatId: uint16
+  toggle: address
+  config: uint96
+  details: string
+  imageURI: string
+}
+
+struct SplitsInfo {
+  hatId: uint256
+  multiplierBottom: uint256
+  multiplierTop: uint256
+  wearers: address[]
+}
+
+class BigBang {
+  + Hats: IHats
+  + HatsModuleFactory: IHatsModuleFactory
+  + SplitsCreatorFactory: ISplitsCreatorFactory
+  + HatsTimeFrameModule_IMPL: address
+  + HatsHatCreatorModule_IMPL: address
+  + SplitsFactoryV2: address
+  + FractionToken: address
+  ---
+  + 初期化する
+  + プロジェクトを作成する
+  + Hats アドレスを設定する
+  + HatsModuleFactory アドレスを設定する
+  + SplitsCreatorFactory アドレスを設定する
+  + HatsTimeFrameModule 実装を設定する
+  + HatsHatCreatorModule 実装を設定する
+  + SplitsFactoryV2 アドレスを設定する
+  + FractionToken アドレスを設定する
+}
+
+class HatsModuleFactory {
+  ---
+  + モジュールを作成する
+  + モジュールアドレスを取得する
+}
+
+class HatsModule {
+  - HATS: IHats
+  - version: string
+  ---
+  + 実装アドレスを取得する
+  # セットアップする
+}
+
+class HatsTimeFrameModule {
+  - operationAuthorities: mapping
+  - woreTime: mapping
+  - deactivatedTime: mapping
+  - totalActiveTime: mapping
+  - isActive: mapping
+  ---
+  + 操作権限を確認する
+  + 操作権限を付与する
+  + 操作権限を剥奪する
+  + Hat をミントする
+  + Hat を非アクティブにする
+  + Hat を再アクティブにする
+  + Hat を放棄する
+  + 着用開始時間を取得する
+  + 着用経過時間を取得する
+}
+
+class HatsHatCreatorModule {
+  - createHatAuthorities: mapping
+  ---
+  + 作成権限を確認する
+  + 作成権限を付与する
+  + 作成権限を剥奪する
+  + Hat を作成する
+}
+
+class FractionToken {
+  + TOKEN_SUPPLY: uint256
+  - tokenRecipients: mapping
+  - hatsContract: IHats
+  ---
+  + 初期供給をミントする
+  + トークンをミントする
+  + トークンを焼却する
+  + トークンを移転する
+  + 複数トークンを移転する
+  + 受領者リストを取得する
+  + トークンIDを取得する
+  + 残高を取得する
+  + 複数残高を取得する
+  + 総供給量を取得する
+}
+
+class SplitWarehouse {
+  ---
+  + トークンを移転する
+  + 残高を更新する
+  # トークンを焼却する
+  + トークンを引き出す
+}
+
+class SplitCreator {
+  + HATS_TIME_FRAME_MODULE: address
+  + FRACTION_TOKEN: address
+  ---
+  + Split を作成する
+  + 分配を計算する
+}
+
+class SplitFactoryV2 {
+  ---
+  + Split をデプロイする
+}
+
+class PullSplit {
+  ---
+  + トークンを分配する
+}
+
+' 継承関係
+BigBang --|> OwnableUpgradeable
+BigBang --|> UUPSUpgradeable
+
+HatsTimeFrameModule --|> HatsModule
+HatsTimeFrameModule --|> OwnableUpgradeable
+
+HatsHatCreatorModule --|> HatsModule
+HatsHatCreatorModule --|> OwnableUpgradeable
+
+FractionToken --|> ERC1155Upgradeable
+FractionToken --|> ERC1155SupplyUpgradeable
+FractionToken --|> OwnableUpgradeable
+FractionToken --|> UUPSUpgradeable
+
+' 依存関係
+HatsModuleFactory --> HatsTimeFrameModule : モジュールを作成する
+HatsModuleFactory --> HatsHatCreatorModule : モジュールを作成する
+HatsTimeFrameModule x--> Hats : Hat をミントする
+HatsHatCreatorModule x--> Hats : Hat を作成する
+BigBang --> HatsModuleFactory : モジュールをデプロイする
+BigBang --> Hats : TopHat/HatterHatを作成する
+BigBang --> SplitCreator : SplitCreatorをデプロイする
+SplitCreator ..> Hats : hatId 間の比率を\n参照（引数）
+SplitCreator ..> HatsTimeFrameModule : hat の着用時間を\n参照（引数）
+SplitCreator ..> FractionToken : トークンの情報を取得する
+SplitCreator --> SplitFactoryV2 : 分配量を計算し、\nPullSplitのデプロイを\n依頼する
+SplitFactoryV2 --> PullSplit : デプロイする
+PullSplit x--> SplitWarehouse : 入金する
+PullSplit x--> SplitWarehouse : 残高を更新する
+FractionToken --> Hats : Hat保有を確認する
+
+remove @unlinked
+@enduml

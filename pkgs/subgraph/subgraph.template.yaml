@@ -30,3 +30,28 @@ dataSources:
         {{/handlers}}
       file: ./src/mapping.ts
   {{/contracts}}
+templates:
+  {{#hatsModuleContracts}}
+  - kind: ethereum/contract
+    name: {{ file }}
+    network: {{ network }}
+    source:
+      abi: {{ file }}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        {{#entities}}
+        - {{name}}
+        {{/entities}}
+      abis:
+        - name: {{ file }}
+          file: ./abis/{{ file }}.json
+      eventHandlers:
+        {{#handlers}}
+        - event: {{event}}
+          handler: {{handler}}
+        {{/handlers}}
+      file: ./src/hatsModuleMapping.ts
+  {{/hatsModuleContracts}}

@@ -44,6 +44,312 @@ export type Block_Height = {
   number_gte?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type HatsHatCreatorModule = {
+  __typename?: 'HatsHatCreatorModule';
+  authorities: Array<HatsHatCreatorModuleAuthority>;
+  id: Scalars['ID']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+
+export type HatsHatCreatorModuleAuthoritiesArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsHatCreatorModuleAuthority_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<HatsHatCreatorModuleAuthority_Filter>;
+};
+
+export type HatsHatCreatorModuleAuthority = {
+  __typename?: 'HatsHatCreatorModuleAuthority';
+  address: Scalars['String']['output'];
+  authorised: Scalars['Boolean']['output'];
+  blockNumber: Scalars['BigInt']['output'];
+  blockTimestamp: Scalars['BigInt']['output'];
+  hatsHatCreatorModule: HatsHatCreatorModule;
+  id: Scalars['ID']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+export type HatsHatCreatorModuleAuthority_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  address?: InputMaybe<Scalars['String']['input']>;
+  address_contains?: InputMaybe<Scalars['String']['input']>;
+  address_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_ends_with?: InputMaybe<Scalars['String']['input']>;
+  address_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_gt?: InputMaybe<Scalars['String']['input']>;
+  address_gte?: InputMaybe<Scalars['String']['input']>;
+  address_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  address_lt?: InputMaybe<Scalars['String']['input']>;
+  address_lte?: InputMaybe<Scalars['String']['input']>;
+  address_not?: InputMaybe<Scalars['String']['input']>;
+  address_not_contains?: InputMaybe<Scalars['String']['input']>;
+  address_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  address_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  address_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  address_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_starts_with?: InputMaybe<Scalars['String']['input']>;
+  address_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  and?: InputMaybe<Array<InputMaybe<HatsHatCreatorModuleAuthority_Filter>>>;
+  authorised?: InputMaybe<Scalars['Boolean']['input']>;
+  authorised_in?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  authorised_not?: InputMaybe<Scalars['Boolean']['input']>;
+  authorised_not_in?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  blockNumber?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockNumber_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_not?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockTimestamp?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockTimestamp_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_not?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  hatsHatCreatorModule?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_?: InputMaybe<HatsHatCreatorModule_Filter>;
+  hatsHatCreatorModule_contains?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_ends_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_gt?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_gte?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  hatsHatCreatorModule_lt?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_lte?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_contains?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  hatsHatCreatorModule_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_starts_with?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<HatsHatCreatorModuleAuthority_Filter>>>;
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspaceId_lt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_lte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+export enum HatsHatCreatorModuleAuthority_OrderBy {
+  Address = 'address',
+  Authorised = 'authorised',
+  BlockNumber = 'blockNumber',
+  BlockTimestamp = 'blockTimestamp',
+  HatsHatCreatorModule = 'hatsHatCreatorModule',
+  HatsHatCreatorModuleId = 'hatsHatCreatorModule__id',
+  HatsHatCreatorModuleWorkspaceId = 'hatsHatCreatorModule__workspaceId',
+  Id = 'id',
+  WorkspaceId = 'workspaceId'
+}
+
+export type HatsHatCreatorModule_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<HatsHatCreatorModule_Filter>>>;
+  authorities_?: InputMaybe<HatsHatCreatorModuleAuthority_Filter>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<HatsHatCreatorModule_Filter>>>;
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspaceId_lt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_lte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+export enum HatsHatCreatorModule_OrderBy {
+  Authorities = 'authorities',
+  Id = 'id',
+  WorkspaceId = 'workspaceId'
+}
+
+export type HatsTimeFrameModule = {
+  __typename?: 'HatsTimeFrameModule';
+  authorities: Array<HatsTimeFrameModuleAuthority>;
+  id: Scalars['ID']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+
+export type HatsTimeFrameModuleAuthoritiesArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsTimeFrameModuleAuthority_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<HatsTimeFrameModuleAuthority_Filter>;
+};
+
+export type HatsTimeFrameModuleAuthority = {
+  __typename?: 'HatsTimeFrameModuleAuthority';
+  address: Scalars['String']['output'];
+  authorised: Scalars['Boolean']['output'];
+  blockNumber: Scalars['BigInt']['output'];
+  blockTimestamp: Scalars['BigInt']['output'];
+  hatsTimeFrameModule: HatsTimeFrameModule;
+  id: Scalars['ID']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+export type HatsTimeFrameModuleAuthority_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  address?: InputMaybe<Scalars['String']['input']>;
+  address_contains?: InputMaybe<Scalars['String']['input']>;
+  address_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_ends_with?: InputMaybe<Scalars['String']['input']>;
+  address_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_gt?: InputMaybe<Scalars['String']['input']>;
+  address_gte?: InputMaybe<Scalars['String']['input']>;
+  address_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  address_lt?: InputMaybe<Scalars['String']['input']>;
+  address_lte?: InputMaybe<Scalars['String']['input']>;
+  address_not?: InputMaybe<Scalars['String']['input']>;
+  address_not_contains?: InputMaybe<Scalars['String']['input']>;
+  address_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  address_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  address_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  address_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  address_starts_with?: InputMaybe<Scalars['String']['input']>;
+  address_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  and?: InputMaybe<Array<InputMaybe<HatsTimeFrameModuleAuthority_Filter>>>;
+  authorised?: InputMaybe<Scalars['Boolean']['input']>;
+  authorised_in?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  authorised_not?: InputMaybe<Scalars['Boolean']['input']>;
+  authorised_not_in?: InputMaybe<Array<Scalars['Boolean']['input']>>;
+  blockNumber?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockNumber_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_not?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockTimestamp?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockTimestamp_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_not?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  hatsTimeFrameModule?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_?: InputMaybe<HatsTimeFrameModule_Filter>;
+  hatsTimeFrameModule_contains?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_ends_with?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_gt?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_gte?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  hatsTimeFrameModule_lt?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_lte?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not_contains?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  hatsTimeFrameModule_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_starts_with?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<HatsTimeFrameModuleAuthority_Filter>>>;
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspaceId_lt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_lte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+export enum HatsTimeFrameModuleAuthority_OrderBy {
+  Address = 'address',
+  Authorised = 'authorised',
+  BlockNumber = 'blockNumber',
+  BlockTimestamp = 'blockTimestamp',
+  HatsTimeFrameModule = 'hatsTimeFrameModule',
+  HatsTimeFrameModuleId = 'hatsTimeFrameModule__id',
+  HatsTimeFrameModuleWorkspaceId = 'hatsTimeFrameModule__workspaceId',
+  Id = 'id',
+  WorkspaceId = 'workspaceId'
+}
+
+export type HatsTimeFrameModule_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<HatsTimeFrameModule_Filter>>>;
+  authorities_?: InputMaybe<HatsTimeFrameModuleAuthority_Filter>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<HatsTimeFrameModule_Filter>>>;
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspaceId_lt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_lte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+export enum HatsTimeFrameModule_OrderBy {
+  Authorities = 'authorities',
+  Id = 'id',
+  WorkspaceId = 'workspaceId'
+}
+
 export type InitializedFractionToken = {
   __typename?: 'InitializedFractionToken';
   blockNumber: Scalars['BigInt']['output'];
@@ -140,6 +446,14 @@ export type Query = {
   __typename?: 'Query';
   /** Access to subgraph metadata */
   _meta?: Maybe<_Meta_>;
+  hatsHatCreatorModule?: Maybe<HatsHatCreatorModule>;
+  hatsHatCreatorModuleAuthorities: Array<HatsHatCreatorModuleAuthority>;
+  hatsHatCreatorModuleAuthority?: Maybe<HatsHatCreatorModuleAuthority>;
+  hatsHatCreatorModules: Array<HatsHatCreatorModule>;
+  hatsTimeFrameModule?: Maybe<HatsTimeFrameModule>;
+  hatsTimeFrameModuleAuthorities: Array<HatsTimeFrameModuleAuthority>;
+  hatsTimeFrameModuleAuthority?: Maybe<HatsTimeFrameModuleAuthority>;
+  hatsTimeFrameModules: Array<HatsTimeFrameModule>;
   initializedFractionToken?: Maybe<InitializedFractionToken>;
   initializedFractionTokens: Array<InitializedFractionToken>;
   transferFractionToken?: Maybe<TransferFractionToken>;
@@ -151,6 +465,78 @@ export type Query = {
 
 export type Query_MetaArgs = {
   block?: InputMaybe<Block_Height>;
+};
+
+
+export type QueryHatsHatCreatorModuleArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryHatsHatCreatorModuleAuthoritiesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsHatCreatorModuleAuthority_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsHatCreatorModuleAuthority_Filter>;
+};
+
+
+export type QueryHatsHatCreatorModuleAuthorityArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryHatsHatCreatorModulesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsHatCreatorModule_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsHatCreatorModule_Filter>;
+};
+
+
+export type QueryHatsTimeFrameModuleArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryHatsTimeFrameModuleAuthoritiesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsTimeFrameModuleAuthority_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsTimeFrameModuleAuthority_Filter>;
+};
+
+
+export type QueryHatsTimeFrameModuleAuthorityArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryHatsTimeFrameModulesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsTimeFrameModule_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsTimeFrameModule_Filter>;
 };
 
 
@@ -211,6 +597,14 @@ export type Subscription = {
   __typename?: 'Subscription';
   /** Access to subgraph metadata */
   _meta?: Maybe<_Meta_>;
+  hatsHatCreatorModule?: Maybe<HatsHatCreatorModule>;
+  hatsHatCreatorModuleAuthorities: Array<HatsHatCreatorModuleAuthority>;
+  hatsHatCreatorModuleAuthority?: Maybe<HatsHatCreatorModuleAuthority>;
+  hatsHatCreatorModules: Array<HatsHatCreatorModule>;
+  hatsTimeFrameModule?: Maybe<HatsTimeFrameModule>;
+  hatsTimeFrameModuleAuthorities: Array<HatsTimeFrameModuleAuthority>;
+  hatsTimeFrameModuleAuthority?: Maybe<HatsTimeFrameModuleAuthority>;
+  hatsTimeFrameModules: Array<HatsTimeFrameModule>;
   initializedFractionToken?: Maybe<InitializedFractionToken>;
   initializedFractionTokens: Array<InitializedFractionToken>;
   transferFractionToken?: Maybe<TransferFractionToken>;
@@ -222,6 +616,78 @@ export type Subscription = {
 
 export type Subscription_MetaArgs = {
   block?: InputMaybe<Block_Height>;
+};
+
+
+export type SubscriptionHatsHatCreatorModuleArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionHatsHatCreatorModuleAuthoritiesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsHatCreatorModuleAuthority_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsHatCreatorModuleAuthority_Filter>;
+};
+
+
+export type SubscriptionHatsHatCreatorModuleAuthorityArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionHatsHatCreatorModulesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsHatCreatorModule_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsHatCreatorModule_Filter>;
+};
+
+
+export type SubscriptionHatsTimeFrameModuleArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionHatsTimeFrameModuleAuthoritiesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsTimeFrameModuleAuthority_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsTimeFrameModuleAuthority_Filter>;
+};
+
+
+export type SubscriptionHatsTimeFrameModuleAuthorityArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionHatsTimeFrameModulesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<HatsTimeFrameModule_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<HatsTimeFrameModule_Filter>;
 };
 
 
@@ -433,8 +899,8 @@ export type Workspace = {
   blockNumber: Scalars['BigInt']['output'];
   blockTimestamp: Scalars['BigInt']['output'];
   creator: Scalars['String']['output'];
-  hatsHatCreatorModule: Scalars['String']['output'];
-  hatsTimeFrameModule: Scalars['String']['output'];
+  hatsHatCreatorModule?: Maybe<HatsHatCreatorModule>;
+  hatsTimeFrameModule?: Maybe<HatsTimeFrameModule>;
   hatterHatId: Scalars['BigInt']['output'];
   id: Scalars['ID']['output'];
   splitCreator: Scalars['String']['output'];
@@ -482,6 +948,7 @@ export type Workspace_Filter = {
   creator_starts_with?: InputMaybe<Scalars['String']['input']>;
   creator_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   hatsHatCreatorModule?: InputMaybe<Scalars['String']['input']>;
+  hatsHatCreatorModule_?: InputMaybe<HatsHatCreatorModule_Filter>;
   hatsHatCreatorModule_contains?: InputMaybe<Scalars['String']['input']>;
   hatsHatCreatorModule_contains_nocase?: InputMaybe<Scalars['String']['input']>;
   hatsHatCreatorModule_ends_with?: InputMaybe<Scalars['String']['input']>;
@@ -502,6 +969,7 @@ export type Workspace_Filter = {
   hatsHatCreatorModule_starts_with?: InputMaybe<Scalars['String']['input']>;
   hatsHatCreatorModule_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   hatsTimeFrameModule?: InputMaybe<Scalars['String']['input']>;
+  hatsTimeFrameModule_?: InputMaybe<HatsTimeFrameModule_Filter>;
   hatsTimeFrameModule_contains?: InputMaybe<Scalars['String']['input']>;
   hatsTimeFrameModule_contains_nocase?: InputMaybe<Scalars['String']['input']>;
   hatsTimeFrameModule_ends_with?: InputMaybe<Scalars['String']['input']>;
@@ -573,7 +1041,11 @@ export enum Workspace_OrderBy {
   BlockTimestamp = 'blockTimestamp',
   Creator = 'creator',
   HatsHatCreatorModule = 'hatsHatCreatorModule',
+  HatsHatCreatorModuleId = 'hatsHatCreatorModule__id',
+  HatsHatCreatorModuleWorkspaceId = 'hatsHatCreatorModule__workspaceId',
   HatsTimeFrameModule = 'hatsTimeFrameModule',
+  HatsTimeFrameModuleId = 'hatsTimeFrameModule__id',
+  HatsTimeFrameModuleWorkspaceId = 'hatsTimeFrameModule__workspaceId',
   HatterHatId = 'hatterHatId',
   Id = 'id',
   SplitCreator = 'splitCreator',
@@ -631,16 +1103,16 @@ export type GetWorkspacesQueryVariables = Exact<{
 }>;
 
 
-export type GetWorkspacesQuery = { __typename?: 'Query', workspaces: Array<{ __typename?: 'Workspace', creator: string, topHatId: any, splitCreator: string, id: string, hatterHatId: any, hatsTimeFrameModule: string, hatsHatCreatorModule: string, blockTimestamp: any, blockNumber: any }> };
+export type GetWorkspacesQuery = { __typename?: 'Query', workspaces: Array<{ __typename?: 'Workspace', creator: string, topHatId: any, splitCreator: string, id: string, hatterHatId: any, blockTimestamp: any, blockNumber: any, hatsTimeFrameModule?: { __typename?: 'HatsTimeFrameModule', id: string } | null, hatsHatCreatorModule?: { __typename?: 'HatsHatCreatorModule', id: string } | null }> };
 
 export type GetWorkspaceQueryVariables = Exact<{
   workspaceId: Scalars['ID']['input'];
 }>;
 
 
-export type GetWorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', creator: string, hatsTimeFrameModule: string, hatsHatCreatorModule: string, hatterHatId: any, id: string, splitCreator: string, topHatId: any, blockTimestamp: any, blockNumber: any } | null };
+export type GetWorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', blockNumber: any, blockTimestamp: any, creator: string, hatterHatId: any, id: string, splitCreator: string, topHatId: any, hatsHatCreatorModule?: { __typename?: 'HatsHatCreatorModule', id: string, authorities: Array<{ __typename?: 'HatsHatCreatorModuleAuthority', address: string, authorised: boolean, blockNumber: any, blockTimestamp: any, id: string, workspaceId: string }> } | null, hatsTimeFrameModule?: { __typename?: 'HatsTimeFrameModule', id: string, authorities: Array<{ __typename?: 'HatsTimeFrameModuleAuthority', address: string, authorised: boolean, blockNumber: any, blockTimestamp: any, id: string, workspaceId: string }> } | null } | null };
 
 
 export const GetTransferFractionTokensDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTransferFractionTokens"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferFractionToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferFractionToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"transferFractionTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"to"}},{"kind":"Field","name":{"kind":"Name","value":"tokenId"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}}]}}]} as unknown as DocumentNode<GetTransferFractionTokensQuery, GetTransferFractionTokensQueryVariables>;
-export const GetWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Workspace_filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatsHatCreatorModule"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspacesQuery, GetWorkspacesQueryVariables>;
-export const GetWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspace"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatsHatCreatorModule"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspaceQuery, GetWorkspaceQueryVariables>;
+export const GetWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Workspace_filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"hatsHatCreatorModule"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetWorkspacesQuery, GetWorkspacesQueryVariables>;
+export const GetWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspace"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"hatterHatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"splitCreator"}},{"kind":"Field","name":{"kind":"Name","value":"topHatId"}},{"kind":"Field","name":{"kind":"Name","value":"hatsHatCreatorModule"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"authorised"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"hatsTimeFrameModule"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"authorised"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetWorkspaceQuery, GetWorkspaceQueryVariables>;

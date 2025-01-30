@@ -36,8 +36,8 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
      */
     function _setUp(bytes calldata _initData) internal override {
         address _owner = abi.decode(_initData, (address));
+        _grantOperationAuthority(_owner);
         _transferOwnership(_owner);
-        operationAuthorities[_owner] = true;
     }
 
     /**
@@ -56,11 +56,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
      * @param authority The address to grant authority to
      */
     function grantOperationAuthority(address authority) external onlyOwner {
-        require(authority != address(0), "Invalid address");
-        require(!hasOperationAuthority(authority), "Already granted");
-
-        operationAuthorities[authority] = true;
-        emit OperationAuthorityGranted(authority);
+        _grantOperationAuthority(authority);
     }
 
     /**
@@ -68,10 +64,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
      * @param authority The address to revoke authority from
      */
     function revokeOperationAuthority(address authority) external onlyOwner {
-        require(hasOperationAuthority(authority), "Not granted");
-
-        operationAuthorities[authority] = false;
-        emit OperationAuthorityRevoked(authority);
+        _revokeOperationAuthority(authority);
     }
 
     /**
@@ -189,5 +182,30 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         }
 
         return activeTime;
+    }
+
+    // internal functions
+
+    /**
+     * @dev Grants hat creation authority to an address
+     * @param authority The address to grant authority to
+     */
+    function _grantOperationAuthority(address authority) internal {
+        require(authority != address(0), "Invalid address");
+        require(!hasOperationAuthority(authority), "Already granted");
+
+        operationAuthorities[authority] = true;
+        emit OperationAuthorityGranted(authority);
+    }
+
+    /**
+     * @dev Revokes hat creation authority from an address
+     * @param authority The address to revoke authority from
+     */
+    function _revokeOperationAuthority(address authority) internal {
+        require(hasOperationAuthority(authority), "Not granted");
+
+        operationAuthorities[authority] = false;
+        emit OperationAuthorityRevoked(authority);
     }
 }

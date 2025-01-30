@@ -4,8 +4,14 @@ import {
   InitialMint,
   TransferSingle,
 } from "../generated/FractionToken/FractionToken";
+import {
+  HatsHatCreatorModule as HatsHatCreatorModuleTemplate,
+  HatsTimeFrameModule as HatsTimeFrameModuleTemplate,
+} from "../generated/templates";
 
 import {
+  HatsHatCreatorModule,
+  HatsTimeFrameModule,
   InitializedFractionToken,
   TransferFractionToken,
   Workspace,
@@ -22,7 +28,7 @@ function hatIdToTreeId(hatId: string): string {
 
 export function handleExecuted(ev: Executed): void {
   const treeId = hatIdToTreeId(ev.params.topHatId.toHexString());
-  const workspace = new Workspace(treeId);
+  let workspace = new Workspace(treeId);
 
   workspace.topHatId = ev.params.topHatId;
   workspace.creator = ev.params.creator.toHex();
@@ -35,6 +41,23 @@ export function handleExecuted(ev: Executed): void {
   workspace.blockNumber = ev.block.number;
 
   workspace.save();
+
+  // Create new index from template for HatsModules
+  const newHatsHatCreatorModule = new HatsHatCreatorModule(
+    ev.params.hatsHatCreatorModule.toHex(),
+  );
+  newHatsHatCreatorModule.workspaceId = treeId;
+  newHatsHatCreatorModule.save();
+
+  HatsHatCreatorModuleTemplate.create(ev.params.hatsHatCreatorModule);
+
+  const newHatsTimeFrameModule = new HatsTimeFrameModule(
+    ev.params.hatsTimeFrameModule.toHex(),
+  );
+  newHatsTimeFrameModule.workspaceId = treeId;
+  newHatsTimeFrameModule.save();
+
+  HatsTimeFrameModuleTemplate.create(ev.params.hatsTimeFrameModule);
 }
 
 export function handleInitialMint(ev: InitialMint): void {

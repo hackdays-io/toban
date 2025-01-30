@@ -28,7 +28,7 @@ const SettingsSubSection: FC<{ children: React.ReactNode; headingText: string }>
   children,
   headingText,
 }) => (
-  <Box mt={3} mb={4}>
+  <Box mt={3} mb={5}>
     <Text mb={3} fontSize="sm" fontWeight="medium" color="gray.600">
       {headingText}
     </Text>
@@ -95,7 +95,7 @@ const RoleSubSection: FC<{
 
   return (
     <SettingsSubSection headingText={headingText}>
-      <Box mt={3} mb={6}>
+      <Box mb={8}>
         {accounts.map((account) => {
           const name = names.find(
             (name) => name[0]?.address === account.address,
@@ -136,9 +136,9 @@ const WorkspaceSettings: FC = () => {
     <Box width="100%" pb={10}>
       <PageHeader title="ワークスペース設定" />
       <SettingsSection headingText="ワークスペースの概要">
-        <Flex mt={7} width="100%" gap={8} alignItems="center">
+        <Flex mt={8} width="100%" gap={8} alignItems="center">
           <Box
-            mb={1}
+            mb={4}
             minW="120px"
             maxW="200px"
             w="20%"

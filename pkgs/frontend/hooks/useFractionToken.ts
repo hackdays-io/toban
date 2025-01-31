@@ -200,6 +200,79 @@ export const useBalanceOfFractionToken = (
   return balance;
 };
 
+export const useBalancesWithHat = (treeId?: string, address?: Address) => {
+  const { data: data1 } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      from: address?.toLowerCase(),
+    },
+    first: 100,
+  });
+
+  const { data: data2 } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      to: address?.toLowerCase(),
+    },
+    first: 100,
+  });
+
+  const [balances, setBalances] = useState<
+    {
+      balance: bigint;
+      isHolder: boolean;
+      hatId: bigint;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!address) return;
+
+      const data = {
+        transferFractionTokens: [
+          ...(data1?.transferFractionTokens || []),
+          ...(data2?.transferFractionTokens || []),
+        ],
+      };
+
+      const tokens = Array.from(
+        new Set(
+          data.transferFractionTokens
+            .filter(({ workspaceId }) => Number(workspaceId) > 0)
+            .map(({ wearer, hatId }) => JSON.stringify({ wearer, hatId })),
+        ),
+      );
+
+      try {
+        const _balances = await Promise.all(
+          tokens
+            .map((token) => JSON.parse(token))
+            .map(async ({ wearer, hatId }) => {
+              const isHolder = address.toLowerCase() === wearer.toLowerCase();
+
+              const balance = await publicClient.readContract({
+                ...fractionTokenBaseConfig,
+                functionName: "balanceOf",
+                args: [address, wearer as Address, BigInt(hatId)],
+              });
+
+              return { balance, isHolder, hatId };
+            }),
+        );
+        setBalances(_balances);
+      } catch (error) {
+        console.error(error);
+        setBalances([]);
+      }
+    };
+
+    fetch();
+  }, [address, data1, data2]);
+
+  return balances;
+};
+
 /**
  * FractionToken 向けの React Hooks
  * @returns

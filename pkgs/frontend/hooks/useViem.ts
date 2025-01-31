@@ -19,5 +19,7 @@ export const currentChain =
  */
 export const publicClient = createPublicClient({
   chain: currentChain,
-  transport: http(),
+  transport: http(
+    "https://eth-sepolia.g.alchemy.com/v2/EgXo1KLF1BxzM0a_kmI9Mypxvfu_UqgU",
+  ),
 });

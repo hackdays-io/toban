@@ -4,6 +4,7 @@ import { useBalancesWithHat } from "hooks/useFractionToken";
 import { useGetHats } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
+import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 
@@ -32,7 +33,7 @@ const WorkspaceWithBalance: FC = () => {
 
   return (
     <Box>
-      <Heading paddingY={5}>アシストクレジットの残高</Heading>
+      <Heading pb={5}>アシストクレジットの残高</Heading>
       <VStack width="full" marginY={5} gapY={5}>
         {hatsWithBalance.map(({ hat, balance, isHolder }) => (
           <HatsListItemParser
@@ -50,6 +51,7 @@ const WorkspaceWithBalance: FC = () => {
           </HatsListItemParser>
         ))}
       </VStack>
+      <StickyNav />
     </Box>
   );
 };

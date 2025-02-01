@@ -9,7 +9,13 @@ import type {
   TransferFractionToken_OrderBy,
 } from "gql/graphql";
 import { useCallback, useEffect, useState } from "react";
-import { type Address, decodeEventLog, encodeFunctionData } from "viem";
+import {
+  type Address,
+  decodeEventLog,
+  encodeFunctionData,
+  encodePacked,
+  keccak256,
+} from "viem";
 import {
   FRACTION_TOKEN_ADDRESS,
   fractionTokenBaseConfig,
@@ -37,7 +43,7 @@ export const useTokenRecipients = (
       try {
         const fetchedRecipients = await Promise.all(
           params.map(async ({ hatId, wearer }) => {
-            const tokenId = await getTokenId({
+            const tokenId = getTokenId({
               hatId: BigInt(hatId),
               account: wearer,
             });
@@ -98,7 +104,7 @@ export const useHoldersWithoutWearers = ({
       try {
         const fetchedRecipients = await Promise.all(
           wearers.map(async (w) => {
-            const tokenId = await getTokenId({
+            const tokenId = getTokenId({
               hatId: BigInt(hatId),
               account: w as Address,
             });
@@ -142,13 +148,14 @@ export const useHoldersWithBalance = ({
     const fetch = async () => {
       if (!wearer || !hatId) return;
       try {
-        const tokenId = await getTokenId({
+        const tokenId = getTokenId({
           hatId: BigInt(hatId),
           account: wearer as Address,
         });
         if (!tokenId) return;
         const holders = [...((await getTokenRecipients({ tokenId })) || [])];
 
+        if (!holders.length) return;
         const balances = await publicClient.readContract({
           ...fractionTokenBaseConfig,
           functionName: "balanceOfBatch",
@@ -311,26 +318,23 @@ export const useFractionToken = () => {
    * @param hatId
    * @param account address
    */
-  const getTokenId = useCallback(
-    async (params: { hatId: bigint; account: Address }) => {
-      setIsLoading(true);
+  const getTokenId = (params: { hatId: bigint; account: Address }) => {
+    setIsLoading(true);
 
-      try {
-        const res = await publicClient.readContract({
-          ...fractionTokenBaseConfig,
-          functionName: "getTokenId",
-          args: [params.hatId, params.account],
-        });
+    try {
+      const tokenId = BigInt(
+        keccak256(
+          encodePacked(["uint256", "address"], [params.hatId, params.account]),
+        ).toString(),
+      );
 
-        return res;
-      } catch (error) {
-        console.error("error occured when fetching tokenId:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
+      return tokenId;
+    } catch (error) {
+      console.error("error occured when fetching tokenId:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const mintInitialSupplyFractionToken = useCallback(
     async (params: { hatId: bigint; account: Address; amount?: bigint }) => {
@@ -516,7 +520,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
   useEffect(() => {
     const fetch = async () => {
-      const _tokenId = await getTokenId({
+      const _tokenId = getTokenId({
         hatId: hatId,
         account: wearer,
       });

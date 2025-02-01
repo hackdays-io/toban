@@ -28,7 +28,7 @@ dataSources:
         - event: {{event}}
           handler: {{handler}}
         {{/handlers}}
-      file: ./src/mapping.ts
+      file: ./src/{{mappingFile}}.ts
   {{/contracts}}
 templates:
   {{#hatsModuleContracts}}

@@ -59,9 +59,20 @@ type TransferFractionToken @entity {
   to: String!
   tokenId: BigInt!
   amount: BigInt!
-  workspaceId: ID!
-  hatId: BigInt!
-  wearer: String!
+  workspaceId: ID
+  hatId: BigInt
+  wearer: String
   blockTimestamp: BigInt!
   blockNumber: BigInt!
+}
+
+type BalanceOfFractionToken @entity {
+  id: ID!
+  owner: String!
+  tokenId: BigInt!
+  balance: BigInt!
+  workspaceId: ID
+  hatId: BigInt
+  wearer: String
+  updatedAt: BigInt!
 }

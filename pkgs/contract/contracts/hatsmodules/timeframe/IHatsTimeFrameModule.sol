@@ -65,4 +65,28 @@ interface IHatsTimeFrameModule {
      * @notice Emitted when hat creation authority is revoked
      */
     event OperationAuthorityRevoked(address indexed authority);
+
+    /**
+     * @notice Emitted when a hat is minted
+     */
+    event HatMinted(
+        uint256 indexed hatId,
+        address indexed wearer,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when a hat is deactivated
+     */
+    event HatDeactivated(uint256 indexed hatId, address indexed wearer);
+
+    /**
+     * @notice Emitted when a hat is Reactivated
+     */
+    event HatReactivated(uint256 indexed hatId, address indexed wearer);
+
+    /**
+     * @notice Emitted when a hat is renounced
+     */
+    event HatRenounced(uint256 indexed hatId, address indexed wearer);
 }

@@ -1,5 +1,6 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { Link, useNavigate } from "@remix-run/react";
+import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
 import type { Address } from "viem";
@@ -27,6 +28,18 @@ const WorkspaceCard: FC<{
 };
 
 const Workspace: FC = () => {
+  const navigate = useNavigate();
+
+  const { wallet, isSmartWallet, isConnectingEmbeddedWallet } =
+    useActiveWallet();
+
+  const { getWorkspacesList, getWorkspacesListByIds } = useHats();
+
+  const address = useMemo(() => {
+    if (isConnectingEmbeddedWallet && !isSmartWallet) return;
+    return wallet?.account?.address as Address;
+  }, [wallet?.account?.address, isSmartWallet, isConnectingEmbeddedWallet]);
+
   const [workspacesList, setWorkspacesList] = useState<
     {
       treeId: string;
@@ -34,17 +47,6 @@ const Workspace: FC = () => {
       imageUrl: string | undefined;
     }[]
   >([]);
-
-  const navigate = useNavigate();
-
-  const { wallet, isSmartWallet, isConnectingEmbeddedWallet } =
-    useActiveWallet();
-  const { getWorkspacesList } = useHats();
-
-  const address = useMemo(() => {
-    if (isConnectingEmbeddedWallet && !isSmartWallet) return;
-    return wallet?.account?.address as Address;
-  }, [wallet?.account?.address, isSmartWallet, isConnectingEmbeddedWallet]);
 
   useEffect(() => {
     const fetchWorkspacesList = async () => {
@@ -58,12 +60,69 @@ const Workspace: FC = () => {
     fetchWorkspacesList();
   }, [address, getWorkspacesList]);
 
+  const { data, loading } = useGetTransferFractionTokens({
+    where: { to: address?.toLowerCase() },
+    first: 100,
+  });
+
+  const treeIds = useMemo(() => {
+    if (!data) return;
+    const tokens = data.transferFractionTokens;
+    if (tokens.length === 0) return;
+    return Array.from(
+      new Set(
+        tokens
+          .map(({ workspaceId }) => Number(workspaceId))
+          .filter(
+            (id) =>
+              id > 0 &&
+              !workspacesList.some(
+                (workspace) => workspace.treeId === id.toString(),
+              ),
+          ),
+      ),
+    );
+  }, [workspacesList, data]);
+
+  const [assistedWorkspacesList, setAssistedWorkspacesList] = useState<
+    {
+      treeId: string;
+      name: string;
+      imageUrl: string | undefined;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchAssistedWorkspacesList = async () => {
+      if (!address || !treeIds) return;
+      const _assistedWorkspacesList = await getWorkspacesListByIds({
+        treeIds,
+      });
+
+      setAssistedWorkspacesList(_assistedWorkspacesList);
+    };
+
+    fetchAssistedWorkspacesList();
+  }, [address, treeIds, getWorkspacesListByIds]);
+
   return (
     <>
       <Box>
         {workspacesList.map((workspace) => (
           <WorkspaceCard key={workspace.treeId} {...workspace} />
         ))}
+      </Box>
+      <Box mt={7}>
+        <Heading my={3}>お手伝いしているワークスペース</Heading>
+        {assistedWorkspacesList.length > 0 ? (
+          assistedWorkspacesList.map((workspace) => (
+            <WorkspaceCard key={workspace.treeId} {...workspace} />
+          ))
+        ) : (
+          <Text mx={2} fontStyle="italic" color="gray.400">
+            該当なし
+          </Text>
+        )}
       </Box>
       <BasicButton mt={7} onClick={() => navigate("/workspace/new")}>
         新しいワークスペースを作成

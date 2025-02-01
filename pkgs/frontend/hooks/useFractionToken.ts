@@ -2,6 +2,10 @@ import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react/hooks";
 import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import type {
+  BalanceOfFractionToken_Filter,
+  BalanceOfFractionToken_OrderBy,
+  BalanceOfFractionTokensQuery,
+  BalanceOfFractionTokensQueryVariables,
   GetTransferFractionTokensQuery,
   GetTransferFractionTokensQueryVariables,
   OrderDirection,
@@ -9,11 +13,14 @@ import type {
   TransferFractionToken_OrderBy,
 } from "gql/graphql";
 import { useCallback, useEffect, useState } from "react";
-import { type Address, decodeEventLog, encodeFunctionData } from "viem";
 import {
-  FRACTION_TOKEN_ADDRESS,
-  fractionTokenBaseConfig,
-} from "./useContracts";
+  type Address,
+  decodeEventLog,
+  encodeFunctionData,
+  encodePacked,
+  keccak256,
+} from "viem";
+import { fractionTokenBaseConfig } from "./useContracts";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
 
@@ -37,7 +44,7 @@ export const useTokenRecipients = (
       try {
         const fetchedRecipients = await Promise.all(
           params.map(async ({ hatId, wearer }) => {
-            const tokenId = await getTokenId({
+            const tokenId = getTokenId({
               hatId: BigInt(hatId),
               account: wearer,
             });
@@ -81,97 +88,6 @@ export const useTokenRecipients = (
   return recipients;
 };
 
-export const useHoldersWithoutWearers = ({
-  hatId,
-  wearers,
-}: {
-  hatId?: string;
-  wearers: string[];
-}) => {
-  const [holders, setHolders] = useState<Address[]>([]);
-
-  const { getTokenId, getTokenRecipients } = useFractionToken();
-
-  useEffect(() => {
-    const fetch = async () => {
-      if (!hatId) return;
-      try {
-        const fetchedRecipients = await Promise.all(
-          wearers.map(async (w) => {
-            const tokenId = await getTokenId({
-              hatId: BigInt(hatId),
-              account: w as Address,
-            });
-            if (!tokenId) return [];
-            const recipients = (await getTokenRecipients({ tokenId }))?.filter(
-              (r) => r.toLowerCase() !== w.toLowerCase(),
-            );
-            return recipients || [];
-          }),
-        );
-
-        setHolders(fetchedRecipients.flat());
-      } catch (error) {
-        console.error("error occured when fetching tokenRecipients:", error);
-      }
-    };
-
-    fetch();
-  }, [getTokenId, getTokenRecipients, hatId, wearers]);
-
-  return holders;
-};
-
-export const useHoldersWithBalance = ({
-  wearer,
-  hatId,
-}: {
-  wearer?: string;
-  hatId?: string;
-}) => {
-  const [holders, setHolders] = useState<
-    {
-      holder: Address;
-      balance: bigint;
-    }[]
-  >([]);
-
-  const { getTokenId, getTokenRecipients } = useFractionToken();
-
-  useEffect(() => {
-    const fetch = async () => {
-      if (!wearer || !hatId) return;
-      try {
-        const tokenId = await getTokenId({
-          hatId: BigInt(hatId),
-          account: wearer as Address,
-        });
-        if (!tokenId) return;
-        const holders = [...((await getTokenRecipients({ tokenId })) || [])];
-
-        const balances = await publicClient.readContract({
-          ...fractionTokenBaseConfig,
-          functionName: "balanceOfBatch",
-          args: [holders, holders.map(() => BigInt(tokenId))],
-        });
-
-        const holdersWithBalance = holders.map((holder, index) => ({
-          holder,
-          balance: balances[index],
-        }));
-
-        setHolders(holdersWithBalance);
-      } catch (error) {
-        console.error("error occured when fetching tokenRecipients:", error);
-      }
-    };
-
-    fetch();
-  }, [getTokenId, getTokenRecipients, wearer, hatId]);
-
-  return holders;
-};
-
 export const useBalanceOfFractionToken = (
   holder: Address,
   address: Address,
@@ -198,6 +114,79 @@ export const useBalanceOfFractionToken = (
   }, [holder, hatId, address]);
 
   return balance;
+};
+
+export const useBalancesWithHat = (treeId?: string, address?: Address) => {
+  const { data: data1 } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      from: address?.toLowerCase(),
+    },
+    first: 100,
+  });
+
+  const { data: data2 } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      to: address?.toLowerCase(),
+    },
+    first: 100,
+  });
+
+  const [balances, setBalances] = useState<
+    {
+      balance: bigint;
+      isHolder: boolean;
+      hatId: bigint;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!address) return;
+
+      const data = {
+        transferFractionTokens: [
+          ...(data1?.transferFractionTokens || []),
+          ...(data2?.transferFractionTokens || []),
+        ],
+      };
+
+      const tokens = Array.from(
+        new Set(
+          data.transferFractionTokens
+            .filter(({ workspaceId }) => Number(workspaceId) > 0)
+            .map(({ wearer, hatId }) => JSON.stringify({ wearer, hatId })),
+        ),
+      );
+
+      try {
+        const _balances = await Promise.all(
+          tokens
+            .map((token) => JSON.parse(token))
+            .map(async ({ wearer, hatId }) => {
+              const isHolder = address.toLowerCase() === wearer.toLowerCase();
+
+              const balance = await publicClient.readContract({
+                ...fractionTokenBaseConfig,
+                functionName: "balanceOf",
+                args: [address, wearer as Address, BigInt(hatId)],
+              });
+
+              return { balance, isHolder, hatId };
+            }),
+        );
+        setBalances(_balances);
+      } catch (error) {
+        console.error(error);
+        setBalances([]);
+      }
+    };
+
+    fetch();
+  }, [address, data1, data2]);
+
+  return balances;
 };
 
 /**
@@ -238,26 +227,23 @@ export const useFractionToken = () => {
    * @param hatId
    * @param account address
    */
-  const getTokenId = useCallback(
-    async (params: { hatId: bigint; account: Address }) => {
-      setIsLoading(true);
+  const getTokenId = (params: { hatId: bigint; account: Address }) => {
+    setIsLoading(true);
 
-      try {
-        const res = await publicClient.readContract({
-          ...fractionTokenBaseConfig,
-          functionName: "getTokenId",
-          args: [params.hatId, params.account],
-        });
+    try {
+      const tokenId = BigInt(
+        keccak256(
+          encodePacked(["uint256", "address"], [params.hatId, params.account]),
+        ).toString(),
+      );
 
-        return res;
-      } catch (error) {
-        console.error("error occured when fetching tokenId:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
+      return tokenId;
+    } catch (error) {
+      console.error("error occured when fetching tokenId:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const mintInitialSupplyFractionToken = useCallback(
     async (params: { hatId: bigint; account: Address; amount?: bigint }) => {
@@ -443,7 +429,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
   useEffect(() => {
     const fetch = async () => {
-      const _tokenId = await getTokenId({
+      const _tokenId = getTokenId({
         hatId: hatId,
         account: wearer,
       });
@@ -550,6 +536,42 @@ export const useGetTransferFractionTokens = (params: {
     GetTransferFractionTokensQuery,
     GetTransferFractionTokensQueryVariables
   >(queryGetTransferFractionTokens, {
+    variables: {
+      where: params.where,
+      orderBy: params.orderBy,
+      orderDirection: params.orderDirection,
+      first: params.first,
+    },
+  });
+
+  return result;
+};
+
+const queryBalanceOfFractionTokens = gql(`
+  query BalanceOfFractionTokens($where: BalanceOfFractionToken_filter = {}, $orderBy: BalanceOfFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 100) {
+    balanceOfFractionTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+      tokenId
+      balance
+      owner
+      workspaceId
+      hatId
+      id
+      updatedAt
+      wearer
+    }
+  }
+`);
+
+export const useBalanceOfFractionTokens = (params: {
+  where?: BalanceOfFractionToken_Filter;
+  orderBy?: BalanceOfFractionToken_OrderBy;
+  orderDirection?: OrderDirection;
+  first?: number;
+}) => {
+  const result = useQuery<
+    BalanceOfFractionTokensQuery,
+    BalanceOfFractionTokensQueryVariables
+  >(queryBalanceOfFractionTokens, {
     variables: {
       where: params.where,
       orderBy: params.orderBy,

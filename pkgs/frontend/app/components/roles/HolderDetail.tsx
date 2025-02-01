@@ -112,24 +112,22 @@ export const ActiveState: FC<HolderDetailProps> = ({
           Inactive
         </Box>
       )}
-      {formattedWoreTime && formattedWearingElapsedTime && (
-        <Box fontSize="sm">
-          {isActive && (
-            <Text>
-              Activated on{" "}
-              <Text as="span" fontWeight="medium">
-                {formattedWoreTime}
-              </Text>
-            </Text>
-          )}
+      <Box fontSize="sm">
+        {isActive && (
           <Text>
-            Active in{" "}
+            Activated on{" "}
             <Text as="span" fontWeight="medium">
-              {formattedWearingElapsedTime}days
+              {formattedWoreTime}
             </Text>
           </Text>
-        </Box>
-      )}
+        )}
+        <Text>
+          Active in{" "}
+          <Text as="span" fontWeight="medium">
+            {formattedWearingElapsedTime} days
+          </Text>
+        </Text>
+      </Box>
     </HStack>
   );
 };
@@ -152,7 +150,6 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
                 No responsibilities
               </Text>
             )}
-            {detail?.data.description}
           </Text>
         </Box>
 

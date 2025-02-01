@@ -1,7 +1,7 @@
 import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useHoldersWithoutWearers } from "hooks/useFractionToken";
+import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -34,16 +34,16 @@ const RoleDetails: FC = () => {
   // wearer
   const { names: wearerNames } = useNamesByAddresses(wearerIds);
 
-  // wearerを除くholder
-  const holdersWithoutWearers = useHoldersWithoutWearers({
-    hatId,
-    wearers: wearerIds,
+  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
+    where: {
+      hatId: BigInt(hatId || 0).toString(10),
+    },
   });
-  const assistantMembers = useMemo(
-    () =>
-      holdersWithoutWearers.filter((h) => !wearerIds.includes(h.toLowerCase())),
-    [holdersWithoutWearers, wearerIds],
-  );
+  const assistantMembers = useMemo(() => {
+    return balanceOfFractionTokens?.balanceOfFractionTokens
+      .filter((h) => !wearerIds.includes(h.owner.toLowerCase()))
+      .map((h) => h.owner.toLowerCase());
+  }, [balanceOfFractionTokens, wearerIds]);
   const { names: holderNames } = useNamesByAddresses(assistantMembers);
 
   // 各wearerのWearingElapsedTimeを取得
@@ -141,7 +141,7 @@ const RoleDetails: FC = () => {
               rounded="md"
               bgColor="blue.200"
             >
-              Assist
+              アシスト
             </Box>
           </HStack>
         ))}

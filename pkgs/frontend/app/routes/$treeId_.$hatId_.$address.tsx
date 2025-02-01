@@ -1,7 +1,7 @@
 import { Box, HStack, Heading, Spinner, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useHoldersWithBalance } from "hooks/useFractionToken";
+import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useHats, useTreeInfo } from "hooks/useHats";
 import {
   useActiveState,
@@ -74,21 +74,26 @@ const RoleHolderDetails: FC = () => {
   );
 
   // holderをbalanceとともに取得
-  const holdersWithBalance = useHoldersWithBalance({ wearer: address, hatId });
+  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
+    where: {
+      wearer: address?.toLowerCase(),
+      hatId: BigInt(hatId || 0).toString(10),
+    },
+  });
   const holders = useMemo(
-    () => holdersWithBalance.map(({ holder }) => holder),
-    [holdersWithBalance],
+    () => balanceOfFractionTokens?.balanceOfFractionTokens.map((d) => d.owner),
+    [balanceOfFractionTokens],
   );
   const { names: holderNames } = useNamesByAddresses(holders);
   const holderDetail = useMemo(
     () =>
       holderNames.flat().map((n) => ({
         ...n,
-        balance: holdersWithBalance.find(
-          ({ holder }) => holder.toLowerCase() === n.address.toLowerCase(),
+        balance: balanceOfFractionTokens?.balanceOfFractionTokens.find(
+          ({ owner }) => owner.toLowerCase() === n.address.toLowerCase(),
         )?.balance,
       })),
-    [holdersWithBalance, holderNames],
+    [balanceOfFractionTokens, holderNames],
   );
 
   // HatsTimeFrameModule関連の情報をボタンクリックの後再取得できるようにカウンターを設置

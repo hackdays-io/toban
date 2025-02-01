@@ -5,6 +5,7 @@
     {
       "address": "0x3E70d10aCdcC14B6C31DA26DcC195a6EDf1C2c16",
       "file": "BigBang",
+      "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
@@ -16,6 +17,7 @@
     {
       "address": "0x54889278bf4F16ACAa3CC1402C987A6C42a5308B",
       "file": "FractionToken",
+      "mappingFile": "fractionTokenMapping",
       "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
       "handlers": [
         {
@@ -51,7 +53,8 @@
       "file": "HatsTimeFrameModule",
       "entities": [
         { "name": "OperationAuthorityGranted" },
-        { "name": "OperationAuthorityRevoked" }
+        { "name": "OperationAuthorityRevoked" },
+        { "name": "HatMinted" }
       ],
       "handlers": [
         {
@@ -61,6 +64,10 @@
         {
           "event": "OperationAuthorityRevoked(indexed address)",
           "handler": "handleOperationAuthorityRevoked"
+        },
+        {
+          "event": "HatMinted(indexed uint256,indexed address,uint256)",
+          "handler": "handleHatMinted"
         }
       ]
     }

@@ -1,4 +1,4 @@
-import { Box, Text, Flex } from "@chakra-ui/react";
+import { Box, Text, Flex, Input } from "@chakra-ui/react";
 import { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
@@ -144,6 +144,7 @@ const WorkspaceSettings: FC = () => {
   const [newOwner, setNewOwner] = useState<string>("");
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
@@ -202,6 +203,18 @@ const WorkspaceSettings: FC = () => {
   useResolveAddressEffect(newCreator, newCreatorAddress, setNewCreatorAddress);
   useResolveAddressEffect(newAssignee, newAssigneeAddress, setNewAssigneeAddress);
 
+  const handleUploadImg = (file: File | undefined) => {
+    if (!file?.type?.startsWith("image/")) {
+      alert("画像ファイルを選択してください");
+      return;
+    }
+    const imgUrl = file
+      ? URL.createObjectURL(file)
+      : undefined;
+    setImageFile(file);
+    setWorkspaceImgUrl(imgUrl);
+  }
+
   return (
     <Box width="100%" pb={10}>
       <PageHeader title="ワークスペース設定" />
@@ -221,8 +234,16 @@ const WorkspaceSettings: FC = () => {
             />
           </Box>
           <Box>
-            <CommonButton>
-              画像をアップロード
+            <CommonButton as="label">
+              <Input
+                type="file"
+                accept="image/*"
+                display="none"
+                onChange={(e) => {
+                  handleUploadImg(e.target.files?.[0])
+                }}
+              />
+              <Text>画像をアップロード</Text>
             </CommonButton>
           </Box>
         </Flex>

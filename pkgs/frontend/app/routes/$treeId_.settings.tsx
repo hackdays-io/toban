@@ -3,7 +3,9 @@ import { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
-import { useTreeInfo } from "hooks/useHats";
+import { useHats, useTreeInfo } from "hooks/useHats";
+import { useUploadHatsDetailsToIpfs, useUploadImageFileToIpfs } from "hooks/useIpfs";
+import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { useEffect, useState, type FC, useCallback } from "react";
 import { HatsDetailSchama } from "types/hats";
@@ -143,10 +145,16 @@ const WorkspaceSettings: FC = () => {
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const { data } = useGetWorkspace(treeId);
   const { fetchNames } = useNamesByAddresses();
+  const { uploadImageFileToIpfs, imageFile, setImageFile } =
+    useUploadImageFileToIpfs();
+  const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
+  const { wallet } = useActiveWallet();
+  const { changeHatDetails, changeHatImageURI } = useHats();
 
   const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(undefined);
   const [workspaceName, setWorkspaceName] = useState<string>("");
   const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
+  const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<HatsDetailSchama | undefined>(undefined);
   const [currentCreateHatAuthoritiesAddresses, setCurrentCreateHatAuthoritiesAddresses] = useState<string[]>([]);
   const [currentOperationAuthoritiesAddresses, setCurrentOperationAuthoritiesAddresses] = useState<string[]>([]);
   const [currentCreateHatAuthoritiesAccounts, setCurrentCreateHatAuthoritiesAccounts] = useState<Account[]>([]);
@@ -157,7 +165,7 @@ const WorkspaceSettings: FC = () => {
   const [newOperationAuthorityAddress, setNewOperationAuthorityAddress] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
@@ -182,6 +190,7 @@ const WorkspaceSettings: FC = () => {
       const name = data.data.name;
       const description = data.data.description;
       if (name !== workspaceName) setWorkspaceName(name);
+      if (data !== currentWorkspaceDetails) setCurrentWorkspaceDetails(data);
       if (description !== workspaceDescription) setWorkspaceDescription(description ?? "");
     }
     setInitialWorkspaceStates();
@@ -275,6 +284,71 @@ const WorkspaceSettings: FC = () => {
     setWorkspaceImgUrl(imgUrl);
   }
 
+  const isChangedDetails = () => {
+    return (
+      workspaceName !== currentWorkspaceDetails?.data.name ||
+      workspaceDescription !== currentWorkspaceDetails?.data.description
+    );
+  };
+
+  const changeDetails = async () => {
+    if (!topHat) return;
+    const isChanged = isChangedDetails();
+    if (!isChanged) return;
+
+    const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
+      name: workspaceName,
+      description: workspaceDescription,
+      responsabilities: currentWorkspaceDetails?.data.responsabilities,
+      authorities: currentWorkspaceDetails?.data.authorities,
+    });
+    if (!resUploadHatsDetails)
+      throw new Error("Failed to upload metadata to ipfs");
+    const ipfsUri = resUploadHatsDetails.ipfsUri;
+    console.log("ipfsUri", ipfsUri);
+    const parsedLog = await changeHatDetails({
+      hatId: BigInt(topHat.id),
+      newDetails: ipfsUri,
+    });
+    if (!parsedLog) throw new Error("Failed to change hat details");
+    console.log("parsedLog", parsedLog);
+  };
+
+  const changeImage = async () => {
+    if (!topHat) return;
+    const resUploadImage = await uploadImageFileToIpfs();
+    if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
+    const ipfsUri = resUploadImage.ipfsUri;
+    console.log("ipfsUri", ipfsUri);
+    const parsedLog = await changeHatImageURI({
+      hatId: BigInt(topHat.id),
+      newImageURI: ipfsUri,
+    });
+    if (!parsedLog) throw new Error("Failed to change hat image");
+    console.log("parsedLog", parsedLog);
+  };
+
+  const handleSubmit = async () => {
+    if (!wallet) {
+      alert("ウォレットを接続してください。");
+      return;
+    }
+    if (!workspaceName || !workspaceDescription) {
+      alert("全ての項目を入力してください。");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await Promise.all([changeDetails(), changeImage()]);
+    } catch (error) {
+      console.error(error);
+      alert(`エラーが発生しました。${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Box width="100%" pb={10}>
       <PageHeader title="ワークスペース設定" />
@@ -326,7 +400,11 @@ const WorkspaceSettings: FC = () => {
           size="lg"
           maxHeight="64px"
           minHeight="48px"
-          onClick={() => {}}
+          onClick={handleSubmit}
+          disabled={!workspaceName || !workspaceDescription ||
+          (!isChangedDetails() && !imageFile)
+          }
+          loading={isLoading}
         >
           保存
         </CommonButton>

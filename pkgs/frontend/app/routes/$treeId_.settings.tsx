@@ -1,10 +1,10 @@
-import { Box, Text, Flex, Button } from "@chakra-ui/react";
+import { Box, Text, Flex } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import { useNamesByAddresses } from "hooks/useENS";
+import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
-import type { FC } from "react";
+import { useEffect, useState, type FC, useCallback } from "react";
 import { ipfs2https } from "utils/ipfs";
-import { abbreviateAddress } from "utils/wallet";
+import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import CommonButton from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
@@ -61,14 +61,14 @@ const InputWithActionButton: FC<{
 );
 
 const InputAddressWithButton: FC<{
-  placeholder: string;
+  placeholder?: string;
   inputAddress: string;
   setInputAddress: (address: string) => void;
   buttonText: string;
   color?: string;
   backgroundColor?: string;
 }> = ({
-  placeholder,
+  placeholder = "",
   inputAddress,
   setInputAddress,
   buttonText,
@@ -131,6 +131,66 @@ const RoleSubSection: FC<{
 const WorkspaceSettings: FC = () => {
   const { treeId } = useParams();
   const treeInfo = useTreeInfo(Number(treeId));
+  const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(undefined);
+  const [workspaceName, setWorkspaceName] = useState<string>("");
+  const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
+  const [newCreator, setNewCreator] = useState<string>("");
+  const [newAssignee, setNewAssignee] = useState<string>("");
+  const [newCreatorAddress, setNewCreatorAddress] = useState<string | undefined>(undefined);
+  const [newAssigneeAddress, setNewAssigneeAddress] = useState<string | undefined>(undefined);
+  const [newOwner, setNewOwner] = useState<string>("");
+  const { fetchAddresses } = useAddressesByNames(undefined, true);
+
+  useEffect(() => {
+    const setInitialImgUrl = async () => {
+      const url = ipfs2https(treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)?.imageUri);
+      if (url !== workspaceImgUrl) setWorkspaceImgUrl(url);
+    }
+    setInitialImgUrl();
+  }, [treeInfo]);
+
+  useEffect(() => {
+    const setInitialWorkspaceStates = () => {
+      const name = "Hackdays";
+      const description = "Hackdays Hackdays HackdaysHackdaysHackdaysHackdaysHackdaysHackdays";
+      if (name !== workspaceName) setWorkspaceName(name);
+      if (description !== workspaceDescription) setWorkspaceDescription(description);
+    }
+    setInitialWorkspaceStates();
+  }, []);
+
+  const useResolveAddressEffect = (nameOrAddress: string, address: string | undefined, setAddress: (address: string | undefined) => void) => {
+    const resolveAddress = useCallback(async () => {
+      let targetAddress = undefined;
+      if (nameOrAddress !== "") {
+        if (isValidEthAddress(nameOrAddress)) {
+          targetAddress = nameOrAddress;
+        } else if (!nameOrAddress.startsWith("0x")) {
+          // @todo 0x で始まる名前（例：0x-yawn）は resolve しなくてよいのか検討
+          const addressesData = await fetchAddresses([nameOrAddress]);
+          if (addressesData) console.log("addressesData:", addressesData);
+          const resolvedAddress = addressesData?.[0]?.[0]?.address;
+          console.log("resolvedAddress:", resolvedAddress);
+          if (resolvedAddress) {
+            targetAddress = resolvedAddress;
+          }
+        }
+      }
+      if (targetAddress !== address) {
+        setAddress(targetAddress);
+        console.log("nameOrAddress:", nameOrAddress);
+        console.log("set address:", targetAddress);
+      }
+      console.log("targetAddress:", targetAddress);
+    }, [nameOrAddress, address, setAddress]);
+
+    useEffect(() => {
+      resolveAddress();
+    }, [resolveAddress]);
+  };
+
+  useResolveAddressEffect(newCreator, newCreatorAddress, setNewCreatorAddress);
+  useResolveAddressEffect(newAssignee, newAssigneeAddress, setNewAssigneeAddress);
 
   return (
     <Box width="100%" pb={10}>
@@ -147,10 +207,7 @@ const WorkspaceSettings: FC = () => {
             borderRadius="3xl"
           >
             <WorkspaceIcon
-              workspaceImageUrl={ipfs2https(
-                treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)
-                  ?.imageUri,
-              )}
+              workspaceImageUrl={workspaceImgUrl}
             />
           </Box>
           <Box>
@@ -161,56 +218,51 @@ const WorkspaceSettings: FC = () => {
         </Flex>
         <SettingsSubSection headingText="名前">
           <CommonInput
-            placeholder={"Hackdays"}
-            value={"Hackdays"}
-            onChange={(e) => console.log(e.target.value)}
+            // placeholder={workspaceName}
+            value={workspaceName}
+            onChange={(e) => setWorkspaceName(e.target.value)}
           />
         </SettingsSubSection>
         <SettingsSubSection headingText="説明">
           <CommonTextArea
             minHeight="80px"
-            placeholder={"Hackdays"}
-            value={"Hackdays　Hackdays　HackdaysHackdaysHackdaysHackdaysHackdaysHackdays"}
-            onChange={(e) => console.log(e.target.value)}
+            // placeholder={workspaceDescription}
+            value={workspaceDescription}
+            onChange={(e) => setWorkspaceDescription(e.target.value)}
           />
         </SettingsSubSection>
-        <Button
+        <CommonButton
           size="lg"
-          w="100%"
-          h="40px"
           maxHeight="64px"
           minHeight="48px"
-          backgroundColor="yellow.400"
-          color="gray.800"
-          borderRadius="12px"
           onClick={() => {}}
         >
           保存
-        </Button>
+        </CommonButton>
       </SettingsSection>
       <SettingsSection headingText="ワークスペースの権限">
         <RoleSubSection
           addresses={["0xEef377Bdf67A227a744e386231fB3f264C158CDF"]}
           accounts={[{ name: "test2-1", address: "0xEef377Bdf67A227a744e386231fB3f264C158CDF" }]}
           headingText="役割の新規作成"
-          inputAddress=""
-          setInputAddress={() => {}}
+          inputAddress={newCreator}
+          setInputAddress={setNewCreator}
         />
         <RoleSubSection
           addresses={["0xEef377Bdf67A227a744e386231fB3f264C158CDF"]}
           accounts={[{ name: "test2-1", address: "0xEef377Bdf67A227a744e386231fB3f264C158CDF" }]}
           headingText="役割の割当・休止・剥奪"
-          inputAddress=""
-          setInputAddress={() => {}}
+          inputAddress={newAssignee}
+          setInputAddress={setNewAssignee}
         />
         <SettingsSubSection headingText="オーナー（注意して変更してください）">
           <InputAddressWithButton
-            placeholder="0x1234567890"
-            inputAddress="0x1234567890"
+            // placeholder="0x1234567890"
+            inputAddress={newOwner}
             buttonText="変更"
             color="white"
             backgroundColor="orange.500"
-            setInputAddress={() => {}}
+            setInputAddress={setNewOwner}
           />
         </SettingsSubSection>
       </SettingsSection>

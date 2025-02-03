@@ -168,9 +168,7 @@ const WorkspaceSettings: FC = () => {
         } else if (!nameOrAddress.startsWith("0x")) {
           // @todo 0x で始まる名前（例：0x-yawn）は resolve しなくてよいのか検討
           const addressesData = await fetchAddresses([nameOrAddress]);
-          if (addressesData) console.log("addressesData:", addressesData);
           const resolvedAddress = addressesData?.[0]?.[0]?.address;
-          console.log("resolvedAddress:", resolvedAddress);
           if (resolvedAddress) {
             targetAddress = resolvedAddress;
           }
@@ -178,8 +176,6 @@ const WorkspaceSettings: FC = () => {
       }
       if (targetAddress !== address) {
         setAddress(targetAddress);
-        console.log("nameOrAddress:", nameOrAddress);
-        console.log("set address:", targetAddress);
       }
       console.log("targetAddress:", targetAddress);
     }, [nameOrAddress, address, setAddress]);

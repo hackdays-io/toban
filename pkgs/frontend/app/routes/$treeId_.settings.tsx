@@ -1,11 +1,14 @@
 import { Box, Text, Flex } from "@chakra-ui/react";
+import { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
+import axios from "axios";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
 import { useEffect, useState, type FC, useCallback } from "react";
+import { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
-import CommonButton from "~/components/common/CommonButton";
+import { CommonButton } from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -140,24 +143,35 @@ const WorkspaceSettings: FC = () => {
   const [newAssigneeAddress, setNewAssigneeAddress] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
   const { fetchAddresses } = useAddressesByNames(undefined, true);
+  const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
 
   useEffect(() => {
-    const setInitialImgUrl = async () => {
-      const url = ipfs2https(treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)?.imageUri);
-      if (url !== workspaceImgUrl) setWorkspaceImgUrl(url);
-    }
-    setInitialImgUrl();
+    const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
+    if (computedTopHat !== topHat) setTopHat(computedTopHat);
   }, [treeInfo]);
 
   useEffect(() => {
-    const setInitialWorkspaceStates = () => {
-      const name = "Hackdays";
-      const description = "Hackdays Hackdays HackdaysHackdaysHackdaysHackdaysHackdaysHackdays";
+    const setInitialWorkspaceImgUrl = async () => {
+      if (!topHat?.imageUri) return;
+      const url = ipfs2https(topHat.imageUri);
+      if (url !== workspaceImgUrl) setWorkspaceImgUrl(url);
+    }
+    setInitialWorkspaceImgUrl();
+  }, [topHat]);
+
+  useEffect(() => {
+    const setInitialWorkspaceStates = async () => {
+      if (!topHat?.details) return;
+      const { data } = await axios.get<HatsDetailSchama>(
+        ipfs2https(topHat.details) || "",
+      );
+      const name = data.data.name;
+      const description = data.data.description;
       if (name !== workspaceName) setWorkspaceName(name);
-      if (description !== workspaceDescription) setWorkspaceDescription(description);
+      if (description !== workspaceDescription) setWorkspaceDescription(description ?? "");
     }
     setInitialWorkspaceStates();
-  }, []);
+  }, [topHat]);
 
   const useResolveAddressEffect = (nameOrAddress: string, address: string | undefined, setAddress: (address: string | undefined) => void) => {
     const resolveAddress = useCallback(async () => {

@@ -4,6 +4,7 @@ import { useParams } from "@remix-run/react";
 import axios from "axios";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
+import { useGetWorkspace } from "hooks/useWorkspace";
 import { useEffect, useState, type FC, useCallback } from "react";
 import { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
@@ -54,9 +55,9 @@ const InputWithActionButton: FC<{
     {children}
     <Box>
       <CommonButton
-      color={color}
-      backgroundColor={backgroundColor}
-    >
+        color={color}
+        backgroundColor={backgroundColor}
+      >
         {buttonText}
       </CommonButton>
     </Box>
@@ -87,9 +88,14 @@ const InputAddressWithButton: FC<{
   </InputWithActionButton>
 );
 
+interface Account {
+  name: string;
+  address: string;
+  [key: string]: unknown;
+}
 const RoleSubSection: FC<{
   addresses: string[];
-  accounts: { name: string; address: string }[];
+  accounts: Account[];
   headingText: string;
   inputAddress: string;
   setInputAddress: (address: string) => void;
@@ -134,15 +140,22 @@ const RoleSubSection: FC<{
 const WorkspaceSettings: FC = () => {
   const { treeId } = useParams();
   const treeInfo = useTreeInfo(Number(treeId));
+  const { fetchAddresses } = useAddressesByNames(undefined, true);
+  const { data } = useGetWorkspace(treeId);
+  const { fetchNames } = useNamesByAddresses();
+
   const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(undefined);
   const [workspaceName, setWorkspaceName] = useState<string>("");
   const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
-  const [newCreator, setNewCreator] = useState<string>("");
-  const [newAssignee, setNewAssignee] = useState<string>("");
-  const [newCreatorAddress, setNewCreatorAddress] = useState<string | undefined>(undefined);
-  const [newAssigneeAddress, setNewAssigneeAddress] = useState<string | undefined>(undefined);
+  const [currentCreateHatAuthoritiesAddresses, setCurrentCreateHatAuthoritiesAddresses] = useState<string[]>([]);
+  const [currentOperationAuthoritiesAddresses, setCurrentOperationAuthoritiesAddresses] = useState<string[]>([]);
+  const [currentCreateHatAuthoritiesAccounts, setCurrentCreateHatAuthoritiesAccounts] = useState<Account[]>([]);
+  const [currentOperationAuthoritiesAccounts, setCurrentOperationAuthoritiesAccounts] = useState<Account[]>([]);
+  const [newCreateHatAuthority, setNewCreateHatAuthority] = useState<string>("");
+  const [newOperationAuthority, setNewOperationAuthority] = useState<string>("");
+  const [newCreateHatAuthorityAddress, setNewCreateHatAuthorityAddress] = useState<string | undefined>(undefined);
+  const [newOperationAuthorityAddress, setNewOperationAuthorityAddress] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
-  const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -174,6 +187,53 @@ const WorkspaceSettings: FC = () => {
     setInitialWorkspaceStates();
   }, [topHat]);
 
+  useEffect(() => {
+    const setInitialWorkspaceAuthorities = async () => {
+      if (!data?.workspace) return;
+
+      setInitialAuthority(
+        data.workspace.hatsHatCreatorModule?.authorities,
+        currentCreateHatAuthoritiesAddresses,
+        setCurrentCreateHatAuthoritiesAddresses,
+        setCurrentCreateHatAuthoritiesAccounts,
+      );
+
+      setInitialAuthority(
+        data.workspace.hatsTimeFrameModule?.authorities,
+        currentOperationAuthoritiesAddresses,
+        setCurrentOperationAuthoritiesAddresses,
+        setCurrentOperationAuthoritiesAccounts,
+      );
+    }
+
+    const setInitialAuthority = async (
+      authorities: {
+        address: string;
+        authorised: boolean;
+        [key: string]: unknown;
+      }[] | undefined,
+      currentAddresses: string[],
+      setCurrentAddresses: (value: React.SetStateAction<string[]>) => void,
+      setCurrentAccounts: (value: React.SetStateAction<Account[]>) => void,
+    ) => {
+      // @todo authorised === true の filter は graphql と ts のどちらで行うか？
+      const addresses = authorities?.map((authority) => authority.address);
+      if (addresses !== currentAddresses) {
+        if (addresses) {
+          setCurrentAddresses(addresses);
+
+          const accounts = await fetchNames(addresses);
+          setCurrentAccounts(accounts?.[0] as Account[]);
+        } else {
+          setCurrentAddresses([]);
+          setCurrentAccounts([]);
+        }
+      }
+    }
+
+    setInitialWorkspaceAuthorities();
+  }, [data]);
+
   const useResolveAddressEffect = (nameOrAddress: string, address: string | undefined, setAddress: (address: string | undefined) => void) => {
     const resolveAddress = useCallback(async () => {
       let targetAddress = undefined;
@@ -200,8 +260,8 @@ const WorkspaceSettings: FC = () => {
     }, [resolveAddress]);
   };
 
-  useResolveAddressEffect(newCreator, newCreatorAddress, setNewCreatorAddress);
-  useResolveAddressEffect(newAssignee, newAssigneeAddress, setNewAssigneeAddress);
+  useResolveAddressEffect(newCreateHatAuthority, newCreateHatAuthorityAddress, setNewCreateHatAuthorityAddress);
+  useResolveAddressEffect(newOperationAuthority, newOperationAuthorityAddress, setNewOperationAuthorityAddress);
 
   const handleUploadImg = (file: File | undefined) => {
     if (!file?.type?.startsWith("image/")) {
@@ -273,18 +333,18 @@ const WorkspaceSettings: FC = () => {
       </SettingsSection>
       <SettingsSection headingText="ワークスペースの権限">
         <RoleSubSection
-          addresses={["0xEef377Bdf67A227a744e386231fB3f264C158CDF"]}
-          accounts={[{ name: "test2-1", address: "0xEef377Bdf67A227a744e386231fB3f264C158CDF" }]}
+          addresses={currentCreateHatAuthoritiesAddresses}
+          accounts={currentCreateHatAuthoritiesAccounts}
           headingText="役割の新規作成"
-          inputAddress={newCreator}
-          setInputAddress={setNewCreator}
+          inputAddress={newCreateHatAuthority}
+          setInputAddress={setNewCreateHatAuthority}
         />
         <RoleSubSection
-          addresses={["0xEef377Bdf67A227a744e386231fB3f264C158CDF"]}
-          accounts={[{ name: "test2-1", address: "0xEef377Bdf67A227a744e386231fB3f264C158CDF" }]}
+          addresses={currentOperationAuthoritiesAddresses}
+          accounts={currentOperationAuthoritiesAccounts}
           headingText="役割の割当・休止・剥奪"
-          inputAddress={newAssignee}
-          setInputAddress={setNewAssignee}
+          inputAddress={newOperationAuthority}
+          setInputAddress={setNewOperationAuthority}
         />
         <SettingsSubSection headingText="オーナー（注意して変更してください）">
           <InputAddressWithButton

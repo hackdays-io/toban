@@ -52,6 +52,7 @@ const ActionButtonWrapper: FC<{
   backgroundColor?: string;
   onClick: () => void;
   isLoading: boolean;
+  isDisabled?: boolean;
 }> = ({
   children,
   buttonText,
@@ -59,6 +60,7 @@ const ActionButtonWrapper: FC<{
   backgroundColor = "yellow.400",
   onClick,
   isLoading,
+  isDisabled,
 }) => (
   <Flex gap={2.5} mb={3.5}>
     {children}
@@ -68,6 +70,7 @@ const ActionButtonWrapper: FC<{
         backgroundColor={backgroundColor}
         onClick={onClick}
         loading={isLoading}
+        disabled={isDisabled}
       >
         {buttonText}
       </CommonButton>
@@ -100,6 +103,7 @@ const InputAddressWithButton: FC<{
     backgroundColor={backgroundColor}
     onClick={onClick}
     isLoading={isLoading}
+    isDisabled={inputAccount===""}
   >
     <CommonInput
       placeholder={placeholder}

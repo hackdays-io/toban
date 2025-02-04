@@ -96,6 +96,7 @@ const InputAddressWithButton: FC<
   backgroundColor = "yellow.400",
   onClick,
   isLoading,
+  isDisabled,
 }) => (
   <ActionButtonWrapper
     buttonText={buttonText}
@@ -103,7 +104,7 @@ const InputAddressWithButton: FC<
     backgroundColor={backgroundColor}
     onClick={onClick}
     isLoading={isLoading}
-    isDisabled={inputAccount===""}
+    isDisabled={isDisabled}
   >
     <CommonInput
       placeholder={placeholder}
@@ -228,6 +229,7 @@ const RoleSubSection: FC<{
           buttonText="追加"
           onClick={() => add(address as Address)}
           isLoading={isLoadingAdd}
+          isDisabled={!address}
         />
       </Box>
     </SettingsSubSection>
@@ -458,6 +460,7 @@ const WorkspaceAuthoritiesSettings: FC = () => {
           setInputAccount={setNewOwner}
           onClick={() => {}}
           isLoading={false}
+          isDisabled={!isValidEthAddress(newOwner)}
         />
       </SettingsSubSection>
     </SettingsSection>

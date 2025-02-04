@@ -243,7 +243,9 @@ export const useRenounceHatFromTimeFrameModule = (
   return { renounceHat, isLoading };
 };
 
-export const useGrantOperationAuthority = (hatsTimeFrameModuleAddress: Address) => {
+export const useGrantOperationAuthority = (
+  hatsTimeFrameModuleAddress: Address,
+) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -275,13 +277,15 @@ export const useGrantOperationAuthority = (hatsTimeFrameModuleAddress: Address) 
         setIsLoading(false);
       }
     },
-    [hatsTimeFrameModuleAddress, wallet]
+    [hatsTimeFrameModuleAddress, wallet],
   );
 
   return { grantOperationAuthority, isLoading, isSuccess };
 };
 
-export const useRevokeOperationAuthority = (hatsTimeFrameModuleAddress: Address) => {
+export const useRevokeOperationAuthority = (
+  hatsTimeFrameModuleAddress: Address,
+) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -313,7 +317,7 @@ export const useRevokeOperationAuthority = (hatsTimeFrameModuleAddress: Address)
         setIsLoading(false);
       }
     },
-    [hatsTimeFrameModuleAddress, wallet]
+    [hatsTimeFrameModuleAddress, wallet],
   );
 
   return { revokeOperationAuthority, isLoading, isSuccess };

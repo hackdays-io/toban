@@ -149,9 +149,9 @@ export const useActiveWallet = () => {
 
 export type WalletType =
   | SmartAccountClient<
-    Transport,
-    typeof currentChain,
-    SmartAccount<SmartAccountImplementation>
-  >
+      Transport,
+      typeof currentChain,
+      SmartAccount<SmartAccountImplementation>
+    >
   | WalletClient<CustomTransport, typeof currentChain, Account>
   | undefined;

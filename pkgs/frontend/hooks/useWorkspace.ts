@@ -3,6 +3,8 @@ import { useQuery } from "@apollo/client/react/hooks";
 import type {
   GetWorkspaceQuery,
   GetWorkspaceQueryVariables,
+  HatsHatCreatorModuleAuthority_Filter,
+  HatsTimeFrameModuleAuthority_Filter,
 } from "gql/graphql";
 
 const queryGetWorkspaces = gql(`
@@ -26,7 +28,7 @@ const queryGetWorkspaces = gql(`
 `);
 
 const queryGetWorkspace = gql(`
-  query GetWorkspace($workspaceId: ID!) {
+  query GetWorkspace($workspaceId: ID!, $hatsHatCreatorModuleAuthority_filter: HatsHatCreatorModuleAuthority_filter, $hatsTimeFrameModuleAuthority_filter: HatsTimeFrameModuleAuthority_filter) {
     workspace(id: $workspaceId) {
       blockNumber
       blockTimestamp
@@ -37,7 +39,7 @@ const queryGetWorkspace = gql(`
       topHatId
       hatsHatCreatorModule {
         id
-        authorities(where: { authorised: true }) {
+        authorities(where: $hatsHatCreatorModuleAuthority_filter) {
           address
           authorised
           blockNumber
@@ -48,7 +50,7 @@ const queryGetWorkspace = gql(`
       }
       hatsTimeFrameModule {
         id
-        authorities(where: { authorised: true }) {
+        authorities(where: $hatsTimeFrameModuleAuthority_filter) {
           address
           authorised
           blockNumber
@@ -61,12 +63,18 @@ const queryGetWorkspace = gql(`
   }
 `);
 
-export const useGetWorkspace = (workspaceId?: string) => {
+export const useGetWorkspace = (
+  workspaceId?: string,
+  hatsHatCreatorModuleAuthority_filter?: HatsHatCreatorModuleAuthority_Filter,
+  hatsTimeFrameModuleAuthority_filter?: HatsTimeFrameModuleAuthority_Filter,
+) => {
   const result = useQuery<GetWorkspaceQuery, GetWorkspaceQueryVariables>(
     queryGetWorkspace,
     {
       variables: {
         workspaceId: workspaceId ?? "",
+        hatsHatCreatorModuleAuthority_filter,
+        hatsTimeFrameModuleAuthority_filter,
       },
     },
   );

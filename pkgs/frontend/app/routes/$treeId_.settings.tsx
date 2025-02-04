@@ -1,35 +1,45 @@
-import { Box, Text, Flex, Input, HStack } from "@chakra-ui/react";
-import { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
+import type { ApolloQueryResult } from "@apollo/client/core";
+import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
+import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
+import type { GetWorkspaceQuery } from "gql/graphql";
+import type { Exact, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useHats, useTreeInfo } from "hooks/useHats";
-import { useUploadHatsDetailsToIpfs, useUploadImageFileToIpfs } from "hooks/useIpfs";
-import { useActiveWallet, WalletType } from "hooks/useWallet";
+import {
+  useGrantCreateHatAuthority,
+  useRevokeCreateHatAuthority,
+} from "hooks/useHatsHatCreatorModule";
+import {
+  useGrantOperationAuthority,
+  useRevokeOperationAuthority,
+} from "hooks/useHatsTimeFrameModule";
+import {
+  useUploadHatsDetailsToIpfs,
+  useUploadImageFileToIpfs,
+} from "hooks/useIpfs";
+import type { WalletType } from "hooks/useWallet";
+import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { useEffect, useState, type FC } from "react";
-import { HatsDetailSchama } from "types/hats";
+import type { NameData } from "namestone-sdk";
+import { type FC, useCallback, useEffect, useState } from "react";
+import { FaCircleCheck } from "react-icons/fa6";
+import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
+import type { Address, TransactionReceipt } from "viem";
+import { PageHeader } from "~/components/PageHeader";
 import { CommonButton } from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
-import { PageHeader } from "~/components/PageHeader";
-import { useGrantCreateHatAuthority, useRevokeCreateHatAuthority } from "hooks/useHatsHatCreatorModule";
-import { Address, TransactionReceipt } from "viem";
-import { useGrantOperationAuthority, useRevokeOperationAuthority } from "hooks/useHatsTimeFrameModule";
-import { GetWorkspaceQuery } from "gql/graphql";
-import { NameData } from "namestone-sdk";
-import { Exact, Scalars } from "gql/graphql";
-import { ApolloQueryResult } from "@apollo/client/core";
-import { FaCircleCheck } from "react-icons/fa6";
 
-const SettingsSection: FC<{ children: React.ReactNode; headingText: string }> = ({
-  children,
-  headingText,
-}) => (
+const SettingsSection: FC<{
+  children: React.ReactNode;
+  headingText: string;
+}> = ({ children, headingText }) => (
   <Box mt={2} mb={12}>
     <Text fontSize="md" fontWeight="medium" color="gray.600">
       {headingText}
@@ -38,10 +48,10 @@ const SettingsSection: FC<{ children: React.ReactNode; headingText: string }> = 
   </Box>
 );
 
-const SettingsSubSection: FC<{ children: React.ReactNode; headingText: string }> = ({
-  children,
-  headingText,
-}) => (
+const SettingsSubSection: FC<{
+  children: React.ReactNode;
+  headingText: string;
+}> = ({ children, headingText }) => (
   <Box mt={3} mb={5}>
     <Text mb={3} fontSize="sm" fontWeight="medium" color="gray.600">
       {headingText}
@@ -59,7 +69,8 @@ interface ActionButtonWrapperWithoutChildrenProps {
   isDisabled?: boolean;
 }
 
-interface ActionButtonWrapperProps extends React.PropsWithChildren<ActionButtonWrapperWithoutChildrenProps> {}
+interface ActionButtonWrapperProps
+  extends React.PropsWithChildren<ActionButtonWrapperWithoutChildrenProps> {}
 
 const ActionButtonWrapper: FC<ActionButtonWrapperProps> = ({
   children,
@@ -128,7 +139,9 @@ const InputAddressWithButton: FC<
       >
         <FaCircleCheck />
         <Text color="gray.500">
-          {resolvedAddress ? abbreviateAddress(resolvedAddress) : "address not found"}
+          {resolvedAddress
+            ? abbreviateAddress(resolvedAddress)
+            : "address not found"}
         </Text>
       </HStack>
     </Box>
@@ -136,11 +149,13 @@ const InputAddressWithButton: FC<
 );
 
 const RoleSubSection: FC<{
-  authorities: {
-    address: string;
-    authorised: boolean;
-    [key: string]: unknown;
-  }[] | undefined,
+  authorities:
+    | {
+        address: string;
+        authorised: boolean;
+        [key: string]: unknown;
+      }[]
+    | undefined;
   headingText: string;
   remove: (address: Address) => Promise<TransactionReceipt | undefined>;
   add: (address: Address) => Promise<TransactionReceipt | undefined>;
@@ -148,9 +163,15 @@ const RoleSubSection: FC<{
   isLoadingAdd: boolean;
   isRemoveSuccess: boolean;
   isAddSuccess: boolean;
-  refetch: (variables?: Partial<Exact<{
-    workspaceId: Scalars["ID"]["input"];
-  }>> | undefined) => Promise<ApolloQueryResult<GetWorkspaceQuery>>;
+  refetch: (
+    variables?:
+      | Partial<
+          Exact<{
+            workspaceId: Scalars["ID"]["input"];
+          }>
+        >
+      | undefined,
+  ) => Promise<ApolloQueryResult<GetWorkspaceQuery>>;
 }> = ({
   authorities,
   headingText,
@@ -162,14 +183,17 @@ const RoleSubSection: FC<{
   isAddSuccess,
   refetch,
 }) => {
-  const [currentAuthoritiesAddresses, setCurrentAuthoritiesAddresses] = useState<string[]>([]);
-  const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<NameData[][]>([]);
+  const [currentAuthoritiesAddresses, setCurrentAuthoritiesAddresses] =
+    useState<string[]>([]);
+  const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<
+    NameData[][]
+  >([]);
   const [newAuthority, setNewAuthority] = useState<string>("");
   const { fetchNames } = useNamesByAddresses(currentAuthoritiesAddresses);
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [address, setAddress] = useState<string | undefined>(undefined);
 
-  const setAuthority = async () => {
+  const setAuthority = useCallback(async () => {
     if (!authorities) return;
     const addresses = authorities?.map((authority) => authority.address);
     if (addresses !== currentAuthoritiesAddresses) {
@@ -183,17 +207,17 @@ const RoleSubSection: FC<{
         setCurrentAuthoritiesAccounts([]);
       }
     }
-  }
+  }, [authorities, currentAuthoritiesAddresses, fetchNames]);
 
   useEffect(() => {
     setAuthority();
-  }, [authorities, fetchNames]);
+  }, [setAuthority]);
 
   useEffect(() => {
     const refetchData = async () => {
       const { data } = await refetch();
       console.log("data", data);
-    }
+    };
 
     if (isRemoveSuccess || isAddSuccess) {
       refetchData();
@@ -221,7 +245,7 @@ const RoleSubSection: FC<{
     };
 
     resolveAddress();
-  }, [newAuthority, fetchAddresses]);
+  }, [newAuthority, fetchAddresses, address]);
 
   return (
     <SettingsSubSection headingText={headingText}>
@@ -281,25 +305,31 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
   const { changeHatDetails, changeHatImageURI } = useHats();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
-  const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(undefined);
+  const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(
+    undefined,
+  );
   const [workspaceName, setWorkspaceName] = useState<string>("");
   const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
-  const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<HatsDetailSchama | undefined>(undefined);
+  const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<
+    HatsDetailSchama | undefined
+  >(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
+    const computedTopHat = treeInfo?.hats?.find(
+      (hat) => hat.levelAtLocalTree === 0,
+    );
     if (computedTopHat !== topHat) setTopHat(computedTopHat);
-  }, [treeInfo]);
+  }, [treeInfo, topHat]);
 
   useEffect(() => {
     const setInitialWorkspaceImgUrl = async () => {
       if (!topHat?.imageUri) return;
       const url = ipfs2https(topHat.imageUri);
       if (url !== workspaceImgUrl) setWorkspaceImgUrl(url);
-    }
+    };
     setInitialWorkspaceImgUrl();
-  }, [topHat]);
+  }, [topHat, workspaceImgUrl]);
 
   useEffect(() => {
     const setInitialWorkspaceStates = async () => {
@@ -311,22 +341,21 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
       const description = data.data.description;
       if (name !== workspaceName) setWorkspaceName(name);
       if (data !== currentWorkspaceDetails) setCurrentWorkspaceDetails(data);
-      if (description !== workspaceDescription) setWorkspaceDescription(description ?? "");
-    }
+      if (description !== workspaceDescription)
+        setWorkspaceDescription(description ?? "");
+    };
     setInitialWorkspaceStates();
-  }, [topHat]);
+  }, [topHat, workspaceName, workspaceDescription, currentWorkspaceDetails]);
 
   const handleUploadImg = (file: File | undefined) => {
     if (!file?.type?.startsWith("image/")) {
       alert("画像ファイルを選択してください");
       return;
     }
-    const imgUrl = file
-      ? URL.createObjectURL(file)
-      : undefined;
+    const imgUrl = file ? URL.createObjectURL(file) : undefined;
     setImageFile(file);
     setWorkspaceImgUrl(imgUrl);
-  }
+  };
 
   const isChangedDetails = () => {
     return (
@@ -405,9 +434,7 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
           bg="gray.100"
           borderRadius="3xl"
         >
-          <WorkspaceIcon
-            workspaceImageUrl={workspaceImgUrl}
-          />
+          <WorkspaceIcon workspaceImageUrl={workspaceImgUrl} />
         </Box>
         <Box>
           <CommonButton as="label">
@@ -416,7 +443,7 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
               accept="image/*"
               display="none"
               onChange={(e) => {
-                handleUploadImg(e.target.files?.[0])
+                handleUploadImg(e.target.files?.[0]);
               }}
             />
             <Text>画像をアップロード</Text>
@@ -443,8 +470,10 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
         maxHeight="64px"
         minHeight="48px"
         onClick={handleSubmit}
-        disabled={!workspaceName || !workspaceDescription ||
-        (!isChangedDetails() && !imageFile)
+        disabled={
+          !workspaceName ||
+          !workspaceDescription ||
+          (!isChangedDetails() && !imageFile)
         }
         loading={isLoading}
       >
@@ -465,27 +494,65 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
   treeId,
   treeInfo,
 }) => {
-  const { data, refetch } = useGetWorkspace(treeId);
-  const { grantCreateHatAuthority, isLoading: isGrantCreateHatAuthorityLoading, isSuccess: isGrantCreateHatAuthoritySuccess } = useGrantCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
-  const { revokeCreateHatAuthority, isLoading: isRevokeCreateHatAuthorityLoading, isSuccess: isRevokeCreateHatAuthoritySuccess } = useRevokeCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
-  const { grantOperationAuthority, isLoading: isGrantOperationAuthorityLoading, isSuccess: isGrantOperationAuthoritySuccess } = useGrantOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
-  const { revokeOperationAuthority, isLoading: isRevokeOperationAuthorityLoading, isSuccess: isRevokeOperationAuthoritySuccess } = useRevokeOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
-  const { transferHat, isLoading: isTransferHatLoading, isSuccess: isTransferHatSuccess } = useHats();
+  const { data, refetch } = useGetWorkspace(
+    treeId,
+    { authorised: true },
+    { authorised: true },
+  );
+  const {
+    grantCreateHatAuthority,
+    isLoading: isGrantCreateHatAuthorityLoading,
+    isSuccess: isGrantCreateHatAuthoritySuccess,
+  } = useGrantCreateHatAuthority(
+    data?.workspace?.hatsHatCreatorModule?.id as Address,
+  );
+  const {
+    revokeCreateHatAuthority,
+    isLoading: isRevokeCreateHatAuthorityLoading,
+    isSuccess: isRevokeCreateHatAuthoritySuccess,
+  } = useRevokeCreateHatAuthority(
+    data?.workspace?.hatsHatCreatorModule?.id as Address,
+  );
+  const {
+    grantOperationAuthority,
+    isLoading: isGrantOperationAuthorityLoading,
+    isSuccess: isGrantOperationAuthoritySuccess,
+  } = useGrantOperationAuthority(
+    data?.workspace?.hatsTimeFrameModule?.id as Address,
+  );
+  const {
+    revokeOperationAuthority,
+    isLoading: isRevokeOperationAuthorityLoading,
+    isSuccess: isRevokeOperationAuthoritySuccess,
+  } = useRevokeOperationAuthority(
+    data?.workspace?.hatsTimeFrameModule?.id as Address,
+  );
+  const {
+    transferHat,
+    isLoading: isTransferHatLoading,
+    isSuccess: isTransferHatSuccess,
+  } = useHats();
   const { getWearersInfo } = useHats();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [owner, setOwner] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
-  const [createHatAuthorities, setCreateHatAuthorities] = useState<{
-    address: string;
-    authorised: boolean;
-    [key: string]: unknown;
-  }[] | undefined>(undefined);
-  const [operationAuthorities, setOperationAuthorities] = useState<{
-    address: string;
-    authorised: boolean;
-    [key: string]: unknown;
-  }[] | undefined>(undefined);
+  const [createHatAuthorities, setCreateHatAuthorities] = useState<
+    | {
+        address: string;
+        authorised: boolean;
+        [key: string]: unknown;
+      }[]
+    | undefined
+  >(undefined);
+  const [operationAuthorities, setOperationAuthorities] = useState<
+    | {
+        address: string;
+        authorised: boolean;
+        [key: string]: unknown;
+      }[]
+    | undefined
+  >(undefined);
 
   useEffect(() => {
     setCreateHatAuthorities(data?.workspace?.hatsHatCreatorModule?.authorities);
@@ -493,24 +560,26 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
   }, [data]);
 
   useEffect(() => {
-    const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
+    const computedTopHat = treeInfo?.hats?.find(
+      (hat) => hat.levelAtLocalTree === 0,
+    );
     if (computedTopHat !== topHat) setTopHat(computedTopHat);
-  }, [treeInfo]);
+  }, [treeInfo, topHat]);
 
   useEffect(() => {
     const fetchTophatWearer = async () => {
       if (!topHat) return;
       const wearerInfo = await getWearersInfo({ hatId: topHat.id });
       setOwner(wearerInfo?.[0].id);
-    }
+    };
     fetchTophatWearer();
-  },[topHat, getWearersInfo]);
+  }, [topHat, getWearersInfo]);
 
   useEffect(() => {
     if (isTransferHatSuccess) {
       setOwner(newOwner);
     }
-  },[isTransferHatSuccess]);
+  }, [isTransferHatSuccess, newOwner]);
 
   return (
     <SettingsSection headingText="ワークスペースの権限">
@@ -545,19 +614,21 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
           backgroundColor="orange.500"
           setInputAccount={setNewOwner}
           onClick={() => {
-            wallet && topHat && transferHat({
-              hatId: BigInt(topHat.id),
-              from: wallet.account.address as Address,
-              to: newOwner as Address,
-            });
+            wallet &&
+              topHat &&
+              transferHat({
+                hatId: BigInt(topHat.id),
+                from: wallet.account.address as Address,
+                to: newOwner as Address,
+              });
           }}
           isLoading={isTransferHatLoading}
           isDisabled={!wallet || !topHat || !isValidEthAddress(newOwner)}
         />
       </SettingsSubSection>
     </SettingsSection>
-  )
-}
+  );
+};
 
 const WorkspaceSettings: FC = () => {
   const { wallet } = useActiveWallet();
@@ -568,7 +639,11 @@ const WorkspaceSettings: FC = () => {
     <Box width="100%" pb={10}>
       <PageHeader title="ワークスペース設定" />
       <WorkspaceOverviewSettings wallet={wallet} treeInfo={treeInfo} />
-      <WorkspaceAuthoritiesSettings wallet={wallet} treeId={treeId} treeInfo={treeInfo} />
+      <WorkspaceAuthoritiesSettings
+        wallet={wallet}
+        treeId={treeId}
+        treeInfo={treeInfo}
+      />
     </Box>
   );
 };

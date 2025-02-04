@@ -275,12 +275,9 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
   wallet,
   treeInfo,
 }) => {
-  // const { treeId } = useParams();
-  // const treeInfo = useTreeInfo(Number(treeId));
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
-  // const { wallet } = useActiveWallet();
   const { changeHatDetails, changeHatImageURI } = useHats();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);

@@ -246,12 +246,14 @@ export const useRenounceHatFromTimeFrameModule = (
 export const useGrantOperationAuthority = (hatsTimeFrameModuleAddress: Address) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const grantOperationAuthority = useCallback(
     async (authority: Address) => {
       if (!hatsTimeFrameModuleAddress || !wallet) return;
 
       setIsLoading(true);
+      setIsSuccess(false);
 
       try {
         const txHash = await wallet?.writeContract({
@@ -264,6 +266,8 @@ export const useGrantOperationAuthority = (hatsTimeFrameModuleAddress: Address) 
           hash: txHash,
         });
 
+        setIsSuccess(true);
+
         return receipt;
       } catch (error) {
         console.error(error);
@@ -274,18 +278,20 @@ export const useGrantOperationAuthority = (hatsTimeFrameModuleAddress: Address) 
     [hatsTimeFrameModuleAddress, wallet]
   );
 
-  return { grantOperationAuthority, isLoading };
+  return { grantOperationAuthority, isLoading, isSuccess };
 };
 
 export const useRevokeOperationAuthority = (hatsTimeFrameModuleAddress: Address) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const revokeOperationAuthority = useCallback(
     async (authority: Address) => {
       if (!hatsTimeFrameModuleAddress || !wallet) return;
 
       setIsLoading(true);
+      setIsSuccess(false);
 
       try {
         const txHash = await wallet?.writeContract({
@@ -298,6 +304,8 @@ export const useRevokeOperationAuthority = (hatsTimeFrameModuleAddress: Address)
           hash: txHash,
         });
 
+        setIsSuccess(true);
+
         return receipt;
       } catch (error) {
         console.error(error);
@@ -308,5 +316,5 @@ export const useRevokeOperationAuthority = (hatsTimeFrameModuleAddress: Address)
     [hatsTimeFrameModuleAddress, wallet]
   );
 
-  return { revokeOperationAuthority, isLoading };
+  return { revokeOperationAuthority, isLoading, isSuccess };
 };

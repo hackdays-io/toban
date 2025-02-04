@@ -1,11 +1,11 @@
 import { Box, Text, Flex, Input } from "@chakra-ui/react";
-import { Hat } from "@hatsprotocol/sdk-v1-subgraph";
+import { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useHats, useTreeInfo } from "hooks/useHats";
 import { useUploadHatsDetailsToIpfs, useUploadImageFileToIpfs } from "hooks/useIpfs";
-import { useActiveWallet } from "hooks/useWallet";
+import { useActiveWallet, WalletType } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { useEffect, useState, type FC } from "react";
 import { HatsDetailSchama } from "types/hats";
@@ -20,7 +20,10 @@ import { PageHeader } from "~/components/PageHeader";
 import { useGrantCreateHatAuthority, useRevokeCreateHatAuthority } from "hooks/useHatsHatCreatorModule";
 import { Address, TransactionReceipt } from "viem";
 import { useGrantOperationAuthority, useRevokeOperationAuthority } from "hooks/useHatsTimeFrameModule";
+import { GetWorkspaceQuery } from "gql/graphql";
 import { NameData } from "namestone-sdk";
+import { Exact, Scalars } from "gql/graphql";
+import { ApolloQueryResult } from "@apollo/client/core";
 
 const SettingsSection: FC<{ children: React.ReactNode; headingText: string }> = ({
   children,
@@ -126,6 +129,11 @@ const RoleSubSection: FC<{
   add: (address: Address) => Promise<TransactionReceipt | undefined>;
   isLoadingRemove: boolean;
   isLoadingAdd: boolean;
+  isRemoveSuccess: boolean;
+  isAddSuccess: boolean;
+  refetch: (variables?: Partial<Exact<{
+    workspaceId: Scalars["ID"]["input"];
+  }>> | undefined) => Promise<ApolloQueryResult<GetWorkspaceQuery>>;
 }> = ({
   authorities,
   headingText,
@@ -133,6 +141,9 @@ const RoleSubSection: FC<{
   add,
   isLoadingRemove,
   isLoadingAdd,
+  isRemoveSuccess,
+  isAddSuccess,
+  refetch,
 }) => {
   const [currentAuthoritiesAddresses, setCurrentAuthoritiesAddresses] = useState<string[]>([]);
   const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<NameData[][]>([]);
@@ -141,27 +152,34 @@ const RoleSubSection: FC<{
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [address, setAddress] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    const setInitialAuthority = async (
-    ) => {
-      if (!authorities) return;
-      // @todo authorised === true の filter は graphql と ts のどちらで行うか？
-      const addresses = authorities?.map((authority) => authority.address);
-      if (addresses !== currentAuthoritiesAddresses) {
-        if (addresses) {
-          setCurrentAuthoritiesAddresses(addresses);
+  const setAuthority = async (
+  ) => {
+    if (!authorities) return;
+    // @todo authorised === true の filter は graphql と ts のどちらで行うか？
+    const addresses = authorities?.map((authority) => authority.address);
+    if (addresses !== currentAuthoritiesAddresses) {
+      if (addresses) {
+        setCurrentAuthoritiesAddresses(addresses);
 
-          const accounts = await fetchNames(addresses);
-          setCurrentAuthoritiesAccounts(accounts as NameData[][]);
-        } else {
-          setCurrentAuthoritiesAddresses([]);
-          setCurrentAuthoritiesAccounts([]);
-        }
+        const accounts = await fetchNames(addresses);
+        setCurrentAuthoritiesAccounts(accounts as NameData[][]);
+      } else {
+        setCurrentAuthoritiesAddresses([]);
+        setCurrentAuthoritiesAccounts([]);
       }
     }
+  }
 
-    setInitialAuthority();
+  useEffect(() => {
+    setAuthority();
   }, [authorities, fetchNames]);
+
+  useEffect(() => {
+    if (isRemoveSuccess || isAddSuccess) {
+      setNewAuthority("");
+      refetch();
+    }
+  }, [isRemoveSuccess, isAddSuccess, refetch]);
 
   useEffect(() => {
     const resolveAddress = async () => {
@@ -229,13 +247,21 @@ const RoleSubSection: FC<{
   );
 };
 
-const WorkspaceOverviewSettings: FC = () => {
-  const { treeId } = useParams();
-  const treeInfo = useTreeInfo(Number(treeId));
+interface WorkspaceOverviewSettingsProps {
+  wallet: WalletType;
+  treeInfo: Tree | undefined;
+}
+
+const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
+  wallet,
+  treeInfo,
+}) => {
+  // const { treeId } = useParams();
+  // const treeInfo = useTreeInfo(Number(treeId));
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
-  const { wallet } = useActiveWallet();
+  // const { wallet } = useActiveWallet();
   const { changeHatDetails, changeHatImageURI } = useHats();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
@@ -412,18 +438,50 @@ const WorkspaceOverviewSettings: FC = () => {
   );
 };
 
-const WorkspaceAuthoritiesSettings: FC = () => {
-  const { treeId } = useParams();
-  const { data } = useGetWorkspace(treeId);
+interface WorkspaceAuthoritiesSettingsProps {
+  wallet: WalletType;
+  treeId: string | undefined;
+  treeInfo: Tree | undefined;
+}
 
-  const { grantCreateHatAuthority, isLoading: isGrantCreateHatAuthorityLoading } = useGrantCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
-  const { revokeCreateHatAuthority, isLoading: isRevokeCreateHatAuthorityLoading } = useRevokeCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
-  const { grantOperationAuthority, isLoading: isGrantOperationAuthorityLoading } = useGrantOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
-  const { revokeOperationAuthority, isLoading: isRevokeOperationAuthorityLoading } = useRevokeOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
+const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
+  wallet,
+  treeId,
+  treeInfo,
+}) => {
+  const { data, refetch } = useGetWorkspace(treeId);
+  const { grantCreateHatAuthority, isLoading: isGrantCreateHatAuthorityLoading, isSuccess: isGrantCreateHatAuthoritySuccess } = useGrantCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
+  const { revokeCreateHatAuthority, isLoading: isRevokeCreateHatAuthorityLoading, isSuccess: isRevokeCreateHatAuthoritySuccess } = useRevokeCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
+  const { grantOperationAuthority, isLoading: isGrantOperationAuthorityLoading, isSuccess: isGrantOperationAuthoritySuccess } = useGrantOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
+  const { revokeOperationAuthority, isLoading: isRevokeOperationAuthorityLoading, isSuccess: isRevokeOperationAuthoritySuccess } = useRevokeOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
+  const { transferHat, isLoading: isTransferHatLoading, isSuccess: isTransferHatSuccess } = useHats();
+  const { getWearersInfo } = useHats();
+
+  const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
+  const [owner, setOwner] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
-
   const createHatAuthorities = data?.workspace?.hatsHatCreatorModule?.authorities;
   const operationAuthorities = data?.workspace?.hatsTimeFrameModule?.authorities;
+
+  useEffect(() => {
+    const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
+    if (computedTopHat !== topHat) setTopHat(computedTopHat);
+  }, [treeInfo]);
+
+  useEffect(() => {
+    const fetchTophatWearer = async () => {
+      if (!topHat) return;
+      const wearerInfo = await getWearersInfo({ hatId: topHat.id });
+      setOwner(wearerInfo?.[0].id);
+    }
+    fetchTophatWearer();
+  },[topHat, getWearersInfo]);
+
+  useEffect(() => {
+    if (isTransferHatSuccess) {
+      setOwner(newOwner);
+    }
+  },[isTransferHatSuccess]);
 
   return (
     <SettingsSection headingText="ワークスペースの権限">
@@ -434,6 +492,9 @@ const WorkspaceAuthoritiesSettings: FC = () => {
         add={grantCreateHatAuthority}
         isLoadingRemove={isRevokeCreateHatAuthorityLoading}
         isLoadingAdd={isGrantCreateHatAuthorityLoading}
+        isRemoveSuccess={isRevokeCreateHatAuthoritySuccess}
+        isAddSuccess={isGrantCreateHatAuthoritySuccess}
+        refetch={refetch}
       />
       <RoleSubSection
         authorities={operationAuthorities}
@@ -442,18 +503,27 @@ const WorkspaceAuthoritiesSettings: FC = () => {
         add={grantOperationAuthority}
         isLoadingRemove={isRevokeOperationAuthorityLoading}
         isLoadingAdd={isGrantOperationAuthorityLoading}
+        isRemoveSuccess={isRevokeOperationAuthoritySuccess}
+        isAddSuccess={isGrantOperationAuthoritySuccess}
+        refetch={refetch}
       />
       <SettingsSubSection headingText="オーナー（注意して変更してください）">
         <InputAddressWithButton
-          // placeholder="0x1234567890"
+          placeholder={owner}
           inputAccount={newOwner}
           buttonText="変更"
           color="white"
           backgroundColor="orange.500"
           setInputAccount={setNewOwner}
-          onClick={() => {}}
-          isLoading={false}
-          isDisabled={!isValidEthAddress(newOwner)}
+          onClick={() => {
+            wallet && topHat && transferHat({
+              hatId: BigInt(topHat.id),
+              from: wallet.account.address as Address,
+              to: newOwner as Address,
+            });
+          }}
+          isLoading={isTransferHatLoading}
+          isDisabled={!wallet || !topHat || !isValidEthAddress(newOwner)}
         />
       </SettingsSubSection>
     </SettingsSection>
@@ -461,11 +531,15 @@ const WorkspaceAuthoritiesSettings: FC = () => {
 }
 
 const WorkspaceSettings: FC = () => {
+  const { wallet } = useActiveWallet();
+  const { treeId } = useParams();
+  const treeInfo = useTreeInfo(Number(treeId));
+
   return (
     <Box width="100%" pb={10}>
       <PageHeader title="ワークスペース設定" />
-      <WorkspaceOverviewSettings />
-      <WorkspaceAuthoritiesSettings />
+      <WorkspaceOverviewSettings wallet={wallet} treeInfo={treeInfo} />
+      <WorkspaceAuthoritiesSettings wallet={wallet} treeId={treeId} treeInfo={treeInfo} />
     </Box>
   );
 };

@@ -72,12 +72,13 @@ export const useGrantCreateHatAuthority = (
 ) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
-
+  const [isSuccess, setIsSuccess] = useState(false);
   const grantCreateHatAuthority = useCallback(
     async (authority: Address) => {
       if (!hatsHatCreatorModuleAddress || !wallet) return;
 
       setIsLoading(true);
+      setIsSuccess(false);
 
       try {
         const txHash = await wallet.writeContract({
@@ -92,6 +93,8 @@ export const useGrantCreateHatAuthority = (
           hash: txHash,
         });
 
+        setIsSuccess(true);
+
         return receipt;
       } catch (error) {
         console.error(error);
@@ -102,7 +105,7 @@ export const useGrantCreateHatAuthority = (
     [hatsHatCreatorModuleAddress, wallet],
   );
 
-  return { grantCreateHatAuthority, isLoading };
+  return { grantCreateHatAuthority, isLoading, isSuccess };
 };
 
 export const useRevokeCreateHatAuthority = (
@@ -110,12 +113,14 @@ export const useRevokeCreateHatAuthority = (
 ) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const revokeCreateHatAuthority = useCallback(
     async (authority: Address) => {
       if (!hatsHatCreatorModuleAddress || !wallet) return;
 
       setIsLoading(true);
+      setIsSuccess(false);
 
       try {
         const txHash = await wallet.writeContract({
@@ -130,6 +135,8 @@ export const useRevokeCreateHatAuthority = (
           hash: txHash,
         });
 
+        setIsSuccess(true);
+
         return receipt;
       } catch (error) {
         console.error(error);
@@ -140,5 +147,5 @@ export const useRevokeCreateHatAuthority = (
     [hatsHatCreatorModuleAddress, wallet],
   );
 
-  return { revokeCreateHatAuthority, isLoading };
+  return { revokeCreateHatAuthority, isLoading, isSuccess };
 };

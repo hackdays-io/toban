@@ -187,8 +187,7 @@ const RoleSubSection: FC<{
       if (newAuthority !== "") {
         if (isValidEthAddress(newAuthority)) {
           targetAddress = newAuthority;
-        } else if (!newAuthority.startsWith("0x")) {
-          // @todo 0x で始まる名前（例：0x-yawn）は resolve しなくてよいのか検討
+        } else {
           const addressesData = await fetchAddresses([newAuthority]);
           const resolvedAddress = addressesData?.[0]?.[0]?.address;
           if (resolvedAddress) {

@@ -1,4 +1,4 @@
-import { Box, Text, Flex, Input } from "@chakra-ui/react";
+import { Box, Text, Flex, Input, HStack } from "@chakra-ui/react";
 import { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
@@ -24,6 +24,7 @@ import { GetWorkspaceQuery } from "gql/graphql";
 import { NameData } from "namestone-sdk";
 import { Exact, Scalars } from "gql/graphql";
 import { ApolloQueryResult } from "@apollo/client/core";
+import { FaCircleCheck } from "react-icons/fa6";
 
 const SettingsSection: FC<{ children: React.ReactNode; headingText: string }> = ({
   children,
@@ -90,12 +91,14 @@ const InputAddressWithButton: FC<
     placeholder?: string;
     inputAccount: string;
     setInputAccount: (account: string) => void;
+    resolvedAddress?: string | undefined;
   }
 > = ({
   placeholder = "",
   inputAccount,
   setInputAccount,
   buttonText,
+  resolvedAddress,
   color = "gray.800",
   backgroundColor = "yellow.400",
   onClick,
@@ -110,11 +113,25 @@ const InputAddressWithButton: FC<
     isLoading={isLoading}
     isDisabled={isDisabled}
   >
-    <CommonInput
-      placeholder={placeholder}
-      value={inputAccount}
-      onChange={(e) => setInputAccount(e.target.value)}
-    />
+    <Box width="100%">
+      <CommonInput
+        placeholder={placeholder}
+        value={inputAccount}
+        onChange={(e) => setInputAccount(e.target.value)}
+      />
+      <HStack
+        mt={1}
+        fontSize="sm"
+        justifyContent="end"
+        color="blue.300"
+        visibility={resolvedAddress ? "visible" : "hidden"}
+      >
+        <FaCircleCheck />
+        <Text color="gray.500">
+          {resolvedAddress ? abbreviateAddress(resolvedAddress) : "address not found"}
+        </Text>
+      </HStack>
+    </Box>
   </ActionButtonWrapper>
 );
 
@@ -206,7 +223,7 @@ const RoleSubSection: FC<{
 
   return (
     <SettingsSubSection headingText={headingText}>
-      <Box mb={8}>
+      <Box>
         {currentAuthoritiesAccounts.map((accountArr) => {
           const account = accountArr[0];
           return (
@@ -237,6 +254,7 @@ const RoleSubSection: FC<{
           inputAccount={newAuthority}
           setInputAccount={setNewAuthority}
           buttonText="追加"
+          resolvedAddress={address}
           onClick={() => add(address as Address)}
           isLoading={isLoadingAdd}
           isDisabled={!address}

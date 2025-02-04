@@ -169,10 +169,8 @@ const RoleSubSection: FC<{
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [address, setAddress] = useState<string | undefined>(undefined);
 
-  const setAuthority = async (
-  ) => {
+  const setAuthority = async () => {
     if (!authorities) return;
-    // @todo authorised === true の filter は graphql と ts のどちらで行うか？
     const addresses = authorities?.map((authority) => authority.address);
     if (addresses !== currentAuthoritiesAddresses) {
       if (addresses) {
@@ -192,9 +190,13 @@ const RoleSubSection: FC<{
   }, [authorities, fetchNames]);
 
   useEffect(() => {
+    const refetchData = async () => {
+      const { data } = await refetch();
+      console.log("data", data);
+    }
+
     if (isRemoveSuccess || isAddSuccess) {
-      setNewAuthority("");
-      refetch();
+      refetchData();
     }
   }, [isRemoveSuccess, isAddSuccess, refetch]);
 
@@ -477,8 +479,21 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [owner, setOwner] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
-  const createHatAuthorities = data?.workspace?.hatsHatCreatorModule?.authorities;
-  const operationAuthorities = data?.workspace?.hatsTimeFrameModule?.authorities;
+  const [createHatAuthorities, setCreateHatAuthorities] = useState<{
+    address: string;
+    authorised: boolean;
+    [key: string]: unknown;
+  }[] | undefined>(undefined);
+  const [operationAuthorities, setOperationAuthorities] = useState<{
+    address: string;
+    authorised: boolean;
+    [key: string]: unknown;
+  }[] | undefined>(undefined);
+
+  useEffect(() => {
+    setCreateHatAuthorities(data?.workspace?.hatsHatCreatorModule?.authorities);
+    setOperationAuthorities(data?.workspace?.hatsTimeFrameModule?.authorities);
+  }, [data]);
 
   useEffect(() => {
     const computedTopHat = treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);

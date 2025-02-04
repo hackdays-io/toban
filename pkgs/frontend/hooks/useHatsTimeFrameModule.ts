@@ -242,3 +242,71 @@ export const useRenounceHatFromTimeFrameModule = (
 
   return { renounceHat, isLoading };
 };
+
+export const useGrantOperationAuthority = (hatsTimeFrameModuleAddress: Address) => {
+  const { wallet } = useActiveWallet();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const grantOperationAuthority = useCallback(
+    async (authority: Address) => {
+      if (!hatsTimeFrameModuleAddress || !wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet?.writeContract({
+          ...hatsTimeFrameContractBaseConfig(hatsTimeFrameModuleAddress),
+          functionName: "grantOperationAuthority",
+          args: [authority],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        return receipt;
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [hatsTimeFrameModuleAddress, wallet]
+  );
+
+  return { grantOperationAuthority, isLoading };
+};
+
+export const useRevokeOperationAuthority = (hatsTimeFrameModuleAddress: Address) => {
+  const { wallet } = useActiveWallet();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const revokeOperationAuthority = useCallback(
+    async (authority: Address) => {
+      if (!hatsTimeFrameModuleAddress || !wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet?.writeContract({
+          ...hatsTimeFrameContractBaseConfig(hatsTimeFrameModuleAddress),
+          functionName: "revokeOperationAuthority",
+          args: [authority],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        return receipt;
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [hatsTimeFrameModuleAddress, wallet]
+  );
+
+  return { revokeOperationAuthority, isLoading };
+};

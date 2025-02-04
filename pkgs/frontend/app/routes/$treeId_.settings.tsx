@@ -7,7 +7,7 @@ import { useHats, useTreeInfo } from "hooks/useHats";
 import { useUploadHatsDetailsToIpfs, useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { useEffect, useState, type FC, useCallback } from "react";
+import { useEffect, useState, type FC } from "react";
 import { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
@@ -17,6 +17,9 @@ import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
 import { PageHeader } from "~/components/PageHeader";
+import { useGrantCreateHatAuthority, useRevokeCreateHatAuthority } from "hooks/useHatsHatCreatorModule";
+import { Address, TransactionReceipt } from "viem";
+import { useGrantOperationAuthority, useRevokeOperationAuthority } from "hooks/useHatsTimeFrameModule";
 
 const SettingsSection: FC<{ children: React.ReactNode; headingText: string }> = ({
   children,
@@ -42,16 +45,20 @@ const SettingsSubSection: FC<{ children: React.ReactNode; headingText: string }>
   </Box>
 );
 
-const InputWithActionButton: FC<{
+const ActionButtonWrapper: FC<{
   children: React.ReactNode;
   buttonText: string;
   color?: string;
   backgroundColor?: string;
+  onClick: () => void;
+  isLoading: boolean;
 }> = ({
   children,
   buttonText,
   color = "gray.800",
   backgroundColor = "yellow.400",
+  onClick,
+  isLoading,
 }) => (
   <Flex gap={2.5} mb={3.5}>
     {children}
@@ -59,6 +66,8 @@ const InputWithActionButton: FC<{
       <CommonButton
         color={color}
         backgroundColor={backgroundColor}
+        onClick={onClick}
+        loading={isLoading}
       >
         {buttonText}
       </CommonButton>
@@ -68,26 +77,36 @@ const InputWithActionButton: FC<{
 
 const InputAddressWithButton: FC<{
   placeholder?: string;
-  inputAddress: string;
-  setInputAddress: (address: string) => void;
+  inputAccount: string;
+  setInputAccount: (account: string) => void;
   buttonText: string;
   color?: string;
   backgroundColor?: string;
+  onClick: () => void;
+  isLoading: boolean;
 }> = ({
   placeholder = "",
-  inputAddress,
-  setInputAddress,
+  inputAccount,
+  setInputAccount,
   buttonText,
   color = "gray.800",
   backgroundColor = "yellow.400",
+  onClick,
+  isLoading,
 }) => (
-  <InputWithActionButton buttonText={buttonText} color={color} backgroundColor={backgroundColor}>
+  <ActionButtonWrapper
+    buttonText={buttonText}
+    color={color}
+    backgroundColor={backgroundColor}
+    onClick={onClick}
+    isLoading={isLoading}
+  >
     <CommonInput
       placeholder={placeholder}
-      value={inputAddress}
-      onChange={(e) => setInputAddress(e.target.value)}
+      value={inputAccount}
+      onChange={(e) => setInputAccount(e.target.value)}
     />
-  </InputWithActionButton>
+  </ActionButtonWrapper>
 );
 
 interface Account {
@@ -97,22 +116,69 @@ interface Account {
 }
 const RoleSubSection: FC<{
   addresses: string[];
-  accounts: Account[];
+  accounts: Account[][];
   headingText: string;
-  inputAddress: string;
-  setInputAddress: (address: string) => void;
-}> = ({ addresses, accounts, headingText, inputAddress, setInputAddress }) => {
+  inputAccount: string;
+  setInputAccount: (account: string) => void;
+  remove: (address: Address) => Promise<TransactionReceipt | undefined>;
+  add: (address: Address) => Promise<TransactionReceipt | undefined>;
+  isLoadingRemove: boolean;
+  isLoadingAdd: boolean;
+}> = ({
+  addresses,
+  accounts,
+  headingText,
+  inputAccount,
+  setInputAccount,
+  remove,
+  add,
+  isLoadingRemove,
+  isLoadingAdd,
+}) => {
   const { names } = useNamesByAddresses(addresses);
+  const { fetchAddresses } = useAddressesByNames(undefined, true);
+  const [address, setAddress] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const resolveAddress = async () => {
+      let targetAddress = undefined;
+      if (inputAccount !== "") {
+        if (isValidEthAddress(inputAccount)) {
+          targetAddress = inputAccount;
+        } else if (!inputAccount.startsWith("0x")) {
+          // @todo 0x で始まる名前（例：0x-yawn）は resolve しなくてよいのか検討
+          const addressesData = await fetchAddresses([inputAccount]);
+          const resolvedAddress = addressesData?.[0]?.[0]?.address;
+          if (resolvedAddress) {
+            targetAddress = resolvedAddress;
+          }
+        }
+      }
+      if (targetAddress !== address) {
+        setAddress(targetAddress);
+      }
+      console.log("targetAddress:", targetAddress);
+    };
+
+    resolveAddress();
+  }, [inputAccount, fetchAddresses]);
 
   return (
     <SettingsSubSection headingText={headingText}>
       <Box mb={8}>
-        {accounts.map((account) => {
+        {accounts.map((accountArr) => {
+          const account = accountArr[0];
           const name = names.find(
             (name) => name[0]?.address === account.address,
           )?.[0];
           return (
-            <InputWithActionButton key={account.address} buttonText="削除" backgroundColor="red.300">
+            <ActionButtonWrapper
+              key={account.address}
+              buttonText="削除"
+              backgroundColor="red.300"
+              onClick={() => remove(account.address as Address)}
+              isLoading={isLoadingRemove}
+            >
               <Flex width="100%" alignItems="center" gap={2}>
                 <UserIcon
                   size="40px"
@@ -125,14 +191,16 @@ const RoleSubSection: FC<{
                   </Text>
                 </Box>
               </Flex>
-            </InputWithActionButton>
+            </ActionButtonWrapper>
           );
         })}
         <InputAddressWithButton
           placeholder="ユーザー名 or ウォレットアドレス"
-          inputAddress={inputAddress}
-          setInputAddress={setInputAddress}
+          inputAccount={inputAccount}
+          setInputAccount={setInputAccount}
           buttonText="追加"
+          onClick={() => add(address as Address)}
+          isLoading={isLoadingAdd}
         />
       </Box>
     </SettingsSubSection>
@@ -142,7 +210,6 @@ const RoleSubSection: FC<{
 const WorkspaceSettings: FC = () => {
   const { treeId } = useParams();
   const treeInfo = useTreeInfo(Number(treeId));
-  const { fetchAddresses } = useAddressesByNames(undefined, true);
   const { data } = useGetWorkspace(treeId);
   const { fetchNames } = useNamesByAddresses();
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
@@ -150,6 +217,10 @@ const WorkspaceSettings: FC = () => {
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { wallet } = useActiveWallet();
   const { changeHatDetails, changeHatImageURI } = useHats();
+  const { grantCreateHatAuthority, isLoading: isGrantCreateHatAuthorityLoading } = useGrantCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
+  const { revokeCreateHatAuthority, isLoading: isRevokeCreateHatAuthorityLoading } = useRevokeCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
+  const { grantOperationAuthority, isLoading: isGrantOperationAuthorityLoading } = useGrantOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
+  const { revokeOperationAuthority, isLoading: isRevokeOperationAuthorityLoading } = useRevokeOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
 
   const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(undefined);
   const [workspaceName, setWorkspaceName] = useState<string>("");
@@ -157,12 +228,10 @@ const WorkspaceSettings: FC = () => {
   const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<HatsDetailSchama | undefined>(undefined);
   const [currentCreateHatAuthoritiesAddresses, setCurrentCreateHatAuthoritiesAddresses] = useState<string[]>([]);
   const [currentOperationAuthoritiesAddresses, setCurrentOperationAuthoritiesAddresses] = useState<string[]>([]);
-  const [currentCreateHatAuthoritiesAccounts, setCurrentCreateHatAuthoritiesAccounts] = useState<Account[]>([]);
-  const [currentOperationAuthoritiesAccounts, setCurrentOperationAuthoritiesAccounts] = useState<Account[]>([]);
+  const [currentCreateHatAuthoritiesAccounts, setCurrentCreateHatAuthoritiesAccounts] = useState<Account[][]>([]);
+  const [currentOperationAuthoritiesAccounts, setCurrentOperationAuthoritiesAccounts] = useState<Account[][]>([]);
   const [newCreateHatAuthority, setNewCreateHatAuthority] = useState<string>("");
   const [newOperationAuthority, setNewOperationAuthority] = useState<string>("");
-  const [newCreateHatAuthorityAddress, setNewCreateHatAuthorityAddress] = useState<string | undefined>(undefined);
-  const [newOperationAuthorityAddress, setNewOperationAuthorityAddress] = useState<string | undefined>(undefined);
   const [newOwner, setNewOwner] = useState<string>("");
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
@@ -223,7 +292,7 @@ const WorkspaceSettings: FC = () => {
       }[] | undefined,
       currentAddresses: string[],
       setCurrentAddresses: (value: React.SetStateAction<string[]>) => void,
-      setCurrentAccounts: (value: React.SetStateAction<Account[]>) => void,
+      setCurrentAccounts: (value: React.SetStateAction<Account[][]>) => void,
     ) => {
       // @todo authorised === true の filter は graphql と ts のどちらで行うか？
       const addresses = authorities?.map((authority) => authority.address);
@@ -232,7 +301,8 @@ const WorkspaceSettings: FC = () => {
           setCurrentAddresses(addresses);
 
           const accounts = await fetchNames(addresses);
-          setCurrentAccounts(accounts?.[0] as Account[]);
+          console.log("accounts", accounts);
+          setCurrentAccounts(accounts as Account[][]);
         } else {
           setCurrentAddresses([]);
           setCurrentAccounts([]);
@@ -242,35 +312,6 @@ const WorkspaceSettings: FC = () => {
 
     setInitialWorkspaceAuthorities();
   }, [data]);
-
-  const useResolveAddressEffect = (nameOrAddress: string, address: string | undefined, setAddress: (address: string | undefined) => void) => {
-    const resolveAddress = useCallback(async () => {
-      let targetAddress = undefined;
-      if (nameOrAddress !== "") {
-        if (isValidEthAddress(nameOrAddress)) {
-          targetAddress = nameOrAddress;
-        } else if (!nameOrAddress.startsWith("0x")) {
-          // @todo 0x で始まる名前（例：0x-yawn）は resolve しなくてよいのか検討
-          const addressesData = await fetchAddresses([nameOrAddress]);
-          const resolvedAddress = addressesData?.[0]?.[0]?.address;
-          if (resolvedAddress) {
-            targetAddress = resolvedAddress;
-          }
-        }
-      }
-      if (targetAddress !== address) {
-        setAddress(targetAddress);
-      }
-      console.log("targetAddress:", targetAddress);
-    }, [nameOrAddress, address, setAddress]);
-
-    useEffect(() => {
-      resolveAddress();
-    }, [resolveAddress]);
-  };
-
-  useResolveAddressEffect(newCreateHatAuthority, newCreateHatAuthorityAddress, setNewCreateHatAuthorityAddress);
-  useResolveAddressEffect(newOperationAuthority, newOperationAuthorityAddress, setNewOperationAuthorityAddress);
 
   const handleUploadImg = (file: File | undefined) => {
     if (!file?.type?.startsWith("image/")) {
@@ -414,24 +455,34 @@ const WorkspaceSettings: FC = () => {
           addresses={currentCreateHatAuthoritiesAddresses}
           accounts={currentCreateHatAuthoritiesAccounts}
           headingText="役割の新規作成"
-          inputAddress={newCreateHatAuthority}
-          setInputAddress={setNewCreateHatAuthority}
+          inputAccount={newCreateHatAuthority}
+          setInputAccount={setNewCreateHatAuthority}
+          remove={revokeCreateHatAuthority}
+          add={grantCreateHatAuthority}
+          isLoadingRemove={isRevokeCreateHatAuthorityLoading}
+          isLoadingAdd={isGrantCreateHatAuthorityLoading}
         />
         <RoleSubSection
           addresses={currentOperationAuthoritiesAddresses}
           accounts={currentOperationAuthoritiesAccounts}
           headingText="役割の割当・休止・剥奪"
-          inputAddress={newOperationAuthority}
-          setInputAddress={setNewOperationAuthority}
+          inputAccount={newOperationAuthority}
+          setInputAccount={setNewOperationAuthority}
+          remove={revokeOperationAuthority}
+          add={grantOperationAuthority}
+          isLoadingRemove={isRevokeOperationAuthorityLoading}
+          isLoadingAdd={isGrantOperationAuthorityLoading}
         />
         <SettingsSubSection headingText="オーナー（注意して変更してください）">
           <InputAddressWithButton
             // placeholder="0x1234567890"
-            inputAddress={newOwner}
+            inputAccount={newOwner}
             buttonText="変更"
             color="white"
             backgroundColor="orange.500"
-            setInputAddress={setNewOwner}
+            setInputAccount={setNewOwner}
+            onClick={() => {}}
+            isLoading={false}
           />
         </SettingsSubSection>
       </SettingsSection>

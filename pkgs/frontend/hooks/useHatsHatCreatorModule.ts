@@ -66,3 +66,79 @@ export const useCreateHatFromHatCreatorModule = (
 
   return { createHat, isLoading };
 };
+
+export const useGrantCreateHatAuthority = (
+  hatsHatCreatorModuleAddress: Address,
+) => {
+  const { wallet } = useActiveWallet();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const grantCreateHatAuthority = useCallback(
+    async (authority: Address) => {
+      if (!hatsHatCreatorModuleAddress || !wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          ...hatsHatCreatorContractBaseConfig(
+            hatsHatCreatorModuleAddress as Address,
+          ),
+          functionName: "grantCreateHatAuthority",
+          args: [authority],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        return receipt;
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [hatsHatCreatorModuleAddress, wallet],
+  );
+
+  return { grantCreateHatAuthority, isLoading };
+};
+
+export const useRevokeCreateHatAuthority = (
+  hatsHatCreatorModuleAddress: Address,
+) => {
+  const { wallet } = useActiveWallet();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const revokeCreateHatAuthority = useCallback(
+    async (authority: Address) => {
+      if (!hatsHatCreatorModuleAddress || !wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          ...hatsHatCreatorContractBaseConfig(
+            hatsHatCreatorModuleAddress as Address,
+          ),
+          functionName: "revokeCreateHatAuthority",
+          args: [authority],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        return receipt;
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [hatsHatCreatorModuleAddress, wallet],
+  );
+
+  return { revokeCreateHatAuthority, isLoading };
+};

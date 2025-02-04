@@ -12,7 +12,7 @@
   "workspaces": ["pkgs/*"],
   "scripts": {
     "biome:format": "npx biome format --write .",
-    "biome:check": "npx biome check --apply .",
+    "biome:check": "npx biome check --write .",
     "frontend": "yarn workspace frontend",
     "contract": "yarn workspace contract",
     "cli": "yarn workspace cli",

@@ -41,8 +41,9 @@ export const useNamesByAddresses = (addresses?: string[]) => {
         .map((address) => {
           return [{ address, name: "", domain: "" }];
         });
-      setNames([...data, ...unresolvedAddresses]);
-      return data;
+      const result = [...data, ...unresolvedAddresses];
+      setNames(result);
+      return result;
     } catch (error) {
       console.error(error);
     }

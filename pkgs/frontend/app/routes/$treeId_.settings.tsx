@@ -20,6 +20,7 @@ import { PageHeader } from "~/components/PageHeader";
 import { useGrantCreateHatAuthority, useRevokeCreateHatAuthority } from "hooks/useHatsHatCreatorModule";
 import { Address, TransactionReceipt } from "viem";
 import { useGrantOperationAuthority, useRevokeOperationAuthority } from "hooks/useHatsTimeFrameModule";
+import { NameData } from "namestone-sdk";
 
 const SettingsSection: FC<{ children: React.ReactNode; headingText: string }> = ({
   children,
@@ -114,11 +115,6 @@ const InputAddressWithButton: FC<
   </ActionButtonWrapper>
 );
 
-interface Account {
-  name: string;
-  address: string;
-  [key: string]: unknown;
-}
 const RoleSubSection: FC<{
   authorities: {
     address: string;
@@ -139,9 +135,9 @@ const RoleSubSection: FC<{
   isLoadingAdd,
 }) => {
   const [currentAuthoritiesAddresses, setCurrentAuthoritiesAddresses] = useState<string[]>([]);
-  const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<Account[][]>([]);
+  const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<NameData[][]>([]);
   const [newAuthority, setNewAuthority] = useState<string>("");
-  const { names, fetchNames } = useNamesByAddresses(currentAuthoritiesAddresses);
+  const { fetchNames } = useNamesByAddresses(currentAuthoritiesAddresses);
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [address, setAddress] = useState<string | undefined>(undefined);
 
@@ -156,7 +152,7 @@ const RoleSubSection: FC<{
           setCurrentAuthoritiesAddresses(addresses);
 
           const accounts = await fetchNames(addresses);
-          setCurrentAuthoritiesAccounts(accounts as Account[][]);
+          setCurrentAuthoritiesAccounts(accounts as NameData[][]);
         } else {
           setCurrentAuthoritiesAddresses([]);
           setCurrentAuthoritiesAccounts([]);
@@ -196,9 +192,6 @@ const RoleSubSection: FC<{
       <Box mb={8}>
         {currentAuthoritiesAccounts.map((accountArr) => {
           const account = accountArr[0];
-          const name = names.find(
-            (name) => name[0]?.address === account.address,
-          )?.[0];
           return (
             <ActionButtonWrapper
               key={account.address}
@@ -210,12 +203,12 @@ const RoleSubSection: FC<{
               <Flex width="100%" alignItems="center" gap={2}>
                 <UserIcon
                   size="40px"
-                  userImageUrl={ipfs2https(name?.text_records?.avatar)}
+                  userImageUrl={ipfs2https(account?.text_records?.avatar)}
                 />
                 <Box flexGrow={1}>
-                  <Text textStyle="sm">{name?.name}</Text>
+                  <Text textStyle="sm">{account?.name}</Text>
                   <Text textStyle="sm">
-                    {abbreviateAddress(name?.address || "")}
+                    {abbreviateAddress(account?.address || "")}
                   </Text>
                 </Box>
               </Flex>

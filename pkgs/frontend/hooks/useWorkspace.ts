@@ -37,7 +37,7 @@ const queryGetWorkspace = gql(`
       topHatId
       hatsHatCreatorModule {
         id
-        authorities {
+        authorities(where: { authorised: true }) {
           address
           authorised
           blockNumber
@@ -48,7 +48,7 @@ const queryGetWorkspace = gql(`
       }
       hatsTimeFrameModule {
         id
-        authorities {
+        authorities(where: { authorised: true }) {
           address
           authorised
           blockNumber

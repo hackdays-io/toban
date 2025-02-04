@@ -45,15 +45,18 @@ const SettingsSubSection: FC<{ children: React.ReactNode; headingText: string }>
   </Box>
 );
 
-const ActionButtonWrapper: FC<{
-  children: React.ReactNode;
+interface ActionButtonWrapperWithoutChildrenProps {
   buttonText: string;
   color?: string;
   backgroundColor?: string;
   onClick: () => void;
   isLoading: boolean;
   isDisabled?: boolean;
-}> = ({
+}
+
+interface ActionButtonWrapperProps extends React.PropsWithChildren<ActionButtonWrapperWithoutChildrenProps> {}
+
+const ActionButtonWrapper: FC<ActionButtonWrapperProps> = ({
   children,
   buttonText,
   color = "gray.800",
@@ -78,16 +81,13 @@ const ActionButtonWrapper: FC<{
   </Flex>
 );
 
-const InputAddressWithButton: FC<{
-  placeholder?: string;
-  inputAccount: string;
-  setInputAccount: (account: string) => void;
-  buttonText: string;
-  color?: string;
-  backgroundColor?: string;
-  onClick: () => void;
-  isLoading: boolean;
-}> = ({
+const InputAddressWithButton: FC<
+  ActionButtonWrapperWithoutChildrenProps & {
+    placeholder?: string;
+    inputAccount: string;
+    setInputAccount: (account: string) => void;
+  }
+> = ({
   placeholder = "",
   inputAccount,
   setInputAccount,
@@ -119,39 +119,62 @@ interface Account {
   [key: string]: unknown;
 }
 const RoleSubSection: FC<{
-  addresses: string[];
-  accounts: Account[][];
+  authorities: {
+    address: string;
+    authorised: boolean;
+    [key: string]: unknown;
+  }[] | undefined,
   headingText: string;
-  inputAccount: string;
-  setInputAccount: (account: string) => void;
   remove: (address: Address) => Promise<TransactionReceipt | undefined>;
   add: (address: Address) => Promise<TransactionReceipt | undefined>;
   isLoadingRemove: boolean;
   isLoadingAdd: boolean;
 }> = ({
-  addresses,
-  accounts,
+  authorities,
   headingText,
-  inputAccount,
-  setInputAccount,
   remove,
   add,
   isLoadingRemove,
   isLoadingAdd,
 }) => {
-  const { names } = useNamesByAddresses(addresses);
+  const [currentAuthoritiesAddresses, setCurrentAuthoritiesAddresses] = useState<string[]>([]);
+  const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<Account[][]>([]);
+  const [newAuthority, setNewAuthority] = useState<string>("");
+  const { names, fetchNames } = useNamesByAddresses(currentAuthoritiesAddresses);
   const { fetchAddresses } = useAddressesByNames(undefined, true);
   const [address, setAddress] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    const setInitialAuthority = async (
+    ) => {
+      if (!authorities) return;
+      // @todo authorised === true の filter は graphql と ts のどちらで行うか？
+      const addresses = authorities?.map((authority) => authority.address);
+      if (addresses !== currentAuthoritiesAddresses) {
+        if (addresses) {
+          setCurrentAuthoritiesAddresses(addresses);
+
+          const accounts = await fetchNames(addresses);
+          setCurrentAuthoritiesAccounts(accounts as Account[][]);
+        } else {
+          setCurrentAuthoritiesAddresses([]);
+          setCurrentAuthoritiesAccounts([]);
+        }
+      }
+    }
+
+    setInitialAuthority();
+  }, [authorities, fetchNames]);
+
+  useEffect(() => {
     const resolveAddress = async () => {
       let targetAddress = undefined;
-      if (inputAccount !== "") {
-        if (isValidEthAddress(inputAccount)) {
-          targetAddress = inputAccount;
-        } else if (!inputAccount.startsWith("0x")) {
+      if (newAuthority !== "") {
+        if (isValidEthAddress(newAuthority)) {
+          targetAddress = newAuthority;
+        } else if (!newAuthority.startsWith("0x")) {
           // @todo 0x で始まる名前（例：0x-yawn）は resolve しなくてよいのか検討
-          const addressesData = await fetchAddresses([inputAccount]);
+          const addressesData = await fetchAddresses([newAuthority]);
           const resolvedAddress = addressesData?.[0]?.[0]?.address;
           if (resolvedAddress) {
             targetAddress = resolvedAddress;
@@ -165,12 +188,12 @@ const RoleSubSection: FC<{
     };
 
     resolveAddress();
-  }, [inputAccount, fetchAddresses]);
+  }, [newAuthority, fetchAddresses]);
 
   return (
     <SettingsSubSection headingText={headingText}>
       <Box mb={8}>
-        {accounts.map((accountArr) => {
+        {currentAuthoritiesAccounts.map((accountArr) => {
           const account = accountArr[0];
           const name = names.find(
             (name) => name[0]?.address === account.address,
@@ -200,8 +223,8 @@ const RoleSubSection: FC<{
         })}
         <InputAddressWithButton
           placeholder="ユーザー名 or ウォレットアドレス"
-          inputAccount={inputAccount}
-          setInputAccount={setInputAccount}
+          inputAccount={newAuthority}
+          setInputAccount={setNewAuthority}
           buttonText="追加"
           onClick={() => add(address as Address)}
           isLoading={isLoadingAdd}
@@ -211,33 +234,20 @@ const RoleSubSection: FC<{
   );
 };
 
-const WorkspaceSettings: FC = () => {
+const WorkspaceOverviewSettings: FC = () => {
   const { treeId } = useParams();
   const treeInfo = useTreeInfo(Number(treeId));
-  const { data } = useGetWorkspace(treeId);
-  const { fetchNames } = useNamesByAddresses();
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { wallet } = useActiveWallet();
   const { changeHatDetails, changeHatImageURI } = useHats();
-  const { grantCreateHatAuthority, isLoading: isGrantCreateHatAuthorityLoading } = useGrantCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
-  const { revokeCreateHatAuthority, isLoading: isRevokeCreateHatAuthorityLoading } = useRevokeCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
-  const { grantOperationAuthority, isLoading: isGrantOperationAuthorityLoading } = useGrantOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
-  const { revokeOperationAuthority, isLoading: isRevokeOperationAuthorityLoading } = useRevokeOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
 
+  const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(undefined);
   const [workspaceName, setWorkspaceName] = useState<string>("");
   const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
   const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<HatsDetailSchama | undefined>(undefined);
-  const [currentCreateHatAuthoritiesAddresses, setCurrentCreateHatAuthoritiesAddresses] = useState<string[]>([]);
-  const [currentOperationAuthoritiesAddresses, setCurrentOperationAuthoritiesAddresses] = useState<string[]>([]);
-  const [currentCreateHatAuthoritiesAccounts, setCurrentCreateHatAuthoritiesAccounts] = useState<Account[][]>([]);
-  const [currentOperationAuthoritiesAccounts, setCurrentOperationAuthoritiesAccounts] = useState<Account[][]>([]);
-  const [newCreateHatAuthority, setNewCreateHatAuthority] = useState<string>("");
-  const [newOperationAuthority, setNewOperationAuthority] = useState<string>("");
-  const [newOwner, setNewOwner] = useState<string>("");
-  const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -268,54 +278,6 @@ const WorkspaceSettings: FC = () => {
     }
     setInitialWorkspaceStates();
   }, [topHat]);
-
-  useEffect(() => {
-    const setInitialWorkspaceAuthorities = async () => {
-      if (!data?.workspace) return;
-
-      setInitialAuthority(
-        data.workspace.hatsHatCreatorModule?.authorities,
-        currentCreateHatAuthoritiesAddresses,
-        setCurrentCreateHatAuthoritiesAddresses,
-        setCurrentCreateHatAuthoritiesAccounts,
-      );
-
-      setInitialAuthority(
-        data.workspace.hatsTimeFrameModule?.authorities,
-        currentOperationAuthoritiesAddresses,
-        setCurrentOperationAuthoritiesAddresses,
-        setCurrentOperationAuthoritiesAccounts,
-      );
-    }
-
-    const setInitialAuthority = async (
-      authorities: {
-        address: string;
-        authorised: boolean;
-        [key: string]: unknown;
-      }[] | undefined,
-      currentAddresses: string[],
-      setCurrentAddresses: (value: React.SetStateAction<string[]>) => void,
-      setCurrentAccounts: (value: React.SetStateAction<Account[][]>) => void,
-    ) => {
-      // @todo authorised === true の filter は graphql と ts のどちらで行うか？
-      const addresses = authorities?.map((authority) => authority.address);
-      if (addresses !== currentAddresses) {
-        if (addresses) {
-          setCurrentAddresses(addresses);
-
-          const accounts = await fetchNames(addresses);
-          console.log("accounts", accounts);
-          setCurrentAccounts(accounts as Account[][]);
-        } else {
-          setCurrentAddresses([]);
-          setCurrentAccounts([]);
-        }
-      }
-    }
-
-    setInitialWorkspaceAuthorities();
-  }, [data]);
 
   const handleUploadImg = (file: File | undefined) => {
     if (!file?.type?.startsWith("image/")) {
@@ -395,101 +357,119 @@ const WorkspaceSettings: FC = () => {
   };
 
   return (
+    <SettingsSection headingText="ワークスペースの概要">
+      <Flex mt={8} width="100%" gap={8} alignItems="center">
+        <Box
+          mb={4}
+          minW="120px"
+          maxW="200px"
+          w="20%"
+          aspectRatio={1}
+          bg="gray.100"
+          borderRadius="3xl"
+        >
+          <WorkspaceIcon
+            workspaceImageUrl={workspaceImgUrl}
+          />
+        </Box>
+        <Box>
+          <CommonButton as="label">
+            <Input
+              type="file"
+              accept="image/*"
+              display="none"
+              onChange={(e) => {
+                handleUploadImg(e.target.files?.[0])
+              }}
+            />
+            <Text>画像をアップロード</Text>
+          </CommonButton>
+        </Box>
+      </Flex>
+      <SettingsSubSection headingText="名前">
+        <CommonInput
+          // placeholder={workspaceName}
+          value={workspaceName}
+          onChange={(e) => setWorkspaceName(e.target.value)}
+        />
+      </SettingsSubSection>
+      <SettingsSubSection headingText="説明">
+        <CommonTextArea
+          minHeight="80px"
+          // placeholder={workspaceDescription}
+          value={workspaceDescription}
+          onChange={(e) => setWorkspaceDescription(e.target.value)}
+        />
+      </SettingsSubSection>
+      <CommonButton
+        size="lg"
+        maxHeight="64px"
+        minHeight="48px"
+        onClick={handleSubmit}
+        disabled={!workspaceName || !workspaceDescription ||
+        (!isChangedDetails() && !imageFile)
+        }
+        loading={isLoading}
+      >
+        保存
+      </CommonButton>
+    </SettingsSection>
+  );
+};
+
+const WorkspaceAuthoritiesSettings: FC = () => {
+  const { treeId } = useParams();
+  const { data } = useGetWorkspace(treeId);
+
+  const { grantCreateHatAuthority, isLoading: isGrantCreateHatAuthorityLoading } = useGrantCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
+  const { revokeCreateHatAuthority, isLoading: isRevokeCreateHatAuthorityLoading } = useRevokeCreateHatAuthority(data?.workspace?.hatsHatCreatorModule?.id as Address);
+  const { grantOperationAuthority, isLoading: isGrantOperationAuthorityLoading } = useGrantOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
+  const { revokeOperationAuthority, isLoading: isRevokeOperationAuthorityLoading } = useRevokeOperationAuthority(data?.workspace?.hatsTimeFrameModule?.id as Address);
+  const [newOwner, setNewOwner] = useState<string>("");
+
+  const createHatAuthorities = data?.workspace?.hatsHatCreatorModule?.authorities;
+  const operationAuthorities = data?.workspace?.hatsTimeFrameModule?.authorities;
+
+  return (
+    <SettingsSection headingText="ワークスペースの権限">
+      <RoleSubSection
+        authorities={createHatAuthorities}
+        headingText="役割の新規作成"
+        remove={revokeCreateHatAuthority}
+        add={grantCreateHatAuthority}
+        isLoadingRemove={isRevokeCreateHatAuthorityLoading}
+        isLoadingAdd={isGrantCreateHatAuthorityLoading}
+      />
+      <RoleSubSection
+        authorities={operationAuthorities}
+        headingText="役割の割当・休止・剥奪"
+        remove={revokeOperationAuthority}
+        add={grantOperationAuthority}
+        isLoadingRemove={isRevokeOperationAuthorityLoading}
+        isLoadingAdd={isGrantOperationAuthorityLoading}
+      />
+      <SettingsSubSection headingText="オーナー（注意して変更してください）">
+        <InputAddressWithButton
+          // placeholder="0x1234567890"
+          inputAccount={newOwner}
+          buttonText="変更"
+          color="white"
+          backgroundColor="orange.500"
+          setInputAccount={setNewOwner}
+          onClick={() => {}}
+          isLoading={false}
+        />
+      </SettingsSubSection>
+    </SettingsSection>
+  )
+}
+
+const WorkspaceSettings: FC = () => {
+  return (
     <Box width="100%" pb={10}>
       <PageHeader title="ワークスペース設定" />
-      <SettingsSection headingText="ワークスペースの概要">
-        <Flex mt={8} width="100%" gap={8} alignItems="center">
-          <Box
-            mb={4}
-            minW="120px"
-            maxW="200px"
-            w="20%"
-            aspectRatio={1}
-            bg="gray.100"
-            borderRadius="3xl"
-          >
-            <WorkspaceIcon
-              workspaceImageUrl={workspaceImgUrl}
-            />
-          </Box>
-          <Box>
-            <CommonButton as="label">
-              <Input
-                type="file"
-                accept="image/*"
-                display="none"
-                onChange={(e) => {
-                  handleUploadImg(e.target.files?.[0])
-                }}
-              />
-              <Text>画像をアップロード</Text>
-            </CommonButton>
-          </Box>
-        </Flex>
-        <SettingsSubSection headingText="名前">
-          <CommonInput
-            // placeholder={workspaceName}
-            value={workspaceName}
-            onChange={(e) => setWorkspaceName(e.target.value)}
-          />
-        </SettingsSubSection>
-        <SettingsSubSection headingText="説明">
-          <CommonTextArea
-            minHeight="80px"
-            // placeholder={workspaceDescription}
-            value={workspaceDescription}
-            onChange={(e) => setWorkspaceDescription(e.target.value)}
-          />
-        </SettingsSubSection>
-        <CommonButton
-          size="lg"
-          maxHeight="64px"
-          minHeight="48px"
-          onClick={handleSubmit}
-          disabled={!workspaceName || !workspaceDescription ||
-          (!isChangedDetails() && !imageFile)
-          }
-          loading={isLoading}
-        >
-          保存
-        </CommonButton>
-      </SettingsSection>
-      <SettingsSection headingText="ワークスペースの権限">
-        <RoleSubSection
-          addresses={currentCreateHatAuthoritiesAddresses}
-          accounts={currentCreateHatAuthoritiesAccounts}
-          headingText="役割の新規作成"
-          inputAccount={newCreateHatAuthority}
-          setInputAccount={setNewCreateHatAuthority}
-          remove={revokeCreateHatAuthority}
-          add={grantCreateHatAuthority}
-          isLoadingRemove={isRevokeCreateHatAuthorityLoading}
-          isLoadingAdd={isGrantCreateHatAuthorityLoading}
-        />
-        <RoleSubSection
-          addresses={currentOperationAuthoritiesAddresses}
-          accounts={currentOperationAuthoritiesAccounts}
-          headingText="役割の割当・休止・剥奪"
-          inputAccount={newOperationAuthority}
-          setInputAccount={setNewOperationAuthority}
-          remove={revokeOperationAuthority}
-          add={grantOperationAuthority}
-          isLoadingRemove={isRevokeOperationAuthorityLoading}
-          isLoadingAdd={isGrantOperationAuthorityLoading}
-        />
-        <SettingsSubSection headingText="オーナー（注意して変更してください）">
-          <InputAddressWithButton
-            // placeholder="0x1234567890"
-            inputAccount={newOwner}
-            buttonText="変更"
-            color="white"
-            backgroundColor="orange.500"
-            setInputAccount={setNewOwner}
-            onClick={() => {}}
-            isLoading={false}
-          />
-        </SettingsSubSection>
-      </SettingsSection>
+      <WorkspaceOverviewSettings />
+      <WorkspaceAuthoritiesSettings />
     </Box>
   );
 };

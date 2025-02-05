@@ -23,8 +23,9 @@ import type { WalletType } from "hooks/useWallet";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaCircleCheck } from "react-icons/fa6";
+import { toast } from "react-toastify";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
@@ -196,18 +197,16 @@ const RoleSubSection: FC<{
   const setAuthority = useCallback(async () => {
     if (!authorities) return;
     const addresses = authorities?.map((authority) => authority.address);
-    if (addresses !== currentAuthoritiesAddresses) {
-      if (addresses) {
-        setCurrentAuthoritiesAddresses(addresses);
+    if (addresses) {
+      setCurrentAuthoritiesAddresses(addresses);
 
-        const accounts = await fetchNames(addresses);
-        setCurrentAuthoritiesAccounts(accounts as NameData[][]);
-      } else {
-        setCurrentAuthoritiesAddresses([]);
-        setCurrentAuthoritiesAccounts([]);
-      }
+      const accounts = await fetchNames(addresses);
+      setCurrentAuthoritiesAccounts(accounts as NameData[][]);
+    } else {
+      setCurrentAuthoritiesAddresses([]);
+      setCurrentAuthoritiesAccounts([]);
     }
-  }, [authorities, currentAuthoritiesAddresses, fetchNames]);
+  }, [authorities, fetchNames]);
 
   useEffect(() => {
     setAuthority();
@@ -221,6 +220,9 @@ const RoleSubSection: FC<{
 
     if (isRemoveSuccess || isAddSuccess) {
       refetchData();
+      toast.success(
+        "権限の変更が完了しました。反映には時間がかかる場合があります。",
+      );
     }
   }, [isRemoveSuccess, isAddSuccess, refetch]);
 
@@ -339,13 +341,12 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
       );
       const name = data.data.name;
       const description = data.data.description;
-      if (name !== workspaceName) setWorkspaceName(name);
-      if (data !== currentWorkspaceDetails) setCurrentWorkspaceDetails(data);
-      if (description !== workspaceDescription)
-        setWorkspaceDescription(description ?? "");
+      setWorkspaceName(name);
+      setCurrentWorkspaceDetails(data);
+      setWorkspaceDescription(description ?? "");
     };
     setInitialWorkspaceStates();
-  }, [topHat, workspaceName, workspaceDescription, currentWorkspaceDetails]);
+  }, [topHat]);
 
   const handleUploadImg = (file: File | undefined) => {
     if (!file?.type?.startsWith("image/")) {
@@ -357,17 +358,16 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
     setWorkspaceImgUrl(imgUrl);
   };
 
-  const isChangedDetails = () => {
+  const isChangedDetails = useMemo(() => {
     return (
       workspaceName !== currentWorkspaceDetails?.data.name ||
       workspaceDescription !== currentWorkspaceDetails?.data.description
     );
-  };
+  }, [workspaceName, workspaceDescription, currentWorkspaceDetails]);
 
-  const changeDetails = async () => {
+  const changeDetails = useCallback(async () => {
     if (!topHat) return;
-    const isChanged = isChangedDetails();
-    if (!isChanged) return;
+    if (!isChangedDetails) return;
 
     const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
       name: workspaceName,
@@ -385,9 +385,17 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
     });
     if (!parsedLog) throw new Error("Failed to change hat details");
     console.log("parsedLog", parsedLog);
-  };
+  }, [
+    topHat,
+    isChangedDetails,
+    changeHatDetails,
+    uploadHatsDetailsToIpfs,
+    workspaceName,
+    workspaceDescription,
+    currentWorkspaceDetails,
+  ]);
 
-  const changeImage = async () => {
+  const changeImage = useCallback(async () => {
     if (!topHat) return;
     const resUploadImage = await uploadImageFileToIpfs();
     if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
@@ -399,7 +407,7 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
     });
     if (!parsedLog) throw new Error("Failed to change hat image");
     console.log("parsedLog", parsedLog);
-  };
+  }, [topHat, changeHatImageURI, uploadImageFileToIpfs]);
 
   const handleSubmit = async () => {
     if (!wallet) {
@@ -413,13 +421,16 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
 
     try {
       setIsLoading(true);
-      await Promise.all([changeDetails(), changeImage()]);
+      const requestArray = [];
+      if (isChangedDetails) requestArray.push(changeDetails());
+      if (imageFile) requestArray.push(changeImage());
+      await Promise.all(requestArray);
+      toast.success("ワークスペースの設定を保存しました。");
     } catch (error) {
       console.error(error);
-      alert(`エラーが発生しました。${error}`);
-    } finally {
-      setIsLoading(false);
+      toast.error("設定の保存に失敗しました。");
     }
+    setIsLoading(false);
   };
 
   return (
@@ -473,7 +484,7 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
         disabled={
           !workspaceName ||
           !workspaceDescription ||
-          (!isChangedDetails() && !imageFile)
+          (!isChangedDetails && !imageFile)
         }
         loading={isLoading}
       >

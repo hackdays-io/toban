@@ -1,6 +1,7 @@
 import { Box, Grid, GridItem, Icon, IconButton } from "@chakra-ui/react";
 import { Link, useParams } from "@remix-run/react";
 import type { FC } from "react";
+import { FaCoins } from "react-icons/fa6";
 import { GoHomeFill } from "react-icons/go";
 import { MdCallSplit } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";
@@ -20,7 +21,7 @@ export const StickyNav: FC = () => {
         zIndex={100}
       >
         <Grid
-          gridTemplateColumns="1fr 1fr 1fr"
+          gridTemplateColumns="1fr 1fr 1fr 1fr"
           maxW="430px"
           width="100%"
           m="0 auto"
@@ -51,6 +52,19 @@ export const StickyNav: FC = () => {
               </IconButton>
               <Box fontWeight="bold" fontSize="sm">
                 Member
+              </Box>
+            </Link>
+          </GridItem>
+
+          <GridItem textAlign="center">
+            <Link to={`/${treeId}/assistcredit`}>
+              <IconButton backgroundColor="transparent" color="blue.500">
+                <Icon fontSize={30}>
+                  <FaCoins size="30px" />
+                </Icon>
+              </IconButton>
+              <Box fontWeight="bold" fontSize="sm">
+                AssistCredit
               </Box>
             </Link>
           </GridItem>

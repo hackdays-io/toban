@@ -1,4 +1,4 @@
-import { http, createPublicClient } from "viem";
+import { http, createPublicClient, fallback } from "viem";
 import { base, mainnet, optimism, sepolia } from "viem/chains";
 
 export const chainId = Number(import.meta.env.VITE_CHAIN_ID) || 1;
@@ -14,10 +14,37 @@ export const currentChain =
           ? base
           : sepolia;
 
+export const currentChainRPCBaseURL =
+  chainId === 1
+    ? [http(`https://eth.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`)]
+    : chainId === 11155111
+      ? [
+          http(
+            `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+          ),
+        ]
+      : chainId === 10
+        ? [
+            http(
+              `https://eth-optimism.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+            ),
+          ]
+        : chainId === 8453
+          ? [
+              http(
+                `https://eth-base.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+              ),
+            ]
+          : [
+              http(
+                `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+              ),
+            ];
+
 /**
  * Public client for fetching data from the blockchain
  */
 export const publicClient = createPublicClient({
   chain: currentChain,
-  transport: http(),
+  transport: fallback([http(), ...currentChainRPCBaseURL]),
 });

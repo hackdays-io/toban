@@ -33,7 +33,7 @@ const WorkspaceTop: FC = () => {
       <Box my={4}>
         <HStack justify="space-between" alignItems="center" pb={4}>
           <Heading>直近のアクティビティ</Heading>
-          <Link to={`/${treeId}/assistcredit-history`}>
+          <Link to={`/${treeId}/assistcredit/history`}>
             <CommonButton size="xs" bgColor="blue.400">
               もっと見る
             </CommonButton>

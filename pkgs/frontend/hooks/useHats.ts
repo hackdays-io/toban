@@ -269,6 +269,41 @@ export const useHats = () => {
     [getTreesInfoByWearer],
   );
 
+  const getWorkspacesListByIds = useCallback(
+    async (params: { treeIds: number[] }) => {
+      const treesInfo = await hatsSubgraphClient.getTreesByIds({
+        chainId: currentChain.id,
+        treeIds: params.treeIds,
+        props: {
+          hats: {
+            props: {
+              details: true,
+              imageUri: true,
+            },
+          },
+        },
+      });
+
+      const workspacesList = await Promise.all(
+        treesInfo.map(async (tree) => {
+          const detailsUri = tree?.hats?.[0]?.details;
+          const detailsJson = detailsUri
+            ? await ipfs2httpsJson(detailsUri)
+            : undefined;
+          const imageIpfsUri = tree?.hats?.[0].imageUri;
+          const imageHttps = ipfs2https(imageIpfsUri);
+          return {
+            treeId: String(treeIdHexToDecimal(tree?.id)),
+            name: detailsJson?.data.name,
+            imageUrl: imageHttps,
+          };
+        }),
+      );
+      return workspacesList;
+    },
+    [],
+  );
+
   /**
    * HatsTimeframeModuleコントラクトのアドレスを取得するコールバック関数
    */
@@ -552,6 +587,7 @@ export const useHats = () => {
     getTreesInfoByWearer,
     getHat,
     getWorkspacesList,
+    getWorkspacesListByIds,
     getHatsTimeframeModuleAddress,
     createHat,
     mintHat,
@@ -585,6 +621,31 @@ export const useGetHat = (hatId: string) => {
   }, [hatId, getHat]);
 
   return { hat, isLoading };
+};
+
+export const useGetHats = (hatIds: string[]) => {
+  const [hats, setHats] = useState<Hat[]>();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { getHat } = useHats();
+
+  useEffect(() => {
+    const fetch = async () => {
+      setIsLoading(true);
+      try {
+        const hats = await Promise.all(
+          hatIds.map(async (hatId) => await getHat(hatId)),
+        );
+        setHats(hats);
+      } catch (error) {
+        console.error("error occured when fetching hats:", error);
+      }
+      setIsLoading(false);
+    };
+    fetch();
+  }, [hatIds, getHat]);
+
+  return { hats, isLoading };
 };
 
 export const useAssignableHats = (treeId: number) => {

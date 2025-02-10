@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { FaCircleUser } from "react-icons/fa6";
+import { ipfs2https } from "utils/ipfs";
 import { CommonIcon } from "../common/CommonIcon";
 
 interface UserIconProps {
@@ -7,9 +9,19 @@ interface UserIconProps {
 }
 
 export const UserIcon = ({ userImageUrl, size = "full" }: UserIconProps) => {
+  const [imageUrl, setImageUrl] = useState<string>();
+
+  useEffect(() => {
+    if (userImageUrl?.includes("ipfs://")) {
+      setImageUrl(ipfs2https(userImageUrl));
+    } else {
+      setImageUrl(userImageUrl);
+    }
+  }, [userImageUrl]);
+
   return (
     <CommonIcon
-      imageUrl={userImageUrl}
+      imageUrl={imageUrl}
       size={size}
       borderRadius="full"
       fallbackIconComponent={

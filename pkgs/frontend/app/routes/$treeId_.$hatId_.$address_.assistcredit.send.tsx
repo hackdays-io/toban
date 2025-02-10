@@ -21,7 +21,7 @@ import {
   useFractionToken,
   useTransferFractionToken,
 } from "hooks/useFractionToken";
-import { useTreeInfo } from "hooks/useHats";
+import { useGetHat, useTreeInfo } from "hooks/useHats";
 import { type NameData, TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
@@ -32,8 +32,10 @@ import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import { CommonInput } from "~/components/common/CommonInput";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
+import RoleWithBalance from "~/components/roles/RoleWithBalance";
 import { Field } from "~/components/ui/field";
 
 const AssistCreditSend: FC = () => {
@@ -47,6 +49,8 @@ const AssistCreditSend: FC = () => {
     BigInt(hatId ?? ""),
   );
 
+  const { hat } = useGetHat(hatId ?? "");
+
   // 送信先取得
   const tree = useTreeInfo(Number(treeId));
   const [searchText, setSearchText] = useState<string>("");
@@ -54,7 +58,7 @@ const AssistCreditSend: FC = () => {
   const members = useMemo(() => {
     if (!tree || !tree.hats) return [];
     return tree.hats
-      .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 0)
+      .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 2)
       .flatMap((h) => h.wearers)
       .filter((w) => typeof w !== "undefined")
       .map((w) => w.id);
@@ -136,10 +140,14 @@ const AssistCreditSend: FC = () => {
           }
         />
 
-        <HStack my={2}>
-          <RoleIcon size="50px" />
-          <Text>掃除当番（残高: {balanceOfToken?.toLocaleString()}）</Text>
-        </HStack>
+        <Box my={6}>
+          <HatsListItemParser imageUri={hat?.imageUri} detailUri={hat?.details}>
+            <RoleWithBalance
+              wearer={address as Address}
+              balance={balanceOfToken ? Number(balanceOfToken) : undefined}
+            />
+          </HatsListItemParser>
+        </Box>
 
         {!receiver ? (
           <>
@@ -153,7 +161,7 @@ const AssistCreditSend: FC = () => {
               />
             </Field>
 
-            <List.Root listStyle="none" my={10} gap={3}>
+            <List.Root listStyle="none" my={10} gap={4}>
               {users?.flat().map((user, index) => (
                 <List.Item
                   key={`${user.name}u`}

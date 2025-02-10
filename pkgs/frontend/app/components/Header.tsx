@@ -98,15 +98,46 @@ export const Header = () => {
         )}
         {headerType === HeaderType.WorkspaceAndUserIcons && (
           <>
-            <Link to="/workspace">
-              <WorkspaceIcon
-                workspaceImageUrl={ipfs2https(
-                  treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)
-                    ?.imageUri,
-                )}
-                size="40px"
-              />
-            </Link>
+            <MenuRoot>
+              <MenuTrigger asChild>
+                <button type="button" aria-label="Workspace menu">
+                  <WorkspaceIcon
+                    workspaceImageUrl={ipfs2https(
+                      treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0)
+                        ?.imageUri,
+                    )}
+                    size="40px"
+                  />
+                </button>
+              </MenuTrigger>
+              <MenuContent
+                mt={-6}
+                ml={5}
+                py={3}
+                px={1}
+                borderRadius={16}
+                minW={44}
+              >
+                <MenuItem
+                  value="workspace-settings"
+                  asChild
+                  px={4}
+                  py={2}
+                  fontSize="sm"
+                >
+                  <Link to={`/${treeId}/settings`}>ワークスペース設定</Link>
+                </MenuItem>
+                <MenuItem
+                  value="workspace-list"
+                  asChild
+                  px={4}
+                  py={2}
+                  fontSize="sm"
+                >
+                  <Link to="/workspace">ワークスペース一覧</Link>
+                </MenuItem>
+              </MenuContent>
+            </MenuRoot>
             <Text fontSize="lg" fontWeight="bold" {...headerTextStyle} ml={4}>
               {workspaceName}
             </Text>

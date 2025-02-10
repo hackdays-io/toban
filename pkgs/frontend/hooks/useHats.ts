@@ -67,6 +67,7 @@ export const useHats = () => {
   const { wallet } = useActiveWallet();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   /**
    * ツリー情報を取得するコールバック関数
@@ -539,8 +540,47 @@ export const useHats = () => {
     [wallet],
   );
 
+  /**
+   * Transfers a hat from one wearer to another eligible wearer.
+   * This hook wraps the `transferHat` function defined in the Hats.sol smart contract.
+   *
+   * @param params.hatId The hat in question (as bigint)
+   * @param params.from The current wearer's address
+   * @param params.to The new wearer's address
+   */
+  const transferHat = useCallback(
+    async (params: { hatId: bigint; from: Address; to: Address }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+      setIsSuccess(false);
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "transferHat",
+          args: [params.hatId, params.from, params.to],
+        });
+        // Wait for the transaction to be mined
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        console.log("Hat transferred successfully", txHash);
+        setIsSuccess(true);
+        return txHash;
+      } catch (error) {
+        console.error("Error occurred when transferring hat:", error);
+        setIsSuccess(false);
+        throw error;
+      } finally {
+        setIsSuccess(false);
+        setIsLoading(false);
+      }
+    },
+    [wallet],
+  );
+
   return {
     isLoading,
+    isSuccess,
     getTreeInfo,
     getWearersInfo,
     getWearerInfo,
@@ -554,6 +594,7 @@ export const useHats = () => {
     changeHatDetails,
     changeHatImageURI,
     renounceHat,
+    transferHat,
   };
 };
 

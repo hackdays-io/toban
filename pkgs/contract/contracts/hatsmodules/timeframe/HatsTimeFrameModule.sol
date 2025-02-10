@@ -79,6 +79,8 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         _setWoreTime(wearer, hatId, time);
         isActive[hatId][wearer] = true;
         HATS().mintHat(hatId, wearer);
+
+        emit HatMinted(hatId, wearer, time == 0 ? block.timestamp : time);
     }
 
     /**
@@ -99,6 +101,8 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         totalActiveTime[hatId][wearer] +=
             block.timestamp -
             woreTime[hatId][wearer];
+
+        emit HatDeactivated(hatId, wearer);
     }
 
     /**
@@ -115,6 +119,8 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         );
         isActive[hatId][wearer] = true;
         woreTime[hatId][wearer] = block.timestamp;
+
+        emit HatReactivated(hatId, wearer);
     }
 
     function renounce(uint256 hatId, address wearer) external {
@@ -129,6 +135,8 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         isActive[hatId][wearer] = false;
         deactivatedTime[hatId][wearer] = 0;
         totalActiveTime[hatId][wearer] = 0;
+
+        emit HatRenounced(hatId, wearer);
     }
 
     /**

@@ -146,3 +146,12 @@ export const useActiveWallet = () => {
 
   return { wallet, connectedWallet, isSmartWallet, isConnectingEmbeddedWallet };
 };
+
+export type WalletType =
+  | SmartAccountClient<
+      Transport,
+      typeof currentChain,
+      SmartAccount<SmartAccountImplementation>
+    >
+  | WalletClient<CustomTransport, typeof currentChain, Account>
+  | undefined;

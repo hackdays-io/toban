@@ -108,9 +108,16 @@ const Workspace: FC = () => {
   return (
     <>
       <Box>
-        {workspacesList.map((workspace) => (
-          <WorkspaceCard key={workspace.treeId} {...workspace} />
-        ))}
+        <Heading my={3}>ロールメンバーのワークスペース</Heading>
+        {workspacesList.length > 0 ? (
+          workspacesList.map((workspace) => (
+            <WorkspaceCard key={workspace.treeId} {...workspace} />
+          ))
+        ) : (
+          <Text mx={2} fontStyle="italic" color="gray.400">
+            該当なし
+          </Text>
+        )}
       </Box>
       <Box mt={7}>
         <Heading my={3}>お手伝いしているワークスペース</Heading>

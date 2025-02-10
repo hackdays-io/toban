@@ -1,0 +1,70 @@
+{
+  "network": "base",
+  "startBlock": 26196920,
+  "contracts": [
+    {
+      "address": "0xc498cCBc53FB6A31D947fF1631bF69b2F1224445",
+      "file": "BigBang",
+      "mappingFile": "bigbangMapping",
+      "entities": [{ "name": "Executed" }],
+      "handlers": [
+        {
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,address,address,address)",
+          "handler": "handleExecuted"
+        }
+      ]
+    },
+    {
+      "address": "0xBe3eC807B3062bfbADDa16c05C060d223F727fa3",
+      "file": "FractionToken",
+      "mappingFile": "fractionTokenMapping",
+      "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
+      "handlers": [
+        {
+          "event": "InitialMint(indexed address,indexed uint256,indexed uint256)",
+          "handler": "handleInitialMint"
+        },
+        {
+          "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
+          "handler": "handleTransferSingle"
+        }
+      ]
+    }
+  ],
+  "hatsModuleContracts": [
+    {
+      "file": "HatsHatCreatorModule",
+      "entities": [
+        { "name": "CreateHatAuthorityGranted" },
+        { "name": "CreateHatAuthorityRevoked" }
+      ],
+      "handlers": [
+        {
+          "event": "CreateHatAuthorityGranted(indexed address)",
+          "handler": "handleCreateHatAuthorityGranted"
+        },
+        {
+          "event": "CreateHatAuthorityRevoked(indexed address)",
+          "handler": "handleCreateHatAuthorityRevoked"
+        }
+      ]
+    },
+    {
+      "file": "HatsTimeFrameModule",
+      "entities": [
+        { "name": "OperationAuthorityGranted" },
+        { "name": "OperationAuthorityRevoked" }
+      ],
+      "handlers": [
+        {
+          "event": "OperationAuthorityGranted(indexed address)",
+          "handler": "handleOperationAuthorityGranted"
+        },
+        {
+          "event": "OperationAuthorityRevoked(indexed address)",
+          "handler": "handleOperationAuthorityRevoked"
+        }
+      ]
+    }
+  ]
+}

@@ -15,6 +15,8 @@ const {
   ETHERSCAN_API_KEY,
   ALCHEMY_API_KEY,
   COINMARKETCAP_API_KEY,
+  PRODUCTION_PRIVATE_KEY,
+  BASESCAN_API_KEY,
   GAS_REPORT,
 } = process.env;
 
@@ -59,11 +61,17 @@ const config: HardhatUserConfig = {
       url: `https://eth-holesky.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
+    base: {
+      url: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      accounts:
+        PRODUCTION_PRIVATE_KEY !== undefined ? [PRODUCTION_PRIVATE_KEY] : [],
+    },
   },
   etherscan: {
     apiKey: {
       sepolia: ETHERSCAN_API_KEY ?? "",
       holesky: ETHERSCAN_API_KEY ?? "",
+      base: BASESCAN_API_KEY ?? "",
     },
   },
   gasReporter: {

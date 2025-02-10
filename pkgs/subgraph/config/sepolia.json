@@ -53,8 +53,7 @@
       "file": "HatsTimeFrameModule",
       "entities": [
         { "name": "OperationAuthorityGranted" },
-        { "name": "OperationAuthorityRevoked" },
-        { "name": "HatMinted" }
+        { "name": "OperationAuthorityRevoked" }
       ],
       "handlers": [
         {
@@ -64,10 +63,6 @@
         {
           "event": "OperationAuthorityRevoked(indexed address)",
           "handler": "handleOperationAuthorityRevoked"
-        },
-        {
-          "event": "HatMinted(indexed uint256,indexed address,uint256)",
-          "handler": "handleHatMinted"
         }
       ]
     }

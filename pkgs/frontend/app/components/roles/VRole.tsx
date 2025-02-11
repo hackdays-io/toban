@@ -17,7 +17,9 @@ export const VRole: FC<BasicRoleProps> = ({
   return (
     <VStack>
       <RoleIcon size={iconSize} roleImageUrl={imageUri} />
-      <Text>{detail?.data?.name}</Text>
+      <Text lineHeight="1.2" textAlign="center" fontSize="sm">
+        {detail?.data?.name}
+      </Text>
     </VStack>
   );
 };

@@ -58,11 +58,12 @@ const AssistCreditSend: FC = () => {
 
   const members = useMemo(() => {
     if (!tree || !tree.hats) return [];
-    return tree.hats
+    const wearerAddresses = tree.hats
       .filter((h) => h.levelAtLocalTree && h.levelAtLocalTree >= 2)
       .flatMap((h) => h.wearers)
       .filter((w) => typeof w !== "undefined")
-      .map((w) => w.id);
+      .map((w) => w.id.toLowerCase());
+    return Array.from(new Set(wearerAddresses));
   }, [tree]);
 
   const { names: defaultNames } = useNamesByAddresses(members);

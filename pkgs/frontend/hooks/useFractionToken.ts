@@ -12,7 +12,7 @@ import type {
   TransferFractionToken_Filter,
   TransferFractionToken_OrderBy,
 } from "gql/graphql";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   type Address,
   decodeEventLog,
@@ -37,7 +37,7 @@ export const useTokenRecipients = (
     }[]
   >([]);
 
-  const { getTokenId } = useFractionToken();
+  const { getTokenId } = useGetTokenId();
 
   useEffect(() => {
     const fetch = async () => {
@@ -48,23 +48,32 @@ export const useTokenRecipients = (
               hatId: BigInt(hatId),
               account: wearer,
             });
-            if (!tokenId) return;
-            const assistants = await publicClient.readContract({
-              ...fractionTokenBaseConfig,
-              functionName: "getTokenRecipients",
-              args: [tokenId],
-            });
-            return {
-              hatId,
-              assistants,
-            };
+            if (!tokenId) return null;
+
+            try {
+              const assistants = await publicClient.readContract({
+                ...fractionTokenBaseConfig,
+                functionName: "getTokenRecipients",
+                args: [tokenId],
+              });
+              return {
+                hatId,
+                assistants,
+              };
+            } catch (error) {
+              console.error("Error fetching token recipients:", error);
+              return null;
+            }
           }),
         );
 
         const formattedRecipients = fetchedRecipients
-          .filter((r) => !!r)
+          .filter(
+            (r): r is { hatId: Address; assistants: Address[] } => r !== null,
+          )
           .reduce(
             (acc, r) => {
+              if (!r.assistants) return acc;
               for (const a of r.assistants) {
                 const existing = acc.find((item) => item.assistant === a);
                 if (existing) {
@@ -194,6 +203,24 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
   return balances;
 };
 
+export const useGetTokenId = () => {
+  const getTokenId = useCallback(
+    (params: {
+      hatId: bigint;
+      account: Address;
+    }) => {
+      return BigInt(
+        keccak256(
+          encodePacked(["uint256", "address"], [params.hatId, params.account]),
+        ).toString(),
+      );
+    },
+    [],
+  );
+
+  return { getTokenId };
+};
+
 /**
  * FractionToken 向けの React Hooks
  * @returns
@@ -201,29 +228,6 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
 export const useFractionToken = () => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
-
-  /**
-   * tokenIdを取得するコールバック関数
-   * @param hatId
-   * @param account address
-   */
-  const getTokenId = (params: { hatId: bigint; account: Address }) => {
-    setIsLoading(true);
-
-    try {
-      const tokenId = BigInt(
-        keccak256(
-          encodePacked(["uint256", "address"], [params.hatId, params.account]),
-        ).toString(),
-      );
-
-      return tokenId;
-    } catch (error) {
-      console.error("error occured when fetching tokenId:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const mintInitialSupplyFractionToken = useCallback(
     async (params: { hatId: bigint; account: Address; amount?: bigint }) => {
@@ -390,7 +394,6 @@ export const useFractionToken = () => {
 
   return {
     isLoading,
-    getTokenId,
     mintInitialSupplyFractionToken,
     mintFractionToken,
     sendFractionToken,
@@ -404,7 +407,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
   const [tokenId, setTokenId] = useState<bigint>();
   const [initialized, setInitialized] = useState(false);
 
-  const { getTokenId } = useFractionToken();
+  const { getTokenId } = useGetTokenId();
 
   useEffect(() => {
     const fetch = async () => {

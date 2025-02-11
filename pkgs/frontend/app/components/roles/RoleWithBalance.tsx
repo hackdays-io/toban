@@ -19,16 +19,24 @@ interface RoleProps {
 }
 
 const RoleWithBalance: FC<RoleProps> = (params) => {
-  const { detail, imageUri, balance, treeId, hatId, address, showSendButton } =
-    params;
+  const {
+    detail,
+    imageUri,
+    balance,
+    treeId,
+    hatId,
+    address,
+    showSendButton,
+    wearer,
+  } = params;
 
   const navigate = useNavigate();
 
-  const wearer = useMemo(() => {
-    if (!params.wearer) return [];
-    return [params.wearer];
-  }, [params.wearer]);
-  const { names } = useNamesByAddresses(wearer);
+  const wearers = useMemo(() => {
+    if (!wearer) return [];
+    return [wearer];
+  }, [wearer]);
+  const { names } = useNamesByAddresses(wearers);
 
   const wearerIconUri = useMemo(() => {
     return names?.[0]?.[0].text_records?.avatar;

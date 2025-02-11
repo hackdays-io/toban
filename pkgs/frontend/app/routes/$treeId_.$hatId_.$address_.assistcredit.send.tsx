@@ -43,6 +43,7 @@ const AssistCreditSend: FC = () => {
 
   const { treeId, hatId, address } = useParams();
   const me = useActiveWalletIdentity();
+
   const balanceOfToken = useBalanceOfFractionToken(
     me.identity?.address as Address,
     address as Address,
@@ -89,7 +90,7 @@ const AssistCreditSend: FC = () => {
   const [amount, setAmount] = useState<number>(0);
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
-    BigInt(hatId ?? ""),
+    BigInt(hatId || 0),
     address as Address,
   );
   const send = useCallback(async () => {

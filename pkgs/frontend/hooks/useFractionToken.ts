@@ -37,7 +37,7 @@ export const useTokenRecipients = (
     }[]
   >([]);
 
-  const { getTokenId, getTokenRecipients } = useFractionToken();
+  const { getTokenId } = useFractionToken();
 
   useEffect(() => {
     const fetch = async () => {
@@ -49,9 +49,14 @@ export const useTokenRecipients = (
               account: wearer,
             });
             if (!tokenId) return;
+            const assistants = await publicClient.readContract({
+              ...fractionTokenBaseConfig,
+              functionName: "getTokenRecipients",
+              args: [tokenId],
+            });
             return {
               hatId,
-              assistants: (await getTokenRecipients({ tokenId })) || [],
+              assistants,
             };
           }),
         );
@@ -83,7 +88,7 @@ export const useTokenRecipients = (
     };
 
     fetch();
-  }, [params, getTokenId, getTokenRecipients]);
+  }, [params, getTokenId]);
 
   return recipients;
 };
@@ -196,31 +201,6 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
 export const useFractionToken = () => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
-
-  /**
-   * tokenRecipientsを取得するコールバック関数
-   * @param tokenId
-   */
-  const getTokenRecipients = useCallback(
-    async (params: { tokenId: bigint }) => {
-      setIsLoading(true);
-
-      try {
-        const res = await publicClient.readContract({
-          ...fractionTokenBaseConfig,
-          functionName: "getTokenRecipients",
-          args: [params.tokenId],
-        });
-
-        return res;
-      } catch (error) {
-        console.error("error occured when fetching tokenRecipients:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
 
   /**
    * tokenIdを取得するコールバック関数
@@ -410,7 +390,6 @@ export const useFractionToken = () => {
 
   return {
     isLoading,
-    getTokenRecipients,
     getTokenId,
     mintInitialSupplyFractionToken,
     mintFractionToken,
@@ -425,7 +404,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
   const [tokenId, setTokenId] = useState<bigint>();
   const [initialized, setInitialized] = useState(false);
 
-  const { getTokenRecipients, getTokenId } = useFractionToken();
+  const { getTokenId } = useFractionToken();
 
   useEffect(() => {
     const fetch = async () => {
@@ -435,13 +414,18 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
       });
       if (!_tokenId) return;
       setTokenId(_tokenId);
-      const recipients = await getTokenRecipients({ tokenId: _tokenId });
+
+      const recipients = await publicClient.readContract({
+        ...fractionTokenBaseConfig,
+        functionName: "getTokenRecipients",
+        args: [_tokenId],
+      });
       if (recipients?.some((r) => r.toLowerCase() === wearer.toLowerCase())) {
         setInitialized(true);
       }
     };
     fetch();
-  }, [hatId, wearer, getTokenId, getTokenRecipients]);
+  }, [hatId, wearer, getTokenId]);
 
   const transferFractionToken = useCallback(
     async (to: Address, amount: bigint) => {

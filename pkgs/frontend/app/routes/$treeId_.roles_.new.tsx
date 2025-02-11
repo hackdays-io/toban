@@ -93,7 +93,13 @@ const NewRole: FC = () => {
       const log = parsedLog?.find((log) => log.eventName === "HatCreated");
       if (!log) throw new Error("Failed to create hat transaction");
       setTimeout(() => {
-        navigate(`/${treeId}/0x00000${log.args.id?.toString(16)}`);
+        const hatIdLength = log.args.id?.toString(16).length || 0;
+        const requiredPadding = 64 - hatIdLength;
+        navigate(
+          `/${treeId}/0x${"0".repeat(
+            requiredPadding,
+          )}${log.args.id?.toString(16)}`,
+        );
       });
     } catch (error) {
       console.error(error);

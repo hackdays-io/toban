@@ -122,8 +122,9 @@ export const Header = () => {
                   value="workspace-settings"
                   asChild
                   px={4}
-                  py={2}
-                  mb={1}
+                  pt={2}
+                  pb={1}
+                  mb={2}
                   fontSize="sm"
                   cursor="pointer"
                 >
@@ -133,7 +134,8 @@ export const Header = () => {
                   value="workspace-list"
                   asChild
                   px={4}
-                  py={2}
+                  pt={1}
+                  pb={2}
                   fontSize="sm"
                   cursor="pointer"
                 >

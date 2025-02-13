@@ -122,8 +122,11 @@ export const Header = () => {
                   value="workspace-settings"
                   asChild
                   px={4}
-                  py={2}
+                  pt={2}
+                  pb={1}
+                  mb={2}
                   fontSize="sm"
+                  cursor="pointer"
                 >
                   <Link to={`/${treeId}/settings`}>ワークスペース設定</Link>
                 </MenuItem>
@@ -131,8 +134,10 @@ export const Header = () => {
                   value="workspace-list"
                   asChild
                   px={4}
-                  py={2}
+                  pt={1}
+                  pb={2}
                   fontSize="sm"
+                  cursor="pointer"
                 >
                   <Link to="/workspace">ワークスペース一覧</Link>
                 </MenuItem>
@@ -159,7 +164,7 @@ export const Header = () => {
               </Text>
               <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
             </MenuItem>
-            <MenuItem value="logout" onClick={handleLogout}>
+            <MenuItem value="logout" onClick={handleLogout} cursor="pointer">
               Logout
             </MenuItem>
           </MenuContent>

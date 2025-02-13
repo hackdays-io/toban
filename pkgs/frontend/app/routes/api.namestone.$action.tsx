@@ -57,7 +57,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         const existingNames = await ns.searchNames({
           domain,
           name,
-          exact_match: true,
+          exact_match: 1 as unknown as boolean,
         });
 
         // If name exists and is owned by a different address, throw error

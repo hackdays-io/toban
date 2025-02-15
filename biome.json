@@ -23,7 +23,9 @@
       "**/contract/test",
       "**/subgraph/generated",
       "**/subgraph/build",
-      "**/frontend/gql"
+      "**/frontend/gql",
+      "**/pkgs/contract/typechain-types",
+      "**/pkgs/contract/ignition"
     ]
   },
   "formatter": {

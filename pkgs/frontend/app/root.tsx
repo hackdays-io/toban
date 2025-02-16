@@ -2,6 +2,7 @@ import { ApolloProvider } from "@apollo/client/react";
 import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { ManifestLink } from "@remix-pwa/sw";
 import {
   type ClientLoaderFunctionArgs,
   Links,
@@ -36,6 +37,7 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
+        <ManifestLink manifestUrl="/manifest.json" />
         <Links />
         <meta
           name="emotion-insertion-point"

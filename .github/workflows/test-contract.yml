@@ -22,15 +22,17 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Yarn
-        run: npm install -g yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.4
 
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install
         working-directory: ./pkgs/contract
 
       - name: Lint Check
-        run: yarn lint
+        run: pnpm lint
         working-directory: ./pkgs/contract
 
       - name: Run Hardhat tests

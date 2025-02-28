@@ -49,14 +49,9 @@ export const useBigBang = () => {
           hash: txHash,
         });
 
-        const parsedLog = parseEventLogs({
-          abi: BIGBANG_ABI,
-          eventName: "Executed",
-          logs: receipt.logs,
-          strict: false,
-        });
+        const ExecutedLog = receipt.logs[receipt.logs.length - 1];
 
-        return parsedLog;
+        return ExecutedLog;
       } finally {
         setIsLoading(false);
       }

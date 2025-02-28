@@ -32,5 +32,5 @@ jobs:
         working-directory: ./pkgs/frontend
 
       - name: Build Frontend
-        run: pnpm frontend build
+        run: pnpm build
         working-directory: ./pkgs/frontend

@@ -15,7 +15,7 @@ export const useUploadMetadataToIpfs = () => {
     try {
       const upload = await ipfsUploadJson(metadata);
 
-      const ipfsCid = upload.IpfsHash;
+      const ipfsCid = upload.cid;
       const ipfsUri = `ipfs://${ipfsCid}`;
 
       console.log("Successfully uploaded metadata to IPFS");
@@ -83,7 +83,7 @@ export const useUploadImageFileToIpfs = () => {
     try {
       const upload = await ipfsUploadFile(imageFile);
 
-      const ipfsCid = upload.IpfsHash;
+      const ipfsCid = upload.cid;
       const ipfsUri = `ipfs://${ipfsCid}`;
 
       console.log("Successfully uploaded image file to IPFS");

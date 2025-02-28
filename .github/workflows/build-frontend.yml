@@ -29,8 +29,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-        working-directory: ./pkgs/frontend
 
       - name: Build Frontend
-        run: pnpm build
-        working-directory: ./pkgs/frontend
+        run: pnpm frontend build

@@ -9,19 +9,18 @@
   "engines": {
     "node": ">=20"
   },
-  "workspaces": ["pkgs/*"],
   "scripts": {
     "biome:format": "npx biome format --write .",
     "biome:check": "npx biome check --write .",
-    "frontend": "yarn workspace frontend",
-    "contract": "yarn workspace contract",
-    "cli": "yarn workspace cli",
-    "document": "yarn workspace document",
-    "subgraph": "yarn workspace subgraph"
+    "frontend": "pnpm --filter frontend",
+    "contract": "pnpm --filter contract",
+    "cli": "pnpm --filter cli",
+    "document": "pnpm --filter document",
+    "subgraph": "pnpm --filter subgraph"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "lefthook": "^1.10.1"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "pnpm@8.15.4"
 }

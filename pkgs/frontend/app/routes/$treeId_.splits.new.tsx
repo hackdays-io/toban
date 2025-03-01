@@ -11,7 +11,6 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import type { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
-import { useNavigate, useParams } from "@remix-run/react";
 import {
   useAddressesByNames,
   useNamesByAddresses,
@@ -33,6 +32,7 @@ import {
   useFieldArray,
   useForm,
 } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
 import type { Address } from "viem";

@@ -7,7 +7,6 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Link, useParams } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useCopyToClipboard } from "hooks/useCopyToClipboard";
 import { useNamesByAddresses } from "hooks/useENS";
@@ -18,6 +17,7 @@ import type { NameData } from "namestone-sdk";
 import { type MouseEvent, useEffect, useMemo } from "react";
 import { type FC, useCallback, useState } from "react";
 import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
+import { Link, useParams } from "react-router-dom";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { StickyNav } from "~/components/StickyNav";

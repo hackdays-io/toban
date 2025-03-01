@@ -1,6 +1,5 @@
 import { Box, Grid } from "@chakra-ui/react";
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
-import { useNavigate } from "@remix-run/react";
 import { useBigBang } from "hooks/useBigBang";
 import {
   useUploadHatsDetailsToIpfs,
@@ -8,6 +7,7 @@ import {
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";

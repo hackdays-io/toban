@@ -1,9 +1,9 @@
 import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
-import { Link, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { type FC, useMemo } from "react";
+import { Link, useParams } from "react-router-dom";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { StickyNav } from "~/components/StickyNav";

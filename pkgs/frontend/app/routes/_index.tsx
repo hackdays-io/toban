@@ -1,14 +1,6 @@
 import { Box, Container, Heading, Image } from "@chakra-ui/react";
-import type { MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router-dom";
 import CommonButton from "~/components/common/CommonButton";
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
-};
 
 export default function Index() {
   return (

@@ -1,11 +1,11 @@
 import { Box, Grid, HStack, Text } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { useAddressesByNames } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useCallback, useEffect, useState } from "react";
 import { FaCircleCheck } from "react-icons/fa6";
+import { useNavigate, useParams } from "react-router-dom";
 import type { HatsDetailSchama } from "types/hats";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import type { Address } from "viem";

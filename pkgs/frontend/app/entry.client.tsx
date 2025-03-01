@@ -1,19 +1,25 @@
-import { RemixBrowser } from "@remix-run/react";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import { ChakraProvider } from "./components/chakra-provider";
 import { ClientCacheProvider } from "./emotion/emotion-client";
+import App from "./root";
 
 const hydrate = () => {
   startTransition(() => {
+    const root = document.getElementById("root");
+    if (!root) throw new Error("Root element not found");
+
     hydrateRoot(
-      document,
+      root,
       <StrictMode>
-        <ClientCacheProvider>
-          <ChakraProvider>
-            <RemixBrowser />
-          </ChakraProvider>
-        </ClientCacheProvider>
+        <BrowserRouter>
+          <ClientCacheProvider>
+            <ChakraProvider>
+              <App />
+            </ChakraProvider>
+          </ClientCacheProvider>
+        </BrowserRouter>
       </StrictMode>,
     );
   });
@@ -22,7 +28,5 @@ const hydrate = () => {
 if (typeof requestIdleCallback === "function") {
   requestIdleCallback(hydrate);
 } else {
-  // Safari doesn't support requestIdleCallback
-  // https://caniuse.com/requestidlecallback
   setTimeout(hydrate, 1);
 }

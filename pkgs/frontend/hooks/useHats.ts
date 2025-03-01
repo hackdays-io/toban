@@ -17,6 +17,8 @@ import { useActiveWallet } from "./useWallet";
 // Read with subgraph
 // ###############################################################
 
+const theGraphAPIKey = import.meta.env.VITE_THEGRAPH_API_KEY;
+
 // Subgraph用のインスタンスを生成
 export const hatsSubgraphClient = new HatsSubgraphClient({
   config: {
@@ -29,8 +31,9 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
         "https://api.studio.thegraph.com/query/55784/hats-v1-optimism/version/latest",
     },
     [base.id]: {
-      endpoint:
-        "https://api.studio.thegraph.com/query/55784/hats-v1-base/version/latest",
+      endpoint: theGraphAPIKey
+        ? `https://gateway.thegraph.com/api/${theGraphAPIKey}/subgraphs/id/FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs`
+        : "https://api.studio.thegraph.com/query/55784/hats-v1-base/version/latest",
     },
   },
 });

@@ -2,8 +2,6 @@ import { ApolloProvider } from "@apollo/client/react";
 import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { currentChain } from "hooks/useViem";
-import { useEffect } from "react";
 import {
   type ClientLoaderFunctionArgs,
   Links,
@@ -13,7 +11,9 @@ import {
   ScrollRestoration,
   data,
   useLoaderData,
-} from "react-router-dom";
+} from "@remix-run/react";
+import { currentChain } from "hooks/useViem";
+import { useEffect } from "react";
 import { ToastContainer, toast as notify } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
 import { getToast } from "remix-toast";
@@ -61,8 +61,9 @@ export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
 };
 
 export default function App() {
-  const { toast } = useLoaderData<typeof loader>();
-
+  const {
+    data: { toast },
+  } = useLoaderData<typeof loader>();
   // Hook to show the toasts
   useEffect(() => {
     if (toast) {

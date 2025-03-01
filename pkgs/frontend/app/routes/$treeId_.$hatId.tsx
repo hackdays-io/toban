@@ -1,11 +1,11 @@
 import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";

@@ -10,6 +10,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
@@ -24,7 +25,6 @@ import { useGetHat, useTreeInfo } from "hooks/useHats";
 import { type NameData, TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
-import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";

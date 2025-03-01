@@ -1,6 +1,6 @@
 import { Box, Heading } from "@chakra-ui/react";
+import { useParams } from "@remix-run/react";
 import type { FC } from "react";
-import { useParams } from "react-router-dom";
 import { PageHeader } from "~/components/PageHeader";
 import { AssistCreditHistory } from "~/components/assistcredit/History";
 

@@ -1,8 +1,8 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonDialog } from "~/components/common/CommonDialog";

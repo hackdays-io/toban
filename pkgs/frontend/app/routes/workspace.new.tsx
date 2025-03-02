@@ -59,7 +59,7 @@ const WorkspaceNew: FC = () => {
         hatterHatImageURI: resUploadImage.ipfsUri,
       });
 
-      const topHatId = parsedLog?.topics[3];
+      const topHatId = parsedLog?.args.topHatId;
 
       if (topHatId) {
         const treeId = hatIdToTreeId(BigInt(topHatId));

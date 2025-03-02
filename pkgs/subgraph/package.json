@@ -9,7 +9,7 @@
     "codegen": "graph codegen",
     "build": "graph build",
     "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.yaml",
-    "deploy:sepolia": "goldsky subgraph deploy toban-sepolia/1.0.1 --path .",
+    "deploy:sepolia": "goldsky subgraph deploy toban-sepolia/1.0.2 --path .",
     "update:sepolia": "goldsky subgraph update toban-sepolia/1.0.1",
     "delete:sepolia": "goldsky subgraph delete toban-sepolia/1.0.1",
     "prepare:base": "mustache config/base.json subgraph.template.yaml > subgraph.yaml",

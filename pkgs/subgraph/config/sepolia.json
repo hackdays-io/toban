@@ -3,7 +3,7 @@
   "startBlock": 7578217,
   "contracts": [
     {
-      "address": "0x3E70d10aCdcC14B6C31DA26DcC195a6EDf1C2c16",
+      "address": "0x2662b0Dc151bbD9C0e5F1b5bD8674b4eD3E92D0b",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "address": "0x54889278bf4F16ACAa3CC1402C987A6C42a5308B",
+      "address": "0xd6031f9543bEB0963e32CA2AC474de69D0515059",
       "file": "FractionToken",
       "mappingFile": "fractionTokenMapping",
       "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],

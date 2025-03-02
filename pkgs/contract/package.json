@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "hardhat": "npx hardhat",
     "setup": "npx hardhat resetContractAddressesJson",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",

@@ -1,5 +1,4 @@
 import { Box, Heading, VStack } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
 import {
   useBalanceOfFractionTokens,
   useBalancesWithHat,
@@ -7,6 +6,7 @@ import {
 import { useGetHats } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
+import { useParams } from "react-router";
 import type { Address } from "viem";
 import { StickyNav } from "~/components/StickyNav";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";

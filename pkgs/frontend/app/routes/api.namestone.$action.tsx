@@ -1,9 +1,5 @@
-import {
-  type ActionFunction,
-  type LoaderFunction,
-  data,
-} from "@remix-run/node";
 import NameStone, { NameData } from "namestone-sdk";
+import { type ActionFunction, type LoaderFunction, data } from "react-router";
 
 const ns = new NameStone(import.meta.env.VITE_NAMESTONE_API_KEY);
 const domain = "toban.eth";

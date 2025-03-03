@@ -9,7 +9,7 @@ import {
   Outlet as OutletRouterDom,
   Scripts,
   ScrollRestoration,
-} from "react-router-dom";
+} from "react-router";
 import { ToastContainer, toast as notify } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
 import { getToast } from "remix-toast";

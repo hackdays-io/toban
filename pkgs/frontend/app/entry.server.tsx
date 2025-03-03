@@ -6,13 +6,13 @@ const handleRequest = (
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  reactRouterContext: EntryContext,
 ) =>
   new Promise((resolve) => {
     const { renderToString, injectStyles } = createEmotion();
 
     const html = renderToString(
-      <ServerRouter context={remixContext} url={request.url} />,
+      <ServerRouter context={reactRouterContext} url={request.url} />,
     );
 
     responseHeaders.set("Content-Type", "text/html");

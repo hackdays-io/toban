@@ -5,7 +5,7 @@ import { useActiveWalletIdentity } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";

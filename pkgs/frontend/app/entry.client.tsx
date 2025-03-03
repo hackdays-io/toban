@@ -1,7 +1,7 @@
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { ClientCacheProvider } from "./emotion/emotion-client";
-import Routes from "./routers";
+import Routes from "./routes";
 
 const hydrate = () => {
   const rootElement = document.getElementById("root");

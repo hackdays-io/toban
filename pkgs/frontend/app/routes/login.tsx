@@ -3,7 +3,7 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect } from "react";
-import { useFetcher, useNavigate } from "react-router-dom";
+import { useFetcher, useNavigate } from "react-router";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonIcon } from "~/components/common/CommonIcon";
 

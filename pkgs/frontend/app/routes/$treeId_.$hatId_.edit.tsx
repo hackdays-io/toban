@@ -1,6 +1,5 @@
 import { Box, Text } from "@chakra-ui/react";
 import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
-import { useNavigate, useParams } from "@remix-run/react";
 import { useHats } from "hooks/useHats";
 import {
   useUploadHatsDetailsToIpfs,
@@ -8,6 +7,7 @@ import {
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import type {
   HatsDetailSchama,
   HatsDetailsAttributes,

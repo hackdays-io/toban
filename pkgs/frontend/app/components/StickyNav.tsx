@@ -1,10 +1,10 @@
 import { Box, Grid, GridItem, Icon, IconButton } from "@chakra-ui/react";
-import { Link, useParams } from "@remix-run/react";
 import type { FC } from "react";
 import { FaCoins } from "react-icons/fa6";
 import { GoHomeFill } from "react-icons/go";
 import { MdCallSplit } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";
+import { Link, useParams } from "react-router";
 
 export const StickyNav: FC = () => {
   const { treeId } = useParams();

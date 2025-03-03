@@ -1,5 +1,5 @@
-import type { EntryContext } from "@remix-run/node";
-import { RemixServer } from "@remix-run/react";
+import type { EntryContext } from "react-router";
+import { ServerRouter } from "react-router";
 import { createEmotion } from "./emotion/emotion-server";
 
 const handleRequest = (
@@ -12,7 +12,7 @@ const handleRequest = (
     const { renderToString, injectStyles } = createEmotion();
 
     const html = renderToString(
-      <RemixServer context={remixContext} url={request.url} />,
+      <ServerRouter context={remixContext} url={request.url} />,
     );
 
     responseHeaders.set("Content-Type", "text/html");

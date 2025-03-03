@@ -2,18 +2,14 @@ import { ApolloProvider } from "@apollo/client/react";
 import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
 import { PrivyProvider } from "@privy-io/react-auth";
-import {
-  type ClientLoaderFunctionArgs,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-  data,
-  useLoaderData,
-} from "@remix-run/react";
 import { currentChain } from "hooks/useViem";
 import { useEffect } from "react";
+import { Links, Meta, useLoaderData } from "react-router";
+import {
+  Outlet as OutletRouterDom,
+  Scripts,
+  ScrollRestoration,
+} from "react-router-dom";
 import { ToastContainer, toast as notify } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
 import { getToast } from "remix-toast";
@@ -43,10 +39,9 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
         />
       </head>
       <body>
-        {children}
-
-        <ScrollRestoration />
+        <div id="root">{children}</div>
         <Scripts />
+        <ScrollRestoration />
       </body>
     </html>
   );
@@ -55,22 +50,25 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
 // Add the toast stylesheet
 export const links = () => [{ rel: "stylesheet", href: toastStyles }];
 // Implemented from above
-export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
-  const { toast, headers } = await getToast(request);
-  return data({ toast }, { headers });
-};
+// export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
+//   const { toast, headers } = await getToast(request);
+//   return data({ toast }, { headers });
+// };
 
 export default function App() {
-  const {
-    data: { toast },
-  } = useLoaderData<typeof loader>();
+  // useLoaderDataの部分は一時的にコメントアウトまたは固定値に置き換え
+  // const {
+  //   data: { toast },
+  // } = useLoaderData();
+  // const toast = null; // 一時的に無効化
+
   // Hook to show the toasts
-  useEffect(() => {
-    if (toast) {
-      // notify on a toast message
-      notify(toast.message, { type: toast.type });
-    }
-  }, [toast]);
+  // useEffect(() => {
+  //   if (toast) {
+  //     // notify on a toast message
+  //     notify(toast.message, { type: toast.type });
+  //   }
+  // }, [toast]);
 
   return (
     <ApolloProvider client={goldskyClient}>
@@ -101,9 +99,9 @@ export default function App() {
             minH="100vh"
           >
             <Header />
-            <Outlet />
+            <OutletRouterDom />
           </Container>
-          <ToastContainer />
+          {/* <ToastContainer /> */}
         </ChakraProvider>
       </PrivyProvider>
     </ApolloProvider>

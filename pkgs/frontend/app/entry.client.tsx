@@ -1,18 +1,23 @@
-import { RemixBrowser } from "@remix-run/react";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { ChakraProvider } from "./components/chakra-provider";
 import { ClientCacheProvider } from "./emotion/emotion-client";
+import Routes from "./routers";
 
 const hydrate = () => {
+  const rootElement = document.getElementById("root");
+
+  if (!rootElement) {
+    console.error("Root element not found! Falling back to document.body");
+  }
+
+  const mountPoint = rootElement || document.body;
+
   startTransition(() => {
     hydrateRoot(
-      document,
+      mountPoint,
       <StrictMode>
         <ClientCacheProvider>
-          <ChakraProvider>
-            <RemixBrowser />
-          </ChakraProvider>
+          <Routes />
         </ClientCacheProvider>
       </StrictMode>,
     );

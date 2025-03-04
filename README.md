@@ -155,6 +155,8 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     pnpm subgraph deploy:sepolia
     ```
 
+    Rewrite the `VITE_GOLDSKY_GRAPHQL_ENDPOINT` in the `.env.local` file with the deployed Goldsky endpoint.
+
 - ### frontend
 
   - #### **build frontend**

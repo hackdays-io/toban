@@ -317,7 +317,9 @@ const SplitterNew: FC = () => {
         await setName({ name: `${splitterName}.split`, address: address });
       }
 
-      navigate(`/${treeId}/splits`);
+      setTimeout(() => {
+        navigate(`/${treeId}/splits`);
+      }, 5000);
     } catch (error) {
       console.error(error);
     }

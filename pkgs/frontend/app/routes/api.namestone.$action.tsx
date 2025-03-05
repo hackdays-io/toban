@@ -3,7 +3,7 @@ import {
   type LoaderFunction,
   data,
 } from "@remix-run/node";
-import NameStone, { NameData } from "namestone-sdk";
+import NameStone from "namestone-sdk";
 
 const ns = new NameStone(import.meta.env.VITE_NAMESTONE_API_KEY);
 const domain = "toban.eth";
@@ -67,6 +67,96 @@ export const action: ActionFunction = async ({ request, params }) => {
 
         await ns.setName({ domain, name, address, text_records });
         return { message: "OK" };
+      }
+      case "update-name": {
+        const { name, address, text_records } = await request.json();
+
+        if (!name) throw data({ message: "Name is required" }, 400);
+        if (!address) throw data({ message: "Address is required" }, 400);
+
+        console.log("Updating name", { name, address, text_records });
+
+        try {
+          // Check if name exists and is owned by another address
+          const existingNames = await ns.searchNames({
+            domain,
+            name,
+            exact_match: 1 as unknown as boolean,
+          });
+
+          console.log("Existing names found:", existingNames);
+
+          if (
+            existingNames.length !== 0 &&
+            existingNames[0].address.toLowerCase() !== address.toLowerCase()
+          ) {
+            console.error("Name conflict", {
+              existing: existingNames[0].address,
+              requested: address,
+            });
+            throw data(
+              {
+                message: `Name "${name}" is already taken by address ${existingNames[0].address}`,
+              },
+              409,
+            );
+          }
+
+          // Attempt to set the name
+          console.log(
+            `Calling ns.setName with: domain=${domain}, name=${name}, address=${address}`,
+          );
+          try {
+            const result = await ns.setName({
+              domain,
+              name,
+              address,
+              text_records,
+            });
+            console.log("Name update raw result:", result);
+            console.log("Name update result type:", typeof result);
+            console.log(
+              "Name update result stringified:",
+              JSON.stringify(result, null, 2),
+            );
+
+            // Double-check that the name was actually set by querying it back
+            const verification = await ns.searchNames({
+              domain,
+              name,
+              exact_match: 1 as unknown as boolean,
+            });
+            console.log("Verification after update:", verification);
+
+            if (
+              verification.length === 0 ||
+              verification[0].address.toLowerCase() !== address.toLowerCase()
+            ) {
+              console.error("Verification failed - name was not properly set");
+              throw new Error("Name update verification failed");
+            }
+
+            return { message: "OK", success: true, verification };
+          } catch (setNameError) {
+            console.error("Error in ns.setName:", setNameError);
+            throw data(
+              {
+                message: `Failed to set name: ${setNameError instanceof Error ? setNameError.message : "Unknown error"}`,
+                error: setNameError,
+              },
+              500,
+            );
+          }
+        } catch (error) {
+          console.error("Error updating name:", error);
+          throw data(
+            {
+              message: `Failed to update name: ${error instanceof Error ? error.message : "Unknown error"}`,
+              error: error,
+            },
+            500,
+          );
+        }
       }
       default:
         throw data({ message: "Not Found" }, 404);

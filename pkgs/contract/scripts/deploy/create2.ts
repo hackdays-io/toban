@@ -78,30 +78,30 @@ const deploy = async () => {
 
   console.log(
     "HatsTimeframeModule module:\n",
-    `npx hardhat verify ${hatsTimeFrameModuleAddress} 0.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsTimeFrameModuleAddress} 0.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
   );
   console.log(
     "HatsHatCreatorModule module:\n",
-    `npx hardhat verify ${hatsHatCreatorModuleAddress} 0.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsHatCreatorModuleAddress} 0.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
   );
   console.log(
     "FractionToken:\n",
-    `npx hardhat verify ${FractionTokenImplAddress} --network ${network.name} &&`,
-    `npx hardhat verify ${fractionTokenAddress} ${FractionTokenImplAddress} ${FractionTokenInitData} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${FractionTokenImplAddress} --network ${network.name} &&`,
+    `pnpm contract hardhat verify ${fractionTokenAddress} ${FractionTokenImplAddress} ${FractionTokenInitData} --network ${network.name}\n`,
   );
   console.log(
     "SplitsCreator:\n",
-    `npx hardhat verify ${splitsCreatorAddress} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${splitsCreatorAddress} --network ${network.name}\n`,
   );
   console.log(
     "SplitsCreatorFactory:\n",
-    `npx hardhat verify ${SplitsCreatorFactoryImplAddress} --network ${network.name} &&`,
-    `npx hardhat verify ${splitsCreatorFactoryAddress} ${SplitsCreatorFactoryImplAddress} ${SplitsCreatorFactoryInitData} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${SplitsCreatorFactoryImplAddress} --network ${network.name} &&`,
+    `pnpm contract hardhat verify ${splitsCreatorFactoryAddress} ${SplitsCreatorFactoryImplAddress} ${SplitsCreatorFactoryInitData} --network ${network.name}\n`,
   );
   console.log(
     "BigBang:\n",
-    `npx hardhat verify ${BigBangImplAddress} --network ${network.name} &&`,
-    `npx hardhat verify ${bigBangAddress} ${BigBangImplAddress} ${BigBangInitData} --network ${network.name}`,
+    `pnpm contract hardhat verify ${BigBangImplAddress} --network ${network.name} &&`,
+    `pnpm contract hardhat verify ${bigBangAddress} ${BigBangImplAddress} ${BigBangInitData} --network ${network.name}`,
   );
 
   // Save non-upgradeable contracts

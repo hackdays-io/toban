@@ -42,7 +42,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ## Live
 
-[toban.onrender.com](https://toban.onrender.com/)
+[https://toban.xyz](https://toban.xyz/)
 
 ## Document
 
@@ -87,12 +87,16 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
        ```txt
         VITE_CHAIN_ID=11155111
         VITE_PRIVY_APP_ID=
-        VITE_BIGBANG_ADDRESS=
-        VITE_HATS_ADDRESS=
-        VITE_FRACTION_TOKEN_ADDRESS=
-        VITE_SPLITS_CREATOR_ADDRESS=
+        VITE_BIGBANG_ADDRESS=0x08B4c53b98f46B14E2AD00189C2Aa3b9F3d0c8f3
+        VITE_HATS_ADDRESS=0x3bc1A0Ad72417f2d411118085256fC53CBdDd137
+        VITE_FRACTION_TOKEN_ADDRESS=0xd921517fdF141d97C289bDb9686f51A1375dCc69
+        VITE_SPLITS_CREATOR_ADDRESS=0x6b5d2e27ff74e9adf4d23aebb9efb52867823583
         VITE_PIMLICO_API_KEY=
+        VITE_PINATA_JWT=
+        VITE_PINATA_GATEWAY=
+        VITE_PINATA_GATEWAY_TOKEN=
         VITE_NAMESTONE_API_KEY=
+        VITE_GOLDSKY_GRAPHQL_ENDPOINT=
        ```
 
   - #### **smartconract**
@@ -117,7 +121,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### **install**
 
     ```bash
-    yarn
+    pnpm install
     ```
 
 - ### whitepaper(Docusaurus)
@@ -125,13 +129,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### build
 
     ```bash
-    yarn document build
+    pnpm document build
     ```
 
   - #### start
 
     ```bash
-    yarn document start
+    pnpm document start
     ```
 
 - ### subgraph
@@ -145,10 +149,10 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### **deploy subgraph to sepolia**
 
     ```bash
-    yarn subgraph prepare:sepolia
-    yarn subgraph codegen
-    yarn subgraph build
-    yarn subgraph deploy:sepolia
+    pnpm subgraph prepare:sepolia
+    pnpm subgraph codegen
+    pnpm subgraph build
+    pnpm subgraph deploy:sepolia
     ```
 
 - ### frontend
@@ -156,13 +160,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### **build frontend**
 
     ```bash
-    yarn frontend build
+    pnpm frontend build
     ```
 
   - #### **start frontend**
 
     ```bash
-    yarn frontend dev
+    pnpm frontend dev
     ```
 
 - ### contract
@@ -170,79 +174,79 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### **compile**
 
     ```bash
-    yarn contract compile
+    pnpm contract compile
     ```
 
   - #### **test**
 
     ```bash
-    yarn contract test
+    pnpm contract test
     ```
 
   - #### **coverage**
 
     ```bash
-    yarn contract coverage
+    pnpm contract coverage
     ```
 
   - #### **clean**
 
     ```bash
-    yarn contract clean
+    pnpm contract clean
     ```
 
   - #### **get Balance of address**
 
     ```bash
-    yarn contract getBalance --network sepolia
+    pnpm contract getBalance --network sepolia
     ```
 
   - #### **get chaininfo**
 
     ```bash
-    yarn contract getChainInfo --network sepolia
+    pnpm contract getChainInfo --network sepolia
     ```
 
   - #### **deploy Sample Contract**
 
     ```bash
-    yarn contract deploy:Lock --network sepolia
+    pnpm contract deploy:Lock --network sepolia
     ```
 
   - #### **verify deployed contract**
 
     ```bash
-    yarn contract deploy:Lock --verify --network sepolia
+    pnpm contract deploy:Lock --verify --network sepolia
     ```
 
   - #### **deploy all contract**
 
     ```bash
-    yarn contract deploy:all --network sepolia
+    pnpm contract deploy:all --network sepolia
     ```
 
   - #### **upgrade BigBang contract**
 
     ```bash
-    yarn contract upgrade:BigBang --network sepolia
+    pnpm contract upgrade:BigBang --network sepolia
     ```
 
   - #### **upgrade FractionToken Contract**
 
     ```bash
-    yarn contract upgrade:FractionToken --network sepolia
+    pnpm contract upgrade:FractionToken --network sepolia
     ```
 
   - #### **get deployed contract address**
 
     ```bash
-    yarn contract getContractAddress --contract Lock --network sepolia
+    pnpm contract getContractAddress --contract Lock --network sepolia
     ```
 
   - #### **resiger new subdomain to `toban.eth`**
 
     ```bash
-    yarn contract registerSubdomain --label <your label> --network sepolia
+    pnpm contract registerSubdomain --label <your label> --network sepolia
     ```
 
   - #### **call bigbang task**
@@ -250,17 +254,18 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     Please set params when you execute.
 
     ```bash
-    yarn contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    pnpm contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
     ```
 
   - #### **call getWoreTime task**
 
     ```bash
-    yarn contract getWoreTime --wearer 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    pnpm contract getWoreTime --wearer 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
     ```
 
   - #### **call mintHat task**
 
     ```bash
-    yarn contract mintHat --hatid 17011726346972053710434886519909386955065038130623101235576378067255296 --wearer 0x1295BDc0C102EB105dC0198fdC193588fe66A1e4 --network sepolia
+    pnpm contract mintHat --hatid 17011726346972053710434886519909386955065038130623101235576378067255296 --wearer 0x1295BDc0C102EB105dC0198fdC193588fe66A1e4 --network sepolia
     ```
+

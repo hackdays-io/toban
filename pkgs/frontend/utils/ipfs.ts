@@ -1,4 +1,4 @@
-import { PinataSDK } from "pinata-web3";
+import { PinataSDK } from "pinata";
 
 const getPinataConfig = () => {
   const pinataJwt = import.meta.env.VITE_PINATA_JWT;

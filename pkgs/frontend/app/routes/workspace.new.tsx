@@ -59,10 +59,10 @@ const WorkspaceNew: FC = () => {
         hatterHatImageURI: resUploadImage.ipfsUri,
       });
 
-      const topHatId = parsedLog?.[0].args.topHatId;
+      const topHatId = parsedLog?.args.topHatId;
 
       if (topHatId) {
-        const treeId = hatIdToTreeId(topHatId);
+        const treeId = hatIdToTreeId(BigInt(topHatId));
         console.log(treeId);
 
         const treeIdStr = treeId.toString();

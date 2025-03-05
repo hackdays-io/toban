@@ -6,6 +6,7 @@ import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useMemo, useState } from "react";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
+import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";
 
 const Login: FC = () => {
@@ -21,6 +22,8 @@ const Login: FC = () => {
   const { wallet } = useActiveWallet();
 
   const { setName, isLoading: isSetNameLoading } = useSetName();
+
+  const [description, setDescription] = useState("");
 
   const names = useMemo(() => {
     return userName ? [userName] : [];
@@ -52,6 +55,10 @@ const Login: FC = () => {
         if (res) params.text_records.avatar = res.ipfsUri;
       }
 
+      if (description) {
+        params.text_records.description = description;
+      }
+
       await setName(params);
     } catch (error) {
       console.error(error);
@@ -61,6 +68,7 @@ const Login: FC = () => {
   }, [
     availableName,
     imageFile,
+    description,
     setName,
     uploadImageFileToIpfs,
     userName,
@@ -115,6 +123,14 @@ const Login: FC = () => {
                 ? "この名前は利用可能です"
                 : "この名前は利用できません"}
             </Text>
+          </Box>
+          <Box width="100%" mt={8}>
+            <CommonTextArea
+              minHeight="125px"
+              value={description}
+              placeholder="自己紹介"
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </Box>
         </Box>
       </Flex>

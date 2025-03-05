@@ -3,6 +3,10 @@ import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "~/components/SettingSections";
 import type { GetWorkspaceQuery } from "gql/graphql";
 import type { Exact, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
@@ -36,30 +40,6 @@ import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
-
-const SettingsSection: FC<{
-  children: React.ReactNode;
-  headingText: string;
-}> = ({ children, headingText }) => (
-  <Box mt={2} mb={12}>
-    <Text fontSize="md" fontWeight="medium" color="gray.600">
-      {headingText}
-    </Text>
-    {children}
-  </Box>
-);
-
-const SettingsSubSection: FC<{
-  children: React.ReactNode;
-  headingText: string;
-}> = ({ children, headingText }) => (
-  <Box mt={3} mb={5}>
-    <Text mb={3} fontSize="sm" fontWeight="medium" color="gray.600">
-      {headingText}
-    </Text>
-    {children}
-  </Box>
-);
 
 interface ActionButtonWrapperWithoutChildrenProps {
   buttonText: string;
@@ -254,6 +234,7 @@ const RoleSubSection: FC<{
       <Box>
         {currentAuthoritiesAccounts.map((accountArr) => {
           const account = accountArr[0];
+          if (!account) return null;
           return (
             <ActionButtonWrapper
               key={account.address}

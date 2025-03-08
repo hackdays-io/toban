@@ -3,8 +3,7 @@ import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
-import type { GetWorkspaceQuery } from "gql/graphql";
-import type { Exact, Scalars } from "gql/graphql";
+import type { Exact, GetWorkspaceQuery, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useHats, useTreeInfo } from "hooks/useHats";
 import {
@@ -49,7 +48,7 @@ const SettingsSection: FC<{
   </Box>
 );
 
-const SettingsSubSection: FC<{
+export const SettingsSubSection: FC<{
   children: React.ReactNode;
   headingText: string;
 }> = ({ children, headingText }) => (

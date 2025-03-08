@@ -11,8 +11,10 @@ import {
   createListCollection,
 } from "@chakra-ui/react";
 import { ERC20_ABI } from "abi/erc20";
+import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useState } from "react";
+import { toast } from "react-toastify";
 import { http, createWalletClient, parseEther } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
@@ -57,6 +59,7 @@ const Transaction: FC = () => {
     });
 
     try {
+      toast.info("トランザクションを実行中...");
       // Native か ERC20トークンかで処理を分岐する。
       if (transactionType === "ERC20") {
         if (!contractAddress || !recipient || !amount) {
@@ -64,12 +67,25 @@ const Transaction: FC = () => {
           return;
         }
 
+        // get decimals of ERC20 token
+        const decimals = await publicClient.readContract({
+          address: contractAddress as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: "decimals",
+        });
+        console.log("decimals:", decimals);
+
+        // decimalを考慮してamountを計算
+        const amountWithDecimals =
+          BigInt(amount) * BigInt(10 ** Number(decimals));
+        console.log("amountWithDecimals:", amountWithDecimals);
+
         // トランザクション実行処理(apprve)
         const approveTxHash = await wallet.writeContract({
           address: contractAddress as `0x${string}`,
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [recipient as `0x${string}`, BigInt(amount)],
+          args: [recipient as `0x${string}`, amountWithDecimals],
         });
         console.log("approveTxHash:", approveTxHash);
 
@@ -78,9 +94,11 @@ const Transaction: FC = () => {
           address: contractAddress as `0x${string}`,
           abi: ERC20_ABI,
           functionName: "transfer",
-          args: [recipient as `0x${string}`, BigInt(amount)],
+          args: [recipient as `0x${string}`, amountWithDecimals],
         });
-        console.log("approveTxHash:", transferTxHash);
+        console.log("transferTxHash:", transferTxHash);
+
+        toast.success("トランザクションが正常に実行されました。");
       } else {
         if (!recipient || !amount) {
           alert("全ての項目を入力してください。");
@@ -101,8 +119,10 @@ const Transaction: FC = () => {
         });
         console.log("txHash:", txHash);
       }
+      toast.success("トランザクションが正常に実行されました。");
     } catch (error) {
       console.error("Transaction execution error:", error);
+      toast.error("エラーが発生しました。");
     }
   };
 

@@ -97,6 +97,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
         VITE_PINATA_GATEWAY_TOKEN=
         VITE_NAMESTONE_API_KEY=
         VITE_GOLDSKY_GRAPHQL_ENDPOINT=
+        VITE_ALCHEMY_KEY=
        ```
 
   - #### **smartconract**

@@ -15,7 +15,7 @@ import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useState } from "react";
 import { toast } from "react-toastify";
-import { http, createWalletClient, parseEther } from "viem";
+import { parseEther } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import { CommonInput } from "~/components/common/CommonInput";
@@ -105,15 +105,9 @@ const Transaction: FC = () => {
           return;
         }
 
-        // create wallet instance
-        const client = createWalletClient({
-          account: wallet.account,
-          chain: wallet.chain,
-          transport: http(),
-        });
-
         // Native Tokenを送金する
-        const txHash = await client.sendTransaction({
+        //@ts-expect-error: Type 'string' is not assignable to type 'number | bigint'
+        const txHash = await wallet.sendTransaction({
           to: recipient as `0x${string}`,
           value: parseEther(amount),
         });

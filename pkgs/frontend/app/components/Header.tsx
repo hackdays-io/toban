@@ -164,6 +164,15 @@ export const Header = () => {
               </Text>
               <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
             </MenuItem>
+            <MenuItem
+              value="executeTx"
+              onClick={() => {
+                navigate("/transaction");
+              }}
+              cursor="pointer"
+            >
+              Execute Tx
+            </MenuItem>
             <MenuItem value="logout" onClick={handleLogout} cursor="pointer">
               Logout
             </MenuItem>

@@ -40,6 +40,7 @@ const Transaction: FC = () => {
   const [contractAddress, setContractAddress] = useState("");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   /**
    * handleTransactionExecution function
@@ -51,20 +52,13 @@ const Transaction: FC = () => {
       return;
     }
 
-    console.log("Executing transaction:", {
-      transactionType,
-      contractAddress,
-      recipient,
-      amount,
-    });
-
+    setIsLoading(true);
     try {
-      toast.info("トランザクションを実行中...");
       // Native か ERC20トークンかで処理を分岐する。
       if (transactionType === "ERC20") {
         if (!contractAddress || !recipient || !amount) {
           alert("全ての項目を入力してください。");
-          return;
+          throw new Error("All fields are required.");
         }
 
         // get decimals of ERC20 token
@@ -80,15 +74,6 @@ const Transaction: FC = () => {
           BigInt(amount) * BigInt(10 ** Number(decimals));
         console.log("amountWithDecimals:", amountWithDecimals);
 
-        // トランザクション実行処理(apprve)
-        const approveTxHash = await wallet.writeContract({
-          address: contractAddress as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "approve",
-          args: [recipient as `0x${string}`, amountWithDecimals],
-        });
-        console.log("approveTxHash:", approveTxHash);
-
         // トランザクション実行処理(transfer)
         const transferTxHash = await wallet.writeContract({
           address: contractAddress as `0x${string}`,
@@ -98,11 +83,15 @@ const Transaction: FC = () => {
         });
         console.log("transferTxHash:", transferTxHash);
 
+        await publicClient.waitForTransactionReceipt({
+          hash: transferTxHash,
+        });
+
         toast.success("トランザクションが正常に実行されました。");
       } else {
         if (!recipient || !amount) {
           alert("全ての項目を入力してください。");
-          return;
+          throw new Error("All fields are required.");
         }
 
         // Native Tokenを送金する
@@ -112,12 +101,16 @@ const Transaction: FC = () => {
           value: parseEther(amount),
         });
         console.log("txHash:", txHash);
+        await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
       }
       toast.success("トランザクションが正常に実行されました。");
     } catch (error) {
       console.error("Transaction execution error:", error);
       toast.error("エラーが発生しました。");
     }
+    setIsLoading(false);
   };
 
   return (
@@ -190,7 +183,12 @@ const Transaction: FC = () => {
           </Grid>
         </SettingsSubSection>
 
-        <BasicButton width="full" mt={6} onClick={handleTransactionExecution}>
+        <BasicButton
+          loading={isLoading}
+          width="full"
+          mt={6}
+          onClick={handleTransactionExecution}
+        >
           実行
         </BasicButton>
       </Box>

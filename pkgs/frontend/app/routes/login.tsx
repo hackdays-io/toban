@@ -1,6 +1,6 @@
-import { Box, Flex, Float, Grid, Text } from "@chakra-ui/react";
+import { Box, Flex, Grid, Text } from "@chakra-ui/react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { useFetcher, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect } from "react";

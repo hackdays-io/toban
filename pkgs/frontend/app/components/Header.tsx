@@ -170,6 +170,15 @@ export const Header = () => {
               <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
             </MenuItem>
             <MenuItem
+              value="executeTx"
+              onClick={() => {
+                navigate("/transaction");
+              }}
+              cursor="pointer"
+            >
+              Execute Tx
+            </MenuItem>
+            <MenuItem
               value="profile"
               onClick={() => {
                 navigate(`/${treeId}/member/${identity.address}`);

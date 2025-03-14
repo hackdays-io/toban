@@ -7,8 +7,7 @@ import {
   SettingsSection,
   SettingsSubSection,
 } from "~/components/SettingSections";
-import type { GetWorkspaceQuery } from "gql/graphql";
-import type { Exact, Scalars } from "gql/graphql";
+import type { Exact, GetWorkspaceQuery, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useHats, useTreeInfo } from "hooks/useHats";
 import {

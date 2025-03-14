@@ -41,6 +41,8 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
           name="emotion-insertion-point"
           content="emotion-insertion-point"
         />
+        <title>Toban -当番-</title>
+        <link rel="icon" href="images/favicon.ico" />
       </head>
       <body>
         {children}

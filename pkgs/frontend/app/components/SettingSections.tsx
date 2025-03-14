@@ -1,8 +1,8 @@
 import { Box, Text } from "@chakra-ui/react";
-import type { FC, ReactNode } from "react";
+import type { FC } from "react";
 
 export const SettingsSection: FC<{
-  children: ReactNode;
+  children: React.ReactNode;
   headingText: string;
 }> = ({ children, headingText }) => (
   <Box mt={2} mb={12}>
@@ -14,7 +14,7 @@ export const SettingsSection: FC<{
 );
 
 export const SettingsSubSection: FC<{
-  children: ReactNode;
+  children: React.ReactNode;
   headingText: string;
 }> = ({ children, headingText }) => (
   <Box mt={3} mb={5}>

@@ -20,6 +20,8 @@
       "**/docs",
       "**/contract/artifacts",
       "**/contract/cache",
+      "**/contract/typechain-types",
+      "**/contract/ignition/deployments",
       "**/contract/test",
       "**/subgraph/generated",
       "**/subgraph/build",

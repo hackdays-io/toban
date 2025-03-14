@@ -123,10 +123,8 @@ export const useUpdateName = () => {
         throw new Error("Address and name are required");
       }
 
-      console.log("updateName called with:", JSON.stringify(params, null, 2));
       setIsLoading(true);
       try {
-        console.log("Sending request to API...");
         const response = await axios.post("/api/namestone/update-name", params);
         console.log("API response:", {
           status: response.status,

@@ -3,7 +3,7 @@ import {
   type LoaderFunction,
   data,
 } from "@remix-run/node";
-import NameStone from "namestone-sdk";
+import NameStone, { type NameData } from "namestone-sdk";
 
 const ns = new NameStone(import.meta.env.VITE_NAMESTONE_API_KEY);
 const domain = "toban.eth";
@@ -106,53 +106,58 @@ export const action: ActionFunction = async ({ request, params }) => {
           console.log(
             `Calling ns.setName with: domain=${domain}, name=${name}, address=${address}`,
           );
-          try {
-            const result = await ns.setName({
-              domain,
-              name,
-              address,
-              text_records,
-            });
-            console.log("Name update raw result:", result);
-            console.log("Name update result type:", typeof result);
-            console.log(
-              "Name update result stringified:",
-              JSON.stringify(result, null, 2),
-            );
-
-            // Double-check that the name was actually set by querying it back
-            const verification = await ns.searchNames({
-              domain,
-              name,
-              exact_match: 1 as unknown as boolean,
-            });
-            console.log("Verification after update:", verification);
-
-            if (
-              verification.length === 0 ||
-              verification[0].address.toLowerCase() !== address.toLowerCase()
-            ) {
-              console.error("Verification failed - name was not properly set");
-              throw new Error("Name update verification failed");
-            }
-
-            return { message: "OK", success: true, verification };
-          } catch (setNameError) {
-            console.error("Error in ns.setName:", setNameError);
-            throw data(
-              {
-                message: `Failed to set name: ${setNameError instanceof Error ? setNameError.message : "Unknown error"}`,
-                error: setNameError,
-              },
-              500,
-            );
-          }
         } catch (error) {
           console.error("Error updating name:", error);
           throw data(
             {
               message: `Failed to update name: ${error instanceof Error ? error.message : "Unknown error"}`,
               error: error,
+            },
+            500,
+          );
+        }
+
+        let currentNames: NameData[] = [];
+        try {
+          currentNames = await ns.getNames({ domain, address });
+        } catch (error) {
+          console.error("Error updating name:", error);
+        }
+        console.log("Current names:", currentNames);
+
+        try {
+          const result = await ns.setName({
+            domain,
+            name,
+            address,
+            text_records,
+          });
+          console.log("Name update raw result:", result);
+          console.log("Name update result type:", typeof result);
+          console.log(
+            "Name update result stringified:",
+            JSON.stringify(result, null, 2),
+          );
+
+          if (currentNames.length !== 0) {
+            for (const currentName of currentNames) {
+              if (currentName.name !== name) {
+                const response = await ns.deleteName({
+                  name: currentName.name,
+                  domain: domain,
+                });
+                console.log("Delete name response:", response, name);
+              }
+            }
+          }
+
+          return { message: "OK", success: true };
+        } catch (setNameError) {
+          console.error("Error in ns.setName:", setNameError);
+          throw data(
+            {
+              message: `Failed to set name: ${setNameError instanceof Error ? setNameError.message : "Unknown error"}`,
+              error: setNameError,
             },
             500,
           );

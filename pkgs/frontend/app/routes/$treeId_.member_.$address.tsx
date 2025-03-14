@@ -30,11 +30,13 @@ import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 interface ProfileOverviewSettingsProps {
   wallet: WalletType;
   treeInfo: Tree | undefined;
+  address: string | undefined;
 }
 
 const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
   wallet,
   treeInfo,
+  address,
 }) => {
   const {
     uploadImageFileToIpfs,
@@ -227,6 +229,11 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
           </CommonButton>
         </Box>
       </Flex>
+      <SettingsSubSection headingText="アドレス">
+        <Text fontSize="sm" fontWeight="medium" color="gray.600" pb={2}>
+          {address}
+        </Text>
+      </SettingsSubSection>
       <SettingsSubSection headingText="名前">
         <CommonInput
           // placeholder={profileName}
@@ -367,7 +374,11 @@ const MemberProfile: FC = () => {
   return (
     <Box width="100%" pb={10}>
       <PageHeader title="プロフィール" />
-      <ProfileOverviewSettings wallet={wallet} treeInfo={treeInfo} />
+      <ProfileOverviewSettings
+        wallet={wallet}
+        treeInfo={treeInfo}
+        address={address}
+      />
       <UserHistoryComponent treeId={treeId} address={address} />
     </Box>
   );

@@ -1,5 +1,6 @@
 import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
 import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
+import type { GetTransferFractionTokensQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useGetHat } from "hooks/useHats";
@@ -13,6 +14,12 @@ import { UserIcon } from "../icon/UserIcon";
 interface Props {
   treeId: string;
   limit?: number;
+}
+
+interface UserProps extends Props {
+  userAddress: string;
+  data: GetTransferFractionTokensQuery | undefined;
+  txType: "sent" | "received";
 }
 
 interface ItemProps {
@@ -130,6 +137,9 @@ const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
   );
 };
 
+/**
+ * ワークスペース全体のアシストクレジット履歴を表示するコンポーネント
+ */
 export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
   const { data } = useGetTransferFractionTokens({
     where: {
@@ -145,6 +155,38 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
       {data?.transferFractionTokens.map((token) => (
         <AssistCreditItem
           key={`th_${token.id}`}
+          from={token.from}
+          to={token.to}
+          hatId={token.hatId}
+          amount={token.amount}
+          timestamp={token.blockTimestamp}
+        />
+      ))}
+    </VStack>
+  );
+};
+
+/**
+ * ユーザーのアシストクレジット履歴を表示するコンポーネント
+ * txType が "sent" の場合は送信履歴、"received" の場合は受信履歴を表示する
+ */
+export const UserAssistCreditHistory: FC<UserProps> = ({ data, txType }) => {
+  if (
+    !data?.transferFractionTokens ||
+    data.transferFractionTokens.length === 0
+  ) {
+    return (
+      <Box p={4} textAlign="center" color="gray.500">
+        {txType === "sent" ? "送信履歴はありません" : "受信履歴はありません"}
+      </Box>
+    );
+  }
+
+  return (
+    <VStack gap={2}>
+      {data.transferFractionTokens.map((token) => (
+        <AssistCreditItem
+          key={`${txType}_${token.id}`}
           from={token.from}
           to={token.to}
           hatId={token.hatId}

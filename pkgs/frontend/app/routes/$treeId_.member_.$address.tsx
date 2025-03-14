@@ -23,13 +23,16 @@ import {
 } from "../../hooks/useENS";
 import { UserIcon } from "../components/icon/UserIcon";
 import type { TextRecords } from "namestone-sdk";
+import { UserAssistCreditHistory } from "../components/assistcredit/History";
+import { useGetTransferFractionTokens } from "hooks/useFractionToken";
+import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 
-interface WorkspaceOverviewSettingsProps {
+interface ProfileOverviewSettingsProps {
   wallet: WalletType;
   treeInfo: Tree | undefined;
 }
 
-const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
+const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
   wallet,
   treeInfo,
 }) => {
@@ -42,18 +45,18 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
   const { identity } = useActiveWalletIdentity();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
-  const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(
+  const [profileImgUrl, setProfileImgUrl] = useState<string | undefined>(
     undefined,
   );
-  const [workspaceName, setWorkspaceName] = useState<string>("");
-  const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
+  const [profileName, setProfileName] = useState<string>("");
+  const [profileDescription, setProfileDescription] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   const { updateName, isLoading: isUpdateNameLoading } = useUpdateName();
 
   const names = useMemo(() => {
-    return workspaceName ? [workspaceName] : [];
-  }, [workspaceName]);
+    return profileName ? [profileName] : [];
+  }, [profileName]);
   const { addresses } = useAddressesByNames(names, true);
 
   useEffect(() => {
@@ -64,25 +67,25 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
   }, [treeInfo, topHat]);
 
   useEffect(() => {
-    const setInitialWorkspaceImgUrl = async () => {
+    const setInitialProfileImgUrl = async () => {
       const avatar = identity?.text_records?.avatar;
-      if (avatar) setWorkspaceImgUrl(ipfs2https(avatar));
+      if (avatar) setProfileImgUrl(ipfs2https(avatar));
     };
-    setInitialWorkspaceImgUrl();
+    setInitialProfileImgUrl();
   }, [identity]);
 
   useEffect(() => {
-    const setInitialWorkspaceStates = async () => {
+    const setInitialProfileStates = async () => {
       if (identity?.name) {
         const name = identity.name;
-        setWorkspaceName(name);
+        setProfileName(name);
       }
       if (identity?.text_records?.description) {
         const description = identity.text_records.description;
-        setWorkspaceDescription(description);
+        setProfileDescription(description);
       }
     };
-    setInitialWorkspaceStates();
+    setInitialProfileStates();
   }, [identity]);
 
   const handleUploadImg = (file: File | undefined) => {
@@ -92,21 +95,21 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
     }
     const imgUrl = file ? URL.createObjectURL(file) : undefined;
     setImageFile(file);
-    setWorkspaceImgUrl(imgUrl);
+    setProfileImgUrl(imgUrl);
   };
 
   const isChangedDetails = useMemo(() => {
     return (
-      workspaceName !== identity?.name ||
-      workspaceDescription !== identity?.text_records?.description ||
+      profileName !== identity?.name ||
+      profileDescription !== identity?.text_records?.description ||
       imageFile
     );
-  }, [workspaceName, workspaceDescription, identity, imageFile]);
+  }, [profileName, profileDescription, identity, imageFile]);
 
   const availableName = useMemo(() => {
-    if (!workspaceName) return false;
-    return addresses?.[0]?.length === 0 || identity?.name === workspaceName;
-  }, [workspaceName, addresses, identity]);
+    if (!profileName) return false;
+    return addresses?.[0]?.length === 0 || identity?.name === profileName;
+  }, [profileName, addresses, identity]);
 
   const uploadImage = useCallback(async () => {
     const resUploadImage = await uploadImageFileToIpfs();
@@ -130,7 +133,7 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
       alert("適切な名前を入力してください。");
       return;
     }
-    if (!workspaceName) {
+    if (!profileName) {
       alert("名前を入力してください。");
       return;
     }
@@ -152,11 +155,11 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
         address: string;
         text_records: TextRecords;
       } = {
-        name: workspaceName ?? identity.name,
+        name: profileName ?? identity.name,
         address: wallet.account?.address,
         text_records: {
           avatar: ipfsUri ?? identity?.text_records?.avatar ?? "",
-          description: workspaceDescription,
+          description: profileDescription,
         },
       };
 
@@ -188,8 +191,8 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
     isChangedDetails,
     wallet,
     availableName,
-    workspaceName,
-    workspaceDescription,
+    profileName,
+    profileDescription,
     identity,
     imageFile,
     uploadImage,
@@ -208,7 +211,7 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
           bg="gray.100"
           borderRadius="full"
         >
-          <UserIcon userImageUrl={workspaceImgUrl} />
+          <UserIcon userImageUrl={profileImgUrl} />
         </Box>
         <Box>
           <CommonButton as="label">
@@ -226,17 +229,17 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
       </Flex>
       <SettingsSubSection headingText="名前">
         <CommonInput
-          // placeholder={workspaceName}
-          value={workspaceName}
-          onChange={(e) => setWorkspaceName(e.target.value)}
+          // placeholder={profileName}
+          value={profileName}
+          onChange={(e) => setProfileName(e.target.value)}
         />
       </SettingsSubSection>
       <SettingsSubSection headingText="自己紹介">
         <CommonTextArea
           minHeight="80px"
-          // placeholder={workspaceDescription}
-          value={workspaceDescription}
-          onChange={(e) => setWorkspaceDescription(e.target.value)}
+          // placeholder={profileDescription}
+          value={profileDescription}
+          onChange={(e) => setProfileDescription(e.target.value)}
         />
       </SettingsSubSection>
       <CommonButton
@@ -253,14 +256,119 @@ const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
   );
 };
 
+interface UserHistoryComponentProps {
+  treeId: string | undefined;
+  address: string | undefined;
+}
+
+export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
+  treeId,
+  address,
+}) => {
+  const TX_HISTORY_LIMIT = 5;
+
+  const [activeTab, setActiveTab] = useState<"sent" | "received">("received");
+
+  const normalizedAddress = useMemo(
+    () => (address ? address.toLowerCase() : address),
+    [address],
+  );
+
+  const { data: receivedData } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      to: normalizedAddress,
+    },
+    orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
+    first: TX_HISTORY_LIMIT,
+  });
+
+  const { data: sentData } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      from: normalizedAddress,
+    },
+    orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
+    first: TX_HISTORY_LIMIT,
+  });
+
+  // タブボタンコンポーネント
+  const TabButton: FC<{
+    isActive: boolean;
+    onClick: () => void;
+    label: string;
+    isLeftTab?: boolean;
+  }> = ({ isActive, onClick, label, isLeftTab = false }) => (
+    <Box
+      as="button"
+      px={4}
+      py={2}
+      borderLeftRadius={isLeftTab ? "md" : "0"}
+      borderRightRadius={isLeftTab ? "0" : "md"}
+      fontWeight={isActive ? "bold" : "medium"}
+      bg={isActive ? "blue.100" : "gray.100"}
+      color={isActive ? "blue.600" : "gray.600"}
+      onClick={onClick}
+      borderRight={isLeftTab ? "1px solid white" : undefined}
+      transition="all 0.2s"
+      _hover={{
+        bg: isActive ? "blue.100" : "gray.200",
+      }}
+      role="tab"
+      aria-selected={isActive}
+    >
+      {label}
+    </Box>
+  );
+
+  return (
+    <Box mt={10} mb={12}>
+      <Flex justifyContent="space-between" alignItems="center" mb={4}>
+        <Text fontSize="md" fontWeight="medium" color="gray.600">
+          アシストクレジット履歴
+        </Text>
+        <Flex>
+          <TabButton
+            isActive={activeTab === "received"}
+            onClick={() => setActiveTab("received")}
+            label="受信"
+            isLeftTab={true}
+          />
+          <TabButton
+            isActive={activeTab === "sent"}
+            onClick={() => setActiveTab("sent")}
+            label="送信"
+          />
+        </Flex>
+      </Flex>
+
+      {treeId && address && (
+        <Box mt={4}>
+          <UserAssistCreditHistory
+            data={activeTab === "received" ? receivedData : sentData}
+            treeId={treeId}
+            userAddress={address}
+            limit={TX_HISTORY_LIMIT}
+            txType={activeTab}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 const MemberProfile: FC = () => {
   const { wallet } = useActiveWallet();
-  const { treeId } = useParams();
+  const { treeId, address } = useParams();
   const treeInfo = useTreeInfo(Number(treeId));
+
   return (
     <Box width="100%" pb={10}>
       <PageHeader title="プロフィール" />
-      <WorkspaceOverviewSettings wallet={wallet} treeInfo={treeInfo} />
+      <ProfileOverviewSettings wallet={wallet} treeInfo={treeInfo} />
+      <UserHistoryComponent treeId={treeId} address={address} />
     </Box>
   );
 };

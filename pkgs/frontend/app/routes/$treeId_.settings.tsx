@@ -3,10 +3,6 @@ import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import axios from "axios";
-import {
-  SettingsSection,
-  SettingsSubSection,
-} from "~/components/SettingSections";
 import type { Exact, GetWorkspaceQuery, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useHats, useTreeInfo } from "hooks/useHats";
@@ -34,6 +30,10 @@ import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import type { Address, TransactionReceipt } from "viem";
 import { PageHeader } from "~/components/PageHeader";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "~/components/SettingSections";
 import { CommonButton } from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";

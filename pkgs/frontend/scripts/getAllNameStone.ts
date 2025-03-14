@@ -1,9 +1,9 @@
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 import NameStone, { AuthenticationError, NetworkError } from "namestone-sdk";
 import type { NameData } from "namestone-sdk";
-import { config } from "dotenv";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { existsSync } from "node:fs";
 
 // Load environment variables from .env or .env.local file
 const __filename = fileURLToPath(import.meta.url);

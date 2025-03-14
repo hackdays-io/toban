@@ -1,31 +1,31 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
-import { useCallback, useEffect, useMemo, useState, type FC } from "react";
-import { PageHeader } from "../components/PageHeader";
-import { useActiveWallet } from "../../hooks/useWallet";
-import { useParams } from "@remix-run/react";
-import type { WalletType } from "../../hooks/useWallet";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
-import { useUploadImageFileToIpfs } from "../../hooks/useIpfs";
-import { useTreeInfo } from "../../hooks/useHats";
-import { ipfs2https } from "../../utils/ipfs";
+import { useParams } from "@remix-run/react";
+import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
+import { useGetTransferFractionTokens } from "hooks/useFractionToken";
+import type { TextRecords } from "namestone-sdk";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import CommonButton from "../components/common/CommonButton";
-import { CommonInput } from "../components/common/CommonInput";
-import { CommonTextArea } from "../components/common/CommonTextarea";
-import {
-  SettingsSection,
-  SettingsSubSection,
-} from "../components/SettingSections";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
   useUpdateName,
 } from "../../hooks/useENS";
-import { UserIcon } from "../components/icon/UserIcon";
-import type { TextRecords } from "namestone-sdk";
+import { useTreeInfo } from "../../hooks/useHats";
+import { useUploadImageFileToIpfs } from "../../hooks/useIpfs";
+import { useActiveWallet } from "../../hooks/useWallet";
+import type { WalletType } from "../../hooks/useWallet";
+import { ipfs2https } from "../../utils/ipfs";
+import { PageHeader } from "../components/PageHeader";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "../components/SettingSections";
 import { UserAssistCreditHistory } from "../components/assistcredit/History";
-import { useGetTransferFractionTokens } from "hooks/useFractionToken";
-import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
+import CommonButton from "../components/common/CommonButton";
+import { CommonInput } from "../components/common/CommonInput";
+import { CommonTextArea } from "../components/common/CommonTextarea";
+import { UserIcon } from "../components/icon/UserIcon";
 
 interface ProfileOverviewSettingsProps {
   wallet: WalletType;

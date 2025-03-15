@@ -1,4 +1,5 @@
 import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
+import { Link } from "@remix-run/react";
 import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import type { GetTransferFractionTokensQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
@@ -23,6 +24,7 @@ interface UserProps extends Props {
 }
 
 interface ItemProps {
+  treeId: string;
   from: string;
   to: string;
   hatId: string;
@@ -42,7 +44,13 @@ const AssistCreaditText: FC<AssistCreditTextProps> = ({ detail }) => {
   );
 };
 
-const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
+const AssistCreditItem: FC<ItemProps> = ({
+  treeId,
+  from,
+  to,
+  amount,
+  hatId,
+}) => {
   const addresses = useMemo(() => {
     return [from, to];
   }, [from, to]);
@@ -101,15 +109,17 @@ const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Flex alignItems="center" gap={2}>
-          <UserIcon
-            size="25px"
-            userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
-          />
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
-            {fromUser?.name || abbreviateAddress(from)}
-          </Text>
-        </Flex>
+        <Link to={`/${treeId}/member/${from}`}>
+          <Flex alignItems="center" gap={2}>
+            <UserIcon
+              size="25px"
+              userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
+            />
+            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              {fromUser?.name || abbreviateAddress(from)}
+            </Text>
+          </Flex>
+        </Link>
 
         <Box textAlign="left">
           <HatsListItemParser imageUri={hat?.imageUri} detailUri={hat?.details}>
@@ -123,15 +133,17 @@ const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
           </Text>
         </Box>
 
-        <Flex justifyContent="flex-end" alignItems="center" gap={2}>
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
-            {toUser?.name || abbreviateAddress(to)}
-          </Text>
-          <UserIcon
-            size="25px"
-            userImageUrl={ipfs2https(toUser?.text_records?.avatar)}
-          />
-        </Flex>
+        <Link to={`/${treeId}/member/${to}`}>
+          <Flex justifyContent="flex-end" alignItems="center" gap={2}>
+            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              {toUser?.name || abbreviateAddress(to)}
+            </Text>
+            <UserIcon
+              size="25px"
+              userImageUrl={ipfs2https(toUser?.text_records?.avatar)}
+            />
+          </Flex>
+        </Link>
       </Grid>
     </Box>
   );
@@ -154,6 +166,7 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
     <VStack gap={2}>
       {data?.transferFractionTokens.map((token) => (
         <AssistCreditItem
+          treeId={treeId}
           key={`th_${token.id}`}
           from={token.from}
           to={token.to}
@@ -186,6 +199,7 @@ export const UserAssistCreditHistory: FC<UserProps> = ({ data, txType }) => {
     <VStack gap={2}>
       {data.transferFractionTokens.map((token) => (
         <AssistCreditItem
+          treeId={token.workspaceId || ""}
           key={`${txType}_${token.id}`}
           from={token.from}
           to={token.to}

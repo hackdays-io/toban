@@ -22,7 +22,7 @@ import {
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
-import { type NameData, TextRecords } from "namestone-sdk";
+import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaArrowRight } from "react-icons/fa6";
 import { toast } from "react-toastify";
@@ -33,7 +33,6 @@ import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 import { Field } from "~/components/ui/field";

@@ -109,6 +109,7 @@ export const useQueryIpfsJsonData = (cid?: string) => {
   const res = useQuery({
     queryKey: ["ipfs", cid],
     queryFn: () => ipfs2httpsJson(cid),
+    staleTime: 1000 * 60 * 60,
   });
 
   return res;

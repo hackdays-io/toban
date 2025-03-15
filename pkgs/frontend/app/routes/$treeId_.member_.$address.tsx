@@ -7,8 +7,8 @@ import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import {
-  useActiveWalletIdentity,
   useAddressesByNames,
+  useIdentity,
   useUpdateName,
 } from "../../hooks/useENS";
 import { useTreeInfo } from "../../hooks/useHats";
@@ -38,13 +38,15 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
   treeInfo,
   address,
 }) => {
+  const me = useActiveWallet();
+  const { identity } = useIdentity(address);
+
   const {
     uploadImageFileToIpfs,
     imageFile,
     setImageFile,
     isLoading: isIpfsLoading,
   } = useUploadImageFileToIpfs();
-  const { identity } = useActiveWalletIdentity();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [profileImgUrl, setProfileImgUrl] = useState<string | undefined>(
@@ -71,7 +73,7 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
   useEffect(() => {
     const setInitialProfileImgUrl = async () => {
       const avatar = identity?.text_records?.avatar;
-      if (avatar) setProfileImgUrl(ipfs2https(avatar));
+      setProfileImgUrl(ipfs2https(avatar || ""));
     };
     setInitialProfileImgUrl();
   }, [identity]);
@@ -201,6 +203,12 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
     updateName,
   ]);
 
+  const isMe = useMemo(() => {
+    return (
+      address?.toLocaleLowerCase() === me?.wallet?.account.address.toLowerCase()
+    );
+  }, [address, me]);
+
   return (
     <SettingsSection headingText="プロフィールの概要">
       <Flex mt={8} width="100%" gap={8} alignItems="center">
@@ -215,19 +223,21 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
         >
           <UserIcon userImageUrl={profileImgUrl} />
         </Box>
-        <Box>
-          <CommonButton as="label">
-            <Input
-              type="file"
-              accept="image/*"
-              display="none"
-              onChange={(e) => {
-                handleUploadImg(e.target.files?.[0]);
-              }}
-            />
-            <Text>画像をアップロード</Text>
-          </CommonButton>
-        </Box>
+        {isMe && (
+          <Box>
+            <CommonButton as="label">
+              <Input
+                type="file"
+                accept="image/*"
+                display="none"
+                onChange={(e) => {
+                  handleUploadImg(e.target.files?.[0]);
+                }}
+              />
+              <Text>画像をアップロード</Text>
+            </CommonButton>
+          </Box>
+        )}
       </Flex>
       <SettingsSubSection headingText="アドレス">
         <Text fontSize="sm" fontWeight="medium" color="gray.600" pb={2}>
@@ -235,30 +245,42 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
         </Text>
       </SettingsSubSection>
       <SettingsSubSection headingText="名前">
-        <CommonInput
-          // placeholder={profileName}
-          value={profileName}
-          onChange={(e) => setProfileName(e.target.value)}
-        />
+        {isMe ? (
+          <CommonInput
+            value={profileName}
+            onChange={(e) => setProfileName(e.target.value)}
+          />
+        ) : (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600" pb={2}>
+            {profileName}
+          </Text>
+        )}
       </SettingsSubSection>
       <SettingsSubSection headingText="自己紹介">
-        <CommonTextArea
-          minHeight="80px"
-          // placeholder={profileDescription}
-          value={profileDescription}
-          onChange={(e) => setProfileDescription(e.target.value)}
-        />
+        {isMe ? (
+          <CommonTextArea
+            minHeight="80px"
+            value={profileDescription}
+            onChange={(e) => setProfileDescription(e.target.value)}
+          />
+        ) : (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600" pb={2}>
+            {profileDescription}
+          </Text>
+        )}
       </SettingsSubSection>
-      <CommonButton
-        size="lg"
-        maxHeight="64px"
-        minHeight="48px"
-        onClick={handleSubmit}
-        disabled={!isChangedDetails && !imageFile}
-        loading={isLoading || isIpfsLoading || isUpdateNameLoading}
-      >
-        保存
-      </CommonButton>
+      {isMe && (
+        <CommonButton
+          size="lg"
+          maxHeight="64px"
+          minHeight="48px"
+          onClick={handleSubmit}
+          disabled={!isChangedDetails && !imageFile}
+          loading={isLoading || isIpfsLoading || isUpdateNameLoading}
+        >
+          保存
+        </CommonButton>
+      )}
     </SettingsSection>
   );
 };

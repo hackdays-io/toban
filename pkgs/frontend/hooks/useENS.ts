@@ -20,6 +20,21 @@ export const useActiveWalletIdentity = () => {
   return { identity };
 };
 
+export const useIdentity = (address?: string) => {
+  const addressArray = useMemo(() => {
+    if (!address) return [];
+    return [address];
+  }, [address]);
+  const { names } = useNamesByAddresses(addressArray);
+
+  const identity = useMemo(() => {
+    if (!names || names.length === 0) return;
+    return names[0][0];
+  }, [names]);
+
+  return { identity };
+};
+
 export const useNamesByAddresses = (addresses?: string[]) => {
   const [names, setNames] = useState<NameData[][]>([]);
 

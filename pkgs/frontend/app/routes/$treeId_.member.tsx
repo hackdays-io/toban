@@ -103,10 +103,12 @@ const WorkspaceMember: FC = () => {
         <VStack width="full" alignItems="start" gap={3}>
           {members.map((m) => (
             <HStack key={`${m.name}m`} width="full">
-              <UserIcon
-                userImageUrl={ipfs2https(m.text_records?.avatar)}
-                size={10}
-              />
+              <Link to={`/${treeId}/member/${m.address}`}>
+                <UserIcon
+                  userImageUrl={ipfs2https(m.text_records?.avatar)}
+                  size={10}
+                />
+              </Link>
               <VStack alignItems="start" width="full">
                 <Text lineBreak="anywhere">
                   {m.name

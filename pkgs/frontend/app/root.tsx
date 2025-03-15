@@ -12,6 +12,7 @@ import {
   data,
   useLoaderData,
 } from "@remix-run/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useEffect } from "react";
 import { ToastContainer, toast as notify } from "react-toastify";
@@ -62,6 +63,8 @@ export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
   return data({ toast }, { headers });
 };
 
+const queryClient = new QueryClient();
+
 export default function App() {
   const {
     data: { toast },
@@ -93,20 +96,22 @@ export default function App() {
           supportedChains: [currentChain],
         }}
       >
-        <SwitchNetwork />
-        <ChakraProvider>
-          <Container
-            bg="#fffdf8"
-            maxW="430px"
-            height="100%"
-            width="100%"
-            minH="100vh"
-          >
-            <Header />
-            <Outlet />
-          </Container>
-          <ToastContainer />
-        </ChakraProvider>
+        <QueryClientProvider client={queryClient}>
+          <SwitchNetwork />
+          <ChakraProvider>
+            <Container
+              bg="#fffdf8"
+              maxW="430px"
+              height="100%"
+              width="100%"
+              minH="100vh"
+            >
+              <Header />
+              <Outlet />
+            </Container>
+            <ToastContainer />
+          </ChakraProvider>
+        </QueryClientProvider>
       </PrivyProvider>
     </ApolloProvider>
   );

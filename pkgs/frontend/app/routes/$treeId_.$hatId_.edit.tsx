@@ -1,8 +1,8 @@
 import { Box, Text } from "@chakra-ui/react";
-import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useGetHat, useHats } from "hooks/useHats";
 import {
+  useQueryIpfsJsonData,
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
@@ -15,9 +15,10 @@ import type {
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { ipfs2https } from "utils/ipfs";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
+import { PageHeader } from "~/components/PageHeader";
 import { RoleAttributesList } from "~/components/RoleAttributesList";
 import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
@@ -61,37 +62,23 @@ const EditRole: FC = () => {
     },
   });
 
+  const { data: hatDetailJson } = useQueryIpfsJsonData(hat?.details);
+
   useEffect(() => {
     const setInitialValues = async () => {
-      if (!hat) return;
-      const detailsJson: HatsDetailSchama = hat.details
-        ? await ipfs2httpsJson(hat.details)
-        : undefined;
-
-      if (detailsJson) {
-        setValue("name", detailsJson.data.name);
-        setValue("description", detailsJson.data.description || "");
-        setValue("responsibilities", detailsJson.data.responsabilities || []);
-        setValue("authorities", detailsJson.data.authorities || []);
+      if (hatDetailJson) {
+        setValue("name", hatDetailJson.data.name);
+        setValue("description", hatDetailJson.data.description || "");
+        setValue("responsibilities", hatDetailJson.data.responsabilities || []);
+        setValue("authorities", hatDetailJson.data.authorities || []);
       }
     };
     setInitialValues();
-  }, [hat, setValue]);
-
-  const [originalDetails, setOriginalDetails] = useState<HatsDetailSchama>();
-
-  useEffect(() => {
-    const loadDetails = async () => {
-      if (!hat?.details) return;
-      const detailsJson = await ipfs2httpsJson(hat.details);
-      setOriginalDetails(detailsJson);
-    };
-    loadDetails();
-  }, [hat?.details]);
+  }, [hatDetailJson, setValue]);
 
   const isChangedDetails = useCallback(
     (currentDetails: FormValues) => {
-      if (!originalDetails) return true;
+      if (!hatDetailJson) return true;
 
       const areArraysEqual = (
         arr1: HatsDetailsAttributes,
@@ -102,20 +89,19 @@ const EditRole: FC = () => {
       };
 
       return (
-        currentDetails.name !== originalDetails.data.name ||
-        currentDetails.description !==
-          (originalDetails.data.description || "") ||
+        currentDetails.name !== hatDetailJson.data.name ||
+        currentDetails.description !== (hatDetailJson.data.description || "") ||
         !areArraysEqual(
           currentDetails.responsibilities,
-          originalDetails.data.responsabilities || [],
+          hatDetailJson.data.responsabilities || [],
         ) ||
         !areArraysEqual(
           currentDetails.authorities,
-          originalDetails.data.authorities || [],
+          hatDetailJson.data.authorities || [],
         )
       );
     },
-    [originalDetails],
+    [hatDetailJson],
   );
 
   const onSubmit = async (formData: FormValues) => {
@@ -175,7 +161,7 @@ const EditRole: FC = () => {
   return (
     <>
       <Box mt={5} w="100%">
-        <Text fontSize="lg">ロールを編集</Text>
+        <PageHeader title="ロール編集" />
         <form onSubmit={handleSubmit(onSubmit)}>
           <ContentContainer>
             <Controller

@@ -4,6 +4,7 @@ import { useNamesByAddresses } from "hooks/useENS";
 import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
+import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
@@ -17,6 +18,9 @@ import { HatDetail, RoleName } from "~/components/roles/HolderDetail";
 
 const RoleDetails: FC = () => {
   const { treeId, hatId } = useParams();
+
+  const { wallet } = useActiveWallet();
+  const me = wallet?.account?.address;
 
   const tree = useTreeInfo(Number(treeId));
 
@@ -40,9 +44,13 @@ const RoleDetails: FC = () => {
     },
   });
   const assistantMembers = useMemo(() => {
-    return balanceOfFractionTokens?.balanceOfFractionTokens
-      .filter((h) => !wearerIds.includes(h.owner.toLowerCase()))
-      .map((h) => h.owner.toLowerCase());
+    return Array.from(
+      new Set(
+        balanceOfFractionTokens?.balanceOfFractionTokens
+          .filter((h) => !wearerIds.includes(h.owner.toLowerCase()))
+          .map((h) => h.owner.toLowerCase()),
+      ),
+    );
   }, [balanceOfFractionTokens, wearerIds]);
   const { names: holderNames } = useNamesByAddresses(assistantMembers);
 
@@ -58,6 +66,17 @@ const RoleDetails: FC = () => {
     wearerIds,
   );
 
+  const isAuthorized = useMemo(() => {
+    if (!me) return false;
+
+    const topHat = tree?.hats?.find((h) => h.levelAtLocalTree === 0);
+
+    return (
+      wearerIds.includes(me.toLowerCase()) ||
+      topHat?.wearers?.some((w) => w.id.toLowerCase() === me.toLowerCase())
+    );
+  }, [me, wearerIds, tree]);
+
   const navigate = useNavigate();
 
   if (!hat) return;
@@ -66,6 +85,20 @@ const RoleDetails: FC = () => {
     <Box>
       <HatsListItemParser imageUri={hat.imageUri} detailUri={hat.details}>
         <RoleName treeId={treeId} />
+
+        {isAuthorized && (
+          <Link to={`/${treeId}/${hatId}/edit`}>
+            <BasicButton
+              fontWeight="bold"
+              minH={2}
+              size="xs"
+              bgColor="blue.300"
+              w="auto"
+            >
+              編集
+            </BasicButton>
+          </Link>
+        )}
         <HatDetail />
       </HatsListItemParser>
 

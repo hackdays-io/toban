@@ -34,7 +34,7 @@ import {
   useForm,
 } from "react-hook-form";
 import type { HatsDetailSchama } from "types/hats";
-import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";

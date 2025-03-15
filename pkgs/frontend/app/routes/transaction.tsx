@@ -18,8 +18,8 @@ import { toast } from "react-toastify";
 import { parseEther } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
+import { SettingsSubSection } from "~/components/SettingSections";
 import { CommonInput } from "~/components/common/CommonInput";
-import { SettingsSubSection } from "./$treeId_.settings";
 
 // Select tx types
 const transactionTypes = createListCollection({

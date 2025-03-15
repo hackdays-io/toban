@@ -109,3 +109,44 @@ export const useSetName = () => {
 
   return { setName, isLoading };
 };
+
+export const useUpdateName = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const updateName = useCallback(
+    async (params: {
+      name: string;
+      address?: string;
+      text_records?: TextRecords;
+    }) => {
+      if (!params.address || !params.name) {
+        throw new Error("Address and name are required");
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await axios.post("/api/namestone/update-name", params);
+        console.log("API response:", {
+          status: response.status,
+          statusText: response.statusText,
+          data: response.data,
+        });
+
+        if (response.status !== 200) {
+          throw new Error(`Failed to update name: ${response.statusText}`);
+        }
+
+        return response.data;
+      } catch (error) {
+        console.error("Error updating name:", error);
+        // Re-throw the error to propagate it to the caller
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return { updateName, isLoading };
+};

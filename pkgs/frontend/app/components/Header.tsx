@@ -150,19 +150,34 @@ export const Header = () => {
         )}
       </Box>
       {identity ? (
-        <MenuRoot closeOnSelect={false}>
+        <MenuRoot>
           <MenuTrigger asChild>
             <button type="button">
               <UserIcon userImageUrl={userImageUrl} size="40px" />
             </button>
           </MenuTrigger>
           <MenuContent>
-            <MenuItem value="name" bgColor="blue.100" display="block">
+            <MenuItem
+              value="name"
+              bgColor="blue.100"
+              display="block"
+              closeOnSelect={false}
+            >
               <Text fontWeight="bold">{identity.name}</Text>
               <Text fontSize="xs">
                 {identity.name}.{identity.domain}
               </Text>
               <Text fontSize="xs">{abbreviateAddress(identity.address)}</Text>
+            </MenuItem>
+            <MenuItem
+              value="profile"
+              onClick={() => {
+                navigate(`/${treeId}/member/${identity.address}`);
+              }}
+              cursor="pointer"
+              closeOnSelect={true}
+            >
+              プロフィール
             </MenuItem>
             <MenuItem
               value="executeTx"
@@ -173,7 +188,12 @@ export const Header = () => {
             >
               Execute Tx
             </MenuItem>
-            <MenuItem value="logout" onClick={handleLogout} cursor="pointer">
+            <MenuItem
+              value="logout"
+              onClick={handleLogout}
+              cursor="pointer"
+              closeOnSelect={true}
+            >
               Logout
             </MenuItem>
           </MenuContent>

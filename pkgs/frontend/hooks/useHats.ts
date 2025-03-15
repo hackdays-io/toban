@@ -4,6 +4,7 @@ import {
   HatsSubgraphClient,
   type Tree,
 } from "@hatsprotocol/sdk-v1-subgraph";
+import { useQuery } from "@tanstack/react-query";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useState } from "react";
 import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
@@ -602,26 +603,12 @@ export const useHats = () => {
 };
 
 export const useGetHat = (hatId: string) => {
-  const [hat, setHat] = useState<Hat>();
-  const [isLoading, setIsLoading] = useState(false);
-
   const { getHat } = useHats();
 
-  useEffect(() => {
-    const fetch = async () => {
-      if (!hatId) return;
-      setIsLoading(true);
-      try {
-        const hat = await getHat(hatId);
-        if (!hat) throw new Error("Hat not found");
-        setHat(hat);
-      } catch (error) {
-        console.error("error occured when fetching hat:", error);
-      }
-      setIsLoading(false);
-    };
-    fetch();
-  }, [hatId, getHat]);
+  const { data: hat, isLoading } = useQuery({
+    queryKey: ["hat", hatId],
+    queryFn: () => getHat(hatId),
+  });
 
   return { hat, isLoading };
 };

@@ -1,6 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { HatsDetailSchama, HatsDetailsData } from "types/hats";
-import { ipfsUploadFile, ipfsUploadJson } from "utils/ipfs";
+import { ipfs2httpsJson, ipfsUploadFile, ipfsUploadJson } from "utils/ipfs";
 
 export const useUploadMetadataToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -102,4 +103,13 @@ export const useUploadImageFileToIpfs = () => {
   };
 
   return { uploadImageFileToIpfs, imageFile, setImageFile, isLoading, error };
+};
+
+export const useQueryIpfsJsonData = (cid?: string) => {
+  const res = useQuery({
+    queryKey: ["ipfs", cid],
+    queryFn: () => ipfs2httpsJson(cid),
+  });
+
+  return res;
 };

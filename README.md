@@ -92,9 +92,12 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
         VITE_FRACTION_TOKEN_ADDRESS=0xd921517fdF141d97C289bDb9686f51A1375dCc69
         VITE_SPLITS_CREATOR_ADDRESS=0x6b5d2e27ff74e9adf4d23aebb9efb52867823583
         VITE_PIMLICO_API_KEY=
+
+        // You need to get pinata jwt, gateway domain and gateway token by yourself.
         VITE_PINATA_JWT=
         VITE_PINATA_GATEWAY=
         VITE_PINATA_GATEWAY_TOKEN=
+
         VITE_NAMESTONE_API_KEY=
         VITE_GOLDSKY_GRAPHQL_ENDPOINT=
         VITE_ALCHEMY_KEY=

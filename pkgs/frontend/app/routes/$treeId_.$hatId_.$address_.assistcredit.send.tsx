@@ -48,7 +48,7 @@ const AssistCreditSend: FC = () => {
     where: {
       workspaceId: treeId,
       hatId: BigInt(hatId ?? "").toString(),
-      owner: address?.toLowerCase(),
+      owner: me.identity?.address.toLowerCase(),
     },
   });
 

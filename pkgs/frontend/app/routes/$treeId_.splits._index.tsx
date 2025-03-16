@@ -33,20 +33,24 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
   const [createdTime, setCreatedTime] = useState<string>();
 
   const consolidatedRecipients = useMemo(() => {
+    let totalOwnership = 0;
     const consolidated = split.recipients.reduce(
       (acc, recipient) => {
         const address = recipient.recipient.address;
-        acc[address] =
-          (acc[address] || 0) + Number(recipient.percentAllocation);
+        acc[address] = (acc[address] || 0) + Number(recipient.ownership);
+        totalOwnership += Number(recipient.ownership);
         return acc;
       },
       {} as Record<string, number>,
     );
 
-    return Object.entries(consolidated).map(([address, percentAllocation]) => ({
-      address,
-      percentAllocation,
-    }));
+    return {
+      list: Object.entries(consolidated).map(([address, ownership]) => ({
+        address,
+        ownership,
+      })),
+      totalOwnership,
+    };
   }, [split.recipients]);
 
   const [open, setOpen] = useState(false);
@@ -160,6 +164,8 @@ const SplitsIndex: FC = () => {
 
   const { splits, isLoading } =
     useSplitsCreatorRelatedSplits(splitCreatorAddress);
+
+  console.log(splits);
 
   const splitsAddress = useMemo(() => {
     return splits.map((split) => split.address);

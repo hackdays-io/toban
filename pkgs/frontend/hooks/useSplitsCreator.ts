@@ -164,8 +164,6 @@ export const useUserEarnings = () => {
   const userEarnings = useQuery({
     queryKey: ["userEarnings"],
     queryFn: async () => {
-      console.log("fetching user earnings");
-      console.log(wallet, splitsDataClient);
       if (!wallet || !splitsDataClient) return;
       try {
         const res = await splitsDataClient.getUserEarnings({

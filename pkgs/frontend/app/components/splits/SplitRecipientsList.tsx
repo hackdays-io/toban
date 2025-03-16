@@ -16,13 +16,13 @@ export const SplitRecipientsList: FC<SplitRecipientsListProps> = ({
   recipients,
 }) => {
   const addresses = useMemo(() => {
-    return recipients.list.map((r) => r.address);
+    return recipients.list?.map((r) => r.address);
   }, [recipients]);
   const { names } = useNamesByAddresses(addresses);
 
   return (
     <Box>
-      {recipients.list.map((recipient) => {
+      {recipients.list?.map((recipient) => {
         const name = names.find(
           (name) => name[0]?.address === recipient.address,
         )?.[0];

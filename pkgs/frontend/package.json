@@ -7,6 +7,7 @@
   "scripts": {
     "build": "remix vite:build",
     "dev": "remix vite:dev",
+    "dev:base": "dotenv -e .env.base remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc",
@@ -56,6 +57,7 @@
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
     "autoprefixer": "^10.4.19",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^8.38.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",

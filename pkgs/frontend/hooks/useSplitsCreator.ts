@@ -124,7 +124,7 @@ export const useSplit = (contractAddress: Address) => {
         const res = await splitsDataClient.getSplitEarnings({
           chainId: currentChain.id,
           splitAddress: contractAddress.toLocaleLowerCase(),
-          erc20TokenList: [],
+          erc20TokenList: ["0x652b67d6BA758CC604940FAd585DC638C3F4a6A6"],
         });
         return res;
       } catch (error) {

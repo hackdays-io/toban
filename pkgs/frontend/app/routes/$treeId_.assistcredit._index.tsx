@@ -24,20 +24,25 @@ const WorkspaceWithBalance: FC = () => {
     },
   });
 
-  const hatIds = useMemo(
-    () => data?.balanceOfFractionTokens.map(({ hatId }) => hatId.toString()),
-    [data],
-  );
+  const hatIds = useMemo(() => {
+    return Array.from(
+      new Set(data?.balanceOfFractionTokens.map(({ hatId }) => hatId)),
+    );
+  }, [data]);
 
   const { hats } = useGetHats(hatIds || []);
 
   const hatsWithBalance = useMemo(() => {
     if (!hats) return [];
-    return hats.map((hat, index) => ({
-      hat,
-      ...data?.balanceOfFractionTokens[index],
-    }));
-  }, [data, hats]);
+    return hats
+      .map((hat) => {
+        const balance = data?.balanceOfFractionTokens.find(
+          ({ hatId }) => hatId === BigInt(hat.id).toString(),
+        );
+        if (balance) return { hat, ...balance };
+      })
+      .filter((hat) => !!hat);
+  }, [hats, data]);
 
   return (
     <Box>
@@ -46,7 +51,7 @@ const WorkspaceWithBalance: FC = () => {
         {wallet &&
           hatsWithBalance.map(({ hat, balance, wearer }) => (
             <HatsListItemParser
-              key={`${hat.id}${wearer}`}
+              key={hat.id}
               imageUri={hat.imageUri}
               detailUri={hat.details}
             >

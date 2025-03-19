@@ -3,6 +3,7 @@ import { useParams } from "@remix-run/react";
 import type { FC } from "react";
 import { PageHeader } from "~/components/PageHeader";
 import { AssistCreditHistory } from "~/components/assistcredit/History";
+import { Treemap } from "~/components/assistcredit/Treemap";
 import { VerticalBar } from "~/components/assistcredit/VerticalBar";
 
 const WorkspaceMember: FC = () => {
@@ -21,6 +22,7 @@ const WorkspaceMember: FC = () => {
         {treeId && <AssistCreditHistory treeId={treeId} limit={100} />}
       </Box>
       <Box mt={5}>{treeId && <VerticalBar treeId={treeId} />}</Box>
+      <Box mt={5}>{treeId && <Treemap treeId={treeId} />}</Box>
     </Box>
   );
 };

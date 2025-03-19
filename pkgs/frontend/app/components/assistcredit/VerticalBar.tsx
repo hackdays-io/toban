@@ -1,19 +1,19 @@
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
   BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
   Title,
   Tooltip,
-  Legend,
 } from "chart.js";
+import { useMemo } from "react";
+import { Bar } from "react-chartjs-2";
 import {
   OrderDirection,
   TransferFractionToken_OrderBy,
 } from "../../../gql/graphql";
 import { useGetTransferFractionTokens } from "../../../hooks/useFractionToken";
-import { Bar } from "react-chartjs-2";
-import { useMemo } from "react";
 
 ChartJS.register(
   CategoryScale,

@@ -25,21 +25,21 @@ ChartJS.register(
 );
 
 export const VerticalBar = ({ treeId }: { treeId: string }) => {
-  const { data: txOriginalData } = useGetTransferFractionTokens({
+  const { data: gqlData } = useGetTransferFractionTokens({
     where: {
       workspaceId: treeId,
     },
     orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
-    orderDirection: OrderDirection.Desc,
+    orderDirection: OrderDirection.Asc,
     first: 100,
   });
 
   const { labels, amounts } = useMemo(() => {
-    if (!txOriginalData?.transferFractionTokens) {
+    if (!gqlData?.transferFractionTokens) {
       return { labels: [], amounts: [] };
     }
 
-    const dailyAmounts = txOriginalData.transferFractionTokens.reduce(
+    const dailyAmounts = gqlData.transferFractionTokens.reduce(
       (acc: { [key: string]: number }, tx) => {
         const date = new Date(
           Number(tx.blockTimestamp) * 1000,
@@ -51,15 +51,11 @@ export const VerticalBar = ({ treeId }: { treeId: string }) => {
       {},
     );
 
-    const sortedDates = Object.keys(dailyAmounts).sort(
-      (a, b) => new Date(a).getTime() - new Date(b).getTime(),
-    );
-
     return {
-      labels: sortedDates,
-      amounts: sortedDates.map((date) => dailyAmounts[date]),
+      labels: Object.keys(dailyAmounts),
+      amounts: Object.values(dailyAmounts),
     };
-  }, [txOriginalData]);
+  }, [gqlData]);
 
   const options = {
     responsive: true,

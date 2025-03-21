@@ -9,6 +9,16 @@ import { abbreviateAddress } from "utils/wallet";
 
 ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
 
+// Define the treemap formatter context interface
+interface TreemapFormatterContext {
+  type: string;
+  raw: {
+    _data: {
+      owner: string;
+    };
+  };
+}
+
 export const Treemap = ({ treeId }: { treeId: string }) => {
   const { data: gqlData } = useBalanceOfFractionTokens({
     where: {
@@ -70,8 +80,7 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
         spacing: 1,
         labels: {
           display: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          formatter: (ctx: any) => {
+          formatter: (ctx: TreemapFormatterContext) => {
             if (ctx.type !== "data") return "";
             return ctx.raw._data.owner;
           },

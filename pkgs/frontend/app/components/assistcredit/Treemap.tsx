@@ -1,4 +1,5 @@
 import { Chart as ChartJS, Tooltip, Legend } from "chart.js";
+import type { TooltipItem } from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
 import { BalanceOfFractionToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
@@ -9,12 +10,23 @@ import { abbreviateAddress } from "utils/wallet";
 
 ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
 
-// Define the treemap formatter context interface
-interface TreemapFormatterContext {
+// Formatter context type
+type FormatterContext = {
   type: string;
   raw: {
-    _data: {
+    _data?: {
       owner: string;
+      balance: number;
+    };
+  };
+};
+
+// Define the tooltip item interface for treemap
+interface TreemapTooltipItem extends TooltipItem<"treemap"> {
+  raw: {
+    _data?: {
+      owner: string;
+      balance: number;
     };
   };
 }
@@ -71,7 +83,6 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
   const data = {
     datasets: [
       {
-        label: "Token Holdings",
         tree: processedData,
         key: "balance",
         backgroundColor: "skyblue",
@@ -80,9 +91,9 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
         spacing: 1,
         labels: {
           display: true,
-          formatter: (ctx: TreemapFormatterContext) => {
+          formatter: (ctx: FormatterContext) => {
             if (ctx.type !== "data") return "";
-            return ctx.raw._data.owner;
+            return ctx.raw._data?.owner || "";
           },
         },
       },
@@ -92,9 +103,26 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
   const options = {
     responsive: true,
     plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: "保有しているトークンの量",
+      },
       tooltip: {
         enabled: true,
         position: "nearest" as const,
+        callbacks: {
+          title: (items: TreemapTooltipItem[]) => {
+            if (!items?.length || !items[0]?.raw?._data) return "";
+            return items[0].raw._data.owner || "";
+          },
+          label: (item: TreemapTooltipItem) => {
+            if (!item?.raw?._data) return "";
+            return `合計: ${item.raw._data.balance || 0}`;
+          },
+        },
       },
     },
   };

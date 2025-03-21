@@ -115,7 +115,7 @@ export const TreemapReceived = ({ treeId }: { treeId: string }) => {
       },
       title: {
         display: true,
-        text: "保有しているトークンの量",
+        text: "受け取ったトークンの量",
       },
       tooltip: {
         enabled: true,

@@ -1,4 +1,4 @@
-import { Chart as ChartJS, Tooltip, Legend } from "chart.js";
+import { Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import type { TooltipItem } from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
 import { BalanceOfFractionToken_OrderBy, OrderDirection } from "gql/graphql";

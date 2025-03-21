@@ -4,6 +4,7 @@ import type { FC } from "react";
 import { PageHeader } from "~/components/PageHeader";
 import { AssistCreditHistory } from "~/components/assistcredit/History";
 import { Treemap } from "~/components/assistcredit/Treemap";
+import { TreemapReceived } from "~/components/assistcredit/TreemapReceived";
 import { VerticalBar } from "~/components/assistcredit/VerticalBar";
 
 const WorkspaceMember: FC = () => {
@@ -33,6 +34,7 @@ const WorkspaceMember: FC = () => {
             <VStack gap={6} alignItems="stretch" width="100%">
               <VerticalBar treeId={treeId} />
               <Treemap treeId={treeId} />
+              <TreemapReceived treeId={treeId} />
             </VStack>
           )}
         </Tabs.Content>

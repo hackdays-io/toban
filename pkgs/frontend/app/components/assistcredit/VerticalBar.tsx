@@ -61,7 +61,7 @@ export const VerticalBar = ({ treeId }: { treeId: string }) => {
     responsive: true,
     plugins: {
       legend: {
-        position: "top" as const,
+        display: false,
       },
       title: {
         display: true,

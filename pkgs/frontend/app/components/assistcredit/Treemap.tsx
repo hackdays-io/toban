@@ -1,4 +1,4 @@
-import { Chart as ChartJS } from "chart.js";
+import { Chart as ChartJS, Tooltip, Legend } from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
 import { BalanceOfFractionToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { Chart } from "react-chartjs-2";
 import { abbreviateAddress } from "utils/wallet";
 
-ChartJS.register(TreemapController, TreemapElement);
+ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
 
 export const Treemap = ({ treeId }: { treeId: string }) => {
   const { data: gqlData } = useBalanceOfFractionTokens({
@@ -82,6 +82,12 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
 
   const options = {
     responsive: true,
+    plugins: {
+      tooltip: {
+        enabled: true,
+        position: "nearest" as const,
+      },
+    },
   };
 
   // @ts-expect-error chartjs-chart-treemap has incomplete type definitions

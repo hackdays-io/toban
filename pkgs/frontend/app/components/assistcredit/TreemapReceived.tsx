@@ -57,8 +57,6 @@ export const TreemapReceived = ({ treeId }: { treeId: string }) => {
   const processedData = (() => {
     if (!gqlData?.balanceOfFractionTokens) return [];
 
-    console.log(gqlData.balanceOfFractionTokens);
-
     const ownerBalances: Record<string, number> = {};
 
     for (const item of gqlData.balanceOfFractionTokens) {

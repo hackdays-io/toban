@@ -62,7 +62,9 @@ export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
       const embeddedWallet = wallets.find(
         (wallet) => wallet.connectorType === "embedded",
       );
-      const owner = await embeddedWallet?.getEthereumProvider();
+
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      const owner = (await embeddedWallet?.getEthereumProvider()) as any;
       if (!owner) return;
 
       // We are using thirdweb smart account

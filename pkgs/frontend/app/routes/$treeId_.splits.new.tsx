@@ -252,8 +252,10 @@ const SplitterNew: FC = () => {
     fetch();
   }, [baseHats, fields.length, insert]);
 
-  const [preview, setPreview] =
-    useState<{ address: Address; percentAllocation: number }[]>();
+  const [preview, setPreview] = useState<{
+    list: { address: Address; ownership: number }[];
+    totalOwnership: number;
+  }>();
 
   const calcParams = useCallback(() => {
     const data = getValues();
@@ -287,20 +289,23 @@ const SplitterNew: FC = () => {
     const params = calcParams();
     const res = await previewSplits(params);
 
+    let totalOwnership = 0;
     const consolidatedRecipients = res[0].reduce((acc, address, index) => {
       const percentAllocation = Number(res[1][index]);
+      totalOwnership += percentAllocation;
       acc.set(address, (acc.get(address) || 0) + percentAllocation);
       return acc;
     }, new Map<Address, number>());
 
-    setPreview(
-      Array.from(consolidatedRecipients.entries()).map(
-        ([address, percentAllocation]) => ({
+    setPreview({
+      list: Array.from(consolidatedRecipients.entries()).map(
+        ([address, ownership]) => ({
           address,
-          percentAllocation,
+          ownership,
         }),
       ),
-    );
+      totalOwnership,
+    });
   }, [availableName, previewSplits, calcParams]);
 
   const { setName } = useSetName();

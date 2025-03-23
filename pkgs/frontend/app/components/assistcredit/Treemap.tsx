@@ -108,7 +108,7 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
       },
       title: {
         display: true,
-        text: "保有しているトークンの量",
+        text: "保有しているアシストクレジットの量",
       },
       tooltip: {
         enabled: true,

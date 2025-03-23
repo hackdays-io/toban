@@ -1,12 +1,13 @@
-import type { EntryContext } from "@remix-run/node";
+import type { HandleDocumentRequestFunction } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
 import { createEmotion } from "./emotion/emotion-server";
 
-const handleRequest = (
+const handleRequest: HandleDocumentRequestFunction = (
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  remixContext: any,
 ) =>
   new Promise((resolve) => {
     const { renderToString, injectStyles } = createEmotion();

@@ -22,6 +22,7 @@ const WorkspaceWithBalance: FC = () => {
       workspaceId: treeId,
       owner: wallet?.account.address.toLowerCase(),
     },
+    first: 100,
   });
 
   const hatIds = useMemo(() => {

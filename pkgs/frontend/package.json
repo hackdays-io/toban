@@ -30,6 +30,7 @@
     "@solana/web3.js": "^1.95.5",
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
+    "framer-motion": "^12.5.0",
     "graphql": "^16.10.0",
     "isbot": "^5.1.11",
     "namestone-sdk": "^0.2.11",

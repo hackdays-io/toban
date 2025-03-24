@@ -1,15 +1,5 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Float,
-  Grid,
-  HStack,
-  Input,
-  List,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Flex, Grid, HStack, List, Text } from "@chakra-ui/react";
+import { Slider } from "@chakra-ui/react/slider";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
@@ -18,13 +8,11 @@ import {
 } from "hooks/useENS";
 import {
   useBalanceOfFractionToken,
-  useFractionToken,
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
-import { type NameData, TextRecords } from "namestone-sdk";
+import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
-import { FaArrowRight } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -33,11 +21,24 @@ import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { RoleIcon } from "~/components/icon/RoleIcon";
 import { UserIcon } from "~/components/icon/UserIcon";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 import { Field } from "~/components/ui/field";
 
+const marks = [
+  { value: 100, label: "0%" },
+  { value: 200, label: "16%" },
+  { value: 300, label: "32%" },
+  { value: 500, label: "48%" },
+  { value: 800, label: "64%" },
+  { value: 1300, label: "80%" },
+  { value: 2000, label: "100%" },
+];
+
+/**
+ * AssistCreditSend Component
+ * @returns
+ */
 const AssistCreditSend: FC = () => {
   const navigate = useNavigate();
 
@@ -94,14 +95,20 @@ const AssistCreditSend: FC = () => {
     BigInt(hatId || 0),
     address as Address,
   );
+
+  /**
+   * トークンを送信する関数
+   */
   const send = useCallback(async () => {
     if (!receiver || !hatId || !me || isLoading) return;
+
     try {
+      // トークンを送信するメソッド
       const res = await transferFractionToken(
         receiver.address as Address,
         BigInt(amount),
       );
-      console.log(res);
+      console.log("transferFractionToken res: ", res);
       res?.error && toast.error(res.error);
       res?.txHash && navigate(`/${treeId}/${hatId}/${address}`);
     } catch (error) {
@@ -164,7 +171,7 @@ const AssistCreditSend: FC = () => {
             </Field>
 
             <List.Root listStyle="none" my={10} gap={4}>
-              {users?.flat().map((user, index) => (
+              {users?.flat().map((user) => (
                 <List.Item
                   key={`${user.name}u`}
                   onClick={() => setReceiver(user)}
@@ -187,52 +194,64 @@ const AssistCreditSend: FC = () => {
         ) : (
           <>
             <Field label="送信量" alignItems="center" justifyContent="center">
-              <Input
-                p={2}
-                pb={4}
-                fontSize="60px"
-                size="2xl"
-                border="none"
-                borderBottom="2px solid"
-                borderRadius="0"
-                w="auto"
-                type="number"
-                textAlign="center"
-                min={0}
-                max={9999}
-                style={{
-                  WebkitAppearance: "none",
-                }}
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-              />
+              <Text fontSize="60px" fontWeight="bold" textAlign="center" mb={2}>
+                {amount}
+              </Text>
+              <Box width="100%" px={4} mb={4}>
+                <Slider.Root
+                  thumbAlignment="contain"
+                  thumbSize={{ width: 16, height: 16 }}
+                  defaultValue={[10]}
+                  step={7}
+                >
+                  <Slider.Control>
+                    <Slider.Track>
+                      <Slider.Range />
+                    </Slider.Track>
+                    <Slider.Thumb index={0}>
+                      <Slider.DraggingIndicator
+                        layerStyle="fill.solid"
+                        top="6"
+                        rounded="sm"
+                        px="1.5"
+                      >
+                        <Slider.ValueText />
+                      </Slider.DraggingIndicator>
+                    </Slider.Thumb>
+                  </Slider.Control>
+                </Slider.Root>
+
+                <Flex justifyContent="space-between" width="100%">
+                  <Text fontSize="sm">100</Text>
+                  <Text fontSize="sm">200</Text>
+                  <Text fontSize="sm">300</Text>
+                  <Text fontSize="sm">500</Text>
+                  <Text fontSize="sm">800</Text>
+                  <Text fontSize="sm">1300</Text>
+                  <Text fontSize="sm">2000</Text>
+                </Flex>
+
+                <Flex justifyContent="space-between" width="100%" mt={1}>
+                  <Text>🍤</Text>
+                  <Text>🍱</Text>
+                  <Text>🍫</Text>
+                  <Text>🍪</Text>
+                  <Text>🧁</Text>
+                  <Text>🍰</Text>
+                  <Text>🎂</Text>
+                </Flex>
+              </Box>
             </Field>
 
             <Flex width="100%" flexDirection="column" alignItems="center">
-              <HStack columnGap={3} mb={4}>
-                <Box textAlign="center">
-                  <UserIcon
-                    size={10}
-                    userImageUrl={ipfs2https(me.identity?.text_records?.avatar)}
-                  />
-                  <Text fontSize="xs">{me.identity?.name}</Text>
-                </Box>
-                <VStack textAlign="center">
-                  <Text>{amount}</Text>
-                  <FaArrowRight size="20px" />
-                </VStack>
-                <Box>
-                  <UserIcon
-                    size={10}
-                    userImageUrl={ipfs2https(receiver.text_records?.avatar)}
-                  />
-                  <Text fontSize="xs">
-                    {receiver.name || abbreviateAddress(receiver.address)}
-                  </Text>
-                </Box>
-              </HStack>
-              <BasicButton loading={isLoading} onClick={send} mb={5}>
-                送信
+              <BasicButton
+                colorScheme="yellow"
+                width={100}
+                loading={isLoading}
+                onClick={send}
+                mb={5}
+              >
+                Next
               </BasicButton>
             </Flex>
           </>

@@ -1,9 +1,6 @@
 import { Box, Heading, VStack } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import {
-  useBalanceOfFractionTokens,
-  useBalancesWithHat,
-} from "hooks/useFractionToken";
+import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHats } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
@@ -34,15 +31,13 @@ const WorkspaceWithBalance: FC = () => {
   const { hats } = useGetHats(hatIds || []);
 
   const hatsWithBalance = useMemo(() => {
-    if (!hats) return [];
-    return hats
-      .map((hat) => {
-        const balance = data?.balanceOfFractionTokens.find(
-          ({ hatId }) => hatId === BigInt(hat.id).toString(),
-        );
-        if (balance) return { hat, ...balance };
+    if (!hats || !data) return [];
+    return data.balanceOfFractionTokens
+      .map(({ hatId, balance, wearer }) => {
+        const hat = hats.find(({ id }) => hatId === BigInt(id).toString());
+        if (hat) return { hat, balance, wearer };
       })
-      .filter((hat) => !!hat);
+      .filter((data) => !!data);
   }, [hats, data]);
 
   return (

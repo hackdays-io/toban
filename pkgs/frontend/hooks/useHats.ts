@@ -242,6 +242,9 @@ export const useHats = () => {
         imageUri: true,
         levelAtLocalTree: true,
         currentSupply: true,
+        wearers: {
+          props: {},
+        },
       },
     });
 

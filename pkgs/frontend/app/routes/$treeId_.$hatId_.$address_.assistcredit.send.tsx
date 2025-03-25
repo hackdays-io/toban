@@ -1,8 +1,6 @@
 import {
   Box,
-  Button,
   Flex,
-  Float,
   Grid,
   HStack,
   Input,
@@ -10,6 +8,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
@@ -17,9 +16,7 @@ import {
   useNamesByAddresses,
 } from "hooks/useENS";
 import {
-  useBalanceOfFractionToken,
   useBalanceOfFractionTokens,
-  useFractionToken,
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
@@ -48,7 +45,8 @@ const AssistCreditSend: FC = () => {
     where: {
       workspaceId: treeId,
       hatId: BigInt(hatId ?? "").toString(),
-      owner: me.identity?.address.toLowerCase(),
+      wearer: address?.toLowerCase(),
+      owner: me.identity?.address?.toLowerCase(),
     },
   });
 
@@ -57,7 +55,13 @@ const AssistCreditSend: FC = () => {
     [data],
   );
 
-  const { hat } = useGetHat(hatId ?? "");
+  const { hat }: { hat?: Hat } = useGetHat(hatId ?? "");
+  const isWearer = useMemo(() => {
+    if (!hat?.wearers) return false;
+    return hat.wearers.some(
+      (w) => w.id.toLowerCase() === me.identity?.address?.toLowerCase(),
+    );
+  }, [hat, me]);
 
   // 送信先取得
   const tree = useTreeInfo(Number(treeId));
@@ -153,7 +157,9 @@ const AssistCreditSend: FC = () => {
           <HatsListItemParser imageUri={hat?.imageUri} detailUri={hat?.details}>
             <RoleWithBalance
               wearer={address as Address}
-              balance={balanceOfToken ? Number(balanceOfToken) : undefined}
+              balance={
+                balanceOfToken ? Number(balanceOfToken) : isWearer ? 10000 : 0
+              }
             />
           </HatsListItemParser>
         </Box>
@@ -171,7 +177,7 @@ const AssistCreditSend: FC = () => {
             </Field>
 
             <List.Root listStyle="none" my={10} gap={4}>
-              {users?.flat().map((user, index) => (
+              {users?.flat().map((user) => (
                 <List.Item
                   key={`${user.name}u`}
                   onClick={() => setReceiver(user)}

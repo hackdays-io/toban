@@ -76,7 +76,11 @@ const Login: FC = () => {
   ]);
 
   return (
-    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
+    <Grid
+      data-testid="signup-form"
+      gridTemplateRows="1fr auto"
+      h="calc(100vh - 72px)"
+    >
       <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
         <Box w="100%">
           <Flex

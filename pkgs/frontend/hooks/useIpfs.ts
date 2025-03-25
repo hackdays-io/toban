@@ -73,7 +73,8 @@ export const useUploadImageFileToIpfs = () => {
     ipfsCid: string;
     ipfsUri: string;
   } | null> => {
-    if (!imageFile || !imageFile.type.startsWith("image/")) {
+    if (!imageFile) return null;
+    if (!imageFile?.type.startsWith("image/")) {
       setError(new Error("Invalid or no image file selected"));
       return null;
     }

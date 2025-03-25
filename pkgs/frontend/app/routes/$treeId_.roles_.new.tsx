@@ -59,7 +59,7 @@ const NewRole: FC = () => {
       return;
     }
     if (!roleName) {
-      alert("全ての項目を入力してください。");
+      alert("ロール名を入力してください。");
       return;
     }
 
@@ -80,7 +80,6 @@ const NewRole: FC = () => {
 
       if (!resUploadHatsDetails)
         throw new Error("Failed to upload metadata to ipfs");
-      if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
 
       const hatterHatId = treeInfo?.hats?.[1]?.id;
       if (!hatterHatId) throw new Error("Hat ID is required");
@@ -88,7 +87,7 @@ const NewRole: FC = () => {
       const parsedLog = await createHat({
         parentHatId: BigInt(hatterHatId),
         details: resUploadHatsDetails?.ipfsUri,
-        imageURI: resUploadImage?.ipfsUri,
+        imageURI: resUploadImage?.ipfsUri || "",
       });
       const log = parsedLog?.find((log) => log.eventName === "HatCreated");
       if (!log) throw new Error("Failed to create hat transaction");
@@ -100,10 +99,11 @@ const NewRole: FC = () => {
             requiredPadding,
           )}${log.args.id?.toString(16)}`,
         );
-      });
+      }, 3000);
     } catch (error) {
       console.error(error);
       alert(`エラーが発生しました。${error}`);
+      setIsLoading(false);
     }
   }, [
     authorities,

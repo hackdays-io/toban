@@ -31,8 +31,8 @@ const WorkspaceNew: FC = () => {
       alert("ウォレットを接続してください。");
       return;
     }
-    if (!name || !description || !imageFile) {
-      alert("全ての項目を入力してください。");
+    if (!name) {
+      alert("名前を入力してください。");
       return;
     }
     setIsLoading(true);
@@ -48,27 +48,25 @@ const WorkspaceNew: FC = () => {
         throw new Error("Failed to upload metadata to ipfs");
 
       const resUploadImage = await uploadImageFileToIpfs();
-      if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
       console.log("resUploadImage", resUploadImage);
 
       const parsedLog = await bigbang({
         owner: wallet?.account.address as Address,
         topHatDetails: resUploadMetadata.ipfsUri,
-        topHatImageURI: resUploadImage.ipfsUri,
+        topHatImageURI: resUploadImage?.ipfsUri || "",
         hatterHatDetails: resUploadMetadata.ipfsUri,
-        hatterHatImageURI: resUploadImage.ipfsUri,
+        hatterHatImageURI: resUploadImage?.ipfsUri || "",
       });
 
       const topHatId = parsedLog?.args.topHatId;
 
       if (topHatId) {
         const treeId = hatIdToTreeId(BigInt(topHatId));
-        console.log(treeId);
-
         const treeIdStr = treeId.toString();
-        console.log("treeIdStr", treeIdStr);
 
-        navigate(`/${treeIdStr}`);
+        setTimeout(() => {
+          navigate(`/${treeIdStr}`);
+        }, 3000);
       } else {
         navigate("/workspace");
       }
@@ -101,7 +99,7 @@ const WorkspaceNew: FC = () => {
       </Box>
       <BasicButton
         onClick={handleSubmit}
-        disabled={!name || !description || !imageFile}
+        disabled={!name}
         loading={isLoading}
         mb={5}
       >

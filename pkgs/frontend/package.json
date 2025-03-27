@@ -24,7 +24,7 @@
     "@emotion/server": "^11.11.0",
     "@hatsprotocol/sdk-v1-core": "^0.10.0",
     "@hatsprotocol/sdk-v1-subgraph": "^1.0.0",
-    "@privy-io/react-auth": ">=2.4.2 <2.7.0",
+    "@privy-io/react-auth": ">=2.4.2 <=2.5.0",
     "@remix-run/node": "^2.15.0",
     "@remix-run/react": "^2.15.0",
     "@remix-run/serve": "^2.15.0",

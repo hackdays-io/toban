@@ -55,6 +55,14 @@ export const ipfsUploadFile = async (file: File) => {
   }
 };
 
+export const ipfsUploadImageFile = async (imageFile: File) => {
+  if (!imageFile) throw new Error("Invalid or no image file selected");
+  if (!imageFile?.type.startsWith("image/"))
+    throw new Error("Invalid or no image file selected");
+
+  return await ipfsUploadFile(imageFile);
+};
+
 export const ipfs2https = (ipfsUri?: string | undefined) => {
   if (!ipfsUri) return undefined;
 

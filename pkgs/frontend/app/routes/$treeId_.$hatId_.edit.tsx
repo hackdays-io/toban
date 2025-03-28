@@ -4,18 +4,16 @@ import { useGetHat, useHats } from "hooks/useHats";
 import {
   useQueryIpfsJsonData,
   useUploadHatsDetailsToIpfs,
-  useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type {
-  HatsDetailSchama,
   HatsDetailsAttributes,
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { ipfs2https } from "utils/ipfs";
+import { ipfs2https, ipfsUploadImageFile } from "utils/ipfs";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
@@ -44,7 +42,6 @@ const EditRole: FC = () => {
   const { hat } = useGetHat(hatId || "");
   const { changeHatDetails, changeHatImageURI } = useHats();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
-  const { uploadImageFileToIpfs, imageFile } = useUploadImageFileToIpfs();
 
   const {
     control,
@@ -98,7 +95,8 @@ const EditRole: FC = () => {
         !areArraysEqual(
           currentDetails.authorities,
           hatDetailJson.data.authorities || [],
-        )
+        ) ||
+        currentDetails.imageFile
       );
     },
     [hatDetailJson],
@@ -138,14 +136,17 @@ const EditRole: FC = () => {
       }
 
       // Handle image change
-      if (imageFile) {
-        const resUploadImage = await uploadImageFileToIpfs();
+      if (formData.imageFile) {
+        const resUploadImage = await ipfsUploadImageFile(formData.imageFile);
         if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
+
+        const ipfsUri = `ipfs://${resUploadImage.cid}`;
+        console.log("ipfsUri", ipfsUri);
 
         promises.push(
           changeHatImageURI({
             hatId: BigInt(hatId),
-            newImageURI: resUploadImage.ipfsUri,
+            newImageURI: ipfsUri,
           }),
         );
       }

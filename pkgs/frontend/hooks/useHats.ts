@@ -251,12 +251,54 @@ export const useHats = () => {
     return hat;
   }, []);
 
+  const getAssistCreditOnlyWorkspaces = useCallback(
+    async (walletAddress: string) => {
+      const query = `
+        query {
+          erc20Balances(
+            where: { account: "${walletAddress.toLowerCase()}" }
+          ) {
+            token {
+              address
+              name
+              symbol
+              decimals
+            }
+            balance
+          }
+        }
+      `;
+
+      const res = await fetch("https://api.goldsky.com/api/public/<your-subgraph-id>", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      const json = await res.json();
+      const balances = json.data?.erc20Balances || [];
+
+      const nonZero = balances.filter((b: any) => Number(b.balance) > 0);
+
+      return nonZero.map((b: any, i: number) => ({
+        treeId: `credit-${i}`, // Hatがないので仮ID
+        name: b.token.name ?? "Assist Credit",
+        imageUrl: "/default-credit-icon.png", // 任意のアイコンパス
+      }));
+    },
+    [],
+  );
+
   const getWorkspacesList = useCallback(
     async (params: { walletAddress: string }) => {
+      // Hatを持つワークスペース取得
       const treesInfo = await getTreesInfoByWearer({
         walletAddress: params.walletAddress,
       });
-      const workspacesList = await Promise.all(
+
+      const roleWorkspaces = await Promise.all(
         treesInfo.map(async (tree) => {
           const detailsUri = tree?.hats?.[0]?.details;
           const detailsJson = detailsUri
@@ -266,14 +308,21 @@ export const useHats = () => {
           const imageHttps = ipfs2https(imageIpfsUri);
           return {
             treeId: String(treeIdHexToDecimal(tree?.id)),
-            name: detailsJson?.data.name,
+            name: detailsJson?.data.name ?? "Role Workspace",
             imageUrl: imageHttps,
           };
         }),
       );
-      return workspacesList;
+
+      // Hatがなくてもアシストクレジットを持つワークスペースを取得
+      const creditWorkspaces = await getAssistCreditOnlyWorkspaces(
+        params.walletAddress,
+      );
+
+      return [...roleWorkspaces, ...creditWorkspaces];
     },
-    [getTreesInfoByWearer],
+
+    [getTreesInfoByWearer, getAssistCreditOnlyWorkspaces],
   );
 
   const getWorkspacesListByIds = useCallback(

@@ -52,8 +52,9 @@ const Workspace: FC = () => {
     const fetchWorkspacesList = async () => {
       if (!address) return;
       const _workspacesList = await getWorkspacesList({
-        walletAddress: address as `0x${string}`,
+        walletAddress: address as `0x${string}`,                                                                                                                                                                                                                                                                                                                            
       });
+      console.log("_workspacesList", _workspacesList);
 
       setWorkspacesList(_workspacesList);
     };
@@ -77,10 +78,10 @@ const Workspace: FC = () => {
             (id) =>
               id > 0 &&
               !workspacesList.some(
-                (workspace) => workspace.treeId === id.toString(),
-              ),
-          ),
-      ),
+                (workspace) => workspace.treeId === id.toString()
+              )
+          )
+      )
     );
   }, [workspacesList, data]);
 

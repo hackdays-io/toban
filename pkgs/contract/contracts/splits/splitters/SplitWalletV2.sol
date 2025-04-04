@@ -128,4 +128,9 @@ abstract contract SplitWalletV2 is Wallet, ERC1271 {
     function getSigner() internal view override returns (address) {
         return owner;
     }
+
+    // TODO: Split Wallet by using Merkle Root
+    // Pull the split from the warehouse
+    // Check if the split is valid
+    // Check if the split hash is the same as the one in the contract
 }

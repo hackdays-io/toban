@@ -91,17 +91,23 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
         // 2. HatterHatの作成
 
+        // TopHatId から直接下位ロールを作ると中央集権的な管理構造になってしまいます。
+        // そこで一段階挟んで HatterHat を作成し、その下に実運用のロール（Contributor, Reviewerなど）を紐づけることで、「TopHatを単なるルートノードに留める」構造が作れます。
+        // 将来的に HatterHat によってサブハット（実働部隊の役割）を分岐させたり、DAOによるガバナンスでHatterHatの被り手を変更することも可能になります。
         uint256 hatterHatId = Hats.createHat(
-            topHatId, // _admin: The id of the Hat that will control who wears the newly created hat
-            _hatterHatDetails,
-            2,
-            0x0000000000000000000000000000000000004A75,
-            0x0000000000000000000000000000000000004A75,
-            true,
-            _hatterHatImageURI
+            topHatId,                     // _admin: このHatの管理者HatのID（TopHatに属する）
+            _hatterHatDetails,            // Hatの説明
+            2,                            // maxSupply（このHatを何人が被れるか）ここでは2人
+            0x0000000000000000000000000000000000004A75, // eligibility（適格性を判定するコントラクト）
+            0x0000000000000000000000000000000000004A75, // toggle（有効/無効を切り替えるコントラクト）
+            true,                         // mutable（trueだと後から条件を変更できる）
+            _hatterHatImageURI            // Hatの見た目画像URI
         );
 
+
         // 3. HatsHatCreatorModuleのデプロイ
+        // 子Hat（ロール）を作るためのモジュール
+        // createHat() とかを中で持つ
         address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
             HatsHatCreatorModule_IMPL,
             topHatId,
@@ -111,6 +117,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         );
 
         // 4. HatsTimeFrameModuleのデプロイ
+        // Hatを「特定の期間だけ有効にする」ための制御モジュール
+        // isActive() とかで時間条件をチェック
         address hatsTimeFrameModule = HatsModuleFactory.createHatsModule(
             HatsTimeFrameModule_IMPL,
             topHatId,
@@ -128,9 +136,14 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         modules[0] = hatsTimeFrameModule;
         modules[1] = hatsHatCreatorModule;
 
+        // mintHat(hatterHatId, hatsTimeFrameModule);
+        // mintHat(hatterHatId, hatsHatCreatorModule);
+        // 複数の（hatId, wearer）セットに対して mintHat を一気に実行する便利関数
+
         Hats.batchMintHats(hatIds, modules);
 
-        // 6. TopHatIdの権限を_ownerに譲渡
+        // 6. TopHatIdの権限を_ownerに譲渡(ロールの引き継ぎ)
+        // あるロール（Hat）を今の着用者（_from）から別の対象（_to）に渡すためのメソッド
         Hats.transferHat(topHatId, address(this), _owner);
 
         // 7. SplitCreatorをFactoryからデプロイ

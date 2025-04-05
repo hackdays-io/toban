@@ -81,11 +81,12 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _hatterHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
-
+        // ワークスペースのルートロール（組織のルートノード）
+        // このコントラクトだけがこのTopHat配下にサブハット（＝下位ロール）を作成できる
         uint256 topHatId = Hats.mintTopHat(
-            address(this), // target: Tophat's wearer address. topHatのみがHatterHatを作成できるためTophatを指定する
-            _topHatDetails,
-            _topHatImageURI
+            address(this),  // TopHatを被るアドレス（ここではこのコントラクト）/ target: Tophat's wearer address. topHatのみがHatterHatを作成できるためTophatを指定する
+            _topHatDetails, // 説明文などの詳細情報（string）
+            _topHatImageURI // トップハットの画像URI
         );
 
         // 2. HatterHatの作成

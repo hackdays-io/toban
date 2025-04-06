@@ -6,6 +6,7 @@ export default defineConfig({
   e2e: {
     baseUrl: "http://localhost:5173",
     testIsolation: false,
+    supportFile: "./cypress/support/e2e.ts",
     async setupNodeEvents(on, config) {
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       return configureSynpressForMetaMask(on, config) as any;

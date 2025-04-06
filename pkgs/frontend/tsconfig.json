@@ -10,7 +10,12 @@
   "exclude": ["node_modules"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["@remix-run/node", "vite/client", "cypress"],
+    "types": [
+      "@remix-run/node",
+      "vite/client",
+      "cypress",
+      "cypress-file-upload"
+    ],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",

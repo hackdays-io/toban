@@ -35,12 +35,24 @@ describe("Basic", () => {
     // Check if URL includes signup or workspace
     cy.url().then((url) => {
       if (url.includes("/signup")) {
-        // If redirected to signup page
         cy.log("New user - redirected to signup page");
-        // Add your signup page test steps here
         const signupForm = cy.get("[data-testid=signup-form]");
         signupForm.should("be.visible");
-        // ... continue with signup flow
+
+        const fileInput = cy.get("[data-testid=file-input]");
+        fileInput.attachFile("images/user_sample.png");
+        const nameInput = cy.get("[data-testid=user-name-input]");
+        nameInput.should("be.visible");
+        nameInput.type("testuser123");
+        const descriptionInput = cy.get("[data-testid=description-input]");
+        descriptionInput.should("be.visible");
+        descriptionInput.type("test description");
+        const saveButton = cy.get("[data-testid=save-button]");
+        saveButton.should("be.visible");
+        saveButton.click();
+
+        cy.wait(5000);
+        cy.url().should("include", "/workspace");
       } else if (url.includes("/workspace")) {
         // If redirected to workspace page (existing user)
         cy.log("Existing user - redirected to workspace page");
@@ -54,7 +66,5 @@ describe("Basic", () => {
         throw new Error(`Unexpected redirect to: ${url}`);
       }
     });
-
-    // cy.connectToDapp();
   });
 });

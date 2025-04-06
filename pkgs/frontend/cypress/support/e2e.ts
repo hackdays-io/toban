@@ -1,4 +1,5 @@
 import { synpressCommandsForMetaMask } from "@synthetixio/synpress/cypress/support";
+import "cypress-file-upload";
 
 Cypress.on("uncaught:exception", (err, runnable) => {
   if (

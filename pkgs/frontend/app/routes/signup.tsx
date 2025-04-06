@@ -4,6 +4,7 @@ import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
@@ -31,7 +32,7 @@ const Login: FC = () => {
   const { addresses } = useAddressesByNames(names, true);
 
   const availableName = useMemo(() => {
-    if (!userName) return false;
+    if (!userName || userName.includes("_")) return false;
 
     return addresses?.[0]?.length === 0;
   }, [userName, addresses]);
@@ -60,10 +61,11 @@ const Login: FC = () => {
       }
 
       await setName(params);
+      window.location.href = "/workspace";
     } catch (error) {
       console.error(error);
-    } finally {
-      window.location.href = "/workspace";
+      toast.error("エラーが発生しました");
+      return;
     }
   }, [
     availableName,
@@ -95,6 +97,7 @@ const Login: FC = () => {
               type="file"
               accept="image/*"
               display="none"
+              data-testid="file-input"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file?.type.startsWith("image/")) {
@@ -120,6 +123,7 @@ const Login: FC = () => {
             <CommonInput
               value={userName}
               placeholder="ユーザー名"
+              data-testid="user-name-input"
               onChange={(e) => setUserName(e.target.value)}
             />
             <Text textAlign="right" fontSize="xs" mt={1}>
@@ -133,6 +137,7 @@ const Login: FC = () => {
               minHeight="125px"
               value={description}
               placeholder="自己紹介"
+              data-testid="description-input"
               onChange={(e) => setDescription(e.target.value)}
             />
           </Box>
@@ -143,6 +148,7 @@ const Login: FC = () => {
           onClick={handleSubmit}
           loading={isIpfsLoading || isSetNameLoading}
           disabled={!availableName}
+          data-testid="save-button"
         >
           保存
         </BasicButton>

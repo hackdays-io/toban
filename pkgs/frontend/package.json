@@ -17,7 +17,7 @@
   "dependencies": {
     "@0xsplits/splits-sdk": "^4.1.0",
     "@apollo/client": "^3.12.4",
-    "@chakra-ui/react": "^3.2.3",
+    "@chakra-ui/react": "^3.15.0",
     "@emotion/cache": "^11.13.5",
     "@emotion/react": "^11.13.5",
     "@emotion/server": "^11.11.0",

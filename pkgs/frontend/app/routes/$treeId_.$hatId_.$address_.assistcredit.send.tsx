@@ -1,5 +1,14 @@
-import { Box, Flex, Grid, HStack, List, Text } from "@chakra-ui/react";
-import { Slider } from "@chakra-ui/react/slider";
+import {
+  Box,
+  Code,
+  Flex,
+  Grid,
+  HStack,
+  List,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
+import { Slider, useSlider } from "@chakra-ui/react/slider";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
@@ -85,6 +94,11 @@ const AssistCreditSend: FC = () => {
     BigInt(hatId || 0),
     address as Address,
   );
+
+  const slider = useSlider({
+    defaultValue: [40],
+    thumbAlignment: "center",
+  });
 
   /**
    * トークンを送信する関数
@@ -188,48 +202,18 @@ const AssistCreditSend: FC = () => {
                 {amount}
               </Text>
               <Box width="100%" px={4} mb={4}>
-                <Slider.Root
-                  thumbAlignment="contain"
-                  thumbSize={{ width: 16, height: 16 }}
-                  defaultValue={[10]}
-                  step={7}
-                >
-                  <Slider.Control>
-                    <Slider.Track>
-                      <Slider.Range />
-                    </Slider.Track>
-                    <Slider.Thumb index={0}>
-                      <Slider.DraggingIndicator
-                        layerStyle="fill.solid"
-                        top="6"
-                        rounded="sm"
-                        px="1.5"
-                      >
-                        <Slider.ValueText />
-                      </Slider.DraggingIndicator>
-                    </Slider.Thumb>
-                  </Slider.Control>
-                </Slider.Root>
-
-                <Flex justifyContent="space-between" width="100%">
-                  <Text fontSize="sm">100</Text>
-                  <Text fontSize="sm">200</Text>
-                  <Text fontSize="sm">300</Text>
-                  <Text fontSize="sm">500</Text>
-                  <Text fontSize="sm">800</Text>
-                  <Text fontSize="sm">1300</Text>
-                  <Text fontSize="sm">2000</Text>
-                </Flex>
-
-                <Flex justifyContent="space-between" width="100%" mt={1}>
-                  <Text>🍤</Text>
-                  <Text>🍱</Text>
-                  <Text>🍫</Text>
-                  <Text>🍪</Text>
-                  <Text>🧁</Text>
-                  <Text>🍰</Text>
-                  <Text>🎂</Text>
-                </Flex>
+                <Stack align="flex-start">
+                  <Code>current: {slider.value}</Code>
+                  <Slider.RootProvider value={slider} size="lg" width="200px">
+                    <Slider.Label>Slider</Slider.Label>
+                    <Slider.Control>
+                      <Slider.Track>
+                        <Slider.Range />
+                      </Slider.Track>
+                      <Slider.Thumbs />
+                    </Slider.Control>
+                  </Slider.RootProvider>
+                </Stack>
               </Box>
             </Field>
 

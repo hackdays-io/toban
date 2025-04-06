@@ -25,16 +25,6 @@ import { UserIcon } from "~/components/icon/UserIcon";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 import { Field } from "~/components/ui/field";
 
-const marks = [
-  { value: 100, label: "0%" },
-  { value: 200, label: "16%" },
-  { value: 300, label: "32%" },
-  { value: 500, label: "48%" },
-  { value: 800, label: "64%" },
-  { value: 1300, label: "80%" },
-  { value: 2000, label: "100%" },
-];
-
 /**
  * AssistCreditSend Component
  * @returns

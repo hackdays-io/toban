@@ -106,7 +106,7 @@ const Workspace: FC = () => {
   }, [address, treeIds, getWorkspacesListByIds]);
 
   return (
-    <>
+    <Box data-testid="workspace-page">
       <Box>
         <Heading my={3}>ロールメンバーのワークスペース</Heading>
         {workspacesList.length > 0 ? (
@@ -147,7 +147,7 @@ const Workspace: FC = () => {
           </Text>
         </Box>
       </CommonDialog>
-    </>
+    </Box>
   );
 };
 

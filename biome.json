@@ -25,7 +25,8 @@
       "**/contract/test",
       "**/subgraph/generated",
       "**/subgraph/build",
-      "**/frontend/gql"
+      "**/frontend/gql",
+      "**/frontend/**/downloads"
     ]
   },
   "formatter": {

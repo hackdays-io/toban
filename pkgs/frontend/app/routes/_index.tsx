@@ -36,7 +36,7 @@ export default function Index() {
 
       <Container mt={3}>
         <Link to="/login">
-          <CommonButton size="xl" fontWeight="bold">
+          <CommonButton size="xl" fontWeight="bold" data-testid="start-button">
             はじめる
           </CommonButton>
         </Link>

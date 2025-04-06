@@ -117,7 +117,8 @@ export const useSetName = () => {
       try {
         await axios.post("/api/namestone/set-name", params);
       } catch (error) {
-        console.error(error);
+        setIsLoading(false);
+        throw error;
       }
       setIsLoading(false);
     },

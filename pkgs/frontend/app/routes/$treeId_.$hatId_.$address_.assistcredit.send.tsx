@@ -34,6 +34,19 @@ import { UserIcon } from "~/components/icon/UserIcon";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 import { Field } from "~/components/ui/field";
 
+const treatEmojis: { [key: number]: string } = {
+  10: "🍪", // クッキー
+  20: "🍩", // ドーナツ
+  30: "🍫", // チョコレート
+  40: "🍫", // チョコレート
+  50: "🍰", // ケーキ
+  60: "🍰", // ケーキ
+  70: "🍰", // ケーキ
+  80: "🍦", // アイスクリーム
+  90: "🍭", // キャンディ
+  100: "🥐", // クロワッサン
+};
+
 /**
  * AssistCreditSend Component
  * @returns
@@ -96,8 +109,9 @@ const AssistCreditSend: FC = () => {
   );
 
   const slider = useSlider({
-    defaultValue: [40],
+    defaultValue: [10],
     thumbAlignment: "center",
+    step: 10,
   });
 
   /**
@@ -199,13 +213,17 @@ const AssistCreditSend: FC = () => {
           <>
             <Field label="送信量" alignItems="center" justifyContent="center">
               <Text fontSize="60px" fontWeight="bold" textAlign="center" mb={2}>
-                {amount}
+                {treatEmojis[amount]}
               </Text>
               <Box width="100%" px={4} mb={4}>
-                <Stack align="flex-start">
+                <Stack align="flex-start" justifyContent="center">
                   <Code>current: {slider.value}</Code>
-                  <Slider.RootProvider value={slider} size="lg" width="200px">
-                    <Slider.Label>Slider</Slider.Label>
+                  <Slider.RootProvider
+                    value={slider}
+                    onChange={() => setAmount(Number(slider.value))}
+                    size="lg"
+                    width="100%"
+                  >
                     <Slider.Control>
                       <Slider.Track>
                         <Slider.Range />

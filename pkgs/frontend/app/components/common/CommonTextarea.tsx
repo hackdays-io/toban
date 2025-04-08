@@ -11,17 +11,19 @@ export const CommonTextArea = ({
   value,
   placeholder,
   onChange,
+  ...props
 }: CommonTextAreaProps) => {
   return (
     <Textarea
-      value={value}
       placeholder={placeholder}
       width="100%"
       minHeight={minHeight}
-      onChange={onChange}
       borderColor="gray.800"
       borderRadius="xl"
       backgroundColor="white"
+      {...props}
+      value={value}
+      onChange={onChange}
     />
   );
 };

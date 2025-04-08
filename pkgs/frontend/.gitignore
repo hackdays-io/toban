@@ -7,3 +7,5 @@ node_modules
 .env.local
 .env.*
 !.env.example
+
+/downloads

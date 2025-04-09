@@ -7,7 +7,9 @@ import { toThirdwebSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Hex,
   http,
+  zeroAddress,
   type Account,
   type Address,
   type CustomTransport,
@@ -22,6 +24,11 @@ import {
   entryPoint07Address,
 } from "viem/account-abstraction";
 import { currentChain, publicClient } from "./useViem";
+import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
+import { odysseyTestnet } from "viem/chains";
+import { safeAbiImplementation } from "./safeAbi";
+import { getSafeModuleSetupData } from "./setupData";
+
 
 // Pimlico API endpoint URL
 export const pimlicoUrl = `https://api.pimlico.io/v2/${
@@ -117,6 +124,25 @@ export const useAccountClient = (wallets: ConnectedWallet[]) => {
         transport: custom(provider),
         account: wallet.address as Address,
       });
+
+      // 7702デモ用のEOAアカウントを作成する
+      const eoaPrivateKey = import.meta.env.VITE_EOA_PRIVATE_KEY as Hex;
+      if (!eoaPrivateKey) throw new Error("EOA_PRIVATE_KEY is required");
+
+      const account = privateKeyToAccount(eoaPrivateKey);
+
+      const walletClient2 = createWalletClient({
+        account,
+        chain: odysseyTestnet,
+        transport: http("https://odyssey.ithaca.xyz"),
+      });
+
+      console.log('walletClient2', walletClient2);
+
+      // const SAFE_SINGLETON_ADDRESS = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
+      // const authorization = await walletClient.signAuthorization({
+      //   contractAddress: SAFE_SINGLETON_ADDRESS,
+      // });
 
       setClient(walletClient);
     };

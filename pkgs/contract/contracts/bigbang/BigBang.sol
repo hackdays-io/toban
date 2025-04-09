@@ -132,6 +132,20 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         // 6. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
+        // 6.1 MemberHat（共通メンバー用）を作成
+        uint256 memberHatId = Hats.createHat(
+            topHatId,
+            "Member",
+            1000, // max supply
+            address(0x4A75), // eligibility（未設定）
+            address(0x4A75), // toggle（未設定）
+            true,
+            "" // image URI（任意）
+        );
+
+        // 6.2 OwnerにMemberHatを割り当て（mint）
+        Hats.mintHat(memberHatId, _owner);
+
         // 7. SplitCreatorをFactoryからデプロイ
         address splitCreator = SplitsCreatorFactory
             .createSplitCreatorDeterministic(

@@ -51,4 +51,12 @@ interface IHatsHatCreatorModule {
      * @notice Emitted when hat creation authority is revoked
      */
     event CreateHatAuthorityRevoked(address indexed authority);
+
+    /// @notice Emitted when edit hat authority is granted to an address
+    /// @param authority The address that was granted edit authority
+    event EditHatAuthorityGranted(address indexed authority);
+
+    /// @notice Emitted when edit hat authority is revoked from an address
+    /// @param authority The address that was revoked edit authority
+    event EditHatAuthorityRevoked(address indexed authority);
 }

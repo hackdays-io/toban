@@ -8,6 +8,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     /// @dev Mapping to track addresses with hat creation authority
     mapping(address => bool) public createHatAuthorities;
+    /// @dev Mapping to track addresses with hat editing authority
+    mapping(address => bool) public editHatAuthorities;
 
     /**
      * @dev Constructor to initialize the contract
@@ -113,5 +115,30 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
 
         createHatAuthorities[authority] = false;
         emit CreateHatAuthorityRevoked(authority);
+    }
+
+    function grantEditHatAuthority(address authority) external onlyOwner {
+        _grantEditHatAuthority(authority);
+    }
+
+    function revokeEditHatAuthority(address authority) external onlyOwner {
+        _revokeEditHatAuthority(authority);
+    }
+
+    function hasEditHatAuthority(address authority) public view returns (bool) {
+        return editHatAuthorities[authority];
+    }
+
+    function _grantEditHatAuthority(address authority) internal {
+        require(authority != address(0), "Invalid address");
+        require(!editHatAuthorities[authority], "Already granted");
+        editHatAuthorities[authority] = true;
+        emit EditHatAuthorityGranted(authority);
+    }
+
+    function _revokeEditHatAuthority(address authority) internal {
+        require(editHatAuthorities[authority], "Not granted");
+        editHatAuthorities[authority] = false;
+        emit EditHatAuthorityRevoked(authority);
     }
 }

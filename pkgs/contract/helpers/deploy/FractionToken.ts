@@ -9,12 +9,14 @@ export type FractionToken = Awaited<
 
 export const deployFractionToken = async (
   uri: string,
-  tokenSupply: bigint,
+  initialSupply: bigint,
   hatsContractAddress: Address,
   create2DeployerAddress?: string,
+  maxSupply = 1000000n,
 ) => {
   const [deployer] = await ethers.getSigners();
-  const _tokenSupply = !tokenSupply ? 10000n : tokenSupply;
+  const _initialSupply = !initialSupply ? 10000n : initialSupply;
+  const _maxSupply = !maxSupply ? 1000000n : maxSupply;
 
   const FractionTokenFactory = await ethers.getContractFactory("FractionToken");
   const FractionTokenImplTx = await FractionTokenFactory.getDeployTransaction();
@@ -29,7 +31,8 @@ export const deployFractionToken = async (
   const FractionTokenInitData =
     FractionTokenFactory.interface.encodeFunctionData("initialize", [
       deployer.address,
-      _tokenSupply,
+      _initialSupply,
+      _maxSupply,
       hatsContractAddress,
       uri,
     ]);

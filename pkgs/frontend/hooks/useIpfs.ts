@@ -19,10 +19,6 @@ export const useUploadMetadataToIpfs = () => {
       const ipfsCid = upload.cid;
       const ipfsUri = `ipfs://${ipfsCid}`;
 
-      console.log("Successfully uploaded metadata to IPFS");
-      console.log("IPFS CID:", ipfsCid);
-      console.log("IPFS URI:", ipfsUri);
-
       return { ipfsCid, ipfsUri };
     } catch (err) {
       setError(
@@ -66,13 +62,9 @@ export const useUploadHatsDetailsToIpfs = () => {
 
 export const useUploadImageFileToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
-  const uploadImageFileToIpfs = async (): Promise<{
-    ipfsCid: string;
-    ipfsUri: string;
-  } | null> => {
+  const uploadImageFileToIpfs = async (imageFile?: File) => {
     if (!imageFile) return null;
     if (!imageFile?.type.startsWith("image/")) {
       setError(new Error("Invalid or no image file selected"));
@@ -88,10 +80,6 @@ export const useUploadImageFileToIpfs = () => {
       const ipfsCid = upload.cid;
       const ipfsUri = `ipfs://${ipfsCid}`;
 
-      console.log("Successfully uploaded image file to IPFS");
-      console.log("IPFS CID:", ipfsCid);
-      console.log("IPFS URI:", ipfsUri);
-
       return { ipfsCid, ipfsUri };
     } catch (err) {
       setError(
@@ -103,7 +91,7 @@ export const useUploadImageFileToIpfs = () => {
     }
   };
 
-  return { uploadImageFileToIpfs, imageFile, setImageFile, isLoading, error };
+  return { uploadImageFileToIpfs, isLoading, error };
 };
 
 export const useQueryIpfsJsonData = (cid?: string) => {

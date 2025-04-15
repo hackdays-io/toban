@@ -41,12 +41,8 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
   const me = useActiveWallet();
   const { identity } = useIdentity(address);
 
-  const {
-    uploadImageFileToIpfs,
-    imageFile,
-    setImageFile,
-    isLoading: isIpfsLoading,
-  } = useUploadImageFileToIpfs();
+  const { uploadImageFileToIpfs, isLoading: isIpfsLoading } =
+    useUploadImageFileToIpfs();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
   const [profileImgUrl, setProfileImgUrl] = useState<string | undefined>(

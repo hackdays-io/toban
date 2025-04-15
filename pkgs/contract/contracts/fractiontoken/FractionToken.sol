@@ -18,7 +18,8 @@ contract FractionToken is
     UUPSUpgradeable,
     IFractionToken
 {
-    uint256 public TOKEN_SUPPLY;
+    uint256 public INITIAL_SUPPLY;
+    uint256 public MAX_SUPPLY;
 
     mapping(uint256 => address[]) private tokenRecipients;
 
@@ -26,14 +27,16 @@ contract FractionToken is
 
     function initialize(
         address _initialOwner,
-        uint256 _tokenSupply,
+        uint256 _initialSupply,
+        uint256 _maxSupply,
         address _hatsAddress,
         string memory _uri
     ) public initializer {
         __ERC1155_init(_uri);
         __Ownable_init(_initialOwner);
         hatsContract = IHats(_hatsAddress);
-        TOKEN_SUPPLY = _tokenSupply;
+        INITIAL_SUPPLY = _initialSupply;
+        MAX_SUPPLY = _maxSupply;
     }
 
     function mintInitialSupply(
@@ -58,7 +61,7 @@ contract FractionToken is
             "This account has already received"
         );
 
-        uint256 initialAmount = amount > 0 ? amount : TOKEN_SUPPLY;
+        uint256 initialAmount = amount > 0 ? amount : INITIAL_SUPPLY;
         _mint(account, tokenId, initialAmount, "");
 
         tokenRecipients[tokenId].push(account);
@@ -77,6 +80,12 @@ contract FractionToken is
         require(
             _msgSender() == tokenRecipients[tokenId][0],
             "Only the first recipient can additionally mint"
+        );
+
+        uint256 currentSupply = super.totalSupply(tokenId);
+        require(
+            currentSupply + amount <= MAX_SUPPLY,
+            "Maximum supply limit exceeded"
         );
 
         _mint(account, tokenId, amount, "");
@@ -184,7 +193,7 @@ contract FractionToken is
         if (
             _hasHatRole(account, hatId) && !_containsRecipient(tokenId, account)
         ) {
-            return TOKEN_SUPPLY;
+            return INITIAL_SUPPLY;
         }
 
         uint256 erc1155Balance = super.balanceOf(account, tokenId);
@@ -212,7 +221,7 @@ contract FractionToken is
         uint256 tokenId = getTokenId(hatId, wearer);
 
         if (tokenRecipients[tokenId].length == 0) {
-            return TOKEN_SUPPLY;
+            return INITIAL_SUPPLY;
         }
 
         return super.totalSupply(tokenId);

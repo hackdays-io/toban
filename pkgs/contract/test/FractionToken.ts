@@ -58,6 +58,7 @@ describe("FractionToken", () => {
       10000n,
       Hats.address,
       Create2Deployer.address,
+      1000000n // max supply
     );
     FractionToken = _FractionToken;
 

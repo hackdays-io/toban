@@ -37,13 +37,13 @@ interface IFractionToken is IERC1155 {
 
 	function balanceOf(
 		address account,
-		address warer,
+		address wearer,
 		uint256 hatId
 	) external view returns (uint256);
 
 	function balanceOfBatch(
 		address[] memory accounts,
-		address[] memory warers,
+		address[] memory wearers,
 		uint256[] memory hatIds
 	) external view returns (uint256[] memory);
 

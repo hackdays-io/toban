@@ -1,12 +1,12 @@
 import {
   Box,
-  Code,
   Flex,
   Grid,
   HStack,
   List,
   Stack,
   Text,
+  VStack,
 } from "@chakra-ui/react";
 import { Slider, useSlider } from "@chakra-ui/react/slider";
 import { useNavigate, useParams } from "@remix-run/react";
@@ -22,6 +22,7 @@ import {
 import { useGetHat, useTreeInfo } from "hooks/useHats";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FaAngleDoubleUp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -102,6 +103,8 @@ const AssistCreditSend: FC = () => {
   // 送信先選択後
   const [receiver, setReceiver] = useState<NameData>();
   const [amount, setAmount] = useState<number>(0);
+  // 画面切り替えのために使用するフラグ
+  const [isSend, setIsSend] = useState(false);
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
     BigInt(hatId || 0),
@@ -167,85 +170,124 @@ const AssistCreditSend: FC = () => {
           }
         />
 
-        <Box my={6}>
-          <HatsListItemParser imageUri={hat?.imageUri} detailUri={hat?.details}>
-            <RoleWithBalance
-              wearer={address as Address}
-              balance={balanceOfToken ? Number(balanceOfToken) : undefined}
-            />
-          </HatsListItemParser>
-        </Box>
-
-        {!receiver ? (
+        {isSend ? (
           <>
-            <Field label="ユーザー名 or ウォレットアドレスで検索">
-              <CommonInput
-                value={searchText}
-                onChange={(e) => {
-                  setSearchText(e.target.value);
-                }}
-                placeholder="ユーザー名 or ウォレットアドレス"
-              />
-            </Field>
+            <VStack pt={8} pb={16}>
+              <Text fontSize="md" color="gray.500">
+                スワイプして
+                <br />
+                アシストクレジットを送る
+              </Text>
 
-            <List.Root listStyle="none" my={10} gap={4}>
-              {users?.flat().map((user) => (
-                <List.Item
-                  key={`${user.name}u`}
-                  onClick={() => setReceiver(user)}
+              <VStack pt={8}>
+                <FaAngleDoubleUp color="orange" size="60px" />
+              </VStack>
+
+              <Field alignItems="center" justifyContent="center" pb={16}>
+                <Text
+                  fontSize="150px"
+                  fontWeight="bold"
+                  textAlign="center"
+                  mb={2}
                 >
-                  <HStack>
-                    <UserIcon
-                      userImageUrl={ipfs2https(user.text_records?.avatar)}
-                      size={10}
-                    />
-                    <Text lineBreak="anywhere">
-                      {user.name
-                        ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
-                        : user.address}
-                    </Text>
-                  </HStack>
-                </List.Item>
-              ))}
-            </List.Root>
+                  {treatEmojis[amount]}
+                </Text>
+              </Field>
+            </VStack>
           </>
         ) : (
           <>
-            <Field label="送信量" alignItems="center" justifyContent="center">
-              <Text fontSize="60px" fontWeight="bold" textAlign="center" mb={2}>
-                {treatEmojis[amount]}
-              </Text>
-              <Box width="100%" px={4} mb={4}>
-                <Stack align="flex-start" justifyContent="center">
-                  <Code>current: {slider.value}</Code>
-                  <Slider.RootProvider
-                    value={slider}
-                    onChange={() => setAmount(Number(slider.value))}
-                    size="lg"
-                    width="100%"
-                  >
-                    <Slider.Control>
-                      <Slider.Track>
-                        <Slider.Range />
-                      </Slider.Track>
-                      <Slider.Thumbs />
-                    </Slider.Control>
-                  </Slider.RootProvider>
-                </Stack>
-              </Box>
-            </Field>
-
-            <Flex width="100%" flexDirection="column" alignItems="center">
-              <BasicButton
-                colorScheme="yellow"
-                width={100}
-                loading={isLoading}
-                onClick={send}
-                mb={5}
+            <Box my={6}>
+              <HatsListItemParser
+                imageUri={hat?.imageUri}
+                detailUri={hat?.details}
               >
-                Next
-              </BasicButton>
-            </Flex>
+                <RoleWithBalance
+                  wearer={address as Address}
+                  balance={balanceOfToken ? Number(balanceOfToken) : undefined}
+                />
+              </HatsListItemParser>
+            </Box>
+
+            {!receiver ? (
+              <>
+                <Field label="ユーザー名 or ウォレットアドレスで検索">
+                  <CommonInput
+                    value={searchText}
+                    onChange={(e) => {
+                      setSearchText(e.target.value);
+                    }}
+                    placeholder="ユーザー名 or ウォレットアドレス"
+                  />
+                </Field>
+
+                <List.Root listStyle="none" my={10} gap={4}>
+                  {users?.flat().map((user) => (
+                    <List.Item
+                      key={`${user.name}`}
+                      onClick={() => setReceiver(user)}
+                    >
+                      <HStack>
+                        <UserIcon
+                          userImageUrl={ipfs2https(user.text_records?.avatar)}
+                          size={10}
+                        />
+                        <Text lineBreak="anywhere">
+                          {user.name
+                            ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
+                            : user.address}
+                        </Text>
+                      </HStack>
+                    </List.Item>
+                  ))}
+                </List.Root>
+              </>
+            ) : (
+              <>
+                <Field alignItems="center" justifyContent="center">
+                  <Text fontSize="50px" fontWeight="bold" textAlign="center">
+                    送信量：{amount}
+                  </Text>
+                  <Text
+                    fontSize="150px"
+                    fontWeight="bold"
+                    textAlign="center"
+                    mb={2}
+                  >
+                    {treatEmojis[amount]}
+                  </Text>
+                  <Box width="100%" px={4} mb={4}>
+                    <Stack align="flex-start" justifyContent="center">
+                      <Slider.RootProvider
+                        value={slider}
+                        onChange={() => setAmount(Number(slider.value))}
+                        size="lg"
+                        width="100%"
+                      >
+                        <Slider.Control>
+                          <Slider.Track>
+                            <Slider.Range />
+                          </Slider.Track>
+                          <Slider.Thumbs />
+                        </Slider.Control>
+                      </Slider.RootProvider>
+                    </Stack>
+                  </Box>
+                </Field>
+
+                <Flex width="100%" flexDirection="column" alignItems="center">
+                  <BasicButton
+                    colorScheme="yellow"
+                    width={100}
+                    loading={isLoading}
+                    onClick={() => setIsSend(true)}
+                    mb={5}
+                  >
+                    Next
+                  </BasicButton>
+                </Flex>
+              </>
+            )}
           </>
         )}
       </Grid>

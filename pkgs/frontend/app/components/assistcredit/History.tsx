@@ -1,5 +1,7 @@
 import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
+import { Link } from "@remix-run/react";
 import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
+import type { GetTransferFractionTokensQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useGetHat } from "hooks/useHats";
@@ -15,7 +17,14 @@ interface Props {
   limit?: number;
 }
 
+interface UserProps extends Props {
+  userAddress: string;
+  data: GetTransferFractionTokensQuery | undefined;
+  txType: "sent" | "received";
+}
+
 interface ItemProps {
+  treeId: string;
   from: string;
   to: string;
   hatId: string;
@@ -35,7 +44,13 @@ const AssistCreaditText: FC<AssistCreditTextProps> = ({ detail }) => {
   );
 };
 
-const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
+const AssistCreditItem: FC<ItemProps> = ({
+  treeId,
+  from,
+  to,
+  amount,
+  hatId,
+}) => {
   const addresses = useMemo(() => {
     return [from, to];
   }, [from, to]);
@@ -94,15 +109,17 @@ const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Flex alignItems="center" gap={2}>
-          <UserIcon
-            size="25px"
-            userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
-          />
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
-            {fromUser?.name || abbreviateAddress(from)}
-          </Text>
-        </Flex>
+        <Link to={`/${treeId}/member/${from}`}>
+          <Flex alignItems="center" gap={2}>
+            <UserIcon
+              size="25px"
+              userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
+            />
+            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              {fromUser?.name || abbreviateAddress(from)}
+            </Text>
+          </Flex>
+        </Link>
 
         <Box textAlign="left">
           <HatsListItemParser imageUri={hat?.imageUri} detailUri={hat?.details}>
@@ -116,20 +133,25 @@ const AssistCreditItem: FC<ItemProps> = ({ from, to, amount, hatId }) => {
           </Text>
         </Box>
 
-        <Flex justifyContent="flex-end" alignItems="center" gap={2}>
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
-            {toUser?.name || abbreviateAddress(to)}
-          </Text>
-          <UserIcon
-            size="25px"
-            userImageUrl={ipfs2https(toUser?.text_records?.avatar)}
-          />
-        </Flex>
+        <Link to={`/${treeId}/member/${to}`}>
+          <Flex justifyContent="flex-end" alignItems="center" gap={2}>
+            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              {toUser?.name || abbreviateAddress(to)}
+            </Text>
+            <UserIcon
+              size="25px"
+              userImageUrl={ipfs2https(toUser?.text_records?.avatar)}
+            />
+          </Flex>
+        </Link>
       </Grid>
     </Box>
   );
 };
 
+/**
+ * ワークスペース全体のアシストクレジット履歴を表示するコンポーネント
+ */
 export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
   const { data } = useGetTransferFractionTokens({
     where: {
@@ -144,7 +166,41 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
     <VStack gap={2}>
       {data?.transferFractionTokens.map((token) => (
         <AssistCreditItem
+          treeId={treeId}
           key={`th_${token.id}`}
+          from={token.from}
+          to={token.to}
+          hatId={token.hatId}
+          amount={token.amount}
+          timestamp={token.blockTimestamp}
+        />
+      ))}
+    </VStack>
+  );
+};
+
+/**
+ * ユーザーのアシストクレジット履歴を表示するコンポーネント
+ * txType が "sent" の場合は送信履歴、"received" の場合は受信履歴を表示する
+ */
+export const UserAssistCreditHistory: FC<UserProps> = ({ data, txType }) => {
+  if (
+    !data?.transferFractionTokens ||
+    data.transferFractionTokens.length === 0
+  ) {
+    return (
+      <Box p={4} textAlign="center" color="gray.500">
+        {txType === "sent" ? "送信履歴はありません" : "受信履歴はありません"}
+      </Box>
+    );
+  }
+
+  return (
+    <VStack gap={2}>
+      {data.transferFractionTokens.map((token) => (
+        <AssistCreditItem
+          treeId={token.workspaceId || ""}
+          key={`${txType}_${token.id}`}
           from={token.from}
           to={token.to}
           hatId={token.hatId}

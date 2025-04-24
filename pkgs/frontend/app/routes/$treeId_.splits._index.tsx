@@ -3,7 +3,9 @@ import {
   Box,
   Collapsible,
   Flex,
+  HStack,
   Heading,
+  List,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -11,7 +13,11 @@ import { Link, useParams } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useCopyToClipboard } from "hooks/useCopyToClipboard";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useSplitsCreatorRelatedSplits } from "hooks/useSplitsCreator";
+import {
+  useSplit,
+  useSplitsCreatorRelatedSplits,
+  useUserEarnings,
+} from "hooks/useSplitsCreator";
 import { currentChain, publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
@@ -22,6 +28,7 @@ import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { StickyNav } from "~/components/StickyNav";
 import { CommonButton } from "~/components/common/CommonButton";
+import { SplitDetail } from "~/components/splits/SplitDetail";
 import { SplitRecipientsList } from "~/components/splits/SplitRecipientsList";
 
 interface SplitInfoItemProps {
@@ -33,20 +40,24 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
   const [createdTime, setCreatedTime] = useState<string>();
 
   const consolidatedRecipients = useMemo(() => {
+    let totalOwnership = 0;
     const consolidated = split.recipients.reduce(
       (acc, recipient) => {
         const address = recipient.recipient.address;
-        acc[address] =
-          (acc[address] || 0) + Number(recipient.percentAllocation);
+        acc[address] = (acc[address] || 0) + Number(recipient.ownership);
+        totalOwnership += Number(recipient.ownership);
         return acc;
       },
       {} as Record<string, number>,
     );
 
-    return Object.entries(consolidated).map(([address, percentAllocation]) => ({
-      address,
-      percentAllocation,
-    }));
+    return {
+      list: Object.entries(consolidated).map(([address, ownership]) => ({
+        address,
+        ownership,
+      })),
+      totalOwnership,
+    };
   }, [split.recipients]);
 
   const [open, setOpen] = useState(false);
@@ -77,6 +88,8 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
     fetch();
   }, [split]);
 
+  const { splitEarnings, distribute, isDistributing } = useSplit(split.address);
+
   return (
     <Box
       w="100%"
@@ -94,14 +107,12 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
                 ? `${name.name}.${name.domain}`
                 : abbreviateAddress(split.address)}
             </Text>
-            <Link
-              target="_blank"
-              to={`https://app.splits.org/accounts/${split.address}/?chainId=${currentChain.id}`}
-            >
-              <CommonButton size="xs" w="100" bgColor="blue.400">
-                詳細を確認
-              </CommonButton>
-            </Link>
+            <SplitDetail
+              splitAddress={split.address}
+              splitEarnings={splitEarnings.data}
+              distribute={distribute}
+              isDistributing={isDistributing}
+            />
           </Flex>
           <Text textStyle="sm">Created at {createdTime}</Text>
           <Flex mt={4} placeItems="center">
@@ -122,6 +133,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
               />
             </CommonButton>
           </Flex>
+
           {open || (
             <CommonButton
               color="#333"
@@ -166,6 +178,16 @@ const SplitsIndex: FC = () => {
   }, [splits]);
   const { names } = useNamesByAddresses(splitsAddress);
 
+  const { userEarnings, withdraw, isWithdrawing } = useUserEarnings();
+  const activeBalances = useMemo(() => {
+    if (!userEarnings.data) return [];
+    return Object.entries(userEarnings.data?.activeBalances || {}).map(
+      ([address, balance]) => {
+        return { address, balance };
+      },
+    );
+  }, [userEarnings]);
+
   return (
     <>
       <Box w="100%">
@@ -179,6 +201,37 @@ const SplitsIndex: FC = () => {
             </CommonButton>
           </Link>
         </Flex>
+
+        {activeBalances.length > 0 && (
+          <Box p={3} bg="red.100" borderRadius={8} mb={4}>
+            <Heading fontSize="md">未回収の報酬があります</Heading>
+
+            <List.Root listStyle="none">
+              {activeBalances.map((balance) => {
+                return (
+                  <List.Item key={balance.address} mb={2}>
+                    <HStack justifyContent="space-between">
+                      <Text fontSize="md">
+                        {Number(balance.balance.formattedAmount).toFixed(4)}...{" "}
+                        {balance.balance.symbol}
+                      </Text>
+                      <CommonButton
+                        size="xs"
+                        w="100"
+                        onClick={() => {
+                          withdraw(balance.address as Address);
+                        }}
+                        loading={isWithdrawing}
+                      >
+                        引き出す
+                      </CommonButton>
+                    </HStack>
+                  </List.Item>
+                );
+              })}
+            </List.Root>
+          </Box>
+        )}
 
         {isLoading ? (
           <></>

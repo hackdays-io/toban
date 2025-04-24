@@ -1,7 +1,9 @@
 import type { Split } from "@0xsplits/splits-sdk";
+import { useQuery } from "@tanstack/react-query";
 import { SPLITS_CREATOR_ABI } from "abi/splits";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { splitsDataClient } from "utils/splits";
+import { toast } from "react-toastify";
+import { getSplitsWriteClient, splitsDataClient } from "utils/splits";
 import { type AbiItemArgs, type Address, parseEventLogs } from "viem";
 import { currentChain, publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
@@ -109,4 +111,92 @@ export const useSplitsCreatorRelatedSplits = (splitsCreator?: Address) => {
   }, [splitsCreator]);
 
   return { isLoading, splits };
+};
+
+export const useSplit = (contractAddress: Address) => {
+  const { wallet } = useActiveWallet();
+
+  const splitEarnings = useQuery({
+    queryKey: ["split", contractAddress],
+    queryFn: async () => {
+      if (!contractAddress || !splitsDataClient) return;
+      try {
+        const res = await splitsDataClient.getSplitEarnings({
+          chainId: currentChain.id,
+          splitAddress: contractAddress.toLocaleLowerCase(),
+          erc20TokenList: ["0x652b67d6BA758CC604940FAd585DC638C3F4a6A6"],
+        });
+        return res;
+      } catch (error) {
+        console.log(error);
+        return;
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const [isDistributing, setIsDistributing] = useState(false);
+  const distribute = useCallback(
+    async (tokenAddress: Address) => {
+      if (!wallet) return;
+      setIsDistributing(true);
+      const client = getSplitsWriteClient(wallet);
+      await client.splitV2.distribute({
+        splitAddress: contractAddress as Address,
+        tokenAddress,
+        distributorAddress: wallet.account.address,
+      });
+      toast.success("Success");
+      setIsDistributing(false);
+      setTimeout(async () => {
+        await splitEarnings.refetch();
+      }, 5000);
+    },
+    [wallet, contractAddress, splitEarnings],
+  );
+
+  return { splitEarnings, distribute, isDistributing };
+};
+
+export const useUserEarnings = () => {
+  const { wallet } = useActiveWallet();
+
+  const userEarnings = useQuery({
+    queryKey: ["userEarnings"],
+    queryFn: async () => {
+      if (!wallet || !splitsDataClient) return;
+      try {
+        const res = await splitsDataClient.getUserEarnings({
+          chainId: currentChain.id,
+          userAddress: wallet.account.address,
+        });
+        return res;
+      } catch (error) {
+        console.log(error);
+        return;
+      }
+    },
+    enabled: !!wallet && !!splitsDataClient,
+  });
+
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const withdraw = useCallback(
+    async (tokenAddress: Address) => {
+      if (!wallet) return;
+      setIsWithdrawing(true);
+      const client = getSplitsWriteClient(wallet);
+      await client.warehouse.withdraw({
+        tokenAddress,
+        ownerAddress: wallet.account.address,
+      });
+      toast.success("Success");
+      setIsWithdrawing(false);
+      setTimeout(async () => {
+        await userEarnings.refetch();
+      }, 5000);
+    },
+    [wallet, userEarnings],
+  );
+
+  return { userEarnings, withdraw, isWithdrawing };
 };

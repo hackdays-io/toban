@@ -1,14 +1,6 @@
 import { Box, Container, Heading, Image } from "@chakra-ui/react";
-import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import CommonButton from "~/components/common/CommonButton";
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
-};
 
 export default function Index() {
   return (
@@ -44,7 +36,7 @@ export default function Index() {
 
       <Container mt={3}>
         <Link to="/login">
-          <CommonButton size="xl" fontWeight="bold">
+          <CommonButton size="xl" fontWeight="bold" data-testid="start-button">
             はじめる
           </CommonButton>
         </Link>

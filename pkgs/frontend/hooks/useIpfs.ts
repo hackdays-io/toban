@@ -1,6 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { HatsDetailSchama, HatsDetailsData } from "types/hats";
-import { ipfsUploadFile, ipfsUploadJson } from "utils/ipfs";
+import { ipfs2httpsJson, ipfsUploadFile, ipfsUploadJson } from "utils/ipfs";
 
 export const useUploadMetadataToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,10 +18,6 @@ export const useUploadMetadataToIpfs = () => {
 
       const ipfsCid = upload.cid;
       const ipfsUri = `ipfs://${ipfsCid}`;
-
-      console.log("Successfully uploaded metadata to IPFS");
-      console.log("IPFS CID:", ipfsCid);
-      console.log("IPFS URI:", ipfsUri);
 
       return { ipfsCid, ipfsUri };
     } catch (err) {
@@ -65,14 +62,14 @@ export const useUploadHatsDetailsToIpfs = () => {
 
 export const useUploadImageFileToIpfs = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const uploadImageFileToIpfs = async (): Promise<{
-    ipfsCid: string;
-    ipfsUri: string;
-  } | null> => {
-    if (!imageFile || !imageFile.type.startsWith("image/")) {
+  const uploadImageFileToIpfs = async (fileToUpload?: File) => {
+    const fileToUse = fileToUpload || imageFile;
+
+    if (!fileToUse) return null;
+    if (!fileToUse?.type.startsWith("image/")) {
       setError(new Error("Invalid or no image file selected"));
       return null;
     }
@@ -81,14 +78,10 @@ export const useUploadImageFileToIpfs = () => {
     setError(null);
 
     try {
-      const upload = await ipfsUploadFile(imageFile);
+      const upload = await ipfsUploadFile(fileToUse);
 
       const ipfsCid = upload.cid;
       const ipfsUri = `ipfs://${ipfsCid}`;
-
-      console.log("Successfully uploaded image file to IPFS");
-      console.log("IPFS CID:", ipfsCid);
-      console.log("IPFS URI:", ipfsUri);
 
       return { ipfsCid, ipfsUri };
     } catch (err) {
@@ -101,5 +94,15 @@ export const useUploadImageFileToIpfs = () => {
     }
   };
 
-  return { uploadImageFileToIpfs, imageFile, setImageFile, isLoading, error };
+  return { uploadImageFileToIpfs, isLoading, error, imageFile, setImageFile };
+};
+
+export const useQueryIpfsJsonData = (cid?: string) => {
+  const res = useQuery({
+    queryKey: ["ipfs", cid],
+    queryFn: () => ipfs2httpsJson(cid),
+    staleTime: 1000 * 60 * 60,
+  });
+
+  return res;
 };

@@ -36,7 +36,7 @@ export const createIpfsClient = () => {
 export const ipfsUploadJson = async (object: object) => {
   try {
     const ipfsClient = createIpfsClient();
-    const upload = await ipfsClient.upload.json(object);
+    const upload = await ipfsClient.upload.public.json(object);
     return upload;
   } catch (error) {
     console.error("Failed to upload JSON to IPFS:", error);
@@ -47,12 +47,20 @@ export const ipfsUploadJson = async (object: object) => {
 export const ipfsUploadFile = async (file: File) => {
   try {
     const ipfsClient = createIpfsClient();
-    const upload = await ipfsClient.upload.file(file);
+    const upload = await ipfsClient.upload.public.file(file);
     return upload;
   } catch (error) {
     console.error("Failed to upload file to IPFS:", error);
     throw error;
   }
+};
+
+export const ipfsUploadImageFile = async (imageFile: File) => {
+  if (!imageFile) throw new Error("Invalid or no image file selected");
+  if (!imageFile?.type.startsWith("image/"))
+    throw new Error("Invalid or no image file selected");
+
+  return await ipfsUploadFile(imageFile);
 };
 
 export const ipfs2https = (ipfsUri?: string | undefined) => {

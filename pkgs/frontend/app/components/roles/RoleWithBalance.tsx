@@ -67,7 +67,7 @@ const RoleWithBalance: FC<RoleProps> = (params) => {
               w="auto"
               size="sm"
               onClick={() =>
-                navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`)
+                navigate(`/${treeId}/${hatId}/${wearer}/assistcredit/send`)
               }
             >
               送る

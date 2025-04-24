@@ -56,7 +56,9 @@ const Login: FC = () => {
       </Flex>
       <Box mb={5}>
         {wallets.length === 0 ? (
-          <BasicButton onClick={connectOrCreateWallet}>Login</BasicButton>
+          <BasicButton data-testid="login" onClick={connectOrCreateWallet}>
+            Login
+          </BasicButton>
         ) : !isSmartWallet ? (
           <BasicButton onClick={disconnectWallets}>Logout</BasicButton>
         ) : (

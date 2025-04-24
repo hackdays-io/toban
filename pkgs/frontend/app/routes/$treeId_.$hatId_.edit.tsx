@@ -1,204 +1,274 @@
-import { Box, Text } from "@chakra-ui/react";
-import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
+import { Box, Stack, Text } from "@chakra-ui/react";
 import { useNavigate, useParams } from "@remix-run/react";
-import { useHats } from "hooks/useHats";
+import { useGetHat, useHats } from "hooks/useHats";
 import {
+  useQueryIpfsJsonData,
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect } from "react";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import type {
-  HatsDetailSchama,
   HatsDetailsAttributes,
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { ipfs2https } from "utils/ipfs";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
+import { PageHeader } from "~/components/PageHeader";
 import { RoleAttributesList } from "~/components/RoleAttributesList";
 import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
+import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
 );
 
+interface FormData {
+  name: string;
+  description: string;
+  image: File;
+  selectedImageCid: string;
+  responsibilities: HatsDetailsResponsabilities;
+  authorities: HatsDetailsAuthorities;
+}
+
 const EditRole: FC = () => {
   const { treeId, hatId } = useParams();
-
-  const { uploadImageFileToIpfs, imageFile, setImageFile } =
-    useUploadImageFileToIpfs();
-
-  const [roleName, setRoleName] = useState("");
-  const [roleDescription, setRoleDescription] = useState("");
-
-  const [responsibilities, setResponsibilities] = useState<
-    NonNullable<HatsDetailsResponsabilities>
-  >([]);
-
-  const [authorities, setAuthorities] = useState<
-    NonNullable<HatsDetailsAuthorities>
-  >([]);
+  const navigate = useNavigate();
   const { wallet } = useActiveWallet();
-  const [isLoading, setIsLoading] = useState(false);
+  const { hat } = useGetHat(hatId || "");
   const { changeHatDetails, changeHatImageURI } = useHats();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
-  const navigate = useNavigate();
-  const { getHat } = useHats();
-  const [hat, setHat] = useState<Hat | undefined>(undefined);
-  const [details, setDetails] = useState<HatsDetailSchama | undefined>(
-    undefined,
-  );
+  const { uploadImageFileToIpfs } = useUploadImageFileToIpfs();
+
+  const { data: hatDetailJson } = useQueryIpfsJsonData(hat?.details);
+
+  const { control, watch, handleSubmit, setValue, resetField, formState } =
+    useForm<FormData>({
+      defaultValues: {
+        name: "",
+        description: "",
+        responsibilities: [],
+        authorities: [],
+      },
+    });
+
+  const responsibilities = useFieldArray({
+    name: "responsibilities",
+    control,
+  });
+
+  const authorities = useFieldArray({
+    name: "authorities",
+    control,
+  });
 
   useEffect(() => {
-    const fetchHat = async () => {
-      if (!hatId) return;
-      const resHat = await getHat(hatId);
-      console.log("hat", resHat);
-      if (resHat && resHat !== hat) {
-        setHat(resHat);
+    const setInitialValues = async () => {
+      if (hatDetailJson) {
+        setValue("name", hatDetailJson.data.name);
+        setValue("description", hatDetailJson.data.description || "");
+        setValue("responsibilities", hatDetailJson.data.responsabilities || []);
+        setValue("authorities", hatDetailJson.data.authorities || []);
       }
     };
-    fetchHat();
-  }, [hatId, getHat, hat]);
+    setInitialValues();
+  }, [hatDetailJson, setValue]);
 
-  useEffect(() => {
-    const setStates = async () => {
-      if (!hat) return;
-      const detailsJson: HatsDetailSchama = hat.details
-        ? await ipfs2httpsJson(hat.details)
-        : undefined;
-      console.log("detailsJson", detailsJson);
-      setDetails(detailsJson);
-      setRoleName(detailsJson?.data.name ?? "");
-      setRoleDescription(detailsJson?.data.description ?? "");
-      setResponsibilities(detailsJson?.data.responsabilities ?? []);
-      setAuthorities(detailsJson?.data.authorities ?? []);
-    };
-    setStates();
-  }, [hat]);
+  const isChangedDetails = useCallback(
+    (currentDetails: FormData) => {
+      if (!hatDetailJson) return true;
 
-  const areArraysEqual = (
-    arr1: HatsDetailsAttributes,
-    arr2: HatsDetailsAttributes,
-  ) => {
-    if (arr1.length !== arr2.length) return false;
-    return JSON.stringify(arr1) === JSON.stringify(arr2);
-  };
+      const areArraysEqual = (
+        arr1: HatsDetailsAttributes | undefined,
+        arr2: HatsDetailsAttributes | undefined,
+      ) => {
+        if (!arr1 || !arr2) return arr1 === arr2;
+        if (arr1.length !== arr2.length) return false;
+        return JSON.stringify(arr1) === JSON.stringify(arr2);
+      };
 
-  const isChangedDetails = () => {
-    if (!details) return false;
+      return (
+        currentDetails.name !== hatDetailJson.data.name ||
+        currentDetails.description !== (hatDetailJson.data.description || "") ||
+        !areArraysEqual(
+          currentDetails.responsibilities,
+          hatDetailJson.data.responsabilities || [],
+        ) ||
+        !areArraysEqual(
+          currentDetails.authorities,
+          hatDetailJson.data.authorities || [],
+        ) ||
+        currentDetails.image ||
+        currentDetails.selectedImageCid
+      );
+    },
+    [hatDetailJson],
+  );
 
-    return (
-      details.data.name !== roleName ||
-      details.data.description !== roleDescription ||
-      !areArraysEqual(details.data.responsabilities ?? [], responsibilities) ||
-      !areArraysEqual(details.data.authorities ?? [], authorities)
-    );
-  };
-
-  const changeDetails = async () => {
-    if (!hatId) return;
-
-    const isChanged = isChangedDetails();
-    if (!isChanged) return;
-
-    const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
-      name: roleName,
-      description: roleDescription,
-      responsabilities: responsibilities,
-      authorities: authorities,
-    });
-    if (!resUploadHatsDetails)
-      throw new Error("Failed to upload metadata to ipfs");
-    const ipfsUri = resUploadHatsDetails.ipfsUri;
-    const parsedLog = await changeHatDetails({
-      hatId: BigInt(hatId),
-      newDetails: ipfsUri,
-    });
-    if (!parsedLog) throw new Error("Failed to change hat details");
-    console.log("parsedLog", parsedLog);
-  };
-
-  const changeImage = async () => {
-    if (!hatId || !hat || !imageFile) return;
-    const resUploadImage = await uploadImageFileToIpfs();
-    if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
-    const ipfsUri = resUploadImage.ipfsUri;
-    const parsedLog = await changeHatImageURI({
-      hatId: BigInt(hatId),
-      newImageURI: ipfsUri,
-    });
-    if (!parsedLog) throw new Error("Failed to change hat image");
-    console.log("parsedLog", parsedLog);
-  };
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: FormData) => {
     if (!wallet) {
       alert("ウォレットを接続してください。");
       return;
     }
-    if (!roleName || !roleDescription) {
-      alert("全ての項目を入力してください。");
+    if (!data.name) {
+      alert("役割の名前を入力してください。");
       return;
     }
+    if (!hatId) return;
 
     try {
-      setIsLoading(true);
+      const promises = [];
 
-      await Promise.all([changeDetails(), changeImage()]);
+      // Handle details change
+      if (isChangedDetails(data)) {
+        const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
+          name: data.name,
+          description: data.description,
+          responsabilities: data.responsibilities,
+          authorities: data.authorities,
+        });
+        if (!resUploadHatsDetails)
+          throw new Error("Failed to upload metadata to ipfs");
 
-      navigate(`/${treeId}/roles`);
+        promises.push(
+          changeHatDetails({
+            hatId: BigInt(hatId),
+            newDetails: resUploadHatsDetails.ipfsUri,
+          }),
+        );
+      }
+
+      // Handle image change
+      if (data.image || data.selectedImageCid) {
+        let imageUri = "";
+        if (data.image) {
+          const resUploadImage = await uploadImageFileToIpfs(data.image);
+          if (!resUploadImage)
+            throw new Error("Failed to upload image to ipfs");
+          imageUri = resUploadImage.ipfsUri;
+        } else if (data.selectedImageCid) {
+          imageUri = `ipfs://${data.selectedImageCid}`;
+        }
+
+        if (imageUri) {
+          promises.push(
+            changeHatImageURI({
+              hatId: BigInt(hatId),
+              newImageURI: imageUri,
+            }),
+          );
+        }
+      }
+
+      await Promise.all(promises);
+      navigate(`/${treeId}/${hatId}`);
     } catch (error) {
       console.error(error);
       alert(`エラーが発生しました。${error}`);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <Box mt={5} w="100%">
-        <Text fontSize="lg">ロールを編集</Text>
+    <Box w="100%" pb={10}>
+      <PageHeader title="ロール編集" />
+      <form onSubmit={handleSubmit(onSubmit)}>
         <ContentContainer>
-          <InputImage
-            imageFile={imageFile}
-            setImageFile={setImageFile}
-            previousImageUrl={ipfs2https(hat?.imageUri)}
+          <Stack my="30px" gap={3}>
+            <Controller
+              control={control}
+              name="image"
+              render={({ field: { onChange, value } }) => (
+                <InputImage
+                  imageFile={value}
+                  setImageFile={onChange}
+                  previousImageUrl={
+                    watch("selectedImageCid")
+                      ? ipfs2https(`ipfs://${watch("selectedImageCid")}`)
+                      : ipfs2https(hat?.imageUri)
+                  }
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="selectedImageCid"
+              render={({ field: { onChange, value } }) => (
+                <RoleImageLibrarySelector
+                  setImageCid={(cid) => {
+                    resetField("image");
+                    onChange(cid);
+                  }}
+                  selectedCid={value}
+                />
+              )}
+            />
+          </Stack>
+
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, value } }) => (
+              <InputName name={value} setName={onChange} />
+            )}
           />
-          <InputName name={roleName} setName={setRoleName} />
-          <InputDescription
-            description={roleDescription}
-            setDescription={setRoleDescription}
-            mt={6}
+
+          <Controller
+            control={control}
+            name="description"
+            render={({ field: { onChange, value } }) => (
+              <InputDescription
+                description={value}
+                setDescription={onChange}
+                mt={6}
+              />
+            )}
           />
         </ContentContainer>
-        <SectionHeading>Responsibilities</SectionHeading>
+
+        <SectionHeading>役割</SectionHeading>
         <ContentContainer>
           <RoleAttributesList
-            items={responsibilities}
-            setItems={setResponsibilities}
+            items={responsibilities.fields}
+            setItem={(index: number, value: HatsDetailsAttributes[number]) => {
+              responsibilities.update(index, value);
+            }}
+            deleteItem={(index: number) => {
+              responsibilities.remove(index);
+            }}
           />
           <AddRoleAttributeDialog
             type="responsibility"
-            attributes={responsibilities}
-            setAttributes={setResponsibilities}
+            attributes={responsibilities.fields}
+            setAttributes={responsibilities.append}
           />
         </ContentContainer>
-        <SectionHeading>Authorities</SectionHeading>
+
+        <SectionHeading>権限</SectionHeading>
         <ContentContainer>
-          <RoleAttributesList items={authorities} setItems={setAuthorities} />
+          <RoleAttributesList
+            items={authorities.fields}
+            setItem={(index: number, value: HatsDetailsAttributes[number]) => {
+              authorities.update(index, value);
+            }}
+            deleteItem={(index: number) => {
+              authorities.remove(index);
+            }}
+          />
           <AddRoleAttributeDialog
             type="authority"
-            attributes={authorities}
-            setAttributes={setAuthorities}
+            attributes={authorities.fields}
+            setAttributes={authorities.append}
           />
         </ContentContainer>
+
         <Box
           mt={10}
           mb="4vh"
@@ -208,21 +278,15 @@ const EditRole: FC = () => {
           alignItems="center"
         >
           <BasicButton
-            onClick={handleSubmit}
-            disabled={
-              !roleName ||
-              !roleDescription ||
-              responsibilities.length === 0 ||
-              authorities.length === 0 ||
-              (!isChangedDetails() && !imageFile)
-            }
-            loading={isLoading}
+            disabled={!watch("name")}
+            loading={formState.isSubmitting}
+            type="submit"
           >
             保存
           </BasicButton>
         </Box>
-      </Box>
-    </>
+      </form>
+    </Box>
   );
 };
 

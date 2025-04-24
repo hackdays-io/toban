@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   Children,
@@ -5,8 +6,6 @@ import {
   type ReactNode,
   cloneElement,
   isValidElement,
-  useEffect,
-  useState,
 } from "react";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
@@ -30,18 +29,15 @@ export const HatsListItemParser: FC<HatsListItemParserProps> = (props) => {
     ? ipfs2https(props.detailUri)
     : props.detailUri;
 
-  const [detail, setDetail] = useState<HatsDetailSchama>();
-
-  useEffect(() => {
-    if (!parsedDetailUri) return;
-
-    const fetch = async () => {
+  const { data: detail } = useQuery({
+    queryKey: ["hats-detail", parsedDetailUri],
+    queryFn: async () => {
+      if (!parsedDetailUri) return;
       const { data } = await axios.get(parsedDetailUri);
-      setDetail(data);
-    };
-
-    fetch();
-  }, [parsedDetailUri]);
+      return data;
+    },
+    staleTime: 1000 * 60 * 60,
+  });
 
   return (
     <>

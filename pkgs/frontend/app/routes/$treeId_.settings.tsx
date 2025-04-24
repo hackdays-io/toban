@@ -30,35 +30,15 @@ import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import type { Address, TransactionReceipt } from "viem";
 import { PageHeader } from "~/components/PageHeader";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "~/components/SettingSections";
 import { CommonButton } from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
-
-const SettingsSection: FC<{
-  children: React.ReactNode;
-  headingText: string;
-}> = ({ children, headingText }) => (
-  <Box mt={2} mb={12}>
-    <Text fontSize="md" fontWeight="medium" color="gray.600">
-      {headingText}
-    </Text>
-    {children}
-  </Box>
-);
-
-export const SettingsSubSection: FC<{
-  children: React.ReactNode;
-  headingText: string;
-}> = ({ children, headingText }) => (
-  <Box mt={3} mb={5}>
-    <Text mb={3} fontSize="sm" fontWeight="medium" color="gray.600">
-      {headingText}
-    </Text>
-    {children}
-  </Box>
-);
 
 interface ActionButtonWrapperWithoutChildrenProps {
   buttonText: string;
@@ -253,6 +233,7 @@ const RoleSubSection: FC<{
       <Box>
         {currentAuthoritiesAccounts.map((accountArr) => {
           const account = accountArr[0];
+          if (!account) return null;
           return (
             <ActionButtonWrapper
               key={account.address}

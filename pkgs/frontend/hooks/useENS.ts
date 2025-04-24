@@ -20,10 +20,26 @@ export const useActiveWalletIdentity = () => {
   return { identity };
 };
 
+export const useIdentity = (address?: string) => {
+  const addressArray = useMemo(() => {
+    if (!address) return [];
+    return [address];
+  }, [address]);
+  const { names } = useNamesByAddresses(addressArray);
+
+  const identity = useMemo(() => {
+    if (!names || names.length === 0) return;
+    return names[0][0];
+  }, [names]);
+
+  return { identity };
+};
+
 export const useNamesByAddresses = (addresses?: string[]) => {
   const [names, setNames] = useState<NameData[][]>([]);
 
   const fetchNames = useCallback(async (addresses: string[]) => {
+    if (addresses.length === 0 || !addresses) return;
     try {
       const { data } = await axios.get<NameData[][]>(
         "/api/namestone/resolve-names",
@@ -62,6 +78,7 @@ export const useAddressesByNames = (names?: string[], exactMatch?: boolean) => {
 
   const fetchAddresses = useCallback(
     async (resolveNames: string[]) => {
+      if (!resolveNames || resolveNames.length === 0) return;
       try {
         const { data } = await axios.get<NameData[][]>(
           "/api/namestone/resolve-addresses",
@@ -100,7 +117,8 @@ export const useSetName = () => {
       try {
         await axios.post("/api/namestone/set-name", params);
       } catch (error) {
-        console.error(error);
+        setIsLoading(false);
+        throw error;
       }
       setIsLoading(false);
     },
@@ -108,4 +126,45 @@ export const useSetName = () => {
   );
 
   return { setName, isLoading };
+};
+
+export const useUpdateName = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const updateName = useCallback(
+    async (params: {
+      name: string;
+      address?: string;
+      text_records?: TextRecords;
+    }) => {
+      if (!params.address || !params.name) {
+        throw new Error("Address and name are required");
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await axios.post("/api/namestone/update-name", params);
+        console.log("API response:", {
+          status: response.status,
+          statusText: response.statusText,
+          data: response.data,
+        });
+
+        if (response.status !== 200) {
+          throw new Error(`Failed to update name: ${response.statusText}`);
+        }
+
+        return response.data;
+      } catch (error) {
+        console.error("Error updating name:", error);
+        // Re-throw the error to propagate it to the caller
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return { updateName, isLoading };
 };

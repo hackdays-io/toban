@@ -1,9 +1,6 @@
 import { Box, Heading, VStack } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import {
-  useBalanceOfFractionTokens,
-  useBalancesWithHat,
-} from "hooks/useFractionToken";
+import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHats } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
@@ -22,22 +19,26 @@ const WorkspaceWithBalance: FC = () => {
       workspaceId: treeId,
       owner: wallet?.account.address.toLowerCase(),
     },
+    first: 100,
   });
 
-  const hatIds = useMemo(
-    () => data?.balanceOfFractionTokens.map(({ hatId }) => hatId.toString()),
-    [data],
-  );
+  const hatIds = useMemo(() => {
+    return Array.from(
+      new Set(data?.balanceOfFractionTokens.map(({ hatId }) => hatId)),
+    );
+  }, [data]);
 
   const { hats } = useGetHats(hatIds || []);
 
   const hatsWithBalance = useMemo(() => {
-    if (!hats) return [];
-    return hats.map((hat, index) => ({
-      hat,
-      ...data?.balanceOfFractionTokens[index],
-    }));
-  }, [data, hats]);
+    if (!hats || !data) return [];
+    return data.balanceOfFractionTokens
+      .map(({ hatId, balance, wearer }) => {
+        const hat = hats.find(({ id }) => hatId === BigInt(id).toString());
+        if (hat) return { hat, balance, wearer };
+      })
+      .filter((data) => !!data);
+  }, [hats, data]);
 
   return (
     <Box>
@@ -46,7 +47,7 @@ const WorkspaceWithBalance: FC = () => {
         {wallet &&
           hatsWithBalance.map(({ hat, balance, wearer }) => (
             <HatsListItemParser
-              key={`${hat.id}${wearer}`}
+              key={hat.id}
               imageUri={hat.imageUri}
               detailUri={hat.details}
             >

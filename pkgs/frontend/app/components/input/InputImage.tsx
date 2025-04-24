@@ -35,18 +35,20 @@ export const InputImage = ({
   setImageFile,
   previousImageUrl,
 }: {
-  imageFile: File | null;
+  imageFile: File | string | undefined | null;
   setImageFile: (file: File | null) => void;
   previousImageUrl?: string;
 }) => {
   const imageUrl = imageFile
-    ? URL.createObjectURL(imageFile)
+    ? typeof imageFile === "string"
+      ? imageFile
+      : URL.createObjectURL(imageFile)
     : previousImageUrl
       ? previousImageUrl
       : undefined;
 
   return (
-    <Box as="label" cursor="pointer" m="40px auto 40px">
+    <Box as="label" cursor="pointer">
       <Input
         type="file"
         accept="image/*"

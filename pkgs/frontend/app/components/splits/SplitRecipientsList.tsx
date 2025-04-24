@@ -6,24 +6,23 @@ import { abbreviateAddress } from "utils/wallet";
 import { UserIcon } from "../icon/UserIcon";
 
 interface SplitRecipientsListProps {
-  recipients: { address: string; percentAllocation: number }[];
+  recipients: {
+    list: { address: string; ownership: number }[];
+    totalOwnership: number;
+  };
 }
 
 export const SplitRecipientsList: FC<SplitRecipientsListProps> = ({
   recipients,
 }) => {
   const addresses = useMemo(() => {
-    return recipients.map((r) => r.address);
+    return recipients.list?.map((r) => r.address);
   }, [recipients]);
   const { names } = useNamesByAddresses(addresses);
 
-  const totalAllocation = useMemo(() => {
-    return recipients.reduce((acc, r) => acc + r.percentAllocation, 0);
-  }, [recipients]);
-
   return (
     <Box>
-      {recipients.map((recipient) => {
+      {recipients.list?.map((recipient) => {
         const name = names.find(
           (name) => name[0]?.address === recipient.address,
         )?.[0];
@@ -40,7 +39,7 @@ export const SplitRecipientsList: FC<SplitRecipientsListProps> = ({
               </Text>
             </Box>
             {(
-              (Number(recipient.percentAllocation) / totalAllocation) *
+              (Number(recipient.ownership) / recipients.totalOwnership) *
               100
             ).toFixed(2)}{" "}
             %

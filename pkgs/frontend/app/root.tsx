@@ -12,11 +12,13 @@ import {
   data,
   useLoaderData,
 } from "@remix-run/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useEffect } from "react";
 import { ToastContainer, toast as notify } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
 import { getToast } from "remix-toast";
+import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
 import { SwitchNetwork } from "./components/SwitchNetwork";
@@ -41,6 +43,8 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
           name="emotion-insertion-point"
           content="emotion-insertion-point"
         />
+        <title>Toban -当番-</title>
+        <link rel="icon" href="/images/favicon.ico" />
       </head>
       <body>
         {children}
@@ -52,13 +56,18 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   );
 });
 
-// Add the toast stylesheet
-export const links = () => [{ rel: "stylesheet", href: toastStyles }];
+// Add stylesheets
+export const links = () => [
+  { rel: "stylesheet", href: toastStyles },
+  { rel: "stylesheet", href: swiperStyles },
+];
 // Implemented from above
 export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request);
   return data({ toast }, { headers });
 };
+
+const queryClient = new QueryClient();
 
 export default function App() {
   const {
@@ -77,9 +86,6 @@ export default function App() {
       <PrivyProvider
         appId={import.meta.env.VITE_PRIVY_APP_ID}
         config={{
-          appearance: {
-            walletList: ["coinbase_wallet", "metamask"],
-          },
           embeddedWallets: {
             createOnLogin: "users-without-wallets",
           },
@@ -91,20 +97,22 @@ export default function App() {
           supportedChains: [currentChain],
         }}
       >
-        <SwitchNetwork />
-        <ChakraProvider>
-          <Container
-            bg="#fffdf8"
-            maxW="430px"
-            height="100%"
-            width="100%"
-            minH="100vh"
-          >
-            <Header />
-            <Outlet />
-          </Container>
-          <ToastContainer />
-        </ChakraProvider>
+        <QueryClientProvider client={queryClient}>
+          <SwitchNetwork />
+          <ChakraProvider>
+            <Container
+              bg="#fffdf8"
+              maxW="430px"
+              height="100%"
+              width="100%"
+              minH="100vh"
+            >
+              <Header />
+              <Outlet />
+            </Container>
+            <ToastContainer />
+          </ChakraProvider>
+        </QueryClientProvider>
       </PrivyProvider>
     </ApolloProvider>
   );

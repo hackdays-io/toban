@@ -34,7 +34,7 @@ import {
   useForm,
 } from "react-hook-form";
 import type { HatsDetailSchama } from "types/hats";
-import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
@@ -252,8 +252,10 @@ const SplitterNew: FC = () => {
     fetch();
   }, [baseHats, fields.length, insert]);
 
-  const [preview, setPreview] =
-    useState<{ address: Address; percentAllocation: number }[]>();
+  const [preview, setPreview] = useState<{
+    list: { address: Address; ownership: number }[];
+    totalOwnership: number;
+  }>();
 
   const calcParams = useCallback(() => {
     const data = getValues();
@@ -287,20 +289,23 @@ const SplitterNew: FC = () => {
     const params = calcParams();
     const res = await previewSplits(params);
 
+    let totalOwnership = 0;
     const consolidatedRecipients = res[0].reduce((acc, address, index) => {
       const percentAllocation = Number(res[1][index]);
+      totalOwnership += percentAllocation;
       acc.set(address, (acc.get(address) || 0) + percentAllocation);
       return acc;
     }, new Map<Address, number>());
 
-    setPreview(
-      Array.from(consolidatedRecipients.entries()).map(
-        ([address, percentAllocation]) => ({
+    setPreview({
+      list: Array.from(consolidatedRecipients.entries()).map(
+        ([address, ownership]) => ({
           address,
-          percentAllocation,
+          ownership,
         }),
       ),
-    );
+      totalOwnership,
+    });
   }, [availableName, previewSplits, calcParams]);
 
   const { setName } = useSetName();
@@ -317,7 +322,9 @@ const SplitterNew: FC = () => {
         await setName({ name: `${splitterName}.split`, address: address });
       }
 
-      navigate(`/${treeId}/splits`);
+      setTimeout(() => {
+        navigate(`/${treeId}/splits`);
+      }, 5000);
     } catch (error) {
       console.error(error);
     }

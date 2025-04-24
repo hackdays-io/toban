@@ -1,13 +1,4 @@
-import {
-  Box,
-  Flex,
-  Grid,
-  HStack,
-  Input,
-  List,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Grid } from "@chakra-ui/react";
 import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
@@ -22,19 +13,20 @@ import {
 import { useGetHat, useTreeInfo } from "hooks/useHats";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
-import { FaArrowRight } from "react-icons/fa6";
 import { toast } from "react-toastify";
-import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
-import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
-import { CommonInput } from "~/components/common/CommonInput";
+import AmountSelector from "~/components/assistcredit/AmountSelector";
+import SendConfirmation from "~/components/assistcredit/SendConfirmation";
+import UserList from "~/components/assistcredit/UserList";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { UserIcon } from "~/components/icon/UserIcon";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
-import { Field } from "~/components/ui/field";
 
+/**
+ * AssistCreditSend Component
+ * @returns
+ */
 const AssistCreditSend: FC = () => {
   const navigate = useNavigate();
 
@@ -100,24 +92,30 @@ const AssistCreditSend: FC = () => {
   // 送信先選択後
   const [receiver, setReceiver] = useState<NameData>();
   const [amount, setAmount] = useState<number>(0);
+  // 画面切り替えのために使用するフラグ
+  const [isSend, setIsSend] = useState(false);
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
     BigInt(hatId || 0),
     address as Address,
   );
+
+  /**
+   * トークンを送信する関数
+   */
   const send = useCallback(async () => {
     if (!receiver || !hatId || !me || isLoading) return;
-    try {
-      const res = await transferFractionToken(
-        receiver.address as Address,
-        BigInt(amount),
-      );
-      console.log(res);
-      res?.error && toast.error(res.error);
-      res?.txHash && navigate(`/${treeId}/${hatId}/${address}`);
-    } catch (error) {
-      console.error(error);
+
+    const res = await transferFractionToken(
+      receiver.address as Address,
+      BigInt(amount),
+    );
+
+    if (res?.error) {
+      toast.error(res.error);
+      throw new Error(res.error);
     }
+    res?.txHash && navigate(`/${treeId}/${hatId}/${address}`);
   }, [
     transferFractionToken,
     receiver,
@@ -134,7 +132,11 @@ const AssistCreditSend: FC = () => {
     <>
       <Grid
         gridTemplateRows={
-          !receiver ? "auto auto auto 1fr" : "auto auto 1fr auto"
+          !receiver
+            ? "auto auto auto 1fr"
+            : isSend
+              ? "auto 1fr"
+              : "auto auto 1fr auto"
         }
         minH="calc(100vh - 100px)"
       >
@@ -146,108 +148,56 @@ const AssistCreditSend: FC = () => {
           }
           backLink={
             receiver &&
-            (() => {
-              setReceiver(undefined);
-              setAmount(0);
-            })
+            (isSend
+              ? () => {
+                  setIsSend(false);
+                  setAmount(10);
+                }
+              : () => {
+                  setReceiver(undefined);
+                  setAmount(10);
+                })
           }
         />
 
-        <Box my={6}>
-          <HatsListItemParser imageUri={hat?.imageUri} detailUri={hat?.details}>
-            <RoleWithBalance
-              wearer={address as Address}
-              balance={
-                balanceOfToken ? Number(balanceOfToken) : isWearer ? 10000 : 0
-              }
-            />
-          </HatsListItemParser>
-        </Box>
-
-        {!receiver ? (
-          <>
-            <Field label="ユーザー名 or ウォレットアドレスで検索">
-              <CommonInput
-                value={searchText}
-                onChange={(e) => {
-                  setSearchText(e.target.value);
-                }}
-                placeholder="ユーザー名 or ウォレットアドレス"
-              />
-            </Field>
-
-            <List.Root listStyle="none" my={10} gap={4}>
-              {users?.flat().map((user) => (
-                <List.Item
-                  key={`${user.name}u`}
-                  onClick={() => setReceiver(user)}
-                >
-                  <HStack>
-                    <UserIcon
-                      userImageUrl={ipfs2https(user.text_records?.avatar)}
-                      size={10}
-                    />
-                    <Text lineBreak="anywhere">
-                      {user.name
-                        ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
-                        : user.address}
-                    </Text>
-                  </HStack>
-                </List.Item>
-              ))}
-            </List.Root>
-          </>
+        {isSend ? (
+          <SendConfirmation
+            amount={amount}
+            me={me.identity}
+            receiver={receiver}
+            onSend={send}
+          />
         ) : (
           <>
-            <Field label="送信量" alignItems="center" justifyContent="center">
-              <Input
-                p={2}
-                pb={4}
-                fontSize="60px"
-                size="2xl"
-                border="none"
-                borderBottom="2px solid"
-                borderRadius="0"
-                w="auto"
-                type="number"
-                textAlign="center"
-                min={0}
-                max={9999}
-                style={{
-                  WebkitAppearance: "none",
-                }}
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-              />
-            </Field>
+            <Box my={6}>
+              <HatsListItemParser
+                imageUri={hat?.imageUri}
+                detailUri={hat?.details}
+              >
+                <RoleWithBalance
+                  wearer={address as Address}
+                  balance={balanceOfToken ? Number(balanceOfToken) : undefined}
+                />
+              </HatsListItemParser>
+            </Box>
 
-            <Flex width="100%" flexDirection="column" alignItems="center">
-              <HStack columnGap={3} mb={4}>
-                <Box textAlign="center">
-                  <UserIcon
-                    size={10}
-                    userImageUrl={ipfs2https(me.identity?.text_records?.avatar)}
-                  />
-                  <Text fontSize="xs">{me.identity?.name}</Text>
-                </Box>
-                <VStack textAlign="center">
-                  <Text>{amount}</Text>
-                  <FaArrowRight size="20px" />
-                </VStack>
-                <Box>
-                  <UserIcon
-                    size={10}
-                    userImageUrl={ipfs2https(receiver.text_records?.avatar)}
-                  />
-                  <Text fontSize="xs">
-                    {receiver.name || abbreviateAddress(receiver.address)}
-                  </Text>
-                </Box>
-              </HStack>
-              <BasicButton loading={isLoading} onClick={send} mb={5}>
-                送信
-              </BasicButton>
-            </Flex>
+            {!receiver ? (
+              <UserList
+                searchText={searchText}
+                setSearchText={setSearchText}
+                users={users}
+                onSelectUser={setReceiver}
+              />
+            ) : (
+              <AmountSelector
+                amount={amount}
+                setAmount={setAmount}
+                onNext={() => setIsSend(true)}
+                isLoading={isLoading}
+                me={me.identity}
+                receiver={receiver}
+              />
+            )}
           </>
         )}
       </Grid>

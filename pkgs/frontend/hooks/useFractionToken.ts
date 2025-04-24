@@ -432,7 +432,6 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
   const transferFractionToken = useCallback(
     async (to: Address, amount: bigint) => {
-      console.log(wallet, tokenId);
       if (!wallet || !tokenId) return;
 
       setIsLoading(true);
@@ -471,12 +470,13 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
             functionName: "multicall",
             args: [[mintInitialSupplyData, transferData]],
           });
-        } catch (error) {
-          console.error(error);
-        } finally {
           await publicClient.waitForTransactionReceipt({
             hash: txHash ?? "0x",
           });
+          setIsLoading(false);
+        } catch (err) {
+          console.error(err);
+          error = "アシストクレジットの送信に失敗しました";
           setIsLoading(false);
         }
       } else {

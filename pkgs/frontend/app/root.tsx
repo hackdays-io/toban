@@ -18,6 +18,7 @@ import { useEffect } from "react";
 import { ToastContainer, toast as notify } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
 import { getToast } from "remix-toast";
+import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
 import { SwitchNetwork } from "./components/SwitchNetwork";
@@ -55,8 +56,11 @@ export const Layout = withEmotionCache((props: LayoutProps, cache) => {
   );
 });
 
-// Add the toast stylesheet
-export const links = () => [{ rel: "stylesheet", href: toastStyles }];
+// Add stylesheets
+export const links = () => [
+  { rel: "stylesheet", href: toastStyles },
+  { rel: "stylesheet", href: swiperStyles },
+];
 // Implemented from above
 export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request);

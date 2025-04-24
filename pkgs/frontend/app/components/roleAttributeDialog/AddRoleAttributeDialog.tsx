@@ -27,11 +27,10 @@ interface AddRoleAttributeDialogProps {
 
 export const AddRoleAttributeDialog = ({
   type,
-  attributes,
   setAttributes,
 }: AddRoleAttributeDialogProps) => {
   const onClick = (name: string, description: string, link: string) => {
-    setAttributes([...attributes, { label: name, description, link }]);
+    setAttributes([{ label: name, description, link }]);
   };
 
   return (

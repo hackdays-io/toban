@@ -1,28 +1,32 @@
-import { Box, Grid, Heading } from "@chakra-ui/react";
+import { Box, Grid, Heading, Image } from "@chakra-ui/react";
 import type { FC } from "react";
 import CommonButton from "../common/CommonButton";
 import { CommonDialog } from "../common/CommonDialog";
 import { DialogCloseTrigger } from "../ui/dialog";
 
-export const RoleImageLibrarySelector: FC = () => {
+interface Props {
+  setImageCid: (cid: string) => void;
+  selectedCid: string;
+}
+
+export const RoleImageLibrarySelector: FC<Props> = ({
+  setImageCid,
+  selectedCid,
+}) => {
   const imageLibrary = [
     {
-      id: "rpg1",
       url: "/images/imagelib/rpg1.png",
       cid: "bafybeignhscpeh55e7y2iva3eliuqugmgve2hfkxb43yg72brdnlexutti",
     },
     {
-      id: "rpg2",
       url: "/images/imagelib/rpg2.png",
       cid: "bafybeibfdgmu525swbw644j5i4cnqkf5lxql24qwjc47ilctdvhkmue7ne",
     },
     {
-      id: "rpg3",
       url: "/images/imagelib/rpg3.png",
       cid: "bafybeigudaq4m4xpoocgisen6adfynuhcei2piuw3bs4zahvit7zcv3nuy",
     },
     {
-      id: "rpg4",
       url: "/images/imagelib/rpg4.png",
       cid: "bafybeicyvdsgjh4gxlzfqyrf47viq2cyr4dwswfjwcgcxipvalz2xqarni",
     },
@@ -49,11 +53,11 @@ export const RoleImageLibrarySelector: FC = () => {
             {imageLibrary.map((image) => (
               <Box
                 key={`image${image.cid}`}
-                onClick={() => setImageLibId(image.id)}
+                onClick={() => setImageCid(image.cid)}
                 position="relative"
               >
                 <Image src={image.url} alt="" />
-                {imageLibId === image.id && (
+                {selectedCid === image.cid && (
                   <Box
                     position="absolute"
                     top={0}

@@ -82,9 +82,6 @@ export default function App() {
       <PrivyProvider
         appId={import.meta.env.VITE_PRIVY_APP_ID}
         config={{
-          appearance: {
-            walletList: ["coinbase_wallet", "metamask"],
-          },
           embeddedWallets: {
             createOnLogin: "users-without-wallets",
           },

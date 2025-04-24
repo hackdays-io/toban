@@ -5,8 +5,9 @@ import { EditRoleAttributeDialog } from "~/components/roleAttributeDialog/EditRo
 
 export const RoleAttributesList: FC<{
   items: HatsDetailsAttributes;
-  setItems: (value: HatsDetailsAttributes) => void;
-}> = ({ items, setItems }) => {
+  setItem: (index: number, value: HatsDetailsAttributes[number]) => void;
+  deleteItem: (index: number) => void;
+}> = ({ items, setItem, deleteItem }) => {
   return (
     <Box w="100%" mt={2}>
       {items.map((item, index) => (
@@ -33,7 +34,8 @@ export const RoleAttributesList: FC<{
             <EditRoleAttributeDialog
               type="responsibility"
               attributes={items}
-              setAttributes={setItems}
+              setAttributes={setItem}
+              deleteAttributes={deleteItem}
               attributeIndex={index}
             />
           </Box>

@@ -43,9 +43,9 @@ const ProfileOverviewSettings: FC<ProfileOverviewSettingsProps> = ({
 
   const {
     uploadImageFileToIpfs,
-    imageFile,
-    setImageFile,
     isLoading: isIpfsLoading,
+    setImageFile,
+    imageFile,
   } = useUploadImageFileToIpfs();
 
   const [topHat, setTopHat] = useState<Hat | undefined>(undefined);

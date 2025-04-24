@@ -23,7 +23,11 @@ const PencilButton = () => {
 interface EditRoleAttributeDialogProps {
   type: "responsibility" | "authority";
   attributes: HatsDetailsAttributes;
-  setAttributes: (attributes: HatsDetailsAttributes) => void;
+  setAttributes: (
+    index: number,
+    attributes: HatsDetailsAttributes[number],
+  ) => void;
+  deleteAttributes: (index: number) => void;
   attributeIndex: number;
 }
 
@@ -31,19 +35,15 @@ export const EditRoleAttributeDialog = ({
   type,
   attributes,
   setAttributes,
+  deleteAttributes,
   attributeIndex,
 }: EditRoleAttributeDialogProps) => {
   const onClick = (name: string, description: string, link: string) => {
-    const newAttributes = [
-      ...attributes.slice(0, attributeIndex),
-      { ...attributes[attributeIndex], label: name, description, link },
-      ...attributes.slice(attributeIndex + 1),
-    ];
-    setAttributes(newAttributes);
+    setAttributes(attributeIndex, { label: name, description, link });
   };
 
   const onClickDelete = () => {
-    setAttributes(attributes.filter((_, index) => index !== attributeIndex));
+    deleteAttributes(attributeIndex);
   };
 
   return (

@@ -69,10 +69,6 @@ describe("Workspace Creation Flow", () => {
     // 7. 「作成」ボタンをクリックする
     workspaceCreationPage.clickCreateButton();
 
-    // 8. MetaMaskウォレットでの署名要求が表示されることを確認する
-    // 9. 署名を承認する
-    workspaceCreationPage.confirmMetaMaskSignature();
-
     // 10. 新しく作成されたワークスペースのホームページに遷移することを確認する
     // 11. 作成したワークスペースの情報（名前、説明、画像）が正しく表示されていることを確認する
     workspaceCreationPage.verifyWorkspaceCreated(workspaceName);

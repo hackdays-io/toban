@@ -9,10 +9,10 @@ export class WorkspaceCreationPage {
   private createWorkspaceButtonSelector =
     "button:contains('新しいワークスペースを作成')";
   private workspaceNameInputSelector =
-    "input[data-testid='workspace-name-input']";
+    "[data-testid='workspace-name-input'] input";
   private workspaceDescriptionInputSelector =
-    "textarea[data-testid='description-input']";
-  private fileInputSelector = "input[data-testid='file-input']";
+    "[data-testid='description-input'] textarea";
+  private fileInputSelector = "[data-testid='file-input'] input";
   private createButtonSelector = "button:contains('作成')";
 
   /**

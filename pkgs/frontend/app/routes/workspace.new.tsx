@@ -87,13 +87,15 @@ const WorkspaceNew: FC = () => {
           justifyContent="center"
           mt={10}
           alignItems="center"
+          data-testid="workspace-creation-form"
         >
-          <InputImage imageFile={imageFile} setImageFile={setImageFile} />
-          <InputName name={name} setName={setName} />
+          <InputImage imageFile={imageFile} setImageFile={setImageFile} data-testid="file-input" />
+          <InputName name={name} setName={setName} data-testid="workspace-name-input" />
           <InputDescription
             description={description}
             setDescription={setDescription}
             mt={6}
+            data-testid="description-input"
           />
         </Box>
       </Box>

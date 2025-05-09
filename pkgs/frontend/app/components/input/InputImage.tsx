@@ -53,7 +53,6 @@ export const InputImage = ({
         type="file"
         accept="image/*"
         display="none"
-        data-testid="file-input"
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file?.type?.startsWith("image/")) {

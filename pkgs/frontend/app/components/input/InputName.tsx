@@ -17,7 +17,6 @@ export const InputName = ({
         value={name}
         onChange={(e) => setName(e.target.value)}
         w="100%"
-        data-testid="workspace-name-input"
       />
     </Box>
   );

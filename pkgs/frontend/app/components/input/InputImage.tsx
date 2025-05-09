@@ -30,15 +30,14 @@ const EmptyImage = () => {
   );
 };
 
-export const InputImage = ({
-  imageFile,
-  setImageFile,
-  previousImageUrl,
-}: {
+export const InputImage = (props: {
   imageFile: File | string | undefined | null;
   setImageFile: (file: File | null) => void;
   previousImageUrl?: string;
+  "data-testid"?: string;
 }) => {
+  const { imageFile, setImageFile, previousImageUrl, ...rest } = props;
+
   const imageUrl = imageFile
     ? typeof imageFile === "string"
       ? imageFile
@@ -48,7 +47,7 @@ export const InputImage = ({
       : undefined;
 
   return (
-    <Box as="label" cursor="pointer">
+    <Box as="label" cursor="pointer" {...rest}>
       <Input
         type="file"
         accept="image/*"

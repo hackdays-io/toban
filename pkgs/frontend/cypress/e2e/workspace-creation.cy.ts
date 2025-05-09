@@ -55,7 +55,7 @@ describe("Workspace Creation Flow", () => {
     workspaceCreationPage.clickCreateWorkspaceButton();
 
     // 3. ワークスペース作成フォームが表示されることを確認する
-    cy.url().should("include", "/workspace.new");
+    cy.url().should("include", "/workspace/new");
 
     // 4. ワークスペース画像をアップロードする
     workspaceCreationPage.uploadImage(TestDataUtils.getSampleImagePath());

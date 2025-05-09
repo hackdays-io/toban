@@ -16,6 +16,7 @@ export const InputDescription = ({
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+        data-testid="description-input"
       />
     </Box>
   );

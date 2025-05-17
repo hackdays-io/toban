@@ -275,7 +275,7 @@ describe("ThanksToken", () => {
       
       if (mintableAmount > 0n) {
         await ThanksToken.write.mint(
-          [address2Validated, mintableAmount / 2n],
+          [address2Validated, mintableAmount / 2n, relatedRoles],
           { account: address1.account }
         ).catch(error => {
           console.log("Error minting ThanksToken:", error.message);
@@ -325,7 +325,7 @@ describe("ThanksToken", () => {
         
         if (mintableAmount > 0n) {
           await ThanksToken.write.mint(
-            [address2Validated, mintableAmount / 2n],
+            [address2Validated, mintableAmount / 2n, relatedRoles],
             { account: address1.account }
           ).catch(error => {
             console.log("Error minting tokens:", error.message);
@@ -452,7 +452,7 @@ describe("ThanksToken", () => {
       
       try {
         await ThanksToken.write.mint(
-          [address2Validated, amountToMint],
+          [address2Validated, amountToMint, relatedRoles],
           { account: address1.account }
         );
       } catch (error: any) {
@@ -642,11 +642,16 @@ describe("ThanksToken", () => {
         ).catch(() => {/* Ignore if already minted */});
       }
       
+      const relatedRoles = [{
+        hatId,
+        wearer: address1Validated
+      }];
+      
       let errorCaught = false;
       
       try {
         await ThanksToken.write.mint(
-          [address1Validated, 1000n],
+          [address1Validated, 1000n, relatedRoles],
           { account: address1.account }
         );
       } catch (error: any) {
@@ -693,7 +698,7 @@ describe("ThanksToken", () => {
       
       try {
         await ThanksToken.write.mint(
-          [address3Validated, mintableAmount + 1000n],
+          [address3Validated, mintableAmount + 1000n, relatedRoles],
           { account: address1.account }
         );
       } catch (error: any) {
@@ -757,6 +762,71 @@ describe("ThanksToken", () => {
       await ThanksToken.write.setDefaultCoefficient([
         1000000000000000000n // 1.0 in wei
       ]);
+    });
+    
+    it("should calculate mintable amount for user with RoleShare but without hat", async () => {
+      const initialWearing = await Hats.read.balanceOf([address2Validated, hatId]);
+      
+      if (initialWearing > 0n) {
+        await Hats.write.setHatWearerStatus([
+          hatId, 
+          address2Validated, 
+          false,
+          true  // Toggle eligibility
+        ], { account: deployer.account }).catch(() => {/* Ignore if toggle fails */});
+      }
+      
+      const isWearingHat = await Hats.read.balanceOf([address2Validated, hatId]);
+      expect(isWearingHat).to.equal(0n);
+      
+      await Hats.write.mintHat([hatId, address1Validated], { account: deployer.account })
+        .catch(() => {/* Ignore if already minted */});
+      
+      await FractionToken.write.mintInitialSupply(
+        [hatId, address1Validated, 10000n], // Mint 10000 tokens to the hat wearer first
+        { account: deployer.account }
+      ).catch(() => {/* Ignore if already minted */});
+      
+      const tokenId = await FractionToken.read.getTokenId([hatId, address1Validated]);
+      
+      await FractionToken.write.safeTransferFrom(
+        [address1Validated, address2Validated, tokenId, 5000n, "0x"],
+        { account: address1.account }
+      ).catch(error => {
+        console.log("Error transferring tokens:", error.message);
+      });
+      
+      const fractionBalance = await FractionToken.read.balanceOf([address2Validated, address1Validated, hatId]);
+      expect(Number(fractionBalance)).to.be.gt(0);
+      
+      const relatedRoles = [{
+        hatId,
+        wearer: address1Validated
+      }];
+      
+      const mintableAmount = await ThanksToken.read.mintableAmount([
+        address2Validated,
+        relatedRoles
+      ]);
+      
+      expect(Number(mintableAmount)).to.be.gt(0);
+      
+      const address3Balance = await ThanksToken.read.balanceOf([address3Validated]);
+      
+      if (mintableAmount > 0n) {
+        await ThanksToken.write.mint(
+          [address3Validated, mintableAmount / 2n, relatedRoles],
+          { account: address2.account }
+        ).catch(error => {
+          console.log("Error minting tokens:", error.message);
+        });
+        
+        const newAddress3Balance = await ThanksToken.read.balanceOf([address3Validated]);
+        expect(Number(newAddress3Balance)).to.be.gt(Number(address3Balance));
+      } else {
+        console.log("Mintable amount is 0, skipping mint test");
+        expect(true).to.be.true;
+      }
     });
   });
 });

@@ -17,9 +17,10 @@ interface IThanksToken is IERC20 {
      * @notice Mints new tokens to a recipient
      * @param to The address to mint tokens to
      * @param amount The amount of tokens to mint
+     * @param relatedRoles Array of roles related to the sender
      * @return success Whether the operation was successful
      */
-    function mint(address to, uint256 amount) external returns (bool);
+    function mint(address to, uint256 amount, RelatedRole[] memory relatedRoles) external returns (bool);
 
     /**
      * @notice Calculates the total amount that can be minted by an address

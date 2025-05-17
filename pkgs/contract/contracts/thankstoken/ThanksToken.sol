@@ -43,13 +43,9 @@ contract ThanksToken is
         _defaultCoefficient = defaultCoefficient > 0 ? defaultCoefficient : 1e18;
     }
 
-    function mint(address to, uint256 amount) public override returns (bool) {
+    function mint(address to, uint256 amount, RelatedRole[] memory relatedRoles) public override returns (bool) {
         require(to != msg.sender, "Cannot mint to yourself");
         require(amount > 0, "Amount must be greater than 0");
-        
-        // Get all roles related to sender
-        RelatedRole[] memory relatedRoles = new RelatedRole[](1);
-        relatedRoles[0] = RelatedRole(0, address(0)); // Placeholder
         
         uint256 maxAmount = mintableAmount(msg.sender, relatedRoles);
         require(amount <= maxAmount, "Amount exceeds mintable amount");
@@ -78,18 +74,22 @@ contract ThanksToken is
             // Check if owner is a role holder
             bool isRoleHolder = hatsContract.balanceOf(owner, role.hatId) > 0;
             
+            // Get share ownership regardless of role holding
+            uint256 shareBalance = fractionToken.balanceOf(owner, role.wearer, role.hatId);
+            
             if (isRoleHolder) {
                 // Get role tenure in hours
                 uint256 wearingTimeSeconds = hatsTimeFrameModule.getWearingElapsedTime(owner, role.hatId);
                 uint256 wearingTimeHours = wearingTimeSeconds / SECONDS_PER_HOUR;
                 
-                // Get share ownership
-                uint256 shareBalance = fractionToken.balanceOf(owner, role.wearer, role.hatId);
-                
                 // Calculate mintable amount based on role tenure (hours) and share ownership
                 uint256 roleBasedAmount = wearingTimeHours * shareBalance;
                 
                 totalMintable += roleBasedAmount;
+            } else if (shareBalance > 0) {
+                // If not a role holder but has shares, add share-based amount
+                // Use a base calculation without time component
+                totalMintable += shareBalance;
             }
         }
         

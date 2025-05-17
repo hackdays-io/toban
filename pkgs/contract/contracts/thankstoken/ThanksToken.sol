@@ -116,6 +116,22 @@ contract ThanksToken is
         _addressCoefficient[userAddress] = coefficient;
     }
     
+    /**
+     * @notice Sets coefficients for multiple addresses at once
+     * @param userAddresses Array of addresses to set coefficients for
+     * @param coefficients Array of coefficient values
+     */
+    function setAddressCoefficients(
+        address[] memory userAddresses,
+        uint256[] memory coefficients
+    ) public onlyOwner {
+        require(userAddresses.length == coefficients.length, "Arrays length mismatch");
+        
+        for (uint256 i = 0; i < userAddresses.length; i++) {
+            _addressCoefficient[userAddresses[i]] = coefficients[i];
+        }
+    }
+    
     function setDefaultCoefficient(uint256 coefficient) public onlyOwner {
         require(coefficient > 0, "Coefficient must be greater than 0");
         _defaultCoefficient = coefficient;

@@ -154,7 +154,7 @@ export const HatDetail: FC<HolderDetailProps> = ({ detail, imageUri }) => (
         </Box>
 
         <Box>
-          <Heading fontSize="lg">役割</Heading>
+          <Heading fontSize="lg">当番</Heading>
           {(detail?.data.responsabilities?.length ?? 0) > 0 ? (
             <List.Root pl={5} listStyle="disc">
               {detail?.data.responsabilities?.map((r) => (

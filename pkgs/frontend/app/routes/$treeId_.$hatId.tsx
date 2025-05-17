@@ -112,7 +112,7 @@ const RoleDetails: FC = () => {
             size="xs"
             bgColor="yellow.400"
           >
-            役割をわたす
+            当番をわたす
           </BasicButton>
         </Link>
       </HStack>
@@ -151,7 +151,7 @@ const RoleDetails: FC = () => {
               rounded="md"
               bgColor="yellow.200"
             >
-              役割保持者
+              当番リード
             </Box>
           </HStack>
         ))}
@@ -174,7 +174,7 @@ const RoleDetails: FC = () => {
               rounded="md"
               bgColor="blue.200"
             >
-              アシスト
+              サポーター
             </Box>
           </HStack>
         ))}

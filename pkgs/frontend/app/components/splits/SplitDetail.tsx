@@ -53,7 +53,7 @@ export const SplitDetail: FC<Props> = ({
       }
     >
       <Box p={4}>
-        <Heading fontSize="md">未分配のトークン</Heading>
+        <Heading fontSize="md">未分配のポイント</Heading>
         <List.Root listStyle="none">
           {activeBalances.map((balance) => {
             return (
@@ -79,7 +79,7 @@ export const SplitDetail: FC<Props> = ({
         </List.Root>
 
         <Heading fontSize="md" mt={4}>
-          分配済みのトークン
+          分配済みのポイント
         </Heading>
 
         <List.Root listStyle="none">

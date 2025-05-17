@@ -44,7 +44,7 @@ const WorkspaceTop: FC = () => {
 
       {/* My roles */}
       <Box my={4}>
-        <Heading py={4}>自分の役割</Heading>
+        <Heading py={4}>担当当番</Heading>
         <VStack>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
@@ -63,7 +63,7 @@ const WorkspaceTop: FC = () => {
 
       {/* All roles */}
       <Box my={4}>
-        <Heading py={4}>役割一覧</Heading>
+        <Heading py={4}>当番一覧</Heading>
         <SimpleGrid columns={4} gap={4}>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)

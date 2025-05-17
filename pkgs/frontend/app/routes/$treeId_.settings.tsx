@@ -576,7 +576,7 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
     <SettingsSection headingText="ワークスペースの権限">
       <RoleSubSection
         authorities={createHatAuthorities}
-        headingText="役割の新規作成"
+        headingText="当番の新規作成"
         remove={revokeCreateHatAuthority}
         add={grantCreateHatAuthority}
         isLoadingRemove={isRevokeCreateHatAuthorityLoading}
@@ -587,7 +587,7 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
       />
       <RoleSubSection
         authorities={operationAuthorities}
-        headingText="役割の割当・休止・剥奪"
+        headingText="当番の割当・休止・剥奪"
         remove={revokeOperationAuthority}
         add={grantOperationAuthority}
         isLoadingRemove={isRevokeOperationAuthorityLoading}

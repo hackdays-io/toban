@@ -33,7 +33,10 @@ export const MyRole: FC<MyRoleProps> = (params) => {
             navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`)
           }
         >
-          アシストクレジットを送る
+          {["144", "175"].includes(treeId || "")
+            ? "ケアポイント"
+            : "アシストクレジット"}
+          を送る
         </CommonButton>
       </VStack>
     </HStack>

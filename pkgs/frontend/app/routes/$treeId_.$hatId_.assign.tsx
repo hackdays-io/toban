@@ -114,7 +114,7 @@ const AssignRole: FC = () => {
     <Grid gridTemplateRows="1fr auto" minH="calc(100vh - 100px)" pb={5}>
       <Box>
         <Box mb={5}>
-          <PageHeader title="役割を割り当てる" />
+          <PageHeader title="当番を割り当てる" />
         </Box>
         <HatsListItemParser detailUri={hat?.details} imageUri={hat?.imageUri}>
           <RoleDetail />

@@ -481,7 +481,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
         }
       } else {
         setIsLoading(false);
-        error = "この役割についてあなたはアシストクレジットの送信ができません";
+        error = "この当番についてあなたはアシストクレジットの送信ができません";
       }
 
       return { txHash, error };

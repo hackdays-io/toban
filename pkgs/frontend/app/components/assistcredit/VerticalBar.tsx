@@ -65,7 +65,7 @@ export const VerticalBar = ({ treeId }: { treeId: string }) => {
       },
       title: {
         display: true,
-        text: "アシストクレジットの日次流通量",
+        text: `${["144", "175"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}の日次流通量`,
       },
     },
   };

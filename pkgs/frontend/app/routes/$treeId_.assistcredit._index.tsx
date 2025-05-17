@@ -42,7 +42,12 @@ const WorkspaceWithBalance: FC = () => {
 
   return (
     <Box>
-      <Heading pb={5}>アシストクレジットの残高</Heading>
+      <Heading pb={5}>
+        {["144", "175"].includes(treeId || "")
+          ? "ケアポイント"
+          : "アシストクレジット"}
+        の残高
+      </Heading>
       <VStack width="full" gapY={5}>
         {wallet &&
           hatsWithBalance.map(({ hat, balance, wearer }) => (

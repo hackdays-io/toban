@@ -125,7 +125,7 @@ const RoleItem: FC<RoleItemProps> = ({
           >
             <Box p={5}>
               <Text fontSize="lg" mb={5}>
-                分配対象にするメンバーと役割を選択
+                分配対象にするメンバーと当番を選択
               </Text>
               <Stack rowGap={5}>
                 {names

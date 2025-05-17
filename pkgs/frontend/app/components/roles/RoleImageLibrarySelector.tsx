@@ -43,7 +43,7 @@ export const RoleImageLibrarySelector: FC<Props> = ({
       >
         <DialogCloseTrigger />
         <Box p={4}>
-          <Heading fontSize="lg">役割画像ライブラリ</Heading>
+          <Heading fontSize="lg">当番画像ライブラリ</Heading>
 
           <Grid
             gridTemplateColumns={"repeat(auto-fill, minmax(100px, 1fr))"}

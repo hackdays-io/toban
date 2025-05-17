@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {IHatsModuleFactory} from "./IHatsModuleFactory.sol";
 import {ISplitsCreatorFactory} from "../splitscreator/ISplitsCreatorFactory.sol";
+import {IThanksTokenFactory} from "../thankstoken/IThanksTokenFactory.sol";
 import {HatsTimeFrameModule} from "../hatsmodules/timeframe/HatsTimeFrameModule.sol";
 import {HatsHatCreatorModule} from "../hatsmodules/hatcreator/HatsHatCreatorModule.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -24,6 +25,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
     address public FractionToken;
 
+    address public ThanksTokenFactory;
+    
     event Executed(
         address indexed creator,
         address indexed owner,
@@ -31,7 +34,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         uint256 hatterHatId,
         address hatsTimeFrameModule,
         address hatsHatCreatorModule,
-        address splitCreator
+        address splitCreator,
+        address thanksToken
     );
 
     /**
@@ -43,6 +47,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
      * @param _splitsCreatorFactory Address of the splits creator factory contract.
      * @param _splitFactoryV2 Address of the split factory V2 contract.
      * @param _fractionToken Address of the fraction token contract.
+     * @param _thanksTokenFactory Address of the thanks token factory contract.
      */
     function initialize(
         address _initialOwner,
@@ -52,7 +57,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsHatCreatorModule_IMPL,
         address _splitsCreatorFactory,
         address _splitFactoryV2,
-        address _fractionToken
+        address _fractionToken,
+        address _thanksTokenFactory
     ) public initializer {
         __Ownable_init(_initialOwner);
         Hats = IHats(_hatsAddress);
@@ -62,6 +68,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
         SplitsFactoryV2 = _splitFactoryV2;
         FractionToken = _fractionToken;
+        ThanksTokenFactory = _thanksTokenFactory;
     }
 
     /**
@@ -143,6 +150,16 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
                 keccak256(abi.encodePacked(topHatId))
             );
 
+        // 8. ThanksTokenをFactoryからデプロイ
+        address thanksToken = IThanksTokenFactory(ThanksTokenFactory)
+            .createThanksTokenDeterministic(
+                string(abi.encodePacked("ThanksToken ", _topHatDetails)),
+                string(abi.encodePacked("THX", topHatId)),
+                _owner,
+                1e18, // デフォルト係数（1.0）
+                keccak256(abi.encodePacked(topHatId, "ThanksToken"))
+            );
+
         emit Executed(
             msg.sender,
             _owner,
@@ -150,7 +167,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             hatterHatId,
             hatsTimeFrameModule,
             hatsHatCreatorModule,
-            splitCreator
+            splitCreator,
+            thanksToken
         );
 
         return topHatId;
@@ -190,6 +208,10 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
     function setFractionToken(address _fractionToken) external onlyOwner {
         FractionToken = _fractionToken;
+    }
+
+    function setThanksTokenFactory(address _thanksTokenFactory) external onlyOwner {
+        ThanksTokenFactory = _thanksTokenFactory;
     }
 
     function _authorizeUpgrade(

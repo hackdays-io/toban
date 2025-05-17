@@ -15,6 +15,12 @@ import {
   deployFractionToken,
 } from "../helpers/deploy/FractionToken";
 import {
+  type ThanksToken,
+  type ThanksTokenFactory,
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../helpers/deploy/ThanksToken";
+import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
@@ -51,6 +57,8 @@ describe("IntegrationTest", () => {
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
   let FractionToken: FractionToken;
+  let ThanksToken_IMPL: ThanksToken;
+  let ThanksTokenFactory: ThanksTokenFactory;
   let BigBang: BigBang;
   let HatsTimeFrameModuleByBigBang: HatsTimeFrameModule;
   let HatsHatCreatorModuleByBigBang: HatsHatCreatorModule;
@@ -74,6 +82,9 @@ describe("IntegrationTest", () => {
   };
 
   before(async () => {
+    [deployer, address1, address2, address3] = await viem.getWalletClients();
+    publicClient = await viem.getPublicClient();
+    
     const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
     Create2Deployer = _Create2Deployer;
 
@@ -117,6 +128,32 @@ describe("IntegrationTest", () => {
       Create2Deployer.address,
     );
     FractionToken = _FractionToken;
+    
+    const { ThanksToken: _ThanksToken } = await deployThanksToken(
+      {
+        initialOwner: await deployer.getAddresses().then(addresses => addresses[0]),
+        name: "Test Thanks Token",
+        symbol: "TTT",
+        hatsAddress: Hats.address,
+        fractionTokenAddress: FractionToken.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
+        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
+      },
+      Create2Deployer.address,
+    );
+    ThanksToken_IMPL = _ThanksToken;
+
+    const { ThanksTokenFactory: _ThanksTokenFactory } = await deployThanksTokenFactory(
+      {
+        initialOwner: await deployer.getAddresses().then(addresses => addresses[0]),
+        implementation: ThanksToken_IMPL.address,
+        hatsAddress: Hats.address,
+        fractionTokenAddress: FractionToken.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
+      },
+      Create2Deployer.address,
+    );
+    ThanksTokenFactory = _ThanksTokenFactory;
 
     const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
       Create2Deployer.address,
@@ -130,10 +167,6 @@ describe("IntegrationTest", () => {
       );
 
     SplitsCreatorFactory = _SplitsCreatorFactory;
-
-    [deployer, address1, address2, address3] = await viem.getWalletClients();
-
-    publicClient = await viem.getPublicClient();
   });
 
   it("should deploy BigBang", async () => {
@@ -146,6 +179,7 @@ describe("IntegrationTest", () => {
         splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
         splitsFactoryV2Address: PullSplitsFactory.address,
         fractionTokenAddress: FractionToken.address,
+        thanksTokenFactoryAddress: ThanksTokenFactory.address,
       },
       Create2Deployer.address,
     );
@@ -157,6 +191,9 @@ describe("IntegrationTest", () => {
 
   it("should execute bigbang", async () => {
     await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+    
+    // ThanksTokenFactoryにBigBangアドレスをセット
+    await ThanksTokenFactory.write.setBigBang([BigBang.address]);
 
     const txHash = await BigBang.write.bigbang(
       [

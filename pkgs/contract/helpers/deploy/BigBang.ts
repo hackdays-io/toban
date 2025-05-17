@@ -14,6 +14,7 @@ export const deployBigBang = async (
     splitsCreatorFactoryAddress: Address;
     splitsFactoryV2Address: Address;
     fractionTokenAddress: Address;
+    thanksTokenFactoryAddress: Address;
   },
   create2DeployerAddress?: string,
 ) => {
@@ -40,6 +41,7 @@ export const deployBigBang = async (
       params.splitsCreatorFactoryAddress,
       params.splitsFactoryV2Address,
       params.fractionTokenAddress,
+      params.thanksTokenFactoryAddress,
     ],
   );
 

@@ -13,6 +13,12 @@ import {
   deployFractionToken,
 } from "../helpers/deploy/FractionToken";
 import {
+  type ThanksToken,
+  type ThanksTokenFactory,
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../helpers/deploy/ThanksToken";
+import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
@@ -50,6 +56,8 @@ describe("BigBang", () => {
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
   let FractionToken: FractionToken;
+  let ThanksToken_IMPL: ThanksToken;
+  let ThanksTokenFactory: ThanksTokenFactory;
   let BigBang: BigBang;
 
   let address1: WalletClient;
@@ -102,6 +110,32 @@ describe("BigBang", () => {
     );
     FractionToken = _FractionToken;
 
+    const { ThanksToken: _ThanksToken } = await deployThanksToken(
+      {
+        initialOwner: await address1.getAddresses().then(addresses => addresses[0]),
+        name: "Test Thanks Token",
+        symbol: "TTT",
+        hatsAddress: Hats.address,
+        fractionTokenAddress: FractionToken.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
+        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
+      },
+      Create2Deployer.address,
+    );
+    ThanksToken_IMPL = _ThanksToken;
+
+    const { ThanksTokenFactory: _ThanksTokenFactory } = await deployThanksTokenFactory(
+      {
+        initialOwner: await address1.getAddresses().then(addresses => addresses[0]),
+        implementation: ThanksToken_IMPL.address,
+        hatsAddress: Hats.address,
+        fractionTokenAddress: FractionToken.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
+      },
+      Create2Deployer.address,
+    );
+    ThanksTokenFactory = _ThanksTokenFactory;
+
     const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
       Create2Deployer.address,
     );
@@ -128,6 +162,7 @@ describe("BigBang", () => {
         splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
         splitsFactoryV2Address: PullSplitsFactory.address,
         fractionTokenAddress: FractionToken.address,
+        thanksTokenFactoryAddress: ThanksTokenFactory.address,
       },
       Create2Deployer.address,
     );
@@ -144,6 +179,9 @@ describe("BigBang", () => {
   it("should execute bigbang", async () => {
     // SplitsCreatorFactoryにBigBangアドレスをセット
     await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+    
+    // ThanksTokenFactoryにBigBangアドレスをセット
+    await ThanksTokenFactory.write.setBigBang([BigBang.address]);
 
     const txHash = await BigBang.write.bigbang(
       [

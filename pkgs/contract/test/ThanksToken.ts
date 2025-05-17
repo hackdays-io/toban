@@ -285,7 +285,7 @@ describe("ThanksToken", () => {
 
     it("should have correct totalSupply", async () => {
       const totalSupply = await ThanksToken.read.totalSupply();
-      expect(totalSupply).to.be.gt(0);
+      expect(Number(totalSupply)).to.be.gt(0);
     });
 
     it("should transfer tokens correctly", async () => {
@@ -383,7 +383,7 @@ describe("ThanksToken", () => {
         await ThanksToken.read.mintableAmount([address1Validated, relatedRoles]) : 
         mintableAmount;
         
-      expect(updatedMintableAmount).to.be.gt(0n);
+      expect(Number(updatedMintableAmount)).to.be.gt(0);
       
       const initialAddress2Balance = await ThanksToken.read.balanceOf([address2Validated]);
       const initialAddress1MintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
@@ -446,7 +446,7 @@ describe("ThanksToken", () => {
         console.log("Initial or new mintable amount is 0, skipping comparison");
         expect(true).to.be.true; // Skip this test
       } else {
-        expect(newMintableAmount).to.be.gt(initialMintableAmount);
+        expect(Number(newMintableAmount)).to.be.gt(Number(initialMintableAmount));
       }
       
       await ThanksToken.write.setAddressCoefficient([

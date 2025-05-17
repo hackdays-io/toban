@@ -36,6 +36,19 @@ interface IThanksToken is IERC20 {
      * @return amount The minted amount
      */
     function mintedAmount(address owner) external view returns (uint256);
+    
+    /**
+     * @notice Returns the coefficient for an address
+     * @param owner The address to get coefficient for
+     * @return coefficient The address coefficient
+     */
+    function addressCoefficient(address owner) external view returns (uint256);
+    
+    /**
+     * @notice Returns the default coefficient
+     * @return coefficient The default coefficient
+     */
+    function defaultCoefficient() external view returns (uint256);
 
     /**
      * @notice Emitted when tokens are minted

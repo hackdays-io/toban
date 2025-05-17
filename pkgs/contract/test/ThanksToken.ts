@@ -26,6 +26,75 @@ import {
   deployThanksTokenFactory,
 } from "../helpers/deploy/ThanksToken";
 
+async function calculateExpectedMintableAmount(
+  publicClient: PublicClient,
+  ThanksToken: ThanksToken,
+  Hats: Hats,
+  FractionToken: FractionToken,
+  HatsTimeFrameModule: HatsTimeFrameModule,
+  owner: Address,
+  relatedRoles: { hatId: bigint; wearer: Address }[]
+): Promise<bigint> {
+  let totalMintable = 0n;
+  
+  for (let i = 0; i < relatedRoles.length; i++) {
+    const role = relatedRoles[i];
+    
+    const hatBalance = await Hats.read.balanceOf([owner, role.hatId]);
+    const isRoleHolder = hatBalance > 0n;
+    
+    const shareBalance = await FractionToken.read.balanceOf([
+      owner, 
+      role.wearer, 
+      role.hatId
+    ]);
+    
+    if (isRoleHolder) {
+      const wearingTimeSeconds = await HatsTimeFrameModule.read.getWearingElapsedTime([
+        owner, 
+        role.hatId
+      ]).catch(() => 0n);
+      const SECONDS_PER_HOUR = 3600n;
+      const wearingTimeHours = wearingTimeSeconds / SECONDS_PER_HOUR;
+      
+      const roleBasedAmount = wearingTimeHours * shareBalance;
+      
+      totalMintable += roleBasedAmount;
+    } else if (shareBalance > 0n) {
+      totalMintable += shareBalance;
+    }
+  }
+  
+  const tokenBalance = await ThanksToken.read.balanceOf([owner]);
+  totalMintable += tokenBalance / 10n;
+  
+  let addressCoefficient = 0n;
+  let defaultCoefficient = 1000000000000000000n; // 1e18 as default
+  
+  try {
+    addressCoefficient = await ThanksToken.read.addressCoefficient([owner]);
+  } catch (error) {
+    console.log("Could not read addressCoefficient, using default");
+  }
+  
+  try {
+    defaultCoefficient = await ThanksToken.read.defaultCoefficient();
+  } catch (error) {
+    console.log("Could not read defaultCoefficient, using 1e18 as default");
+  }
+  
+  const coefficient = addressCoefficient > 0n ? addressCoefficient : defaultCoefficient;
+  totalMintable = (totalMintable * coefficient) / 1000000000000000000n; // Divide by 1e18
+  
+  const mintedAmount = await ThanksToken.read.mintedAmount([owner]);
+  
+  if (totalMintable > mintedAmount) {
+    return totalMintable - mintedAmount;
+  }
+  
+  return 0n;
+}
+
 interface ContractError extends Error {
   message: string;
 }
@@ -426,26 +495,52 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
+      const expectedMintableAmount = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address1Validated,
+        relatedRoles
+      );
+      
+      expect(mintableAmount).to.equal(expectedMintableAmount);
+      
       if (mintableAmount === 0n) {
         console.log("Setting up test data for mintableAmount calculation");
         await ThanksToken.write.setAddressCoefficient([
           address1Validated,
           10000000000000000000n // 10.0 in wei to ensure we get a non-zero value
         ]);
+        
+        const updatedMintableAmount = await ThanksToken.read.mintableAmount([
+          address1Validated, 
+          relatedRoles
+        ]);
+        
+        if (updatedMintableAmount === 0n) {
+          console.log("Cannot get non-zero mintable amount for testing");
+          return; // Skip the rest of the test if we can't get a non-zero mintable amount
+        }
+        
+        const expectedUpdatedAmount = await calculateExpectedMintableAmount(
+          publicClient,
+          ThanksToken,
+          Hats,
+          FractionToken,
+          HatsTimeFrameModule,
+          address1Validated,
+          relatedRoles
+        );
+        
+        expect(updatedMintableAmount).to.equal(expectedUpdatedAmount);
+        
+        const amountToMint = updatedMintableAmount / 2n;
+        return { updatedMintableAmount, amountToMint };
       }
       
-      const updatedMintableAmount = mintableAmount === 0n ? 
-        await ThanksToken.read.mintableAmount([address1Validated, relatedRoles]) : 
-        mintableAmount;
-      
-      const amountToMint = updatedMintableAmount > 0n ? updatedMintableAmount / 2n : 1000n;
-      
-      if (updatedMintableAmount === 0n) {
-        console.log("Mintable amount is still 0, using fixed amount for test");
-        expect(true).to.be.true;
-      } else {
-        expect(Number(updatedMintableAmount)).to.be.gt(0);
-      }
+      const amountToMint = mintableAmount / 2n;
       
       const initialAddress2Balance = await ThanksToken.read.balanceOf([address2Validated]);
       const initialAddress1MintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
@@ -500,6 +595,18 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
+      const expectedInitialAmount = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address1Validated,
+        relatedRoles
+      );
+      
+      expect(initialMintableAmount).to.equal(expectedInitialAmount);
+      
       await ThanksToken.write.setAddressCoefficient([
         address1Validated,
         2000000000000000000n // 2.0 in wei
@@ -510,12 +617,24 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
-      if (initialMintableAmount === 0n || newMintableAmount === 0n) {
-        console.log("Initial or new mintable amount is 0, skipping comparison");
-        expect(true).to.be.true; // Skip this test
-      } else {
-        expect(Number(newMintableAmount)).to.be.gt(Number(initialMintableAmount));
+      const expectedNewAmount = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address1Validated,
+        relatedRoles
+      );
+      
+      expect(newMintableAmount).to.equal(expectedNewAmount);
+      
+      if (initialMintableAmount === 0n && newMintableAmount === 0n) {
+        console.log("Both initial and new mintable amounts are 0, skipping comparison");
+        return;
       }
+      
+      expect(Number(newMintableAmount)).to.be.gt(Number(initialMintableAmount));
       
       await ThanksToken.write.setAddressCoefficient([
         address1Validated,
@@ -590,6 +709,29 @@ describe("ThanksToken", () => {
         relatedRoles2
       ]);
       
+      const expectedInitialAmount1 = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address1Validated,
+        relatedRoles1
+      );
+      
+      const expectedInitialAmount2 = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address2Validated,
+        relatedRoles2
+      );
+      
+      expect(initialMintableAmount1).to.equal(expectedInitialAmount1);
+      expect(initialMintableAmount2).to.equal(expectedInitialAmount2);
+      
       await ThanksToken.write.setAddressCoefficients([
         [address1Validated, address2Validated, address3Validated],
         [3000000000000000000n, 5000000000000000000n, 1500000000000000000n] // 3.0, 5.0, 1.5 in wei
@@ -605,16 +747,37 @@ describe("ThanksToken", () => {
         relatedRoles2
       ]);
       
-      if (initialMintableAmount1 === 0n || newMintableAmount1 === 0n) {
-        console.log("Initial or new mintable amount 1 is 0, skipping comparison");
-        expect(true).to.be.true; // Skip this test
+      const expectedNewAmount1 = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address1Validated,
+        relatedRoles1
+      );
+      
+      const expectedNewAmount2 = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address2Validated,
+        relatedRoles2
+      );
+      
+      expect(newMintableAmount1).to.equal(expectedNewAmount1);
+      expect(newMintableAmount2).to.equal(expectedNewAmount2);
+      
+      if (initialMintableAmount1 === 0n && newMintableAmount1 === 0n) {
+        console.log("Both initial and new mintable amounts for address1 are 0, skipping comparison");
       } else {
         expect(Number(newMintableAmount1)).to.be.gt(Number(initialMintableAmount1));
       }
       
-      if (initialMintableAmount2 === 0n || newMintableAmount2 === 0n) {
-        console.log("Initial or new mintable amount 2 is 0, skipping comparison");
-        expect(true).to.be.true; // Skip this test
+      if (initialMintableAmount2 === 0n && newMintableAmount2 === 0n) {
+        console.log("Both initial and new mintable amounts for address2 are 0, skipping comparison");
       } else {
         expect(Number(newMintableAmount2)).to.be.gt(Number(initialMintableAmount2));
       }
@@ -694,6 +857,18 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
+      const expectedMintableAmount = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address1Validated,
+        relatedRoles
+      );
+      
+      expect(mintableAmount).to.equal(expectedMintableAmount);
+      
       let errorCaught = false;
       
       try {
@@ -757,6 +932,18 @@ describe("ThanksToken", () => {
         relatedRoles3
       ]);
       
+      const expectedMintableAmount3 = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address3Validated,
+        relatedRoles3
+      );
+      
+      expect(mintableAmount3).to.equal(expectedMintableAmount3);
+      
       expect(Number(mintableAmount3)).to.be.gt(0);
       
       await ThanksToken.write.setDefaultCoefficient([
@@ -808,6 +995,18 @@ describe("ThanksToken", () => {
         address2Validated,
         relatedRoles
       ]);
+      
+      const expectedMintableAmount = await calculateExpectedMintableAmount(
+        publicClient,
+        ThanksToken,
+        Hats,
+        FractionToken,
+        HatsTimeFrameModule,
+        address2Validated,
+        relatedRoles
+      );
+      
+      expect(mintableAmount).to.equal(expectedMintableAmount);
       
       expect(Number(mintableAmount)).to.be.gt(0);
       

@@ -112,6 +112,14 @@ contract ThanksToken is
         return _mintedAmount[owner];
     }
     
+    function addressCoefficient(address owner) public view override returns (uint256) {
+        return _addressCoefficient[owner];
+    }
+    
+    function defaultCoefficient() public view override returns (uint256) {
+        return _defaultCoefficient;
+    }
+    
     function setAddressCoefficient(address userAddress, uint256 coefficient) public onlyOwner {
         _addressCoefficient[userAddress] = coefficient;
     }

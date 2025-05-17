@@ -6,6 +6,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { useParams } from "@remix-run/react";
 import type { NameData } from "namestone-sdk";
 import { type FC, useRef, useState } from "react";
 import { FaAngleDoubleUp } from "react-icons/fa";
@@ -69,6 +70,8 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
     }
   };
 
+  const { treeId } = useParams();
+
   return (
     <VStack
       pt={8}
@@ -79,7 +82,10 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
       <Text fontSize="md" color="gray.500" fontWeight="bold" textAlign="center">
         スワイプして
         <br />
-        アシストクレジットを送る
+        {["144", "175"].includes(treeId || "")
+          ? "ケアポイント"
+          : "アシストクレジット"}
+        を送る
       </Text>
 
       <VStack pt={4}>

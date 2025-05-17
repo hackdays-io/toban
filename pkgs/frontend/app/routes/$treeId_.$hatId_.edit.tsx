@@ -118,7 +118,7 @@ const EditRole: FC = () => {
       return;
     }
     if (!data.name) {
-      alert("役割の名前を入力してください。");
+      alert("当番の名前を入力してください。");
       return;
     }
     if (!hatId) return;
@@ -233,7 +233,7 @@ const EditRole: FC = () => {
           />
         </ContentContainer>
 
-        <SectionHeading>役割</SectionHeading>
+        <SectionHeading>当番</SectionHeading>
         <ContentContainer>
           <RoleAttributesList
             items={responsibilities.fields}

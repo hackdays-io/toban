@@ -195,7 +195,7 @@ const NewRole: FC = () => {
           />
         </ContentContainer>
 
-        <SectionHeading>役割</SectionHeading>
+        <SectionHeading>当番</SectionHeading>
         <ContentContainer>
           <RoleAttributesList
             items={responsibilities.fields}

@@ -138,7 +138,11 @@ const RoleHolderDetails: FC = () => {
       </HatsListItemParser>
 
       <HStack paddingTop={8} justifyContent="space-between">
-        <Heading size="lg">アシストクレジット</Heading>
+        <Heading size="lg">
+          {["144", "175"].includes(treeId || "")
+            ? "ケアポイント"
+            : "アシストクレジット"}
+        </Heading>
         <Link to={`/${treeId}/${hatId}/${address}/assistcredit/send`}>
           <BasicButton minH={5} size="xs" bgColor="yellow.400">
             誰かに送る
@@ -217,7 +221,7 @@ const RoleHolderDetails: FC = () => {
             disabled={isRenouncing}
             loading={isRenouncing}
           >
-            役割を剥奪
+            当番を剥奪
           </BasicButton>
         </>
       )}

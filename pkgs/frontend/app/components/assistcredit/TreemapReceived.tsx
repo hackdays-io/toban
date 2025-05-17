@@ -113,7 +113,7 @@ export const TreemapReceived = ({ treeId }: { treeId: string }) => {
       },
       title: {
         display: true,
-        text: "受け取ったアシストクレジットの量",
+        text: `受け取った${["144", "175"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}の量`,
       },
       tooltip: {
         enabled: true,

@@ -484,7 +484,7 @@ describe("ThanksToken", () => {
       expect(address2BalanceAfter).to.equal(initialBalance - approveAmount / 2n);
       expect(address3BalanceAfter).to.equal(approveAmount / 2n);
       
-      expect(allowanceAfter).to.equal(49n);
+      expect(allowanceAfter).to.equal(approveAmount - approveAmount / 2n);
     });
   });
 

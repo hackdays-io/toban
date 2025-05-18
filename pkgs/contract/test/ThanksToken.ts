@@ -46,28 +46,26 @@ function calculateExpectedMintableAmount(
   for (let i = 0; i < relatedRoles.length; i++) {
     const role = relatedRoles[i];
     
-    if (role.shareBalance === 0n) {
+    if (role.shareBalance === 0n || role.shareTotalSupply === 0n) {
       continue;
     }
     
-    if (role.shareTotalSupply === 0n) {
-      continue;
-    }
+    const SECONDS_PER_HOUR = 3600n;
+    const wearingTimeHours = role.wearingTimeSeconds / SECONDS_PER_HOUR;
     
-    if (role.hasHat) {
-      const SECONDS_PER_HOUR = 3600n;
-      const wearingTimeHours = role.wearingTimeSeconds / SECONDS_PER_HOUR;
-      
-      const roleBasedAmount = (wearingTimeHours * role.shareBalance) / role.shareTotalSupply;
-      totalMintable += roleBasedAmount;
-    } else {
+    const roleBasedAmount = (wearingTimeHours * role.shareBalance) / role.shareTotalSupply;
+    
+    if (roleBasedAmount === 0n && role.shareBalance > 0n) {
       const sharePercentage = (role.shareBalance * 1000000000000000000n) / role.shareTotalSupply;
-      totalMintable += (sharePercentage / 10000000000000000n) + (role.shareBalance > 0n ? 1n : 0n); // Divide by 1e16 and add 1 if has any shares
+      totalMintable += (sharePercentage / 10000000000000000n) + 1n; // Minimum of 1 token for any share ownership
+    } else {
+      totalMintable += roleBasedAmount;
     }
   }
   
   totalMintable += tokenBalance / 10n;
   
+  // Apply address coefficient
   const coefficient = addressCoefficient > 0n ? addressCoefficient : defaultCoefficient;
   totalMintable = (totalMintable * coefficient) / 1000000000000000000n; // Divide by 1e18
   

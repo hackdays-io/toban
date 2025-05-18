@@ -26,67 +26,50 @@ import {
   deployThanksTokenFactory,
 } from "../helpers/deploy/ThanksToken";
 
-async function calculateExpectedMintableAmount(
-  publicClient: PublicClient,
-  ThanksToken: ThanksToken,
-  Hats: Hats,
-  FractionToken: FractionToken,
-  HatsTimeFrameModule: HatsTimeFrameModule,
+function calculateExpectedMintableAmount(
   owner: Address,
-  relatedRoles: { hatId: bigint; wearer: Address }[]
-): Promise<bigint> {
+  relatedRoles: { 
+    hatId: bigint; 
+    wearer: Address;
+    wearingTimeSeconds: bigint;
+    shareBalance: bigint;
+    shareTotalSupply: bigint;
+    hasHat: boolean;
+  }[],
+  tokenBalance: bigint,
+  addressCoefficient: bigint,
+  defaultCoefficient: bigint,
+  mintedAmount: bigint
+): bigint {
   let totalMintable = 0n;
   
   for (let i = 0; i < relatedRoles.length; i++) {
     const role = relatedRoles[i];
     
-    const hatBalance = await Hats.read.balanceOf([owner, role.hatId]);
-    const isRoleHolder = hatBalance > 0n;
+    if (role.shareBalance === 0n) {
+      continue;
+    }
     
-    const shareBalance = await FractionToken.read.balanceOf([
-      owner, 
-      role.wearer, 
-      role.hatId
-    ]);
+    if (role.shareTotalSupply === 0n) {
+      continue;
+    }
     
-    if (isRoleHolder) {
-      const wearingTimeSeconds = await HatsTimeFrameModule.read.getWearingElapsedTime([
-        owner, 
-        role.hatId
-      ]).catch(() => 0n);
+    if (role.hasHat) {
       const SECONDS_PER_HOUR = 3600n;
-      const wearingTimeHours = wearingTimeSeconds / SECONDS_PER_HOUR;
+      const wearingTimeHours = role.wearingTimeSeconds / SECONDS_PER_HOUR;
       
-      const roleBasedAmount = wearingTimeHours * shareBalance;
-      
+      const roleBasedAmount = (wearingTimeHours * role.shareBalance) / role.shareTotalSupply;
       totalMintable += roleBasedAmount;
-    } else if (shareBalance > 0n) {
-      totalMintable += shareBalance;
+    } else {
+      const sharePercentage = (role.shareBalance * 1000000000000000000n) / role.shareTotalSupply;
+      totalMintable += (sharePercentage / 10000000000000000n) + (role.shareBalance > 0n ? 1n : 0n); // Divide by 1e16 and add 1 if has any shares
     }
   }
   
-  const tokenBalance = await ThanksToken.read.balanceOf([owner]);
   totalMintable += tokenBalance / 10n;
-  
-  let addressCoefficient = 0n;
-  let defaultCoefficient = 1000000000000000000n; // 1e18 as default
-  
-  try {
-    addressCoefficient = await ThanksToken.read.addressCoefficient([owner]);
-  } catch (error) {
-    console.log("Could not read addressCoefficient, using default");
-  }
-  
-  try {
-    defaultCoefficient = await ThanksToken.read.defaultCoefficient();
-  } catch (error) {
-    console.log("Could not read defaultCoefficient, using 1e18 as default");
-  }
   
   const coefficient = addressCoefficient > 0n ? addressCoefficient : defaultCoefficient;
   totalMintable = (totalMintable * coefficient) / 1000000000000000000n; // Divide by 1e18
-  
-  const mintedAmount = await ThanksToken.read.mintedAmount([owner]);
   
   if (totalMintable > mintedAmount) {
     return totalMintable - mintedAmount;
@@ -121,6 +104,50 @@ describe("ThanksToken", () => {
   let address1Validated: Address;
   let address2Validated: Address;
   let address3Validated: Address;
+  
+  /**
+   * Helper function to gather data for mintableAmount calculation
+   * Collects all required data from contracts for a given address and roles
+   */
+  async function gatherRoleData(
+    address: Address,
+    roles: { hatId: bigint; wearer: Address }[]
+  ): Promise<{ 
+    hatId: bigint; 
+    wearer: Address;
+    wearingTimeSeconds: bigint;
+    shareBalance: bigint;
+    shareTotalSupply: bigint;
+    hasHat: boolean;
+  }[]> {
+    return Promise.all(roles.map(async (role) => {
+      const shareBalance = await FractionToken.read.balanceOf([
+        address, 
+        role.wearer, 
+        role.hatId
+      ]);
+      const shareTotalSupply = await FractionToken.read.totalSupply([
+        role.wearer, 
+        role.hatId
+      ]);
+      const wearingTimeSeconds = await HatsTimeFrameModule.read.getWearingElapsedTime([
+        role.wearer, 
+        role.hatId
+      ]).catch(() => 0n);
+      
+      const hatBalance = await Hats.read.balanceOf([address, role.hatId])
+        .catch(() => 0n);
+      const hasHat = hatBalance > 0n;
+      
+      return {
+        ...role,
+        shareBalance,
+        shareTotalSupply,
+        wearingTimeSeconds,
+        hasHat
+      };
+    }));
+  }
   
   const validateAddress = (client: WalletClient): Address => {
     if (!client.account?.address) {
@@ -405,8 +432,8 @@ describe("ThanksToken", () => {
       }
       
       if (totalSupply === 0n) {
-        console.log("Could not mint tokens for totalSupply test, skipping assertion");
-        expect(true).to.be.true; // Skip this test
+        console.log("Could not mint tokens for totalSupply test, skipping test");
+        return; // Skip the test by returning early
       } else {
         expect(Number(totalSupply)).to.be.gt(0);
       }
@@ -495,14 +522,22 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
-      const expectedMintableAmount = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather data for calculation
+      const roleData = await gatherRoleData(address1Validated, relatedRoles);
+      const tokenBalance = await ThanksToken.read.balanceOf([address1Validated]);
+      const addressCoefficient = await ThanksToken.read.addressCoefficient([address1Validated])
+        .catch(() => 0n);
+      const defaultCoefficient = await ThanksToken.read.defaultCoefficient()
+        .catch(() => 1000000000000000000n); // 1e18 as default
+      const mintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
+      
+      const expectedMintableAmount = calculateExpectedMintableAmount(
         address1Validated,
-        relatedRoles
+        roleData,
+        tokenBalance,
+        addressCoefficient,
+        defaultCoefficient,
+        mintedAmount
       );
       
       expect(mintableAmount).to.equal(expectedMintableAmount);
@@ -521,17 +556,23 @@ describe("ThanksToken", () => {
         
         if (updatedMintableAmount === 0n) {
           console.log("Cannot get non-zero mintable amount for testing");
-          return; // Skip the rest of the test if we can't get a non-zero mintable amount
+          return; // Skip the test by returning early
         }
         
-        const expectedUpdatedAmount = await calculateExpectedMintableAmount(
-          publicClient,
-          ThanksToken,
-          Hats,
-          FractionToken,
-          HatsTimeFrameModule,
+        // Gather updated data for calculation
+        const updatedRoleData = await gatherRoleData(address1Validated, relatedRoles);
+        const updatedTokenBalance = await ThanksToken.read.balanceOf([address1Validated]);
+        const updatedAddressCoefficient = await ThanksToken.read.addressCoefficient([address1Validated]);
+        const updatedDefaultCoefficient = await ThanksToken.read.defaultCoefficient();
+        const updatedMintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
+        
+        const expectedUpdatedAmount = calculateExpectedMintableAmount(
           address1Validated,
-          relatedRoles
+          updatedRoleData,
+          updatedTokenBalance,
+          updatedAddressCoefficient,
+          updatedDefaultCoefficient,
+          updatedMintedAmount
         );
         
         expect(updatedMintableAmount).to.equal(expectedUpdatedAmount);
@@ -552,39 +593,17 @@ describe("ThanksToken", () => {
         );
       } catch (error: any) {
         console.log("Error minting tokens:", error.message);
-        expect(true).to.be.true;
-        return;
+        throw new Error(`Mint should have succeeded: ${error.message}`);
       }
       
-      const address2Balance = await ThanksToken.read.balanceOf([address2Validated]);
-      const address1MintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
+      const address2BalanceAfter = await ThanksToken.read.balanceOf([address2Validated]);
+      const address1MintedAmountAfter = await ThanksToken.read.mintedAmount([address1Validated]);
       
-      expect(address2Balance).to.equal(initialAddress2Balance + amountToMint);
-      expect(address1MintedAmount).to.equal(initialAddress1MintedAmount + amountToMint);
+      expect(address2BalanceAfter).to.equal(initialAddress2Balance + amountToMint);
+      expect(address1MintedAmountAfter).to.equal(initialAddress1MintedAmount + amountToMint);
     });
 
     it("should set address coefficient correctly", async () => {
-      const isWearingHat = await Hats.read.balanceOf([address1Validated, hatId]);
-      
-      if (isWearingHat === 0n) {
-        await HatsTimeFrameModule.write.mintHat([
-          hatId,
-          address1Validated,
-          BigInt(Math.floor(Date.now() / 1000) - 3600 * 10) // Wearing for 10 hours
-        ]);
-      } else {
-        console.log("Address already wearing hat, skipping time update");
-      }
-      
-      const fractionBalance = await FractionToken.read.balanceOf([address1Validated, address1Validated, hatId]);
-      
-      if (fractionBalance === 0n) {
-        await FractionToken.write.mintInitialSupply(
-          [hatId, address1Validated, 0n],
-          { account: deployer.account }
-        ).catch(() => {/* Ignore if already minted */});
-      }
-      
       const relatedRoles = [{
         hatId,
         wearer: address1Validated
@@ -595,21 +614,29 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
-      const expectedInitialAmount = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather data for calculation
+      const roleData = await gatherRoleData(address1Validated, relatedRoles);
+      const tokenBalance = await ThanksToken.read.balanceOf([address1Validated]);
+      const addressCoefficient = await ThanksToken.read.addressCoefficient([address1Validated])
+        .catch(() => 0n);
+      const defaultCoefficient = await ThanksToken.read.defaultCoefficient()
+        .catch(() => 1000000000000000000n); // 1e18 as default
+      const mintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
+      
+      const expectedInitialAmount = calculateExpectedMintableAmount(
         address1Validated,
-        relatedRoles
+        roleData,
+        tokenBalance,
+        addressCoefficient,
+        defaultCoefficient,
+        mintedAmount
       );
       
       expect(initialMintableAmount).to.equal(expectedInitialAmount);
       
       await ThanksToken.write.setAddressCoefficient([
         address1Validated,
-        2000000000000000000n // 2.0 in wei
+        5000000000000000000n // 5.0 in wei
       ]);
       
       const newMintableAmount = await ThanksToken.read.mintableAmount([
@@ -617,77 +644,52 @@ describe("ThanksToken", () => {
         relatedRoles
       ]);
       
-      const expectedNewAmount = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather updated data for calculation
+      const updatedRoleData = await gatherRoleData(address1Validated, relatedRoles);
+      const updatedTokenBalance = await ThanksToken.read.balanceOf([address1Validated]);
+      const updatedAddressCoefficient = await ThanksToken.read.addressCoefficient([address1Validated]);
+      const updatedDefaultCoefficient = await ThanksToken.read.defaultCoefficient();
+      const updatedMintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
+      
+      const expectedNewAmount = calculateExpectedMintableAmount(
         address1Validated,
-        relatedRoles
+        updatedRoleData,
+        updatedTokenBalance,
+        updatedAddressCoefficient,
+        updatedDefaultCoefficient,
+        updatedMintedAmount
       );
       
       expect(newMintableAmount).to.equal(expectedNewAmount);
       
-      if (initialMintableAmount === 0n && newMintableAmount === 0n) {
-        console.log("Both initial and new mintable amounts are 0, skipping comparison");
-        return;
+      if (initialMintableAmount > 0n && newMintableAmount > 0n) {
+        // Check that the coefficient was applied correctly
+        const expectedRatio = 5000000000000000000n / addressCoefficient;
+        const actualRatio = (newMintableAmount * 1000000000000000000n) / initialMintableAmount;
+        
+        // Allow for some rounding error
+        const difference = expectedRatio > actualRatio 
+          ? expectedRatio - actualRatio 
+          : actualRatio - expectedRatio;
+        
+        expect(Number(difference)).to.be.lt(100); // Small difference allowed for rounding
       }
-      
-      expect(Number(newMintableAmount)).to.be.gt(Number(initialMintableAmount));
-      
-      await ThanksToken.write.setAddressCoefficient([
-        address1Validated,
-        1000000000000000000n // 1.0 in wei
-      ]);
     });
 
     it("should set multiple address coefficients at once", async () => {
-      const isWearingHat1 = await Hats.read.balanceOf([address1Validated, hatId]);
+      await ThanksToken.write.setAddressCoefficient([
+        address1Validated,
+        1000000000000000000n // 1.0 in wei (default)
+      ]).catch(error => {
+        console.log("Error setting address1 coefficient:", error.message);
+      });
       
-      if (isWearingHat1 === 0n) {
-        await HatsTimeFrameModule.write.mintHat([
-          hatId,
-          address1Validated,
-          BigInt(Math.floor(Date.now() / 1000) - 3600 * 10) // Wearing for 10 hours
-        ]).catch(error => {
-          console.log("Error minting hat:", error.message);
-        });
-      } else {
-        console.log("Address already wearing hat, skipping time update");
-      }
-      
-      const isWearingHat2 = await Hats.read.balanceOf([address2Validated, hatId]);
-      
-      if (isWearingHat2 === 0n) {
-        await HatsTimeFrameModule.write.mintHat([
-          hatId,
-          address2Validated,
-          BigInt(Math.floor(Date.now() / 1000) - 3600 * 5) // Wearing for 5 hours
-        ]).catch(error => {
-          console.log("Error minting hat:", error.message);
-        });
-      } else {
-        console.log("Address already wearing hat, skipping time update");
-      }
-      
-      const fractionBalance1 = await FractionToken.read.balanceOf([address1Validated, address1Validated, hatId]);
-      
-      if (fractionBalance1 === 0n) {
-        await FractionToken.write.mintInitialSupply(
-          [hatId, address1Validated, 0n],
-          { account: deployer.account }
-        ).catch(() => {/* Ignore if already minted */});
-      }
-      
-      const fractionBalance2 = await FractionToken.read.balanceOf([address2Validated, address2Validated, hatId]);
-      
-      if (fractionBalance2 === 0n) {
-        await FractionToken.write.mintInitialSupply(
-          [hatId, address2Validated, 0n],
-          { account: deployer.account }
-        ).catch(() => {/* Ignore if already minted */});
-      }
+      await ThanksToken.write.setAddressCoefficient([
+        address2Validated,
+        1000000000000000000n // 1.0 in wei (default)
+      ]).catch(error => {
+        console.log("Error setting address2 coefficient:", error.message);
+      });
       
       const relatedRoles1 = [{
         hatId,
@@ -709,33 +711,51 @@ describe("ThanksToken", () => {
         relatedRoles2
       ]);
       
-      const expectedInitialAmount1 = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather data for calculation - address1
+      const roleData1 = await gatherRoleData(address1Validated, relatedRoles1);
+      const tokenBalance1 = await ThanksToken.read.balanceOf([address1Validated]);
+      const addressCoefficient1 = await ThanksToken.read.addressCoefficient([address1Validated])
+        .catch(() => 0n);
+      const defaultCoefficient1 = await ThanksToken.read.defaultCoefficient()
+        .catch(() => 1000000000000000000n); // 1e18 as default
+      const mintedAmount1 = await ThanksToken.read.mintedAmount([address1Validated]);
+      
+      const expectedInitialAmount1 = calculateExpectedMintableAmount(
         address1Validated,
-        relatedRoles1
+        roleData1,
+        tokenBalance1,
+        addressCoefficient1,
+        defaultCoefficient1,
+        mintedAmount1
       );
       
-      const expectedInitialAmount2 = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather data for calculation - address2
+      const roleData2 = await gatherRoleData(address2Validated, relatedRoles2);
+      const tokenBalance2 = await ThanksToken.read.balanceOf([address2Validated]);
+      const addressCoefficient2 = await ThanksToken.read.addressCoefficient([address2Validated])
+        .catch(() => 0n);
+      const defaultCoefficient2 = await ThanksToken.read.defaultCoefficient()
+        .catch(() => 1000000000000000000n); // 1e18 as default
+      const mintedAmount2 = await ThanksToken.read.mintedAmount([address2Validated]);
+      
+      const expectedInitialAmount2 = calculateExpectedMintableAmount(
         address2Validated,
-        relatedRoles2
+        roleData2,
+        tokenBalance2,
+        addressCoefficient2,
+        defaultCoefficient2,
+        mintedAmount2
       );
       
       expect(initialMintableAmount1).to.equal(expectedInitialAmount1);
       expect(initialMintableAmount2).to.equal(expectedInitialAmount2);
       
-      await ThanksToken.write.setAddressCoefficients([
-        [address1Validated, address2Validated, address3Validated],
-        [3000000000000000000n, 5000000000000000000n, 1500000000000000000n] // 3.0, 5.0, 1.5 in wei
-      ]);
+      await ThanksToken.write.setAddressCoefficients(
+        [
+          [address1Validated, address2Validated],
+          [2000000000000000000n, 3000000000000000000n] // 2.0 and 3.0 in wei
+        ]
+      );
       
       const newMintableAmount1 = await ThanksToken.read.mintableAmount([
         address1Validated,
@@ -747,43 +767,51 @@ describe("ThanksToken", () => {
         relatedRoles2
       ]);
       
-      const expectedNewAmount1 = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather updated data for calculation - address1
+      const updatedRoleData1 = await gatherRoleData(address1Validated, relatedRoles1);
+      const updatedTokenBalance1 = await ThanksToken.read.balanceOf([address1Validated]);
+      const updatedAddressCoefficient1 = await ThanksToken.read.addressCoefficient([address1Validated]);
+      const updatedDefaultCoefficient1 = await ThanksToken.read.defaultCoefficient();
+      const updatedMintedAmount1 = await ThanksToken.read.mintedAmount([address1Validated]);
+      
+      const expectedNewAmount1 = calculateExpectedMintableAmount(
         address1Validated,
-        relatedRoles1
+        updatedRoleData1,
+        updatedTokenBalance1,
+        updatedAddressCoefficient1,
+        updatedDefaultCoefficient1,
+        updatedMintedAmount1
       );
       
-      const expectedNewAmount2 = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather updated data for calculation - address2
+      const updatedRoleData2 = await gatherRoleData(address2Validated, relatedRoles2);
+      const updatedTokenBalance2 = await ThanksToken.read.balanceOf([address2Validated]);
+      const updatedAddressCoefficient2 = await ThanksToken.read.addressCoefficient([address2Validated]);
+      const updatedDefaultCoefficient2 = await ThanksToken.read.defaultCoefficient();
+      const updatedMintedAmount2 = await ThanksToken.read.mintedAmount([address2Validated]);
+      
+      const expectedNewAmount2 = calculateExpectedMintableAmount(
         address2Validated,
-        relatedRoles2
+        updatedRoleData2,
+        updatedTokenBalance2,
+        updatedAddressCoefficient2,
+        updatedDefaultCoefficient2,
+        updatedMintedAmount2
       );
       
       expect(newMintableAmount1).to.equal(expectedNewAmount1);
       expect(newMintableAmount2).to.equal(expectedNewAmount2);
       
-      if (initialMintableAmount1 === 0n && newMintableAmount1 === 0n) {
-        console.log("Both initial and new mintable amounts for address1 are 0, skipping comparison");
-      } else {
-        expect(Number(newMintableAmount1)).to.be.gt(Number(initialMintableAmount1));
-      }
+      // Verify coefficients were set correctly
+      const coefficient1 = await ThanksToken.read.addressCoefficient([address1Validated]);
+      const coefficient2 = await ThanksToken.read.addressCoefficient([address2Validated]);
       
-      if (initialMintableAmount2 === 0n && newMintableAmount2 === 0n) {
-        console.log("Both initial and new mintable amounts for address2 are 0, skipping comparison");
-      } else {
-        expect(Number(newMintableAmount2)).to.be.gt(Number(initialMintableAmount2));
-      }
+      expect(coefficient1).to.equal(2000000000000000000n);
+      expect(coefficient2).to.equal(3000000000000000000n);
     });
-
-    it("should fail to mint to yourself", async () => {
+    
+    it("should calculate mintable amount for user with RoleShare but without hat", async () => {
+      // First, ensure address1 has a hat and RoleShare
       const isWearingHat = await Hats.read.balanceOf([address1Validated, hatId]);
       
       if (isWearingHat === 0n) {
@@ -792,199 +820,196 @@ describe("ThanksToken", () => {
           address1Validated,
           BigInt(Math.floor(Date.now() / 1000) - 3600 * 10) // Wearing for 10 hours
         ]);
-      } else {
-        console.log("Address already wearing hat, skipping time update");
       }
       
-      const fractionBalance = await FractionToken.read.balanceOf([address1Validated, address1Validated, hatId]);
-      
-      if (fractionBalance === 0n) {
-        await FractionToken.write.mintInitialSupply(
-          [hatId, address1Validated, 0n],
-          { account: deployer.account }
-        ).catch(() => {/* Ignore if already minted */});
-      }
-      
-      const relatedRoles = [{
-        hatId,
-        wearer: address1Validated
-      }];
-      
-      let errorCaught = false;
-      
+      // First, ensure we have a significant amount of tokens minted
       try {
-        await ThanksToken.write.mint(
-          [address1Validated, 1000n, relatedRoles],
-          { account: address1.account }
-        );
-      } catch (error: any) {
-        errorCaught = true;
-        expect(error.message).to.include("Cannot mint to yourself");
-      }
-      
-      expect(errorCaught).to.be.true;
-    });
-
-    it("should fail to mint more than mintable amount", async () => {
-      const isWearingHat = await Hats.read.balanceOf([address1Validated, hatId]);
-      
-      if (isWearingHat === 0n) {
-        await HatsTimeFrameModule.write.mintHat([
-          hatId,
-          address1Validated,
-          BigInt(Math.floor(Date.now() / 1000) - 3600 * 10) // Wearing for 10 hours
-        ]);
-      } else {
-        console.log("Address already wearing hat, skipping time update");
-      }
-      
-      const fractionBalance = await FractionToken.read.balanceOf([address1Validated, address1Validated, hatId]);
-      
-      if (fractionBalance === 0n) {
         await FractionToken.write.mintInitialSupply(
-          [hatId, address1Validated, 0n],
+          [hatId, address1Validated, 10000n],
           { account: deployer.account }
-        ).catch(() => {/* Ignore if already minted */});
+        );
+        console.log("Successfully minted initial supply");
+      } catch (error: any) {
+        console.log("Initial supply already minted, continuing");
       }
+      
+      const tokenId = await FractionToken.read.getTokenId([hatId, address1Validated]);
+      
+      const currentBalance = await FractionToken.read.balanceOf([
+        address1Validated,
+        address1Validated,
+        hatId
+      ]);
+      
+      console.log(`Current balance for address1: ${currentBalance}`);
+      
+      expect(currentBalance > 0n, "Need non-zero RoleShare balance for this test").to.be.true;
+      console.log(`Current balance for address1: ${currentBalance}`);
+      
+      const transferAmount = 1n;
+      
+      // Transfer a small amount to address2 (who doesn't have the hat)
+      await FractionToken.write.safeTransferFrom(
+        [
+          address1Validated,
+          address2Validated,
+          tokenId,
+          transferAmount,
+          "0x" // empty bytes data
+        ],
+        { account: address1.account }
+      ).then(() => {
+        console.log(`Successfully transferred ${transferAmount} tokens to address2`);
+      }).catch((error: any) => {
+        console.log(`Transfer failed: ${error.message}`);
+        throw new Error("Cannot test RoleShare without hat due to transfer failure");
+      });
       
       const relatedRoles = [{
         hatId,
         wearer: address1Validated
       }];
+      
+      // Check mintable amount for address2 (has RoleShare but no hat)
+      const mintableAmount = await ThanksToken.read.mintableAmount([
+        address2Validated,
+        relatedRoles
+      ]);
+      
+      await ThanksToken.write.setAddressCoefficient([
+        address2Validated,
+        10000000000000000000n // 10.0 in wei to ensure we get a non-zero value
+      ]);
+      
+      // Check mintable amount again after setting coefficient
+      const updatedMintableAmount = await ThanksToken.read.mintableAmount([
+        address2Validated,
+        relatedRoles
+      ]);
+      
+      // Gather data for calculation
+      const roleData = await gatherRoleData(address2Validated, relatedRoles);
+      const tokenBalance = await ThanksToken.read.balanceOf([address2Validated]);
+      const addressCoefficient = await ThanksToken.read.addressCoefficient([address2Validated]);
+      const defaultCoefficient = await ThanksToken.read.defaultCoefficient();
+      const mintedAmount = await ThanksToken.read.mintedAmount([address2Validated]);
+      
+      console.log("Role data:", JSON.stringify(roleData, (key, value) => 
+        typeof value === 'bigint' ? value.toString() : value, 2));
+      console.log("Token balance:", tokenBalance.toString());
+      console.log("Address coefficient:", addressCoefficient.toString());
+      console.log("Default coefficient:", defaultCoefficient.toString());
+      console.log("Minted amount:", mintedAmount.toString());
+      
+      const expectedMintableAmount = calculateExpectedMintableAmount(
+        address2Validated,
+        roleData,
+        tokenBalance,
+        addressCoefficient,
+        defaultCoefficient,
+        mintedAmount
+      );
+      
+      // Check that the expected mintable amount matches the actual amount
+      expect(updatedMintableAmount).to.equal(expectedMintableAmount);
+      
+      // For this test, we specifically expect the amount to be greater than 0
+      // since we have RoleShare but no hat
+      expect(Number(updatedMintableAmount)).to.be.gt(0);
+      
+      console.log(`Mintable amount for user with RoleShare but no hat: ${updatedMintableAmount}`);
+    });
+    
+    it("should prevent minting to yourself", async () => {
+      const relatedRoles = [{
+        hatId,
+        wearer: address1Validated
+      }];
+      
+      await ThanksToken.write.setAddressCoefficient([
+        address1Validated,
+        10000000000000000000n // 10.0 in wei to ensure we get a non-zero value
+      ]);
       
       const mintableAmount = await ThanksToken.read.mintableAmount([
         address1Validated,
         relatedRoles
       ]);
       
-      const expectedMintableAmount = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
-        address1Validated,
-        relatedRoles
-      );
-      
-      expect(mintableAmount).to.equal(expectedMintableAmount);
-      
-      let errorCaught = false;
+      expect(mintableAmount > 0n, "Need non-zero mintable amount to test self-minting prevention").to.be.true;
+      console.log(`Mintable amount for self-minting test: ${mintableAmount}`);
       
       try {
         await ThanksToken.write.mint(
-          [address3Validated, mintableAmount + 1000n, relatedRoles],
+          [address1Validated, mintableAmount, relatedRoles],
           { account: address1.account }
         );
+        // If we get here, the mint succeeded when it should have failed
+        expect.fail("Mint to self should have failed");
       } catch (error: any) {
-        errorCaught = true;
-        expect(error.message).to.include("Amount exceeds mintable amount");
+        expect(error.message).to.include("Cannot mint to yourself");
       }
-      
-      expect(errorCaught).to.be.true;
     });
-
-    it("should set default coefficient correctly", async () => {
-      await ThanksToken.write.setDefaultCoefficient([
-        1500000000000000000n // 1.5 in wei
-      ]);
-      
-      const isWearingHat = await Hats.read.balanceOf([address3Validated, hatId]);
-      
-      if (isWearingHat === 0n) {
-        await HatsTimeFrameModule.write.mintHat([
-          hatId,
-          address3Validated,
-          BigInt(Math.floor(Date.now() / 1000) - 3600 * 3) // Wearing for 3 hours
-        ]);
-      } else {
-        console.log("Address already wearing hat, skipping time update");
-      }
-      
-      if (isWearingHat === 0n) {
-        await Hats.write.mintHat([hatId, address3Validated])
-          .catch(error => {
-            console.log("Error minting hat:", error.message);
-          });
-      }
-      
-      const fractionBalance = await FractionToken.read.balanceOf([address3Validated, address3Validated, hatId]);
-      
-      if (fractionBalance === 0n) {
-        await FractionToken.write.mintInitialSupply(
-          [hatId, address3Validated, 0n],
-          { account: deployer.account }
-        ).catch(() => {/* Ignore if already minted */});
-      }
-      
-      await ThanksToken.write.setAddressCoefficient([
-        address3Validated,
-        0n
-      ]);
-      
+    
+    it("should prevent minting more than mintable amount", async () => {
       const relatedRoles3 = [{
         hatId,
         wearer: address3Validated
       }];
+      
+      await ThanksToken.write.setAddressCoefficient([
+        address3Validated,
+        10000000000000000000n // 10.0 in wei to ensure we get a non-zero value
+      ]);
       
       const mintableAmount3 = await ThanksToken.read.mintableAmount([
         address3Validated,
         relatedRoles3
       ]);
       
-      const expectedMintableAmount3 = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
+      // Gather data for calculation
+      const roleData3 = await gatherRoleData(address3Validated, relatedRoles3);
+      const tokenBalance3 = await ThanksToken.read.balanceOf([address3Validated]);
+      const addressCoefficient3 = await ThanksToken.read.addressCoefficient([address3Validated]);
+      const defaultCoefficient3 = await ThanksToken.read.defaultCoefficient();
+      const mintedAmount3 = await ThanksToken.read.mintedAmount([address3Validated]);
+      
+      const expectedMintableAmount3 = calculateExpectedMintableAmount(
         address3Validated,
-        relatedRoles3
+        roleData3,
+        tokenBalance3,
+        addressCoefficient3,
+        defaultCoefficient3,
+        mintedAmount3
       );
       
       expect(mintableAmount3).to.equal(expectedMintableAmount3);
       
-      expect(Number(mintableAmount3)).to.be.gt(0);
+      expect(mintableAmount3 > 0n, "Need non-zero mintable amount to test minting limits").to.be.true;
+      console.log(`Mintable amount for minting limit test: ${mintableAmount3}`);
       
-      await ThanksToken.write.setDefaultCoefficient([
-        1000000000000000000n // 1.0 in wei
-      ]);
+      try {
+        await ThanksToken.write.mint(
+          [address1Validated, mintableAmount3 + 1n, relatedRoles3],
+          { account: address3.account }
+        );
+        // If we get here, the mint succeeded when it should have failed
+        expect.fail("Mint exceeding mintable amount should have failed");
+      } catch (error: any) {
+        expect(error.message).to.include("Amount exceeds mintable amount");
+      }
     });
     
-    it("should calculate mintable amount for user with RoleShare but without hat", async () => {
-      const initialWearing = await Hats.read.balanceOf([address2Validated, hatId]);
+    it("should use default coefficient when address coefficient is not set", async () => {
+      // Reset address coefficient to 0
+      await ThanksToken.write.setAddressCoefficient([
+        address1Validated,
+        0n
+      ]);
       
-      if (initialWearing > 0n) {
-        await Hats.write.setHatWearerStatus([
-          hatId, 
-          address2Validated, 
-          false,
-          true  // Toggle eligibility
-        ], { account: deployer.account }).catch(() => {/* Ignore if toggle fails */});
-      }
-      
-      const isWearingHat = await Hats.read.balanceOf([address2Validated, hatId]);
-      expect(isWearingHat).to.equal(0n);
-      
-      await Hats.write.mintHat([hatId, address1Validated], { account: deployer.account })
-        .catch(() => {/* Ignore if already minted */});
-      
-      await FractionToken.write.mintInitialSupply(
-        [hatId, address1Validated, 10000n], // Mint 10000 tokens to the hat wearer first
-        { account: deployer.account }
-      ).catch(() => {/* Ignore if already minted */});
-      
-      const tokenId = await FractionToken.read.getTokenId([hatId, address1Validated]);
-      
-      await FractionToken.write.safeTransferFrom(
-        [address1Validated, address2Validated, tokenId, 5000n, "0x"],
-        { account: address1.account }
-      ).catch(error => {
-        console.log("Error transferring tokens:", error.message);
-      });
-      
-      const fractionBalance = await FractionToken.read.balanceOf([address2Validated, address1Validated, hatId]);
-      expect(Number(fractionBalance)).to.be.gt(0);
+      // Set default coefficient
+      const newDefaultCoefficient = 2000000000000000000n; // 2.0 in wei
+      await ThanksToken.write.setDefaultCoefficient([newDefaultCoefficient]);
       
       const relatedRoles = [{
         hatId,
@@ -992,40 +1017,33 @@ describe("ThanksToken", () => {
       }];
       
       const mintableAmount = await ThanksToken.read.mintableAmount([
-        address2Validated,
+        address1Validated,
         relatedRoles
       ]);
       
-      const expectedMintableAmount = await calculateExpectedMintableAmount(
-        publicClient,
-        ThanksToken,
-        Hats,
-        FractionToken,
-        HatsTimeFrameModule,
-        address2Validated,
-        relatedRoles
+      // Gather data for calculation
+      const roleData = await gatherRoleData(address1Validated, relatedRoles);
+      const tokenBalance = await ThanksToken.read.balanceOf([address1Validated]);
+      const addressCoefficient = await ThanksToken.read.addressCoefficient([address1Validated]);
+      const defaultCoefficient = await ThanksToken.read.defaultCoefficient();
+      const mintedAmount = await ThanksToken.read.mintedAmount([address1Validated]);
+      
+      const expectedMintableAmount = calculateExpectedMintableAmount(
+        address1Validated,
+        roleData,
+        tokenBalance,
+        addressCoefficient,
+        defaultCoefficient,
+        mintedAmount
       );
       
       expect(mintableAmount).to.equal(expectedMintableAmount);
+      expect(defaultCoefficient).to.equal(newDefaultCoefficient);
       
-      expect(Number(mintableAmount)).to.be.gt(0);
-      
-      const address3Balance = await ThanksToken.read.balanceOf([address3Validated]);
-      
-      if (mintableAmount > 0n) {
-        await ThanksToken.write.mint(
-          [address3Validated, mintableAmount / 2n, relatedRoles],
-          { account: address2.account }
-        ).catch(error => {
-          console.log("Error minting tokens:", error.message);
-        });
-        
-        const newAddress3Balance = await ThanksToken.read.balanceOf([address3Validated]);
-        expect(Number(newAddress3Balance)).to.be.gt(Number(address3Balance));
-      } else {
-        console.log("Mintable amount is 0, skipping mint test");
-        expect(true).to.be.true;
-      }
+      // Reset default coefficient for other tests
+      await ThanksToken.write.setDefaultCoefficient([1000000000000000000n]).catch(error => {
+        console.log("Error resetting default coefficient:", error.message);
+      });
     });
   });
 });

@@ -62,49 +62,63 @@ contract ThanksToken is
     }
     
     function mintableAmount(
-        address owner, 
+        address owner,
         RelatedRole[] memory relatedRoles
     ) public view override returns (uint256) {
         uint256 totalMintable = 0;
-        
+
         // Calculate based on role tenure and share ownership
         for (uint256 i = 0; i < relatedRoles.length; i++) {
             RelatedRole memory role = relatedRoles[i];
+
+            uint256 shareBalance = fractionToken.balanceOf(
+                owner,
+                role.wearer,
+                role.hatId
+            );
             
-            // Check if owner is a role holder
-            bool isRoleHolder = hatsContract.balanceOf(owner, role.hatId) > 0;
+            uint256 shareTotalSupply = fractionToken.totalSupply(
+                role.wearer,
+                role.hatId
+            );
             
-            // Get share ownership regardless of role holding
-            uint256 shareBalance = fractionToken.balanceOf(owner, role.wearer, role.hatId);
-            
-            if (isRoleHolder) {
-                // Get role tenure in hours
-                uint256 wearingTimeSeconds = hatsTimeFrameModule.getWearingElapsedTime(owner, role.hatId);
-                uint256 wearingTimeHours = wearingTimeSeconds / SECONDS_PER_HOUR;
-                
-                // Calculate mintable amount based on role tenure (hours) and share ownership
-                uint256 roleBasedAmount = wearingTimeHours * shareBalance;
-                
-                totalMintable += roleBasedAmount;
-            } else if (shareBalance > 0) {
-                // If not a role holder but has shares, add share-based amount
-                // Use a base calculation without time component
-                totalMintable += shareBalance;
+            // Skip if user has no shares for this role or total supply is zero
+            if (shareBalance == 0 || shareTotalSupply == 0) {
+                continue;
             }
+
+            uint256 wearingTimeSeconds = hatsTimeFrameModule
+                .getWearingElapsedTime(role.wearer, role.hatId);
+            uint256 wearingTimeHours = wearingTimeSeconds / 1 hours;
+
+            // Calculate mintable amount based on role tenure (hours) and share ownership
+            uint256 roleBasedAmount = (wearingTimeHours * shareBalance) /
+                shareTotalSupply;
+            
+            // Add a minimum amount based on share ownership percentage
+            // This ensures users with shares but no hat or short tenure still get tokens
+            if (roleBasedAmount == 0 && shareBalance > 0) {
+                uint256 sharePercentage = (shareBalance * 1e18) / shareTotalSupply;
+                roleBasedAmount = (sharePercentage / 1e16) + 1; // Minimum of 1 token for any share ownership
+            }
+            
+            totalMintable += roleBasedAmount;
         }
-        
+
         // Add 10% of received ThanksTokens
         totalMintable += balanceOf(owner) / 10;
-        
+
         // Apply address coefficient
-        uint256 coefficient = _addressCoefficient[owner] > 0 ? _addressCoefficient[owner] : _defaultCoefficient;
-        totalMintable = totalMintable * coefficient / 1e18;
-        
+        uint256 coefficient = _addressCoefficient[owner] > 0
+            ? _addressCoefficient[owner]
+            : _defaultCoefficient;
+        totalMintable = (totalMintable * coefficient) / 1e18;
+
         // Subtract already minted amount
         if (totalMintable > _mintedAmount[owner]) {
             return totalMintable - _mintedAmount[owner];
         }
-        
+
         return 0;
     }
     

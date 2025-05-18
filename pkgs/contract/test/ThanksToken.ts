@@ -483,7 +483,8 @@ describe("ThanksToken", () => {
       
       expect(address2BalanceAfter).to.equal(initialBalance - approveAmount / 2n);
       expect(address3BalanceAfter).to.equal(approveAmount / 2n);
-      expect(allowanceAfter).to.be.lte(Number(approveAmount));
+      
+      expect(allowanceAfter).to.equal(approveAmount - approveAmount / 2n);
     });
   });
 
@@ -661,28 +662,14 @@ describe("ThanksToken", () => {
       expect(newMintableAmount).to.equal(expectedNewAmount);
       
       if (initialMintableAmount > 0n && newMintableAmount > 0n) {
-        // Check that the coefficient was applied correctly
-        if (addressCoefficient > 0n) {
-          const expectedRatio = 5000000000000000000n / addressCoefficient;
-          const actualRatio = (newMintableAmount * 1000000000000000000n) / initialMintableAmount;
-          
-          // Allow for some rounding error
-          const difference = expectedRatio > actualRatio 
-            ? expectedRatio - actualRatio 
-            : actualRatio - expectedRatio;
-          
-          expect(Number(difference)).to.be.lt(100); // Small difference allowed for rounding
-        } else {
-          const expectedRatio = 5n;
-          const actualRatio = (newMintableAmount * 1000000000000000000n) / initialMintableAmount;
-          
-          // Allow for some rounding error
-          const difference = expectedRatio > actualRatio 
-            ? expectedRatio - actualRatio 
-            : actualRatio - expectedRatio;
-          
-          expect(Number(difference)).to.be.lt(100); // Small difference allowed for rounding
-        }
+        // since we're setting the coefficient to 5.0 (5e18)
+        const minExpected = initialMintableAmount * 4n; // Allow some flexibility (at least 4x)
+        const maxExpected = initialMintableAmount * 6n; // Allow some flexibility (at most 6x)
+        
+        expect(newMintableAmount).to.be.gte(minExpected);
+        expect(newMintableAmount).to.be.lte(maxExpected);
+        
+        console.log(`Coefficient test: initial=${initialMintableAmount}, new=${newMintableAmount}, ratio=${Number(newMintableAmount) / Number(initialMintableAmount)}`);
       }
     });
 

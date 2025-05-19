@@ -1,4 +1,4 @@
-import { NumberInput, type BoxProps } from "@chakra-ui/react";
+import { type BoxProps, NumberInput } from "@chakra-ui/react";
 
 type ValueChangeDetails = { value: number; valueAsString: string };
 

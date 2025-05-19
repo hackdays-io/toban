@@ -45,6 +45,8 @@ const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
 const NewRole: FC = () => {
   const { treeId } = useParams();
 
+  const defaultMaxSupply = 10;
+
   const { control, watch, handleSubmit, formState, resetField } =
     useForm<FormData>({
       defaultValues: {
@@ -52,7 +54,7 @@ const NewRole: FC = () => {
         description: "",
         responsibilities: [],
         authorities: [],
-        maxSupply: 10,
+        maxSupply: defaultMaxSupply,
       },
     });
 
@@ -251,7 +253,7 @@ const NewRole: FC = () => {
                 mt={3}
                 number={value}
                 setNumber={onChange}
-                placeholder="10"
+                defaultValue={defaultMaxSupply}
               />
             )}
           />

@@ -1,48 +1,41 @@
-import { Box, type BoxProps } from "@chakra-ui/react";
-import { CommonInput } from "../common/CommonInput";
+import { NumberInput, type BoxProps } from "@chakra-ui/react";
+
+type ValueChangeDetails = { value: number; valueAsString: string };
 
 export const InputNumber = ({
   number,
   setNumber,
+  defaultValue,
   ...boxProps
 }: {
   number: number | undefined;
-  setNumber: (number: number | undefined) => void;
-  placeholder?: string;
+  setNumber: (value: number | undefined) => void;
+  defaultValue?: number;
 } & BoxProps) => {
   return (
-    <Box w="100%" {...boxProps}>
-      <CommonInput
+    <NumberInput.Root
+      w="100%"
+      {...boxProps}
+      value={number}
+      onValueChange={(e: ValueChangeDetails) => setNumber(e.value)}
+      defaultValue={defaultValue}
+      min={1}
+      precision={0}
+      formatOptions={{}}
+      allowMouseWheel
+      borderColor="gray.800"
+      borderRadius="3xl"
+      backgroundColor="white"
+    >
+      <NumberInput.Input
         minHeight="45px"
-        value={number}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value === undefined) {
-            setNumber(undefined);
-          } else {
-            // Try to parse as an integer
-            const intVal = Number.parseInt(value, 10);
-
-            // Check if it's a positive integer and the parsed value matches the input string
-            // (to prevent things like "1.2" being parsed as 1, or "1abc" as 1)
-            if (
-              !Number.isNaN(intVal) &&
-              intVal.toString() === value &&
-              intVal > 0
-            ) {
-              setNumber(intVal);
-            } else if (value === "") {
-              // This case is already handled by the outer if, but kept for clarity during refactor
-              setNumber("");
-            }
-            // If not a valid positive integer string (e.g., "abc", "1.2", "-5", "0"),
-            // do nothing, effectively rejecting the invalid input.
-            // This allows the user to type, but only valid positive integers will update the state.
-          }
-        }}
-        type="number"
-        w="100%"
+        textAlign="right"
+        paddingRight="2.5rem"
       />
-    </Box>
+      <NumberInput.Control>
+        <NumberInput.IncrementTrigger />
+        <NumberInput.DecrementTrigger />
+      </NumberInput.Control>
+    </NumberInput.Root>
   );
 };

@@ -77,7 +77,6 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         string calldata _imageURI
     ) external returns (uint256) {
         require(hasCreateHatAuthority(msg.sender), "Not authorized");
-
         return
             HATS().createHat(
                 _admin,

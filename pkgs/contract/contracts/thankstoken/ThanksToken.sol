@@ -40,27 +40,33 @@ contract ThanksToken is
         hatsContract = IHats(_hatsAddress);
         fractionToken = IFractionToken(_fractionTokenAddress);
         hatsTimeFrameModule = IHatsTimeFrameModule(_hatsTimeFrameModuleAddress);
-        _defaultCoefficient = defaultCoefficient > 0 ? defaultCoefficient : 1e18;
+        _defaultCoefficient = defaultCoefficient > 0
+            ? defaultCoefficient
+            : 1e18;
     }
 
-    function mint(address to, uint256 amount, RelatedRole[] memory relatedRoles) public override returns (bool) {
+    function mint(
+        address to,
+        uint256 amount,
+        RelatedRole[] memory relatedRoles
+    ) public override returns (bool) {
         require(to != msg.sender, "Cannot mint to yourself");
         require(amount > 0, "Amount must be greater than 0");
-        
+
         uint256 maxAmount = mintableAmount(msg.sender, relatedRoles);
         require(amount <= maxAmount, "Amount exceeds mintable amount");
-        
+
         // Update minted amount
         _mintedAmount[msg.sender] += amount;
-        
+
         // Mint tokens
         _mint(to, amount);
-        
+
         emit TokensMinted(to, amount);
-        
+
         return true;
     }
-    
+
     function mintableAmount(
         address owner,
         RelatedRole[] memory relatedRoles
@@ -76,12 +82,12 @@ contract ThanksToken is
                 role.wearer,
                 role.hatId
             );
-            
+
             uint256 shareTotalSupply = fractionToken.totalSupply(
                 role.wearer,
                 role.hatId
             );
-            
+
             // Skip if user has no shares for this role or total supply is zero
             if (shareBalance == 0 || shareTotalSupply == 0) {
                 continue;
@@ -94,14 +100,7 @@ contract ThanksToken is
             // Calculate mintable amount based on role tenure (hours) and share ownership
             uint256 roleBasedAmount = (wearingTimeHours * shareBalance) /
                 shareTotalSupply;
-            
-            // Add a minimum amount based on share ownership percentage
-            // This ensures users with shares but no hat or short tenure still get tokens
-            if (roleBasedAmount == 0 && shareBalance > 0) {
-                uint256 sharePercentage = (shareBalance * 1e18) / shareTotalSupply;
-                roleBasedAmount = (sharePercentage / 1e16) + 1; // Minimum of 1 token for any share ownership
-            }
-            
+
             totalMintable += roleBasedAmount;
         }
 
@@ -121,23 +120,30 @@ contract ThanksToken is
 
         return 0;
     }
-    
-    function mintedAmount(address owner) public view override returns (uint256) {
+
+    function mintedAmount(
+        address owner
+    ) public view override returns (uint256) {
         return _mintedAmount[owner];
     }
-    
-    function addressCoefficient(address owner) public view override returns (uint256) {
+
+    function addressCoefficient(
+        address owner
+    ) public view override returns (uint256) {
         return _addressCoefficient[owner];
     }
-    
+
     function defaultCoefficient() public view override returns (uint256) {
         return _defaultCoefficient;
     }
-    
-    function setAddressCoefficient(address userAddress, uint256 coefficient) public onlyOwner {
+
+    function setAddressCoefficient(
+        address userAddress,
+        uint256 coefficient
+    ) public onlyOwner {
         _addressCoefficient[userAddress] = coefficient;
     }
-    
+
     /**
      * @notice Sets coefficients for multiple addresses at once
      * @param userAddresses Array of addresses to set coefficients for
@@ -147,17 +153,22 @@ contract ThanksToken is
         address[] memory userAddresses,
         uint256[] memory coefficients
     ) public onlyOwner {
-        require(userAddresses.length == coefficients.length, "Arrays length mismatch");
-        
+        require(
+            userAddresses.length == coefficients.length,
+            "Arrays length mismatch"
+        );
+
         for (uint256 i = 0; i < userAddresses.length; i++) {
             _addressCoefficient[userAddresses[i]] = coefficients[i];
         }
     }
-    
+
     function setDefaultCoefficient(uint256 coefficient) public onlyOwner {
         require(coefficient > 0, "Coefficient must be greater than 0");
         _defaultCoefficient = coefficient;
     }
-    
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }

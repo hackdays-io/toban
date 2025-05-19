@@ -89,12 +89,6 @@ const NewRole: FC = () => {
         return;
       }
 
-      // const maxSupplyValue = Number(data.maxSupply);
-      // if (Number.isNaN(maxSupplyValue) || maxSupplyValue <= 0) {
-      //   alert("ロールの上限人数は正の整数である必要があります。");
-      //   return;
-      // }
-
       try {
         const [resUploadHatsDetails, resUploadImage, treeInfo] =
           await Promise.all([

@@ -90,12 +90,38 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
             );
     }
 
+    // Allow editing an existing hat’s details
+    function changeHatDetails(
+        uint256 hatId,
+        string calldata newDetails
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatDetails(hatId, newDetails);
+        emit HatDetailsChanged(hatId, newDetails);
+    }
+
+    // Allow editing an existing hat’s image URI
+    function changeHatImageURI(
+        uint256 hatId,
+        string calldata newImageURI
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatImageURI(hatId, newImageURI);
+        emit HatImageURIChanged(hatId, newImageURI);
+    }
+
+    // Allow editing an existing hat’s max supply
+    function changeHatMaxSupply(
+        uint256 hatId,
+        uint32 newMaxSupply
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatMaxSupply(hatId, newMaxSupply);
+        emit HatMaxSupplyChanged(hatId, newMaxSupply);
+    }
+
     // Internal Functions
 
-    /**
-     * @dev Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
     function _grantCreateHatAuthority(address authority) internal {
         require(authority != address(0), "Invalid address");
         require(!hasCreateHatAuthority(authority), "Already granted");
@@ -104,10 +130,6 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         emit CreateHatAuthorityGranted(authority);
     }
 
-    /**
-     * @dev Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
     function _revokeCreateHatAuthority(address authority) internal {
         require(hasCreateHatAuthority(authority), "Not granted");
 

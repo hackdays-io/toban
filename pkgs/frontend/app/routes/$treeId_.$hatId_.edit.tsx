@@ -22,6 +22,7 @@ import { RoleAttributesList } from "~/components/RoleAttributesList";
 import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
+import { InputNumber } from "~/components/input/InputNumber";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
@@ -36,6 +37,7 @@ interface FormData {
   selectedImageCid: string;
   responsibilities: HatsDetailsResponsabilities;
   authorities: HatsDetailsAuthorities;
+  maxSupply: number | undefined;
 }
 
 const EditRole: FC = () => {
@@ -43,7 +45,7 @@ const EditRole: FC = () => {
   const navigate = useNavigate();
   const { wallet } = useActiveWallet();
   const { hat } = useGetHat(hatId || "");
-  const { changeHatDetails, changeHatImageURI } = useHats();
+  const { changeHatDetails, changeHatImageURI, changeHatMaxSupply } = useHats();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { uploadImageFileToIpfs } = useUploadImageFileToIpfs();
 
@@ -56,6 +58,7 @@ const EditRole: FC = () => {
         description: "",
         responsibilities: [],
         authorities: [],
+        maxSupply: undefined,
       },
     });
 
@@ -76,10 +79,11 @@ const EditRole: FC = () => {
         setValue("description", hatDetailJson.data.description || "");
         setValue("responsibilities", hatDetailJson.data.responsabilities || []);
         setValue("authorities", hatDetailJson.data.authorities || []);
+        setValue("maxSupply", Number(hat?.maxSupply) || undefined);
       }
     };
     setInitialValues();
-  }, [hatDetailJson, setValue]);
+  }, [hatDetailJson, hat?.maxSupply, setValue]);
 
   const isChangedDetails = useCallback(
     (currentDetails: FormData) => {
@@ -106,10 +110,11 @@ const EditRole: FC = () => {
           hatDetailJson.data.authorities || [],
         ) ||
         currentDetails.image ||
-        currentDetails.selectedImageCid
+        currentDetails.selectedImageCid ||
+        currentDetails.maxSupply !== Number(hat?.maxSupply)
       );
     },
-    [hatDetailJson],
+    [hatDetailJson, hat?.maxSupply],
   );
 
   const onSubmit = async (data: FormData) => {
@@ -165,6 +170,16 @@ const EditRole: FC = () => {
             }),
           );
         }
+      }
+
+      // Handle max supply change
+      if (data.maxSupply && data.maxSupply !== Number(hat?.maxSupply)) {
+        promises.push(
+          changeHatMaxSupply({
+            hatId: BigInt(hatId),
+            newMaxSupply: data.maxSupply,
+          }),
+        );
       }
 
       await Promise.all(promises);
@@ -266,6 +281,22 @@ const EditRole: FC = () => {
             type="authority"
             attributes={authorities.fields}
             setAttributes={authorities.append}
+          />
+        </ContentContainer>
+
+        <SectionHeading>ロールの上限人数</SectionHeading>
+        <ContentContainer>
+          <Controller
+            control={control}
+            name="maxSupply"
+            render={({ field: { onChange, value } }) => (
+              <InputNumber
+                mt={3}
+                number={value}
+                setNumber={onChange}
+                defaultValue={hatDetailJson?.data.maxSupply}
+              />
+            )}
           />
         </ContentContainer>
 

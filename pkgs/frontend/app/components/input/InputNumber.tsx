@@ -1,7 +1,5 @@
 import { type BoxProps, NumberInput } from "@chakra-ui/react";
 
-type ValueChangeDetails = { value: number; valueAsString: string };
-
 export const InputNumber = ({
   number,
   setNumber,
@@ -16,16 +14,16 @@ export const InputNumber = ({
     <NumberInput.Root
       w="100%"
       {...boxProps}
-      value={number}
-      onValueChange={(e: ValueChangeDetails) => setNumber(e.value)}
-      defaultValue={defaultValue}
+      value={String(number)}
+      onValueChange={(e) => setNumber(Number(e.value))}
+      defaultValue={String(defaultValue)}
       min={1}
-      precision={0}
       formatOptions={{}}
       allowMouseWheel
       borderColor="gray.800"
       borderRadius="3xl"
       backgroundColor="white"
+      inputMode="numeric"
     >
       <NumberInput.Input
         minHeight="45px"

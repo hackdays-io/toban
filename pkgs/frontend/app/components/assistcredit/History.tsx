@@ -128,7 +128,7 @@ const AssistCreditItem: FC<ItemProps> = ({
           <Text fontSize="lg" fontWeight="semibold" color="blue.600">
             {amount}{" "}
             <Box fontSize="xs" as="span">
-              tokens
+              points
             </Box>
           </Text>
         </Box>

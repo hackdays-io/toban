@@ -192,7 +192,7 @@ const EditRole: FC = () => {
 
   return (
     <Box w="100%" pb={10}>
-      <PageHeader title="ロール編集" />
+      <PageHeader title="当番の編集" />
       <form onSubmit={handleSubmit(onSubmit)}>
         <ContentContainer>
           <Stack my="30px" gap={3}>
@@ -284,7 +284,7 @@ const EditRole: FC = () => {
           />
         </ContentContainer>
 
-        <SectionHeading>ロールの上限人数</SectionHeading>
+        <SectionHeading>当番の上限人数</SectionHeading>
         <ContentContainer>
           <Controller
             control={control}

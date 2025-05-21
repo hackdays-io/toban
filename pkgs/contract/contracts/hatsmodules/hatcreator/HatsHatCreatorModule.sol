@@ -90,6 +90,45 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
             );
     }
 
+    // ► Added: allow editing an existing hat’s details
+    /**
+     * @notice Change the details string of an existing hat
+     */
+    function changeHatDetails(
+        uint256 hatId,
+        string calldata newDetails
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatDetails(hatId, newDetails);
+        emit HatDetailsChanged(hatId, newDetails);
+    }
+
+    // ► Allow editing an existing hat’s image URI
+    /**
+     * @notice Change the image URI of an existing hat
+     */
+    function changeHatImageURI(
+        uint256 hatId,
+        string calldata newImageURI
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatImageURI(hatId, newImageURI);
+        emit HatImageURIChanged(hatId, newImageURI);
+    }
+
+    // ► Allow editing an existing hat’s max supply
+    /**
+     * @notice Change the max supply of an existing hat
+     */
+    function changeHatMaxSupply(
+        uint256 hatId,
+        uint32 newMaxSupply
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatMaxSupply(hatId, newMaxSupply);
+        emit HatMaxSupplyChanged(hatId, newMaxSupply);
+    }
+
     // Internal Functions
 
     /**

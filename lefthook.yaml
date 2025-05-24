@@ -9,4 +9,4 @@ pre-commit:
     type-check:
       glob: "*.{ts,tsx}"
       run: |
-        pnpm frontend typecheck
+        npx pnpm frontend typecheck

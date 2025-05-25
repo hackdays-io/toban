@@ -75,6 +75,12 @@ interface IHatsTimeFrameModule {
         uint256 timestamp
     );
 
+    event HatsMinted(
+        uint256[] indexed hatIds,
+        address[] indexed wearers,
+        uint256[] timestamps
+    );
+
     /**
      * @notice Emitted when a hat is deactivated
      */

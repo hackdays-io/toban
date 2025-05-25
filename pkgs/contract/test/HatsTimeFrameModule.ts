@@ -4,6 +4,10 @@ import { viem } from "hardhat";
 import type { Address, PublicClient, WalletClient } from "viem";
 import { decodeEventLog, encodeAbiParameters } from "viem";
 import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
+import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
@@ -11,10 +15,6 @@ import {
   deployHatsProtocol,
   deployHatsTimeFrameModule,
 } from "../helpers/deploy/Hats";
-import {
-  Create2Deployer,
-  deployCreate2Deployer,
-} from "../helpers/deploy/Create2Factory";
 
 describe("HatsTimeFrameModule", () => {
   let Create2Deployer: Create2Deployer;
@@ -29,6 +29,7 @@ describe("HatsTimeFrameModule", () => {
 
   let topHatId: bigint;
   let roleHatId: bigint | undefined;
+  let roleHatId2: bigint | undefined;
 
   let publicClient: PublicClient;
 
@@ -162,6 +163,32 @@ describe("HatsTimeFrameModule", () => {
         roleHatId = decodedLog.args.id;
       }
     }
+
+    // Create Role hat2
+    txHash = await Hats.write.createHat([
+      hatterHatId,
+      "Role Hat2",
+      10,
+      "0x0000000000000000000000000000000000004a75",
+      "0x0000000000000000000000000000000000004a75",
+      true,
+      "",
+    ]);
+
+    receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    for (const log of receipt.logs) {
+      const decodedLog = decodeEventLog({
+        abi: Hats.abi,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decodedLog.eventName === "HatCreated") {
+        roleHatId2 = decodedLog.args.id;
+      }
+    }
   });
 
   it("mint hat", async () => {
@@ -268,6 +295,34 @@ describe("HatsTimeFrameModule", () => {
     ]);
 
     expect(woreTime).to.equal(initialTime + 5000n);
+  });
+
+  it("batch mint hats previous time", async () => {
+    if (!roleHatId && !roleHatId2) {
+      throw new Error("Role hat ID is undefined");
+    }
+
+    const initialTime = BigInt(await time.latest());
+    await time.increaseTo(initialTime + 10000n);
+
+    await HatsTimeFrameModule.write.batchMintHat([
+      [roleHatId2 as bigint, roleHatId2 as bigint],
+      [address1Validated, address2Validated],
+      [initialTime + 5000n, initialTime + 5000n],
+    ]);
+
+    const woreTime1 = await HatsTimeFrameModule.read.getWoreTime([
+      address1Validated,
+      roleHatId2 as bigint,
+    ]);
+
+    const woreTime2 = await HatsTimeFrameModule.read.getWoreTime([
+      address2Validated,
+      roleHatId2 as bigint,
+    ]);
+
+    expect(woreTime1).to.equal(initialTime + 5000n);
+    expect(woreTime2).to.equal(initialTime + 5000n);
   });
 
   it("renouce hat", async () => {

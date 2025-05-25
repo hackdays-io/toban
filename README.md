@@ -211,18 +211,6 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     pnpm contract getChainInfo --network sepolia
     ```
 
-  - #### **deploy Sample Contract**
-
-    ```bash
-    pnpm contract deploy:Lock --network sepolia
-    ```
-
-  - #### **verify deployed contract**
-
-    ```bash
-    pnpm contract deploy:Lock --verify --network sepolia
-    ```
-
   - #### **deploy all contract**
 
     ```bash
@@ -271,4 +259,10 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
     ```bash
     pnpm contract mintHat --hatid 17011726346972053710434886519909386955065038130623101235576378067255296 --wearer 0x1295BDc0C102EB105dC0198fdC193588fe66A1e4 --network sepolia
+    ```
+
+  - #### **call batchMintHat task**
+
+    ```bash
+    pnpm contract batchMintHat --filepath ./data/sample.csv --network sepolia
     ```

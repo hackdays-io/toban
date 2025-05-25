@@ -10,7 +10,6 @@
     "test": "npx hardhat test",
     "coverage": "SOLIDITY_COVERAGE=true npx hardhat coverage",
     "lint": "solhint --fix --noPrompt --save 'contracts/**/*.sol'",
-    "deploy:Lock": "npx hardhat ignition deploy ./ignition/modules/Lock.ts",
     "deploy:all": "npx hardhat run scripts/deploy/all.ts",
     "local": "npx hardhat node",
     "getBalance": "npx hardhat getBalance",
@@ -22,7 +21,8 @@
     "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts",
     "bigbang": "npx hardhat bigbang",
     "getWoreTime": "npx hardhat getWoreTime",
-    "mintHat": "npx hardhat mintHat"
+    "mintHat": "npx hardhat mintHat",
+    "batchMintHat": "npx hardhat batchMintHat"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",

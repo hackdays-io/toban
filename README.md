@@ -229,12 +229,6 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     pnpm contract upgrade:FractionToken --network sepolia
     ```
 
-  - #### **get deployed contract address**
-
-    ```bash
-    pnpm contract getContractAddress --contract Lock --network sepolia
-    ```
-
   - #### **resiger new subdomain to `toban.eth`**
 
     ```bash
@@ -246,7 +240,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     Please set params when you execute.
 
     ```bash
-    pnpm contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    pnpm contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --network sepolia
     ```
 
   - #### **call getWoreTime task**

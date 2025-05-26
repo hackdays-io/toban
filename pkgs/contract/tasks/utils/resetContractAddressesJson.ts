@@ -4,7 +4,7 @@ import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import { resetContractAddressesJson } from "../../helpers/deploy/contractsJsonHelper";
 
 task("resetContractAddressesJson", "resetContractAddressesJson").setAction(
-  async (taskArgs: undefined, hre: HardhatRuntimeEnvironment) => {
+  async (taskArgs, hre: HardhatRuntimeEnvironment) => {
     // call reset contract address json file
     resetContractAddressesJson({ network: hre.network.name });
   },

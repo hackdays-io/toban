@@ -45,6 +45,10 @@ const config: HardhatUserConfig = {
       url: `https://eth-holesky.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
+    baseSepolia: {
+      url: `https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+    },
     base: {
       url: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       accounts:
@@ -56,6 +60,7 @@ const config: HardhatUserConfig = {
       sepolia: ETHERSCAN_API_KEY ?? "",
       holesky: ETHERSCAN_API_KEY ?? "",
       base: BASESCAN_API_KEY ?? "",
+      baseSepolia: BASESCAN_API_KEY ?? "",
     },
   },
   gasReporter: {

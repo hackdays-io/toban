@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 import { network } from "hardhat";
-import { type Address, zeroAddress } from "viem";
+import type { Address } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
 import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import {
@@ -32,7 +32,9 @@ const deployAll = async () => {
     contracts: { Hats, HatsModuleFactory, PullSplitsFactory },
   } = loadDeployedContractAddresses(network.name);
 
-  const { HatsTimeFrameModule } = await deployHatsTimeFrameModule();
+  const { HatsTimeFrameModule } = await deployHatsTimeFrameModule(
+    "0x0000000000000000000000000000000000000001",
+  );
   const { HatsHatCreatorModule } = await deployHatsHatCreatorModule(
     "0x0000000000000000000000000000000000000001", // zero address 以外のアドレスを仮に渡す
   );

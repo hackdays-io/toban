@@ -19,7 +19,9 @@ interface IHatsHatCreatorModule {
      * @param authority The address to check
      * @return bool Whether the address has authority
      */
-    function hasCreateHatAuthority(address authority) external view returns (bool);
+    function hasCreateHatAuthority(
+        address authority
+    ) external view returns (bool);
 
     /**
      * @notice Creates a new hat
@@ -52,8 +54,6 @@ interface IHatsHatCreatorModule {
      */
     event CreateHatAuthorityRevoked(address indexed authority);
 
-    // ► Added: edit‐functions
-
     /**
      * @notice Change the details string of an existing hat
      * @param hatId The ID of the hat to update
@@ -79,12 +79,7 @@ interface IHatsHatCreatorModule {
      * @param hatId The ID of the hat to update
      * @param newMaxSupply The new max supply value
      */
-    function changeHatMaxSupply(
-        uint256 hatId,
-        uint32 newMaxSupply
-    ) external;
-
-    // ► Added: edit‐events
+    function changeHatMaxSupply(uint256 hatId, uint32 newMaxSupply) external;
 
     /**
      * @notice Emitted when hat details are updated

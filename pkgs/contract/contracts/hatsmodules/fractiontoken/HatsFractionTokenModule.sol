@@ -9,9 +9,9 @@ import {IHatsFractionTokenModule} from "./IHatsFractionTokenModule.sol";
 /**
  * @title HatsFractionTokenModule
  * @notice A module that creates fractionalized ERC1155 tokens for Hats Protocol
- * @dev This contract allows minting fractional tokens representing ownership or participation
- *      in a specific hat. Each hat wearer can receive a configurable amount of tokens,
- *      enabling fractional governance, rewards distribution, or other use cases.
+ * @dev This contract manages the ratio of roles through the amount of these tokens.
+ *      The token amounts determine the proportional allocation of roles, and these ratios
+ *      can also be used as coefficients for reward distribution calculations.
  *
  * Key features:
  * - Only works with top hats to ensure proper domain isolation

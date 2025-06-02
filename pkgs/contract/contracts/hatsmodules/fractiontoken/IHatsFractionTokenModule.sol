@@ -46,10 +46,10 @@ interface IHatsFractionTokenModule {
     error InvalidHatIdForDomain();
 
     /**
-     * @notice Thrown when the caller is not an admin of the specified hat
-     * @dev Only hat admins can perform minting and burning operations
+     * @notice Thrown when the caller is neither an admin nor a wearer of the specified hat
+     * @dev Only hat admins or hat wearers can perform minting and burning operations
      */
-    error CallerNotHatAdmin();
+    error CallerNotHatAdminOrWearer();
 
     /**
      * @notice Thrown when the wearer doesn't have the specified hat
@@ -146,9 +146,15 @@ interface IHatsFractionTokenModule {
      * @notice Burns tokens from a hat wearer's balance
      * @param _hatId The ID of the hat for which tokens are being burned
      * @param _wearer The address of the hat wearer whose tokens are being burned
+     * @param _target The target address for the burn operation
      * @param _amount The amount of tokens to burn
      */
-    function burn(uint256 _hatId, address _wearer, uint256 _amount) external;
+    function burn(
+        uint256 _hatId,
+        address _wearer,
+        address _target,
+        uint256 _amount
+    ) external;
 
     // ============ Administrative Functions ============
 

@@ -39,35 +39,36 @@ contract HatsFractionTokenModule is
      * @notice Initialize the contract with required parameters
      * @param _version The version of the contract for upgrade compatibility
      * @param _tmpOwner The temporary owner of the contract (will be transferred during setup)
-     * @param _uri The base URI for token metadata
      */
     constructor(
         string memory _version,
-        address _tmpOwner,
-        string memory _uri
-    ) HatsModule(_version) Ownable(_tmpOwner) ERC1155(_uri) {}
+        address _tmpOwner
+    ) HatsModule(_version) Ownable(_tmpOwner) ERC1155("") {}
 
     // ============ Initialization ============
 
     /**
-     * @notice Initializes the module with owner and token supply configuration
+     * @notice Initializes the module with owner, URI, and token supply configuration
      * @dev This function is called once during module deployment via the factory
-     * @param _initData ABI-encoded data containing (address _owner, uint256 _tokenSupply)
+     * @param _initData ABI-encoded data containing (address _owner, string _uri, uint256 _tokenSupply)
      *
      * Requirements:
      * - The hatId must be a top hat (ensures domain isolation)
      * - Only called once during initialization
      *
      * Effects:
+     * - Sets the base URI for token metadata
      * - Sets the token supply for initial minting
      * - Extracts and stores the domain from the top hat
      * - Transfers ownership to the specified address
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, uint256 _tokenSupply) = abi.decode(
+        (address _owner, string memory _uri, uint256 _tokenSupply) = abi.decode(
             _initData,
-            (address, uint256)
+            (address, string, uint256)
         );
+
+        _setURI(_uri);
 
         TOKEN_SUPPLY = _tokenSupply;
 
@@ -94,7 +95,7 @@ contract HatsFractionTokenModule is
      *
      * Requirements:
      * - Hat must belong to this module's domain
-     * - Caller must be an admin of the specified hat
+     * - Caller must be an admin or wearer of the specified hat
      * - Wearer must currently hold the specified hat
      * - No tokens have been previously minted for this wearer-hat combination
      *
@@ -168,7 +169,7 @@ contract HatsFractionTokenModule is
      *
      * Requirements:
      * - Hat must belong to this module's domain
-     * - Caller must be an admin of the specified hat
+     * - Caller must be an admin or wearer of the specified hat
      * - Wearer must currently hold the specified hat
      * - Initial supply must have been previously minted for this wearer-hat combination
      *
@@ -195,11 +196,12 @@ contract HatsFractionTokenModule is
      * @dev Reduces the token supply by burning tokens from the specified wearer
      * @param _hatId The ID of the hat for which tokens are being burned
      * @param _wearer The address of the hat wearer whose tokens are being burned
+     * @param _target The target address for the burn operation
      * @param _amount The amount of tokens to burn
      *
      * Requirements:
      * - Hat must belong to this module's domain
-     * - Caller must be an admin of the specified hat
+     * - Caller must be an admin or wearer of the specified hat
      * - Wearer must currently hold the specified hat
      * - Wearer must have sufficient token balance to burn
      *
@@ -207,12 +209,17 @@ contract HatsFractionTokenModule is
      * - Decreases the token balance for the specified wearer
      * - Reduces total token supply
      */
-    function burn(uint256 _hatId, address _wearer, uint256 _amount) public {
+    function burn(
+        uint256 _hatId,
+        address _wearer,
+        address _target,
+        uint256 _amount
+    ) public {
         _checkValidAction(_hatId, _wearer);
 
         uint256 _tokenId = getTokenId(_hatId, _wearer);
 
-        _burn(_wearer, _tokenId, _amount);
+        _burn(_target, _tokenId, _amount);
 
         emit TokensBurned(_hatId, _wearer, _tokenId, _amount);
     }
@@ -350,12 +357,12 @@ contract HatsFractionTokenModule is
      *
      * Requirements:
      * - Hat must belong to this module's domain
-     * - Caller must be an admin of the specified hat
+     * - Caller must be an admin or wearer of the specified hat
      * - Wearer must currently hold the specified hat
      *
      * Reverts:
      * - InvalidHatIdForDomain: if hat doesn't belong to module's domain
-     * - CallerNotHatAdmin: if caller lacks admin permissions for the hat
+     * - CallerNotHatAdminOrWearer: if caller is neither admin nor wearer of the hat
      * - WearerDoesNotHaveHat: if wearer doesn't currently hold the hat
      */
     function _checkValidAction(uint256 _hatId, address _wearer) internal view {
@@ -364,9 +371,12 @@ contract HatsFractionTokenModule is
             revert InvalidHatIdForDomain();
         }
 
-        // Ensure the caller has admin permissions for this hat
-        if (!HATS().isAdminOfHat(msg.sender, _hatId)) {
-            revert CallerNotHatAdmin();
+        // Ensure the caller has admin permissions or is a wearer of this hat
+        if (
+            !HATS().isAdminOfHat(msg.sender, _hatId) &&
+            !HATS().isWearerOfHat(msg.sender, _hatId)
+        ) {
+            revert CallerNotHatAdminOrWearer();
         }
 
         // Ensure the wearer currently holds the specified hat

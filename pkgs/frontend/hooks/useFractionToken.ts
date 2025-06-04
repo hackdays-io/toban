@@ -411,6 +411,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
   useEffect(() => {
     const fetch = async () => {
+      if (!hatId || !wearer || !getTokenId) return;
       const _tokenId = getTokenId({
         hatId: hatId,
         account: wearer,

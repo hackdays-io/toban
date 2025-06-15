@@ -42,19 +42,13 @@ describe("HatsTimeFrameModule", () => {
   before(async () => {
     const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
     Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     const { HatsModuleFactory: _HatsModuleFactory } =
       await deployHatsModuleFactory(_Hats.address);
-    const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        "0x0000000000000000000000000000000000000001",
-        "0.0.0",
-        Create2Deployer.address,
-      );
 
     Hats = _Hats;
     HatsModuleFactory = _HatsModuleFactory;
-    HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     [address1, address2] = await viem.getWalletClients();
     address1Validated = validateAddress(address1);
@@ -69,6 +63,14 @@ describe("HatsTimeFrameModule", () => {
     topHatId = BigInt(
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
+
+    const { HatsTimeFrameModule: _HatsTimeFrameModule } =
+      await deployHatsTimeFrameModule(
+        address1Validated,
+        "0.0.0",
+        Create2Deployer.address,
+      );
+    HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     publicClient = await viem.getPublicClient();
   });

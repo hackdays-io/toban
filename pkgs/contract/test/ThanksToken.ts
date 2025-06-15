@@ -11,14 +11,12 @@ import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
+  type HatsFractionTokenModule,
   deployHatsProtocol,
   deployHatsModuleFactory,
   deployHatsTimeFrameModule,
+  deployHatsFractionTokenModule,
 } from "../helpers/deploy/Hats";
-import {
-  type FractionToken,
-  deployFractionToken,
-} from "../helpers/deploy/FractionToken";
 import {
   type ThanksToken,
   type ThanksTokenFactory,
@@ -36,7 +34,8 @@ describe("ThanksToken", () => {
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsTimeFrameModule: HatsTimeFrameModule;
-  let FractionToken: FractionToken;
+  let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
+  let HatsFractionTokenModule: HatsFractionTokenModule;
   let ThanksToken: ThanksToken;
   let ThanksTokenFactory: ThanksTokenFactory;
 
@@ -86,7 +85,15 @@ describe("ThanksToken", () => {
       );
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
-    const initData = encodeAbiParameters(
+    const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
+      await deployHatsFractionTokenModule(
+        validateAddress(deployer),
+        "0.0.0",
+        Create2Deployer.address,
+      );
+    HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
+
+    const timeFrameInitData = encodeAbiParameters(
       [{ type: "address" }],
       [validateAddress(deployer)],
     );
@@ -119,7 +126,7 @@ describe("ThanksToken", () => {
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      initData,
+      timeFrameInitData,
       BigInt(0),
     ]);
 
@@ -136,13 +143,32 @@ describe("ThanksToken", () => {
       hatsTimeFrameModuleAddress,
     );
 
-    const { FractionToken: _FractionToken } = await deployFractionToken(
-      "",
-      10000n,
-      Hats.address,
-      Create2Deployer.address,
+    // Deploy HatsFractionTokenModule
+    const fractionTokenInitData = encodeAbiParameters(
+      [{ type: "address" }, { type: "string" }, { type: "uint256" }],
+      [validateAddress(deployer), "https://example.com/fraction-token", 10000n],
     );
-    FractionToken = _FractionToken;
+
+    await HatsModuleFactory.write.createHatsModule([
+      HatsFractionTokenModule_IMPL.address,
+      topHatId,
+      "0x",
+      fractionTokenInitData,
+      BigInt(1),
+    ]);
+
+    const hatsFractionTokenModuleAddress =
+      await HatsModuleFactory.read.getHatsModuleAddress([
+        HatsFractionTokenModule_IMPL.address,
+        topHatId,
+        "0x",
+        BigInt(1),
+      ]);
+
+    HatsFractionTokenModule = await viem.getContractAt(
+      "HatsFractionTokenModule",
+      hatsFractionTokenModuleAddress,
+    );
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
       {
@@ -152,7 +178,7 @@ describe("ThanksToken", () => {
         name: "Test Thanks Token",
         symbol: "TTT",
         hatsAddress: Hats.address,
-        fractionTokenAddress: FractionToken.address,
+        fractionTokenAddress: HatsFractionTokenModule.address,
         hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
         defaultCoefficient: 1000000000000000000n, // 1.0 in wei
       },
@@ -168,7 +194,7 @@ describe("ThanksToken", () => {
             .then((addresses) => addresses[0]),
           implementation: ThanksToken.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: FractionToken.address,
+          fractionTokenAddress: HatsFractionTokenModule.address,
           hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
         },
         Create2Deployer.address,
@@ -263,7 +289,7 @@ describe("ThanksToken", () => {
           });
       }
 
-      await FractionToken.write
+      await HatsFractionTokenModule.write
         .mintInitialSupply([hatId, address1Validated, 0n], {
           account: deployer.account,
         })

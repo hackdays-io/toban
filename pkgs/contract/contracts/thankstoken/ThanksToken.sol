@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {IThanksToken} from "./IThanksToken.sol";
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
-import {IFractionToken} from "../fractiontoken/IFractionToken.sol";
+import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -16,7 +16,7 @@ contract ThanksToken is
     IThanksToken
 {
     IHats private hatsContract;
-    IFractionToken private fractionToken;
+    IHatsFractionTokenModule private fractionToken;
     IHatsTimeFrameModule private hatsTimeFrameModule;
 
     mapping(address => uint256) private _mintedAmount;
@@ -38,7 +38,7 @@ contract ThanksToken is
         __Ownable_init(_initialOwner);
         __UUPSUpgradeable_init();
         hatsContract = IHats(_hatsAddress);
-        fractionToken = IFractionToken(_fractionTokenAddress);
+        fractionToken = IHatsFractionTokenModule(_fractionTokenAddress);
         hatsTimeFrameModule = IHatsTimeFrameModule(_hatsTimeFrameModuleAddress);
         _defaultCoefficient = defaultCoefficient > 0
             ? defaultCoefficient

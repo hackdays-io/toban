@@ -99,7 +99,7 @@ const WorkspaceMember: FC = () => {
     <>
       {/* Members */}
       <Box mb={4}>
-        <Heading pb={4}>Role Members</Heading>
+        <Heading pb={4}>当番リード</Heading>
         <VStack width="full" alignItems="start" gap={3}>
           {members.map((m) => (
             <HStack key={`${m.name}m`} width="full">
@@ -135,7 +135,7 @@ const WorkspaceMember: FC = () => {
 
       {/* AssistantMembers */}
       <Box my={4}>
-        <Heading py={4}>All Contributors</Heading>
+        <Heading py={4}>サポーター</Heading>
         <VStack width="full" alignItems="start" gap={3}>
           {assistantMembers.map((m) => (
             <HStack key={`assistant_${m.name}`} width="full">

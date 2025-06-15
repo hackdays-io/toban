@@ -2,11 +2,10 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
 import "@openzeppelin/hardhat-upgrades";
-import fs from "node:fs";
 import * as dotenv from "dotenv";
 import "hardhat-gas-reporter";
-import path from "node:path";
 import type { HardhatUserConfig } from "hardhat/config";
+import "./tasks";
 
 dotenv.config();
 
@@ -19,21 +18,6 @@ const {
   BASESCAN_API_KEY,
   GAS_REPORT,
 } = process.env;
-
-// タスクファイルを読み込むための設定
-const SKIP_LOAD = process.env.SKIP_LOAD === "true";
-if (!SKIP_LOAD) {
-  const taskPaths = ["", "utils", "ens", "BigBang", "HatsTimeFrameModule"];
-  for (const folder of taskPaths) {
-    const tasksPath = path.join(__dirname, "tasks", folder);
-    const taskFiles = fs
-      .readdirSync(tasksPath)
-      .filter((_path) => _path.includes(".ts"));
-    for (const task of taskFiles) {
-      require(`${tasksPath}/${task}`);
-    }
-  }
-}
 
 const config: HardhatUserConfig = {
   solidity: {

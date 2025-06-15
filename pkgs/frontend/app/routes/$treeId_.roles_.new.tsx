@@ -8,7 +8,7 @@ import {
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { type FC, useCallback, useState } from "react";
+import { type FC, useCallback } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import type {
   HatsDetailsAttributes,
@@ -24,6 +24,7 @@ import { RoleAttributesList } from "~/components/RoleAttributesList";
 import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
+import { InputNumber } from "~/components/input/InputNumber";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
@@ -34,6 +35,7 @@ interface FormData {
   selectedImageCid: string;
   responsibilities: HatsDetailsResponsabilities;
   authorities: HatsDetailsAuthorities;
+  maxSupply: number | undefined;
 }
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -43,6 +45,8 @@ const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
 const NewRole: FC = () => {
   const { treeId } = useParams();
 
+  const defaultMaxSupply = 10;
+
   const { control, watch, handleSubmit, formState, resetField } =
     useForm<FormData>({
       defaultValues: {
@@ -50,6 +54,7 @@ const NewRole: FC = () => {
         description: "",
         responsibilities: [],
         authorities: [],
+        maxSupply: defaultMaxSupply,
       },
     });
 
@@ -106,6 +111,7 @@ const NewRole: FC = () => {
         const parsedLog = await createHat({
           parentHatId: BigInt(hatterHatId),
           details: resUploadHatsDetails?.ipfsUri,
+          maxSupply: Number(data.maxSupply),
           imageURI:
             resUploadImage?.ipfsUri ||
             (data.selectedImageCid && `ipfs://${data.selectedImageCid}`) ||
@@ -231,6 +237,22 @@ const NewRole: FC = () => {
           />
         </ContentContainer>
 
+        <SectionHeading>ロールの上限人数</SectionHeading>
+        <ContentContainer>
+          <Controller
+            control={control}
+            name="maxSupply"
+            render={({ field: { onChange, value } }) => (
+              <InputNumber
+                mt={3}
+                number={value}
+                setNumber={onChange}
+                defaultValue={defaultMaxSupply}
+              />
+            )}
+          />
+        </ContentContainer>
+
         <Box
           mt={10}
           mb="4vh"
@@ -240,7 +262,7 @@ const NewRole: FC = () => {
           alignItems="center"
         >
           <BasicButton
-            disabled={!watch("name")}
+            disabled={!watch("name") || !watch("maxSupply")}
             loading={formState.isSubmitting}
             type="submit"
           >

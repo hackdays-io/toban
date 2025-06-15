@@ -521,6 +521,41 @@ export const useHats = () => {
     [wallet],
   );
 
+  const changeHatMaxSupply = useCallback(
+    async (params: { hatId: bigint; newMaxSupply: number }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "changeHatMaxSupply",
+          args: [params.hatId, params.newMaxSupply],
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const parsedLog = parseEventLogs({
+          abi: HATS_ABI,
+          eventName: "HatMaxSupplyChanged",
+          logs: receipt.logs,
+          strict: false,
+        });
+
+        return parsedLog;
+      } catch (error) {
+        console.error("error occured when changing Hat max supply:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet],
+  );
+
   const renounceHat = useCallback(
     async (hatId: bigint) => {
       if (!wallet) return;
@@ -600,6 +635,7 @@ export const useHats = () => {
     mintHat,
     changeHatDetails,
     changeHatImageURI,
+    changeHatMaxSupply,
     renounceHat,
     transferHat,
   };

@@ -50,7 +50,9 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
     function _authorizedToOperate(
         address authority
     ) internal view returns (bool) {
-        return HATS().isWearerOfHat(authority, timeFrameTobanId);
+        return
+            HATS().isAdminOfHat(authority, timeFrameTobanId) ||
+            HATS().isWearerOfHat(authority, timeFrameTobanId);
     }
 
     /**

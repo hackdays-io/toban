@@ -39,7 +39,9 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     function _authorizedToCreateHat(
         address authority
     ) internal view returns (bool) {
-        return HATS().isWearerOfHat(authority, creatorTobanId);
+        return
+            HATS().isAdminOfHat(authority, creatorTobanId) ||
+            HATS().isWearerOfHat(authority, creatorTobanId);
     }
 
     /**

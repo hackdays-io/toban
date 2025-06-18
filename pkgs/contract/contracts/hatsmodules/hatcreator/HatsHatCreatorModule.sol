@@ -7,7 +7,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     /// @dev Mapping to track addresses with hat creation authority
-    mapping(address => bool) public createHatAuthorities;
+    mapping(address => bool) public revokedAuthorities;
+    uint256 private creatorTobanId;
 
     /**
      * @dev Constructor to initialize the contract
@@ -24,9 +25,26 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param _initData The initialization data (encoded owner address)
      */
     function _setUp(bytes calldata _initData) internal override {
-        address _owner = abi.decode(_initData, (address));
-        _grantCreateHatAuthority(_owner);
+        (address _owner, uint256 _creatorTobanId) = abi.decode(
+            _initData,
+            (address, uint256)
+        );
+        creatorTobanId = _creatorTobanId;
+        _initializeTobanToSelf(_owner);
         _transferOwnership(_owner);
+    }
+
+    /**
+     * @notice Checks if an address is authorized to create hats
+     * @param authority The address to check
+     * @return bool Whether the address is authorized
+     */
+    function _authorizedToCreateHat(
+        address authority
+    ) internal view returns (bool) {
+        return
+            !revokedAuthorities[authority] &&
+            HATS().isWearerOfHat(authority, creatorTobanId);
     }
 
     /**
@@ -37,7 +55,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     function hasCreateHatAuthority(
         address authority
     ) public view returns (bool) {
-        return createHatAuthorities[authority];
+        return _authorizedToCreateHat(authority);
     }
 
     /**
@@ -136,6 +154,18 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
     }
 
     // Internal Functions
+    /*
+     * @dev initialize toban to authority
+     *   this is similar to _grantOperationAuthority but for the
+     *   contract itself to be able to mint hats for the authority
+     * @param authority The address to grant authority to
+     */
+    function _initializeTobanToSelf(address authority) internal {
+        require(authority != address(0), "Invalid address");
+        require(creatorTobanId != 0, "Invalid Creator Toban ID");
+        require(!hasCreateHatAuthority(authority), "Already granted");
+        HATS().mintHat(creatorTobanId, authority);
+    }
 
     /**
      * @dev Grants hat creation authority to an address
@@ -143,9 +173,12 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      */
     function _grantCreateHatAuthority(address authority) internal {
         require(authority != address(0), "Invalid address");
-        require(!hasCreateHatAuthority(authority), "Already granted");
-
-        createHatAuthorities[authority] = true;
+        require(creatorTobanId != 0, "Invalid Creator Toban ID");
+        require(hasCreateHatAuthority(authority), "Already granted");
+        require(hasCreateHatAuthority(msg.sender), "Caller is not granted");
+        HATS().mintHat(creatorTobanId, authority);
+        //#YF TODO Clean up
+        // createHatAuthorities[authority] = true;
         emit CreateHatAuthorityGranted(authority);
     }
 
@@ -154,9 +187,9 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to revoke authority from
      */
     function _revokeCreateHatAuthority(address authority) internal {
-        require(hasCreateHatAuthority(authority), "Not granted");
-
-        createHatAuthorities[authority] = false;
+        require(hasCreateHatAuthority(authority), "Not yet granted");
+        require(hasCreateHatAuthority(msg.sender), "caller granted");
+        revokedAuthorities[authority] = true;
         emit CreateHatAuthorityRevoked(authority);
     }
 }

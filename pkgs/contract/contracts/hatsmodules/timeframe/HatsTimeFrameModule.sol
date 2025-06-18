@@ -6,9 +6,6 @@ import {HatsModule} from "../../hats/module/HatsModule.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
-    /// @dev Mapping to track addresses with operation authority
-    mapping(address => bool) public revokedOperationAuthorities;
-
     // hatId => wearer => wore timestamp
     mapping(uint256 => mapping(address => uint256)) public woreTime;
 
@@ -42,7 +39,6 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
             (address, uint256)
         );
         timeFrameTobanId = _timeFrameTobanId;
-        _initializeTobanToSelf(_owner);
         _transferOwnership(_owner);
     }
 
@@ -54,9 +50,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
     function _authorizedToOperate(
         address authority
     ) internal view returns (bool) {
-        return
-            !revokedOperationAuthorities[authority] &&
-            HATS().isWearerOfHat(authority, timeFrameTobanId);
+        return HATS().isWearerOfHat(authority, timeFrameTobanId);
     }
 
     /**
@@ -68,22 +62,6 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         address authority
     ) public view returns (bool) {
         return _authorizedToOperate(authority);
-    }
-
-    /**
-     * @notice Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function grantOperationAuthority(address authority) external onlyOwner {
-        _grantOperationAuthority(authority);
-    }
-
-    /**
-     * @notice Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function revokeOperationAuthority(address authority) external onlyOwner {
-        _revokeOperationAuthority(authority);
     }
 
     /**
@@ -209,54 +187,5 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         }
 
         return activeTime;
-    }
-
-    // internal functions
-
-    /*
-     * @dev initialize toban to authority
-     *   this is similar to _grantOperationAuthority but for the
-     *   contract itself to be able to mint hats for the authority
-     * @param authority The address to grant authority to
-     */
-    function _initializeTobanToSelf(address authority) internal {
-        require(authority != address(0), "Invalid address");
-        require(timeFrameTobanId != 0, "Invalid Creator Toban ID");
-        require(!hasOperationAuthority(authority), "Already granted");
-        HATS().mintHat(timeFrameTobanId, authority);
-        if (revokedOperationAuthorities[authority]) {
-            revokedOperationAuthorities[authority] = false;
-        }
-        emit OperationAuthorityGranted(authority);
-    }
-
-    /**
-     * @dev Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function _grantOperationAuthority(address authority) internal {
-        require(authority != address(0), "Invalid address");
-        require(timeFrameTobanId != 0, "Invalid Creator Toban ID");
-        require(!hasOperationAuthority(authority), "Already granted");
-        require(hasOperationAuthority(msg.sender), "Not authorized");
-        HATS().mintHat(timeFrameTobanId, authority);
-        if (revokedOperationAuthorities[authority]) {
-            revokedOperationAuthorities[authority] = false;
-        }
-        emit OperationAuthorityGranted(authority);
-    }
-
-    /**
-     * @dev Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function _revokeOperationAuthority(address authority) internal {
-        require(authority != address(0), "Invalid address");
-        require(hasOperationAuthority(authority), "Not granted");
-        require(revokedOperationAuthorities[authority], "Already revoked");
-        require(hasOperationAuthority(authority), "Not granted");
-        require(hasOperationAuthority(msg.sender), "Not authorized to revoke");
-        revokedOperationAuthorities[authority] = true;
-        emit OperationAuthorityRevoked(authority);
     }
 }

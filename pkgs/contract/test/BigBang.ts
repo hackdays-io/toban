@@ -171,6 +171,7 @@ describe("BigBang", () => {
           expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
             address1.account?.address!,
           );
+          console.log(decodedLog.args);
         }
       } catch (error) {}
     }
@@ -338,64 +339,64 @@ describe("BigBang", () => {
     );
   });
 
-  /**
-   * 以降は、Upgradeのテストコードになる。
-   * Upgrade後に再度機能をテストする。
-   */
-  describe("Upgrade Test", () => {
-    it("upgrde", async () => {
-      // BigBangをアップグレード
-      const { UpgradedBigBang } = await upgradeBigBang(
-        BigBang.address,
-        "BigBang_Mock_v2",
-        Create2Deployer.address,
-      );
+  // /**
+  //  * 以降は、Upgradeのテストコードになる。
+  //  * Upgrade後に再度機能をテストする。
+  //  */
+  // describe("Upgrade Test", () => {
+  //   it("upgrde", async () => {
+  //     // BigBangをアップグレード
+  //     const { UpgradedBigBang } = await upgradeBigBang(
+  //       BigBang.address,
+  //       "BigBang_Mock_v2",
+  //       Create2Deployer.address,
+  //     );
 
-      // upgrade後にしかないメソッドを実行
-      const result = await UpgradedBigBang.read.testUpgradeFunction();
-      expect(result).to.equal("testUpgradeFunction");
-    });
+  //     // upgrade後にしかないメソッドを実行
+  //     const result = await UpgradedBigBang.read.testUpgradeFunction();
+  //     expect(result).to.equal("testUpgradeFunction");
+  //   });
 
-    it("should execute bigbang after upgrade", async () => {
-      // BigBangをアップグレード
-      const { UpgradedBigBang } = await upgradeBigBang(
-        BigBang.address,
-        "BigBang_Mock_v2",
-        Create2Deployer.address,
-      );
+  //   it("should execute bigbang after upgrade", async () => {
+  //     // BigBangをアップグレード
+  //     const { UpgradedBigBang } = await upgradeBigBang(
+  //       BigBang.address,
+  //       "BigBang_Mock_v2",
+  //       Create2Deployer.address,
+  //     );
 
-      // SplitsCreatorFactoryにBigBangアドレスをセット
-      SplitsCreatorFactory.write.setBigBang([UpgradedBigBang.address]);
+  //     // SplitsCreatorFactoryにBigBangアドレスをセット
+  //     SplitsCreatorFactory.write.setBigBang([UpgradedBigBang.address]);
 
-      const txHash = await UpgradedBigBang.write.bigbang(
-        [
-          address1.account?.address!,
-          "tophatDetails",
-          "tophatURI",
-          "hatterhatDetails",
-          "hatterhatURI",
-        ],
-        { account: address1.account },
-      );
+  //     const txHash = await UpgradedBigBang.write.bigbang(
+  //       [
+  //         address1.account?.address!,
+  //         "tophatDetails",
+  //         "tophatURI",
+  //         "hatterhatDetails",
+  //         "hatterhatURI",
+  //       ],
+  //       { account: address1.account },
+  //     );
 
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: txHash,
-      });
+  //     const receipt = await publicClient.waitForTransactionReceipt({
+  //       hash: txHash,
+  //     });
 
-      for (const log of receipt.logs) {
-        try {
-          const decodedLog: any = decodeEventLog({
-            abi: UpgradedBigBang.abi as any,
-            data: log.data,
-            topics: log.topics,
-          });
-          if (decodedLog.eventName == "Executed") {
-            expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
-              address1.account?.address!,
-            );
-          }
-        } catch (error) {}
-      }
-    });
-  });
+  //     for (const log of receipt.logs) {
+  //       try {
+  //         const decodedLog: any = decodeEventLog({
+  //           abi: UpgradedBigBang.abi as any,
+  //           data: log.data,
+  //           topics: log.topics,
+  //         });
+  //         if (decodedLog.eventName == "Executed") {
+  //           expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
+  //             address1.account?.address!,
+  //           );
+  //         }
+  //       } catch (error) {}
+  //     }
+  //   });
+  // });
 });

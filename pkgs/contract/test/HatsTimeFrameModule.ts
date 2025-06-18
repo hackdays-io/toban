@@ -188,7 +188,7 @@ describe("HatsTimeFrameModule", () => {
 
     const currentTime1 = BigInt(await time.latest());
 
-    let expectedElapsedTime = currentTime1 - woreTime;
+    let expectedElapsedTime = currentTime1 - woreTime + 1n;
 
     let elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
       address1Validated,
@@ -201,7 +201,7 @@ describe("HatsTimeFrameModule", () => {
 
     const currentTime2 = BigInt(await time.latest());
 
-    expectedElapsedTime = currentTime2 - woreTime;
+    expectedElapsedTime = currentTime2 - woreTime + 1n;
 
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
       address1Validated,
@@ -240,7 +240,7 @@ describe("HatsTimeFrameModule", () => {
     const currentTime3 = BigInt(await time.latest());
 
     expectedElapsedTime =
-      totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
+      totalActiveTimeAfterDeactivation + (currentTime3 - woreTime) + 1n;
 
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
       address1Validated,

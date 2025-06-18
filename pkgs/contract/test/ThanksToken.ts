@@ -36,7 +36,7 @@ describe("ThanksToken", () => {
   let HatsTimeFrameModule: HatsTimeFrameModule;
   let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
   let HatsFractionTokenModule: HatsFractionTokenModule;
-  let ThanksToken: ThanksToken;
+  let DeployedThanksToken: ThanksToken;
   let ThanksTokenFactory: ThanksTokenFactory;
 
   let deployer: WalletClient;
@@ -184,7 +184,7 @@ describe("ThanksToken", () => {
       },
       Create2Deployer.address,
     );
-    ThanksToken = _ThanksToken;
+    DeployedThanksToken = _ThanksToken;
 
     const { ThanksTokenFactory: _ThanksTokenFactory } =
       await deployThanksTokenFactory(
@@ -192,7 +192,7 @@ describe("ThanksToken", () => {
           initialOwner: await deployer
             .getAddresses()
             .then((addresses) => addresses[0]),
-          implementation: ThanksToken.address,
+          implementation: DeployedThanksToken.address,
           hatsAddress: Hats.address,
           fractionTokenAddress: HatsFractionTokenModule.address,
           hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
@@ -263,9 +263,9 @@ describe("ThanksToken", () => {
   });
 
   it("should initialize with correct name, symbol and owner", async () => {
-    const name = await ThanksToken.read.name();
-    const symbol = await ThanksToken.read.symbol();
-    const owner = await ThanksToken.read.owner();
+    const name = await DeployedThanksToken.read.name();
+    const symbol = await DeployedThanksToken.read.symbol();
+    const owner = await DeployedThanksToken.read.owner();
     const deployerAddress = validateAddress(deployer);
 
     expect(name).to.equal("Test Thanks Token");
@@ -299,10 +299,10 @@ describe("ThanksToken", () => {
     });
 
     it("should have correct totalSupply", async () => {
-      let totalSupply = await ThanksToken.read.totalSupply();
+      let totalSupply = await DeployedThanksToken.read.totalSupply();
       expect(Number(totalSupply)).to.equal(0);
 
-      await ThanksToken.write.setAddressCoefficient([
+      await DeployedThanksToken.write.setAddressCoefficient([
         address1Validated,
         10000000000000000000n, // 10.0 in wei
       ]);
@@ -314,39 +314,42 @@ describe("ThanksToken", () => {
         },
       ];
 
-      const mintableAmount = await ThanksToken.read.mintableAmount([
+      const mintableAmount = await DeployedThanksToken.read.mintableAmount([
         address1Validated,
         relatedRoles,
       ]);
 
       expect(Number(mintableAmount)).to.be.equal(100);
 
-      await ThanksToken.write.mint(
+      await DeployedThanksToken.write.mint(
         [address2Validated, mintableAmount / 2n, relatedRoles],
         {
           account: address1.account,
         },
       );
 
-      totalSupply = await ThanksToken.read.totalSupply();
+      totalSupply = await DeployedThanksToken.read.totalSupply();
 
       expect(Number(totalSupply)).to.be.equal(50);
     });
 
     it("should transfer tokens correctly", async () => {
-      const initialBalance = await ThanksToken.read.balanceOf([
+      const initialBalance = await DeployedThanksToken.read.balanceOf([
         address2Validated,
       ]);
       const transferAmount = initialBalance / 2n;
 
-      await ThanksToken.write.transfer([address3Validated, transferAmount], {
-        account: address2.account,
-      });
+      await DeployedThanksToken.write.transfer(
+        [address3Validated, transferAmount],
+        {
+          account: address2.account,
+        },
+      );
 
-      const address2BalanceAfter = await ThanksToken.read.balanceOf([
+      const address2BalanceAfter = await DeployedThanksToken.read.balanceOf([
         address2Validated,
       ]);
-      const address3BalanceAfter = await ThanksToken.read.balanceOf([
+      const address3BalanceAfter = await DeployedThanksToken.read.balanceOf([
         address3Validated,
       ]);
 
@@ -355,34 +358,37 @@ describe("ThanksToken", () => {
     });
 
     it("should approve and use allowance correctly", async () => {
-      const initialBalance = await ThanksToken.read.balanceOf([
+      const initialBalance = await DeployedThanksToken.read.balanceOf([
         address2Validated,
       ]);
       const approveAmount = initialBalance / 2n;
 
-      await ThanksToken.write.approve([address3Validated, approveAmount], {
-        account: address2.account,
-      });
+      await DeployedThanksToken.write.approve(
+        [address3Validated, approveAmount],
+        {
+          account: address2.account,
+        },
+      );
 
-      const allowance = await ThanksToken.read.allowance([
+      const allowance = await DeployedThanksToken.read.allowance([
         address2Validated,
         address3Validated,
       ]);
 
       expect(allowance).to.equal(approveAmount);
 
-      await ThanksToken.write.transferFrom(
+      await DeployedThanksToken.write.transferFrom(
         [address2Validated, address3Validated, approveAmount / 2n],
         { account: address3.account },
       );
 
-      const address2BalanceAfter = await ThanksToken.read.balanceOf([
+      const address2BalanceAfter = await DeployedThanksToken.read.balanceOf([
         address2Validated,
       ]);
-      const address3BalanceAfter = await ThanksToken.read.balanceOf([
+      const address3BalanceAfter = await DeployedThanksToken.read.balanceOf([
         address3Validated,
       ]);
-      const allowanceAfter = await ThanksToken.read.allowance([
+      const allowanceAfter = await DeployedThanksToken.read.allowance([
         address2Validated,
         address3Validated,
       ]);

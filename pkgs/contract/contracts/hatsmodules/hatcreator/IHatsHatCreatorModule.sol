@@ -3,18 +3,6 @@ pragma solidity ^0.8.24;
 
 interface IHatsHatCreatorModule {
     /**
-     * @notice Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function grantCreateHatAuthority(address authority) external;
-
-    /**
-     * @notice Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function revokeCreateHatAuthority(address authority) external;
-
-    /**
      * @notice Checks if an address has hat creation authority
      * @param authority The address to check
      * @return bool Whether the address has authority

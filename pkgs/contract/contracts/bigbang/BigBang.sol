@@ -31,6 +31,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address indexed owner,
         uint256 indexed topHatId,
         uint256 hatterHatId,
+        uint256 operatorTobanId,
+        uint256 creatorTobanId,
+        uint256 timeFrameTobanId,
         address hatsTimeFrameModule,
         address hatsHatCreatorModule,
         address splitCreator
@@ -77,7 +80,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         uint256 _parentHatId,
         string memory _roleName,
         string calldata _hatterHatImageURI
-    ) internal onlyOwner returns (uint256) {
+    ) internal returns (uint256) {
         require(
             _parentHatId != 0,
             "BigBang: Parent hat ID must be greater than zero"
@@ -141,10 +144,6 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             "OperatorToban",
             _hatterHatImageURI
         );
-        Hats.mintHat(
-            operatorTobanId,
-            address(this) // Mint to the contract itself
-        );
         uint256 creatorTobanId = createToban(
             operatorTobanId,
             "HatCreatorToban",
@@ -204,6 +203,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _owner,
             topHatId,
             hatterHatId,
+            operatorTobanId,
+            creatorTobanId,
+            timeFrameTobanId,
             hatsTimeFrameModule,
             hatsHatCreatorModule,
             splitCreator

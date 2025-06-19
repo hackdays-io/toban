@@ -6,8 +6,6 @@ import {HatsModule} from "../../hats/module/HatsModule.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
-    /// @dev Mapping to track addresses with hat creation authority
-    mapping(address => bool) public revokedAuthorities;
     uint256 private creatorTobanId;
 
     /**
@@ -30,7 +28,6 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
             (address, uint256)
         );
         creatorTobanId = _creatorTobanId;
-        _initializeTobanToSelf(_owner);
         _transferOwnership(_owner);
     }
 
@@ -43,7 +40,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         address authority
     ) internal view returns (bool) {
         return
-            !revokedAuthorities[authority] &&
+            HATS().isAdminOfHat(authority, creatorTobanId) ||
             HATS().isWearerOfHat(authority, creatorTobanId);
     }
 
@@ -56,22 +53,6 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         address authority
     ) public view returns (bool) {
         return _authorizedToCreateHat(authority);
-    }
-
-    /**
-     * @notice Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function grantCreateHatAuthority(address authority) external onlyOwner {
-        _grantCreateHatAuthority(authority);
-    }
-
-    /**
-     * @notice Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function revokeCreateHatAuthority(address authority) external onlyOwner {
-        _revokeCreateHatAuthority(authority);
     }
 
     /**
@@ -151,45 +132,5 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         require(hasCreateHatAuthority(msg.sender), "Not authorized");
         HATS().changeHatMaxSupply(hatId, newMaxSupply);
         emit HatMaxSupplyChanged(hatId, newMaxSupply);
-    }
-
-    // Internal Functions
-    /*
-     * @dev initialize toban to authority
-     *   this is similar to _grantOperationAuthority but for the
-     *   contract itself to be able to mint hats for the authority
-     * @param authority The address to grant authority to
-     */
-    function _initializeTobanToSelf(address authority) internal {
-        require(authority != address(0), "Invalid address");
-        require(creatorTobanId != 0, "Invalid Creator Toban ID");
-        require(!hasCreateHatAuthority(authority), "Already granted");
-        HATS().mintHat(creatorTobanId, authority);
-    }
-
-    /**
-     * @dev Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function _grantCreateHatAuthority(address authority) internal {
-        require(authority != address(0), "Invalid address");
-        require(creatorTobanId != 0, "Invalid Creator Toban ID");
-        require(hasCreateHatAuthority(authority), "Already granted");
-        require(hasCreateHatAuthority(msg.sender), "Caller is not granted");
-        HATS().mintHat(creatorTobanId, authority);
-        //#YF TODO Clean up
-        // createHatAuthorities[authority] = true;
-        emit CreateHatAuthorityGranted(authority);
-    }
-
-    /**
-     * @dev Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function _revokeCreateHatAuthority(address authority) internal {
-        require(hasCreateHatAuthority(authority), "Not yet granted");
-        require(hasCreateHatAuthority(msg.sender), "caller granted");
-        revokedAuthorities[authority] = true;
-        emit CreateHatAuthorityRevoked(authority);
     }
 }

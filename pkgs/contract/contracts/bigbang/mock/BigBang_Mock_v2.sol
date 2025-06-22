@@ -16,6 +16,8 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
 
     ISplitsCreatorFactory public SplitsCreatorFactory;
 
+    uint32 private maxTobanSupply = 10;
+
     address public HatsTimeFrameModule_IMPL;
 
     address public HatsHatCreatorModule_IMPL;
@@ -65,6 +67,39 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
+     * @notice Creates a role hat with the given top hat ID and role name.
+     * and returns the id of the created role hat.
+     * @param _parentHatId The ID of the top hat to create the role hat under.
+     * @param _roleName The name of the role for the new hat.
+     * @param _hatterHatImageURI The image URI for the new hat.
+     */
+    function createToban(
+        uint256 _parentHatId,
+        string memory _roleName,
+        string calldata _hatterHatImageURI
+    ) internal returns (uint256) {
+        require(
+            _parentHatId != 0,
+            "BigBang: Parent hat ID must be greater than zero"
+        );
+        require(
+            bytes(_roleName).length > 0,
+            "BigBang: Role name must not be empty"
+        );
+
+        uint256 roleHatId = Hats.createHat(
+            _parentHatId,
+            _roleName,
+            maxTobanSupply,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _hatterHatImageURI
+        );
+        return roleHatId;
+    }
+
+    /**
      * @dev
      * @param _owner The address of the user who will own the topHat.
      * @param _topHatDetails The details of the topHat.
@@ -100,25 +135,42 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 3. HatsHatCreatorModuleのデプロイ
+        // 3. Create Fixed Roles under TopHat
+        uint256 operatorTobanId = createToban(
+            topHatId,
+            "OperatorToban",
+            _hatterHatImageURI
+        );
+        uint256 creatorTobanId = createToban(
+            operatorTobanId,
+            "HatCreatorToban",
+            _hatterHatImageURI
+        );
+        uint256 timeFrameTobanId = createToban(
+            operatorTobanId,
+            "TimeFrameToban",
+            _hatterHatImageURI
+        );
+
+        // 4. HatsHatCreatorModuleのデプロイ
         address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
             HatsHatCreatorModule_IMPL,
             topHatId,
             "",
-            abi.encode(_owner), // ownerを初期化データとして渡す
+            abi.encode(creatorTobanId), // ownerを初期化データとして渡す
             0
         );
 
-        // 4. HatsTimeFrameModuleのデプロイ
+        // 5. HatsTimeFrameModuleのデプロイ
         address hatsTimeFrameModule = HatsModuleFactory.createHatsModule(
             HatsTimeFrameModule_IMPL,
             topHatId,
             "",
-            abi.encode(_owner),
+            abi.encode(timeFrameTobanId),
             0
         );
 
-        // 5. HatterHatにHatModuleをMint
+        // 6. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
         hatIds[1] = hatterHatId;
@@ -132,7 +184,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         // 6. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
-        // 7. SplitCreatorをFactoryからデプロイ
+        // 8. SplitCreatorをFactoryからデプロイ
         address splitCreator = SplitsCreatorFactory
             .createSplitCreatorDeterministic(
                 topHatId,

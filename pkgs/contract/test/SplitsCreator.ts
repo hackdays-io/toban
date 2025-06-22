@@ -413,8 +413,8 @@ describe("CreateSplit", () => {
     );
 
     const initData = encodeAbiParameters(
-      [{ type: "address" }, { type: "uint256" }],
-      [address1.account?.address!, timeFrameTobanId],
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
 
     await HatsModuleFactory.write.createHatsModule([

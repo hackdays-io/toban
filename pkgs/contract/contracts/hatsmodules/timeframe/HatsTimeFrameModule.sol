@@ -3,9 +3,8 @@ pragma solidity ^0.8.24;
 
 import {IHatsTimeFrameModule} from "./IHatsTimeFrameModule.sol";
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
+contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
     // hatId => wearer => wore timestamp
     mapping(uint256 => mapping(address => uint256)) public woreTime;
 
@@ -24,22 +23,15 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
      * @dev Constructor to initialize the trusted forwarder.
      * @param _version The version of the contract.
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) {}
+    constructor(string memory _version) HatsModule(_version) {}
 
     /**
      * @dev Initializes the contract, setting up the owner
      * @param _initData The initialization data (encoded owner address)
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, uint256 _timeFrameTobanId) = abi.decode(
-            _initData,
-            (address, uint256)
-        );
+        uint256 _timeFrameTobanId = abi.decode(_initData, (uint256));
         timeFrameTobanId = _timeFrameTobanId;
-        _transferOwnership(_owner);
     }
 
     /**

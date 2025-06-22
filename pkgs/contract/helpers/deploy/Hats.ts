@@ -54,7 +54,7 @@ export const deployHatsTimeFrameModule = async (
     "HatsTimeFrameModule",
   );
   const HatsTimeFrameModuleTx =
-    await HatsTimeFrameModuleFactory.getDeployTransaction(version, tmpOwner);
+    await HatsTimeFrameModuleFactory.getDeployTransaction(version);
   const HatsTimeFrameModuleAddress = await deployContract_Create2(
     baseSalt,
     HatsTimeFrameModuleTx.data || "0x",
@@ -80,7 +80,7 @@ export const deployHatsHatCreatorModule = async (
     "HatsHatCreatorModule",
   );
   const HatsHatCreatorModuleTx =
-    await HatsHatCreatorModuleFactory.getDeployTransaction(version, tmpOwner);
+    await HatsHatCreatorModuleFactory.getDeployTransaction(version);
   const HatsHatCreatorModuleAddress = await deployContract_Create2(
     baseSalt,
     HatsHatCreatorModuleTx.data || "0x",

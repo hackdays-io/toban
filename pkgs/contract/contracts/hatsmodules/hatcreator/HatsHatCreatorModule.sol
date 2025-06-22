@@ -3,32 +3,23 @@ pragma solidity ^0.8.24;
 
 import {IHatsHatCreatorModule} from "./IHatsHatCreatorModule.sol";
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
+contract HatsHatCreatorModule is HatsModule, IHatsHatCreatorModule {
     uint256 private creatorTobanId;
 
     /**
      * @dev Constructor to initialize the contract
      * @param _version The version of the contract
-     * @param _tmpOwner The owner of the contract
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) {}
+    constructor(string memory _version) HatsModule(_version) {}
 
     /**
      * @dev Initializes the contract, setting up the owner
      * @param _initData The initialization data (encoded owner address)
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, uint256 _creatorTobanId) = abi.decode(
-            _initData,
-            (address, uint256)
-        );
+        uint256 _creatorTobanId = abi.decode(_initData, (uint256));
         creatorTobanId = _creatorTobanId;
-        _transferOwnership(_owner);
     }
 
     /**

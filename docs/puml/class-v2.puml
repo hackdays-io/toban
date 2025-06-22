@@ -176,10 +176,10 @@ BigBang --|> OwnableUpgradeable
 BigBang --|> UUPSUpgradeable
 
 HatsTimeFrameModule --|> HatsModule
-HatsTimeFrameModule --|> OwnableUpgradeable
+HatsTimeFrameModule --|> Upgradeable
 
 HatsHatCreatorModule --|> HatsModule
-HatsHatCreatorModule --|> OwnableUpgradeable
+HatsHatCreatorModule --|> Upgradeable
 
 FractionToken --|> ERC1155Upgradeable
 FractionToken --|> ERC1155SupplyUpgradeable

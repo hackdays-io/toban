@@ -122,8 +122,8 @@ describe("HatsTimeFrameModule", () => {
 
   it("deploy time frame module", async () => {
     const initData = encodeAbiParameters(
-      [{ type: "address" }, { type: "uint256" }],
-      [address1Validated, timeFrameTobanId],
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
     // HatsModuleインスタンスをデプロイ
     await HatsModuleFactory.write.createHatsModule([

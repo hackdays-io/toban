@@ -45,6 +45,41 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
     return [friendship.user1, friendship.user2];
   }, [friendship.user1, friendship.user2]);
 
+  const getRankColors = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return {
+          bg: "yellow.400",
+          color: "white",
+          cardBg: "yellow.50",
+          borderColor: "yellow.200",
+        }; // Gold
+      case 2:
+        return {
+          bg: "gray.400",
+          color: "white",
+          cardBg: "gray.50",
+          borderColor: "gray.200",
+        }; // Silver
+      case 3:
+        return {
+          bg: "orange.600",
+          color: "white",
+          cardBg: "orange.50",
+          borderColor: "orange.200",
+        }; // Bronze
+      default:
+        return {
+          bg: "purple.500",
+          color: "white",
+          cardBg: "purple.50",
+          borderColor: "purple.200",
+        }; // Default purple
+    }
+  };
+
+  const rankColors = getRankColors(rank);
+
   const { names } = useNamesByAddresses(addresses);
 
   const user1Name = useMemo(() => {
@@ -61,13 +96,13 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
       py={3}
       px={4}
       w="full"
-      borderColor="gray.200"
+      borderColor={rankColors.borderColor}
       position="relative"
-      bgColor="purple.50"
+      bgColor={rankColors.cardBg}
       borderRadius={8}
       overflow="hidden"
       border="1px solid"
-      borderBottomColor="purple.200"
+      borderBottomColor={rankColors.borderColor}
     >
       <Grid
         gridTemplateColumns="60px 1fr 100px"
@@ -82,8 +117,8 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
           w="40px"
           h="40px"
           borderRadius="full"
-          bgColor="purple.500"
-          color="white"
+          bgColor={rankColors.bg}
+          color={rankColors.color}
           fontWeight="bold"
           fontSize="lg"
         >

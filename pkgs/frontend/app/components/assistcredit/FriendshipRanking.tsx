@@ -32,12 +32,14 @@ interface FriendshipItemProps {
   treeId: string;
   friendship: FriendshipData;
   rank: number;
+  sortBy: SortType;
 }
 
 const FriendshipItem: FC<FriendshipItemProps> = ({
   treeId,
   friendship,
   rank,
+  sortBy,
 }) => {
   const addresses = useMemo(() => {
     return [friendship.user1, friendship.user2];
@@ -68,7 +70,7 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
       borderBottomColor="purple.200"
     >
       <Grid
-        gridTemplateColumns="60px 1fr 80px"
+        gridTemplateColumns="60px 1fr 100px"
         justifyContent="space-between"
         alignItems="center"
         height="100%"
@@ -89,44 +91,87 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
         </Flex>
 
         {/* Users */}
-        <Flex alignItems="center" gap={3} px={3}>
+        <Flex
+          alignItems="center"
+          justifyContent="center"
+          gap={3}
+          px={2}
+          minW="0"
+        >
           <Link to={`/${treeId}/member/${friendship.user1}`}>
-            <Flex alignItems="center" gap={2}>
+            <VStack gap={1} minW="0" alignItems="center">
               <UserIcon
-                size="30px"
+                size="32px"
                 userImageUrl={ipfs2https(user1Name?.text_records?.avatar)}
               />
-              <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              <Text
+                fontSize="xs"
+                fontWeight="medium"
+                color="gray.700"
+                maxW="70px"
+                textAlign="center"
+                overflow="hidden"
+                whiteSpace="nowrap"
+                textOverflow="ellipsis"
+              >
                 {user1Name?.name || abbreviateAddress(friendship.user1)}
               </Text>
-            </Flex>
+            </VStack>
           </Link>
 
-          <Text color="purple.500" fontWeight="bold" fontSize="lg">
+          <Text
+            color="purple.500"
+            fontWeight="bold"
+            fontSize="lg"
+            alignSelf="flex-start"
+            mt={2}
+          >
             ⟷
           </Text>
 
           <Link to={`/${treeId}/member/${friendship.user2}`}>
-            <Flex alignItems="center" gap={2}>
+            <VStack gap={1} minW="0" alignItems="center">
               <UserIcon
-                size="30px"
+                size="32px"
                 userImageUrl={ipfs2https(user2Name?.text_records?.avatar)}
               />
-              <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              <Text
+                fontSize="xs"
+                fontWeight="medium"
+                color="gray.700"
+                maxW="70px"
+                textAlign="center"
+                overflow="hidden"
+                whiteSpace="nowrap"
+                textOverflow="ellipsis"
+              >
                 {user2Name?.name || abbreviateAddress(friendship.user2)}
               </Text>
-            </Flex>
+            </VStack>
           </Link>
         </Flex>
 
         {/* Stats */}
-        <Box textAlign="center">
-          <Text fontSize="lg" fontWeight="bold" color="purple.600">
-            {friendship.totalAmount}
-          </Text>
-          <Text fontSize="xs" color="gray.500">
-            {friendship.transactionCount}回
-          </Text>
+        <Box textAlign="center" w="100px">
+          {sortBy === "totalAmount" ? (
+            <>
+              <Text fontSize="lg" fontWeight="bold" color="purple.600">
+                {friendship.totalAmount}
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                {friendship.transactionCount}回
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text fontSize="lg" fontWeight="bold" color="purple.600">
+                {friendship.transactionCount}回
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                {friendship.totalAmount}pt
+              </Text>
+            </>
+          )}
         </Box>
       </Grid>
     </Box>
@@ -233,6 +278,7 @@ export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
           key={`friendship_${friendship.user1}_${friendship.user2}`}
           friendship={friendship}
           rank={index + 1}
+          sortBy={sortBy}
         />
       ))}
     </VStack>

@@ -1,9 +1,17 @@
-import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  Grid,
+  HStack,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import { Link } from "@remix-run/react";
 import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
-import { type FC, useMemo } from "react";
+import { type FC, useMemo, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { UserIcon } from "../icon/UserIcon";
@@ -125,11 +133,14 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
   );
 };
 
+type SortType = "totalAmount" | "transactionCount";
+
 /**
  * フレンドシップランキングを表示するコンポーネント
  * 二人の間でのアシストクレジット総量と取引回数を表示
  */
 export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
+  const [sortBy, setSortBy] = useState<SortType>("totalAmount");
   const { data } = useGetTransferFractionTokens({
     where: {
       workspaceId: treeId,
@@ -169,11 +180,16 @@ export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
       }
     }
 
-    // 総量でソート
+    // ソート
     return Array.from(pairMap.values())
-      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .sort((a, b) => {
+        if (sortBy === "totalAmount") {
+          return b.totalAmount - a.totalAmount;
+        }
+        return b.transactionCount - a.transactionCount;
+      })
       .slice(0, 20); // 上位20ペアまで表示
-  }, [data]);
+  }, [data, sortBy]);
 
   if (
     !data?.transferFractionTokens ||
@@ -190,8 +206,26 @@ export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
     <VStack gap={3} mt={4}>
       <Box w="full" mb={2}>
         <Text fontSize="sm" color="gray.600" textAlign="center">
-          コミュニティ内での友情ランキング（総交換量順）
+          コミュニティ内での友情ランキング
         </Text>
+        <HStack justifyContent="center" mt={3} gap={2}>
+          <Button
+            size="sm"
+            variant={sortBy === "totalAmount" ? "solid" : "outline"}
+            colorScheme="purple"
+            onClick={() => setSortBy("totalAmount")}
+          >
+            総交換量順
+          </Button>
+          <Button
+            size="sm"
+            variant={sortBy === "transactionCount" ? "solid" : "outline"}
+            colorScheme="purple"
+            onClick={() => setSortBy("transactionCount")}
+          >
+            取引回数順
+          </Button>
+        </HStack>
       </Box>
       {friendshipData.map((friendship, index) => (
         <FriendshipItem

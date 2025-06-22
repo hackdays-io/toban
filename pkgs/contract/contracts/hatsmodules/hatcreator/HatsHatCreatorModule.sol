@@ -14,8 +14,8 @@ contract HatsHatCreatorModule is HatsModule, IHatsHatCreatorModule {
     constructor(string memory _version) HatsModule(_version) {}
 
     /**
-     * @dev Initializes the contract, setting up the owner
-     * @param _initData The initialization data (encoded owner address)
+     * @dev Initializes the contract, hold creator toban ID
+     * @param _initData The initialization data (encoded creator toban ID)
      */
     function _setUp(bytes calldata _initData) internal override {
         uint256 _creatorTobanId = abi.decode(_initData, (uint256));

@@ -26,8 +26,8 @@ contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
     constructor(string memory _version) HatsModule(_version) {}
 
     /**
-     * @dev Initializes the contract, setting up the owner
-     * @param _initData The initialization data (encoded owner address)
+     * @dev Initializes the contract, setting up TimeFrame toban ID.
+     * @param _initData The initialization data (encoded TimeFrame Toban ID).
      */
     function _setUp(bytes calldata _initData) internal override {
         uint256 _timeFrameTobanId = abi.decode(_initData, (uint256));

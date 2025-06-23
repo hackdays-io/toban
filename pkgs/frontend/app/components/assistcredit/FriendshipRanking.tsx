@@ -51,22 +51,28 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
         return {
           bg: "yellow.400",
           color: "white",
-          cardBg: "yellow.50",
-          borderColor: "yellow.200",
+          cardBg: "yellow.200",
+          borderColor: "yellow.300",
+          statsColor: "yellow.700",
+          statsFontSize: "xl",
         }; // Gold
       case 2:
         return {
           bg: "gray.400",
           color: "white",
-          cardBg: "gray.50",
-          borderColor: "gray.200",
+          cardBg: "gray.200",
+          borderColor: "gray.300",
+          statsColor: "gray.700",
+          statsFontSize: "lg",
         }; // Silver
       case 3:
         return {
           bg: "orange.600",
           color: "white",
-          cardBg: "orange.50",
-          borderColor: "orange.200",
+          cardBg: "orange.200",
+          borderColor: "orange.300",
+          statsColor: "orange.700",
+          statsFontSize: "md",
         }; // Bronze
       default:
         return {
@@ -74,6 +80,8 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
           color: "white",
           cardBg: "purple.50",
           borderColor: "purple.200",
+          statsColor: "purple.600",
+          statsFontSize: "md",
         }; // Default purple
     }
   };
@@ -190,7 +198,11 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
         <Box textAlign="center" w="100px">
           {sortBy === "totalAmount" ? (
             <>
-              <Text fontSize="lg" fontWeight="bold" color="purple.600">
+              <Text
+                fontSize={rankColors.statsFontSize}
+                fontWeight="bold"
+                color={rankColors.statsColor}
+              >
                 {friendship.totalAmount}
               </Text>
               <Text fontSize="xs" color="gray.500">
@@ -199,7 +211,11 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
             </>
           ) : (
             <>
-              <Text fontSize="lg" fontWeight="bold" color="purple.600">
+              <Text
+                fontSize={rankColors.statsFontSize}
+                fontWeight="bold"
+                color={rankColors.statsColor}
+              >
                 {friendship.transactionCount}回
               </Text>
               <Text fontSize="xs" color="gray.500">

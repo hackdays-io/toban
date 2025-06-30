@@ -26,13 +26,13 @@ export const currentChainRPCBaseURL =
       : chainId === 10
         ? [
             http(
-              `https://eth-optimism.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+              `https://opt-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
             ),
           ]
         : chainId === 8453
           ? [
               http(
-                `https://eth-base.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+                `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
               ),
             ]
           : [

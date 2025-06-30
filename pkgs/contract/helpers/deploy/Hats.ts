@@ -20,6 +20,10 @@ export type HatsHatCreatorModule = Awaited<
   ReturnType<typeof deployHatsHatCreatorModule>
 >["HatsHatCreatorModule"];
 
+export type HatsFractionTokenModule = Awaited<
+  ReturnType<typeof deployHatsFractionTokenModule>
+>["HatsFractionTokenModule"];
+
 export const deployHatsProtocol = async () => {
   const Hats = await viem.deployContract("Hats", ["test", "https://test.com"]);
 
@@ -91,4 +95,33 @@ export const deployHatsHatCreatorModule = async (
   );
 
   return { HatsHatCreatorModule };
+};
+
+export const deployHatsFractionTokenModule = async (
+  tmpOwner: Address,
+  version = "0.0.0",
+  create2DeployerAddress?: string,
+) => {
+  const HatsFractionTokenModuleFactory = await ethers.getContractFactory(
+    "HatsFractionTokenModule",
+  );
+  const HatsFractionTokenModuleTx =
+    await HatsFractionTokenModuleFactory.getDeployTransaction(
+      version,
+      tmpOwner,
+    );
+  const HatsFractionTokenModuleAddress = await deployContract_Create2(
+    baseSalt,
+    HatsFractionTokenModuleTx.data || "0x",
+    ethers.keccak256(HatsFractionTokenModuleTx.data),
+    "HatsFractionTokenModule",
+    create2DeployerAddress,
+  );
+
+  const HatsFractionTokenModule = await viem.getContractAt(
+    "HatsFractionTokenModule",
+    HatsFractionTokenModuleAddress as Address,
+  );
+
+  return { HatsFractionTokenModule };
 };

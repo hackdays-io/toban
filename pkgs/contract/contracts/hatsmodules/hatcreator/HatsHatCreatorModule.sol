@@ -90,6 +90,51 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
             );
     }
 
+    /**
+     * @notice Change the details string of an existing hat
+     * @param hatId The ID of the hat to change
+     * @param newDetails The new details string for the hat
+     * @dev Only callable by addresses with hat creation authority
+     */
+    function changeHatDetails(
+        uint256 hatId,
+        string calldata newDetails
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatDetails(hatId, newDetails);
+        emit HatDetailsChanged(hatId, newDetails);
+    }
+
+    /**
+     * @notice Change the image URI of an existing hat
+     * @param hatId The ID of the hat to change
+     * @param newImageURI The new image URI for the hat
+     * @dev Only callable by addresses with hat creation authority
+     */
+    function changeHatImageURI(
+        uint256 hatId,
+        string calldata newImageURI
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatImageURI(hatId, newImageURI);
+        emit HatImageURIChanged(hatId, newImageURI);
+    }
+
+    /**
+     * @notice Change the max supply of an existing hat
+     * @param hatId The ID of the hat to change
+     * @param newMaxSupply The new maximum supply for the hat
+     * @dev Only callable by addresses with hat creation authority
+     */
+    function changeHatMaxSupply(
+        uint256 hatId,
+        uint32 newMaxSupply
+    ) external override {
+        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        HATS().changeHatMaxSupply(hatId, newMaxSupply);
+        emit HatMaxSupplyChanged(hatId, newMaxSupply);
+    }
+
     // Internal Functions
 
     /**

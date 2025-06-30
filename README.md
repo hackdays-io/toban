@@ -72,6 +72,17 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 | 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory       |      |
 | 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory       |      |
 
+### Base
+
+| ContractAddress                            | Name                    | Memo |
+| ------------------------------------------ | ----------------------- | ---- |
+| 0xc498cCBc53FB6A31D947fF1631bF69b2F1224445 | BigBang                 |      |
+| 0xBe3eC807B3062bfbADDa16c05C060d223F727fa3 | FractionToken           |      |
+| 0x4BbA4e70437bF162F8EfB8de88E5ECb3C19e11e6 | SplitsCreatorFactory    |      |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                    |      |
+| 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory       |      |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory       |      |
+
 ## How to work
 
 - ### **setUp**

@@ -3,9 +3,8 @@ pragma solidity ^0.8.24;
 
 import {IHatsTimeFrameModule} from "./IHatsTimeFrameModule.sol";
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
+contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
     // hatId => wearer => wore timestamp
     mapping(uint256 => mapping(address => uint256)) public woreTime;
 
@@ -18,28 +17,21 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
     // hatId => wearer => isActive
     mapping(uint256 => mapping(address => bool)) public isActive;
 
-    uint256 private timeFrameTobanId;
+    uint256 private minterHatId;
 
     /**
      * @dev Constructor to initialize the trusted forwarder.
      * @param _version The version of the contract.
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) {}
+    constructor(string memory _version) HatsModule(_version) {}
 
     /**
-     * @dev Initializes the contract, setting up the owner
-     * @param _initData The initialization data (encoded owner address)
+     * @dev Initializes the contract, setting up TimeFrame toban ID.
+     * @param _initData The initialization data (encoded TimeFrame Toban ID).
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, uint256 _timeFrameTobanId) = abi.decode(
-            _initData,
-            (address, uint256)
-        );
-        timeFrameTobanId = _timeFrameTobanId;
-        _transferOwnership(_owner);
+        uint256 _minterHatId = abi.decode(_initData, (uint256));
+        minterHatId = _minterHatId;
     }
 
     /**
@@ -47,23 +39,19 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
      * @param authority The address to check
      * @return bool Whether the address is authorized
      */
-    function _authorizedToOperate(
-        address authority
-    ) internal view returns (bool) {
+    function _authorized(address authority) internal view returns (bool) {
         return
-            HATS().isAdminOfHat(authority, timeFrameTobanId) ||
-            HATS().isWearerOfHat(authority, timeFrameTobanId);
+            HATS().isAdminOfHat(authority, minterHatId) ||
+            HATS().isWearerOfHat(authority, minterHatId);
     }
 
     /**
-     * @notice Checks if an address has hat creation authority
+     * @notice Checks if an address has mint hat authority
      * @param authority The address to check
      * @return bool Whether the address has authority
      */
-    function hasOperationAuthority(
-        address authority
-    ) public view returns (bool) {
-        return _authorizedToOperate(authority);
+    function hasAuthority(address authority) public view returns (bool) {
+        return _authorized(authority);
     }
 
     /**
@@ -73,7 +61,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
      * @param time The specific timestamp when the hat was minted.
      */
     function mintHat(uint256 hatId, address wearer, uint256 time) external {
-        require(hasOperationAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
 
         _setWoreTime(wearer, hatId, time);
         isActive[hatId][wearer] = true;
@@ -92,7 +80,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
         // msg.sender should be the owner of the hat or parent hat owner
         require(isActive[hatId][wearer], "Hat is already inactive");
         require(
-            hasOperationAuthority(msg.sender) || msg.sender == wearer,
+            hasAuthority(msg.sender) || msg.sender == wearer,
             "Not authorized"
         );
         isActive[hatId][wearer] = false;
@@ -113,7 +101,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
     function reactivate(uint256 hatId, address wearer) external {
         require(!isActive[hatId][wearer], "Hat is already active");
         require(
-            hasOperationAuthority(msg.sender) || msg.sender == wearer,
+            hasAuthority(msg.sender) || msg.sender == wearer,
             "Not authorized"
         );
         isActive[hatId][wearer] = true;
@@ -124,7 +112,7 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
 
     function renounce(uint256 hatId, address wearer) external {
         require(
-            hasOperationAuthority(msg.sender) || msg.sender == wearer,
+            hasAuthority(msg.sender) || msg.sender == wearer,
             "Not authorized"
         );
 

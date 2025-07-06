@@ -7,9 +7,7 @@ interface IHatsHatCreatorModule {
      * @param authority The address to check
      * @return bool Whether the address has authority
      */
-    function hasCreateHatAuthority(
-        address authority
-    ) external view returns (bool);
+    function hasAuthority(address authority) external view returns (bool);
 
     /**
      * @notice Creates a new hat

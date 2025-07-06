@@ -3,32 +3,23 @@ pragma solidity ^0.8.24;
 
 import {IHatsHatCreatorModule} from "./IHatsHatCreatorModule.sol";
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
-    uint256 private creatorTobanId;
+contract HatsHatCreatorModule is HatsModule, IHatsHatCreatorModule {
+    uint256 private creatorHatId;
 
     /**
      * @dev Constructor to initialize the contract
      * @param _version The version of the contract
-     * @param _tmpOwner The owner of the contract
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) {}
+    constructor(string memory _version) HatsModule(_version) {}
 
     /**
-     * @dev Initializes the contract, setting up the owner
-     * @param _initData The initialization data (encoded owner address)
+     * @dev Initializes the contract, hold creator toban ID
+     * @param _initData The initialization data (encoded creator toban ID)
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, uint256 _creatorTobanId) = abi.decode(
-            _initData,
-            (address, uint256)
-        );
-        creatorTobanId = _creatorTobanId;
-        _transferOwnership(_owner);
+        uint256 _creatorHatId = abi.decode(_initData, (uint256));
+        creatorHatId = _creatorHatId;
     }
 
     /**
@@ -36,12 +27,10 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to check
      * @return bool Whether the address is authorized
      */
-    function _authorizedToCreateHat(
-        address authority
-    ) internal view returns (bool) {
+    function _authorized(address authority) internal view returns (bool) {
         return
-            HATS().isAdminOfHat(authority, creatorTobanId) ||
-            HATS().isWearerOfHat(authority, creatorTobanId);
+            HATS().isAdminOfHat(authority, creatorHatId) ||
+            HATS().isWearerOfHat(authority, creatorHatId);
     }
 
     /**
@@ -49,10 +38,8 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to check
      * @return bool Whether the address has authority
      */
-    function hasCreateHatAuthority(
-        address authority
-    ) public view returns (bool) {
-        return _authorizedToCreateHat(authority);
+    function hasAuthority(address authority) public view returns (bool) {
+        return _authorized(authority);
     }
 
     /**
@@ -75,7 +62,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         bool _mutable,
         string calldata _imageURI
     ) external returns (uint256) {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
 
         return
             HATS().createHat(
@@ -99,7 +86,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         uint256 hatId,
         string calldata newDetails
     ) external override {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
         HATS().changeHatDetails(hatId, newDetails);
         emit HatDetailsChanged(hatId, newDetails);
     }
@@ -114,7 +101,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         uint256 hatId,
         string calldata newImageURI
     ) external override {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
         HATS().changeHatImageURI(hatId, newImageURI);
         emit HatImageURIChanged(hatId, newImageURI);
     }
@@ -129,7 +116,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         uint256 hatId,
         uint32 newMaxSupply
     ) external override {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
         HATS().changeHatMaxSupply(hatId, newMaxSupply);
         emit HatMaxSupplyChanged(hatId, newMaxSupply);
     }

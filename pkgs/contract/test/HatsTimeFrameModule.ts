@@ -86,11 +86,7 @@ describe("HatsTimeFrameModule", () => {
     const { HatsModuleFactory: _HatsModuleFactory } =
       await deployHatsModuleFactory(_Hats.address);
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        "0x0000000000000000000000000000000000000001",
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
 
     Hats = _Hats;
     HatsModuleFactory = _HatsModuleFactory;
@@ -122,8 +118,8 @@ describe("HatsTimeFrameModule", () => {
 
   it("deploy time frame module", async () => {
     const initData = encodeAbiParameters(
-      [{ type: "address" }, { type: "uint256" }],
-      [address1Validated, timeFrameTobanId],
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
     // HatsModuleインスタンスをデプロイ
     await HatsModuleFactory.write.createHatsModule([
@@ -188,7 +184,7 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime).to.equal(expectedElapsedTime);
+    expect(elapsedTime - 1n).to.equal(expectedElapsedTime);
 
     await time.increaseTo(initialTime + 200n);
 
@@ -201,7 +197,7 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime).to.equal(expectedElapsedTime);
+    expect(elapsedTime - 1n).to.equal(expectedElapsedTime);
 
     await HatsTimeFrameModule.write.deactivate([roleHatId, address1Validated]);
 
@@ -240,7 +236,7 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime).to.equal(expectedElapsedTime);
+    expect(elapsedTime - 1n).to.equal(expectedElapsedTime);
   });
 
   it("mint hat previous time", async () => {

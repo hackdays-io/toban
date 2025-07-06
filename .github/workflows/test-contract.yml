@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Hardhat tests
         run: |
-          npx hardhat test > ./test-results.txt
+          pnpm test > ./test-results.txt
           echo "\`\`\`\n$(cat ./test-results.txt)" > ./comments
         working-directory: ./pkgs/contract
         env:

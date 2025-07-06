@@ -28,14 +28,7 @@ const config: HardhatUserConfig = {
           viaIR: true,
           optimizer: {
             enabled: true,
-            runs: 1,
-            details: {
-              yul: true,
-              yulDetails: {
-                stackAllocation: true,
-                optimizerSteps: "dhfoDgvulfnTUtnIf",
-              },
-            },
+            runs: 200,
           },
         },
       },

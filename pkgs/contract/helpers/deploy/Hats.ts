@@ -1,5 +1,5 @@
 import { ethers, viem } from "hardhat";
-import { type Address, zeroAddress } from "viem";
+import type { Address } from "viem";
 import { baseSalt, deployContract_Create2 } from "./Create2Factory";
 
 export type Hats = Awaited<ReturnType<typeof deployHatsProtocol>>["Hats"];
@@ -46,7 +46,6 @@ export const deployEmptyHatsModule = async () => {
 };
 
 export const deployHatsTimeFrameModule = async (
-  tmpOwner: Address,
   version = "0.0.0",
   create2DeployerAddress?: string,
 ) => {
@@ -54,7 +53,7 @@ export const deployHatsTimeFrameModule = async (
     "HatsTimeFrameModule",
   );
   const HatsTimeFrameModuleTx =
-    await HatsTimeFrameModuleFactory.getDeployTransaction(version, tmpOwner);
+    await HatsTimeFrameModuleFactory.getDeployTransaction(version);
   const HatsTimeFrameModuleAddress = await deployContract_Create2(
     baseSalt,
     HatsTimeFrameModuleTx.data || "0x",
@@ -72,7 +71,6 @@ export const deployHatsTimeFrameModule = async (
 };
 
 export const deployHatsHatCreatorModule = async (
-  tmpOwner: Address,
   version = "0.0.0",
   create2DeployerAddress?: string,
 ) => {
@@ -80,7 +78,7 @@ export const deployHatsHatCreatorModule = async (
     "HatsHatCreatorModule",
   );
   const HatsHatCreatorModuleTx =
-    await HatsHatCreatorModuleFactory.getDeployTransaction(version, tmpOwner);
+    await HatsHatCreatorModuleFactory.getDeployTransaction(version);
   const HatsHatCreatorModuleAddress = await deployContract_Create2(
     baseSalt,
     HatsHatCreatorModuleTx.data || "0x",

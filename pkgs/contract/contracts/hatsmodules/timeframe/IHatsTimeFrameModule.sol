@@ -3,16 +3,11 @@ pragma solidity ^0.8.24;
 
 interface IHatsTimeFrameModule {
     /**
-     * @notice Grants hat creation authority to an address
-     * @param authority The address to grant authority to
+     * @notice Checks if an address has mit hat authority
+     * @param authority The address to check
+     * @return bool Whether the address has authority
      */
-    function grantOperationAuthority(address authority) external;
-
-    /**
-     * @notice Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function revokeOperationAuthority(address authority) external;
+    function hasAuthority(address authority) external view returns (bool);
 
     /**
      * @dev Gets the timestamp when a specific hat was minted for a specific address.

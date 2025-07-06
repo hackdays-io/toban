@@ -16,6 +16,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
     ISplitsCreatorFactory public SplitsCreatorFactory;
 
+    uint32 private maxTobanSupply = 10;
+
     address public HatsTimeFrameModule_IMPL;
 
     address public HatsHatCreatorModule_IMPL;
@@ -29,6 +31,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address indexed owner,
         uint256 indexed topHatId,
         uint256 hatterHatId,
+        uint256 operatorHatId,
+        uint256 creatorHatId,
+        uint256 minterHatId,
         address hatsTimeFrameModule,
         address hatsHatCreatorModule,
         address splitCreator
@@ -100,25 +105,54 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 3. HatsHatCreatorModuleのデプロイ
+        // 3. Create Fixed Roles under TopHat
+        uint256 operatorHatId = Hats.createHat(
+            topHatId,
+            _hatterHatDetails,
+            5,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _hatterHatImageURI
+        );
+        uint256 creatorHatId = Hats.createHat(
+            operatorHatId,
+            _hatterHatDetails,
+            5,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _hatterHatImageURI
+        );
+        uint256 minterHatId = Hats.createHat(
+            operatorHatId,
+            _hatterHatDetails,
+            5,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _hatterHatImageURI
+        );
+
+        // 4. HatsHatCreatorModuleのデプロイ
         address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
             HatsHatCreatorModule_IMPL,
             topHatId,
             "",
-            abi.encode(_owner), // ownerを初期化データとして渡す
+            abi.encode(creatorHatId), // ownerを初期化データとして渡す
             0
         );
 
-        // 4. HatsTimeFrameModuleのデプロイ
+        // 5. HatsTimeFrameModuleのデプロイ
         address hatsTimeFrameModule = HatsModuleFactory.createHatsModule(
             HatsTimeFrameModule_IMPL,
             topHatId,
             "",
-            abi.encode(_owner), // ownerを初期化データとして渡す
+            abi.encode(minterHatId), // ownerを初期化データとして渡す
             0
         );
 
-        // 5. HatterHatにHatModuleをMint
+        // 6. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
         hatIds[1] = hatterHatId;
@@ -129,10 +163,10 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
         Hats.batchMintHats(hatIds, modules);
 
-        // 6. TopHatIdの権限を_ownerに譲渡
+        // 7. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
-        // 7. SplitCreatorをFactoryからデプロイ
+        // 8. SplitCreatorをFactoryからデプロイ
         address splitCreator = SplitsCreatorFactory
             .createSplitCreatorDeterministic(
                 topHatId,
@@ -148,6 +182,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _owner,
             topHatId,
             hatterHatId,
+            operatorHatId,
+            creatorHatId,
+            minterHatId,
             hatsTimeFrameModule,
             hatsHatCreatorModule,
             splitCreator

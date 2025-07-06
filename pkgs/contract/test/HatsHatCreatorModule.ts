@@ -29,8 +29,8 @@ describe("HatsHatCreatorModule", () => {
   let address3Validated: Address;
 
   let topHatId: bigint;
-  let operatorTobanId: bigint;
-  let hatCreatorTobanId: bigint;
+  let operatorHatId: bigint;
+  let hatCreatorHatId: bigint;
   let hatterHatId: bigint;
 
   let publicClient: PublicClient;
@@ -110,10 +110,10 @@ describe("HatsHatCreatorModule", () => {
 
     publicClient = await viem.getPublicClient();
 
-    operatorTobanId = await createHat(publicClient, topHatId, "OperatorToban");
-    hatCreatorTobanId = await createHat(
+    operatorHatId = await createHat(publicClient, topHatId, "OperatorToban");
+    hatCreatorHatId = await createHat(
       publicClient,
-      operatorTobanId,
+      operatorHatId,
       "HatCreatorToban",
     );
   });
@@ -123,7 +123,7 @@ describe("HatsHatCreatorModule", () => {
       // オーナーアドレスをエンコード
       const initData = encodeAbiParameters(
         [{ type: "uint256" }],
-        [hatCreatorTobanId],
+        [hatCreatorHatId],
       );
 
       // HatsModuleインスタンスをデプロイ
@@ -199,7 +199,7 @@ describe("HatsHatCreatorModule", () => {
       ]);
       expect(hasAuthority).to.be.false;
 
-      await Hats.write.mintHat([hatCreatorTobanId, address2Validated]);
+      await Hats.write.mintHat([hatCreatorHatId, address2Validated]);
 
       hasAuthority = await HatsHatCreatorModule.read.hasAuthority([
         address2Validated,
@@ -207,7 +207,7 @@ describe("HatsHatCreatorModule", () => {
       expect(hasAuthority).to.be.true;
 
       try {
-        await Hats.write.mintHat([hatCreatorTobanId, address2Validated]),
+        await Hats.write.mintHat([hatCreatorHatId, address2Validated]),
           expect.fail("Should have thrown AlreadyWearingHat error");
       } catch (error: any) {
         expect(error.message).to.include("AlreadyWearingHat");
@@ -221,11 +221,18 @@ describe("HatsHatCreatorModule", () => {
         address2Validated,
       ]);
       expect(hasAuthority).to.be.true;
-      //#YF TODO  権限を剥奪
-      // hasAuthority = await HatsHatCreatorModule.read.hasAuthority([
-      //   address2Validated,
-      // ]);
-      // expect(hasAuthority).to.be.false;
+
+      await Hats.write.transferHat([
+        hatCreatorHatId,
+        address2Validated,
+        address1Validated,
+      ]);
+      await Hats.write.renounceHat([hatCreatorHatId]);
+
+      hasAuthority = await HatsHatCreatorModule.read.hasAuthority([
+        address2Validated,
+      ]);
+      expect(hasAuthority).to.be.false;
     });
   });
 

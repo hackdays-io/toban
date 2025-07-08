@@ -200,6 +200,11 @@ describe("BigBang", () => {
           expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
             address1.account?.address!,
           );
+          expect(decodedLog.args.memberHatId).to.be.not.equal(null);
+          Hats.read.isWearerOfHat([
+            decodedLog.args.memberHatId,
+            BigInt(address1.account?.address!),
+          ]);
           console.log(decodedLog.args);
         }
       } catch (error) {}

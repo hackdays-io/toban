@@ -28,6 +28,43 @@ interface ContractError extends Error {
   message: string;
 }
 
+const createHat = async (
+  Hats: Hats,
+  publicClient: PublicClient,
+  topHatId: bigint,
+  roleName: string,
+): Promise<bigint> => {
+  let txHash = await Hats.write.createHat([
+    topHatId,
+    roleName,
+    100,
+    "0x0000000000000000000000000000000000004a75",
+    "0x0000000000000000000000000000000000004a75",
+    true,
+    "",
+  ]);
+  let receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  let hatId: bigint | undefined = undefined;
+  for (const log of receipt.logs) {
+    const decodedLog = decodeEventLog({
+      abi: Hats.abi,
+      data: log.data,
+      topics: log.topics,
+    });
+    if (decodedLog.eventName === "HatCreated") {
+      hatId = decodedLog.args.id;
+    }
+  }
+
+  if (!hatId) {
+    throw new Error("Hatter hat ID not found in transaction logs");
+  }
+  return hatId as bigint;
+};
+
 describe("ThanksToken", () => {
   let Create2Deployer: Create2Deployer;
   let Hats: Hats;
@@ -82,17 +119,8 @@ describe("ThanksToken", () => {
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
-      await deployHatsFractionTokenModule(
-        validateAddress(deployer),
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
-
-    const timeFrameInitData = encodeAbiParameters(
-      [{ type: "address" }],
-      [validateAddress(deployer)],
-    );
 
     const deployerAddress = validateAddress(deployer);
     const txHash = await Hats.write.mintTopHat([
@@ -118,6 +146,23 @@ describe("ThanksToken", () => {
       } catch (error) {}
     }
 
+    const operatorTobanId = await createHat(
+      Hats,
+      publicClient,
+      topHatId,
+      "OperatorToban",
+    );
+    const timeFrameHatId = await createHat(
+      Hats,
+      publicClient,
+      operatorTobanId,
+      "TimeFrameToban",
+    );
+    const timeFrameInitData = encodeAbiParameters(
+      [{ type: "uint256" }],
+      [timeFrameHatId],
+    );
+
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
@@ -141,8 +186,8 @@ describe("ThanksToken", () => {
 
     // Deploy HatsFractionTokenModule
     const fractionTokenInitData = encodeAbiParameters(
-      [{ type: "address" }, { type: "string" }, { type: "uint256" }],
-      [validateAddress(deployer), "https://example.com/fraction-token", 10000n],
+      [{ type: "string" }, { type: "uint256" }],
+      ["https://example.com/fraction-token", 10000n],
     );
 
     await HatsModuleFactory.write.createHatsModule([

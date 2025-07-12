@@ -96,7 +96,6 @@ export const deployHatsHatCreatorModule = async (
 };
 
 export const deployHatsFractionTokenModule = async (
-  tmpOwner: Address,
   version = "0.0.0",
   create2DeployerAddress?: string,
 ) => {
@@ -104,10 +103,7 @@ export const deployHatsFractionTokenModule = async (
     "HatsFractionTokenModule",
   );
   const HatsFractionTokenModuleTx =
-    await HatsFractionTokenModuleFactory.getDeployTransaction(
-      version,
-      tmpOwner,
-    );
+    await HatsFractionTokenModuleFactory.getDeployTransaction(version);
   const HatsFractionTokenModuleAddress = await deployContract_Create2(
     baseSalt,
     HatsFractionTokenModuleTx.data || "0x",

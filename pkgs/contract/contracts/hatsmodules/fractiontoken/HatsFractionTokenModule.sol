@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {ERC1155Supply} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {IHatsFractionTokenModule} from "./IHatsFractionTokenModule.sol";
@@ -22,7 +21,6 @@ import {IHatsFractionTokenModule} from "./IHatsFractionTokenModule.sol";
  */
 contract HatsFractionTokenModule is
     HatsModule,
-    Ownable,
     ERC1155,
     ERC1155Supply,
     IHatsFractionTokenModule
@@ -45,19 +43,15 @@ contract HatsFractionTokenModule is
     /**
      * @notice Initialize the contract with required parameters
      * @param _version The version of the contract for upgrade compatibility
-     * @param _tmpOwner The temporary owner of the contract (will be transferred during setup)
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) ERC1155("") {}
+    constructor(string memory _version) HatsModule(_version) ERC1155("") {}
 
     // ============ Initialization ============
 
     /**
-     * @notice Initializes the module with owner, URI, and token supply configuration
+     * @notice Initializes the module with URI, and token supply configuration
      * @dev This function is called once during module deployment via the factory
-     * @param _initData ABI-encoded data containing (address _owner, string _uri, uint256 _defaultTokenSupply)
+     * @param _initData ABI-encoded data containing (string _uri, uint256 _defaultTokenSupply)
      *
      * Requirements:
      * - The hatId must be a top hat (ensures domain isolation)
@@ -67,11 +61,12 @@ contract HatsFractionTokenModule is
      * - Sets the base URI for token metadata
      * - Sets the token supply for initial minting
      * - Extracts and stores the domain from the top hat
-     * - Transfers ownership to the specified address
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, string memory _uri, uint256 _defaultTokenSupply) = abi
-            .decode(_initData, (address, string, uint256));
+        (string memory _uri, uint256 _defaultTokenSupply) = abi.decode(
+            _initData,
+            (string, uint256)
+        );
 
         _setURI(_uri);
 
@@ -88,9 +83,6 @@ contract HatsFractionTokenModule is
 
         // Extract domain from the top hat for validation in future operations
         DOMAIN = HATS().getTopHatDomain(hatId());
-
-        // Transfer ownership to the specified address
-        _transferOwnership(_owner);
     }
 
     // ============ Minting Functions ============

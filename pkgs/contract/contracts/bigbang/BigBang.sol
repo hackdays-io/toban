@@ -94,7 +94,6 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _hatterHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
-
         uint256 topHatId = Hats.mintTopHat(
             address(this), // target: Tophat's wearer address. topHatのみがHatterHatを作成できるためTophatを指定する
             _topHatDetails,
@@ -102,7 +101,6 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         );
 
         // 2. HatterHatの作成
-
         uint256 hatterHatId = Hats.createHat(
             topHatId, // _admin: The id of the Hat that will control who wears the newly created hat
             _hatterHatDetails,
@@ -165,7 +163,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             HatsFractionTokenModule_IMPL,
             topHatId,
             "",
-            abi.encode(_owner, "", 10_000),
+            abi.encode("", 10_000),
             0
         );
 

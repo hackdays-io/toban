@@ -155,16 +155,12 @@ describe("SplitsCreator Factory", () => {
     );
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
-      await deployHatsFractionTokenModule(
-        address1.account?.address!,
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
 
     const timeFrameInitData = encodeAbiParameters(
-      [{ type: "address" }],
-      [address1.account?.address!],
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
 
     await HatsModuleFactory.write.createHatsModule([
@@ -190,12 +186,8 @@ describe("SplitsCreator Factory", () => {
 
     // Deploy HatsFractionTokenModule
     const fractionTokenInitData = encodeAbiParameters(
-      [{ type: "address" }, { type: "string" }, { type: "uint256" }],
-      [
-        address1.account?.address!,
-        "https://example.com/fraction-token",
-        10000n,
-      ],
+      [{ type: "string" }, { type: "uint256" }],
+      ["https://example.com/fraction-token", 10000n],
     );
 
     await HatsModuleFactory.write.createHatsModule([
@@ -428,11 +420,7 @@ describe("CreateSplit", () => {
     );
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
-      await deployHatsFractionTokenModule(
-        address1.account?.address!,
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
 
     const timeFrameInitData = encodeAbiParameters(
@@ -463,12 +451,8 @@ describe("CreateSplit", () => {
 
     // Deploy HatsFractionTokenModule
     const fractionTokenInitData = encodeAbiParameters(
-      [{ type: "address" }, { type: "string" }, { type: "uint256" }],
-      [
-        address1.account?.address!,
-        "https://example.com/fraction-token",
-        10000n,
-      ],
+      [{ type: "string" }, { type: "uint256" }],
+      ["https://example.com/fraction-token", 10000n],
     );
 
     await HatsModuleFactory.write.createHatsModule([

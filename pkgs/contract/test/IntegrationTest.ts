@@ -95,19 +95,11 @@ describe("IntegrationTest", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        await deployer.getAddresses().then((addresses) => addresses[0]),
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const { HatsHatCreatorModule: _HatsHatCreatorModule } =
-      await deployHatsHatCreatorModule(
-        await deployer.getAddresses().then((addresses) => addresses[0]),
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsHatCreatorModule("0.0.0", Create2Deployer.address);
     HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =

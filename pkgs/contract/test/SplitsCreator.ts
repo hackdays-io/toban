@@ -38,6 +38,43 @@ import {
   deployCreate2Deployer,
 } from "../helpers/deploy/Create2Factory";
 
+const createHat = async (
+  Hats: Hats,
+  publicClient: PublicClient,
+  topHatId: bigint,
+  roleName: string,
+): Promise<bigint> => {
+  let txHash = await Hats.write.createHat([
+    topHatId,
+    roleName,
+    100,
+    "0x0000000000000000000000000000000000004a75",
+    "0x0000000000000000000000000000000000004a75",
+    true,
+    "",
+  ]);
+  let receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  let hatId: bigint | undefined = undefined;
+  for (const log of receipt.logs) {
+    const decodedLog = decodeEventLog({
+      abi: Hats.abi,
+      data: log.data,
+      topics: log.topics,
+    });
+    if (decodedLog.eventName === "HatCreated") {
+      hatId = decodedLog.args.id;
+    }
+  }
+
+  if (!hatId) {
+    throw new Error("Hatter hat ID not found in transaction logs");
+  }
+  return hatId as bigint;
+};
+
 describe("SplitsCreator Factory", () => {
   let Create2Deployer: Create2Deployer;
   let Hats: Hats;
@@ -70,6 +107,10 @@ describe("SplitsCreator Factory", () => {
       await deployHatsModuleFactory(Hats.address);
     HatsModuleFactory = _HatsModuleFactory;
 
+    const { HatsTimeFrameModule: _HatsTimeFrameModule } =
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
+    HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
+
     const {
       SplitsWarehouse: _SplitsWarehouse,
       PullSplitsFactory: _PullSplitsFactory,
@@ -94,17 +135,24 @@ describe("SplitsCreator Factory", () => {
       "https://test.com/tophat.png",
     ]);
 
+    let publicClient = await viem.getPublicClient();
+
     topHatId = BigInt(
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
-
-    const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        address1.account?.address!,
-        "0.0.0",
-        Create2Deployer.address,
-      );
-    HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
+    // Operator Tobanを作成
+    let operatorTobanId = await createHat(
+      Hats,
+      publicClient,
+      topHatId,
+      "OperatorToban",
+    );
+    let timeFrameTobanId = await createHat(
+      Hats,
+      publicClient,
+      operatorTobanId,
+      "TimeFrameToban",
+    );
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
       await deployHatsFractionTokenModule(
@@ -306,6 +354,10 @@ describe("CreateSplit", () => {
       await deployHatsModuleFactory(Hats.address);
     HatsModuleFactory = _HatsModuleFactory;
 
+    const { HatsTimeFrameModule: _HatsTimeFrameModule } =
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
+    HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
+
     const {
       SplitsWarehouse: _SplitsWarehouse,
       PullSplitsFactory: _PullSplitsFactory,
@@ -326,23 +378,54 @@ describe("CreateSplit", () => {
 
     publicClient = await viem.getPublicClient();
 
-    await Hats.write.mintTopHat([
+    let txHash = await Hats.write.mintTopHat([
       address1.account?.address!,
       "Description",
       "https://test.com/tophat.png",
     ]);
 
-    topHatId = BigInt(
-      "0x0000000100000000000000000000000000000000000000000000000000000000",
+    // Wait for the transaction receipt
+    let receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    // Extract the TopHat ID from the logs
+    let topHatId: bigint | undefined = undefined;
+    for (const log of receipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: Hats.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName === "HatCreated") {
+          topHatId = decodedLog.args.id;
+          break; // TopHat will be the first hat created
+        }
+      } catch (error) {
+        // Handle any errors that occur during decoding
+        console.error("Error decoding log:", error);
+        throw error; // Continue to the next log if decoding fails
+      }
+    }
+
+    // Operator Tobanを作成
+    let operatorTobanId = await createHat(
+      Hats,
+      publicClient,
+      topHatId!,
+      "OperatorToban",
     );
 
-    const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        address1.account?.address!,
-        "0.0.0",
-        Create2Deployer.address,
-      );
-    HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
+    // Assign Operator Toban to address1
+    await Hats.write.mintHat([operatorTobanId, address1.account?.address!]);
+
+    let timeFrameTobanId = await createHat(
+      Hats,
+      publicClient,
+      operatorTobanId,
+      "TimeFrameToban",
+    );
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
       await deployHatsFractionTokenModule(
@@ -353,13 +436,13 @@ describe("CreateSplit", () => {
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
 
     const timeFrameInitData = encodeAbiParameters(
-      [{ type: "address" }],
-      [address1.account?.address!],
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
 
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
-      topHatId,
+      topHatId!,
       "0x",
       timeFrameInitData,
       BigInt(0),
@@ -368,7 +451,7 @@ describe("CreateSplit", () => {
     const hatsTimeFrameModuleAddress =
       await HatsModuleFactory.read.getHatsModuleAddress([
         HatsTimeFrameModule_IMPL.address,
-        topHatId,
+        topHatId!,
         "0x",
         BigInt(0),
       ]);
@@ -390,7 +473,7 @@ describe("CreateSplit", () => {
 
     await HatsModuleFactory.write.createHatsModule([
       HatsFractionTokenModule_IMPL.address,
-      topHatId,
+      topHatId!,
       "0x",
       fractionTokenInitData,
       BigInt(1),
@@ -399,7 +482,7 @@ describe("CreateSplit", () => {
     const hatsFractionTokenModuleAddress =
       await HatsModuleFactory.read.getHatsModuleAddress([
         HatsFractionTokenModule_IMPL.address,
-        topHatId,
+        topHatId!,
         "0x",
         BigInt(1),
       ]);
@@ -421,20 +504,19 @@ describe("CreateSplit", () => {
       bigBangAddress.account?.address!,
     ]);
 
-    let txHash =
-      await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
-        [
-          topHatId,
-          Hats.address,
-          PullSplitsFactory.address,
-          HatsTimeFrameModule.address,
-          HatsFractionTokenModule.address,
-          keccak256("0x1234"),
-        ],
-        { account: bigBangAddress.account },
-      );
+    txHash = await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
+      [
+        topHatId!,
+        Hats.address,
+        PullSplitsFactory.address,
+        HatsTimeFrameModule.address,
+        hatsFractionTokenModuleAddress,
+        keccak256("0x1234"),
+      ],
+      { account: bigBangAddress.account },
+    );
 
-    let receipt = await publicClient.waitForTransactionReceipt({
+    receipt = await publicClient.waitForTransactionReceipt({
       hash: txHash,
     });
 
@@ -455,7 +537,7 @@ describe("CreateSplit", () => {
     }
 
     txHash = await Hats.write.createHat([
-      topHatId,
+      topHatId!,
       "hatterHat",
       3,
       "0x0000000000000000000000000000000000004a75",

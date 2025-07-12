@@ -32,7 +32,7 @@ contract ThanksToken is
         address _hatsAddress,
         address _fractionTokenAddress,
         address _hatsTimeFrameModuleAddress,
-        uint256 defaultCoefficient
+        uint256 _initialDefaultCoefficient
     ) public initializer {
         __ERC20_init(_name, _symbol);
         __Ownable_init(_initialOwner);
@@ -40,8 +40,8 @@ contract ThanksToken is
         hatsContract = IHats(_hatsAddress);
         fractionToken = IHatsFractionTokenModule(_fractionTokenAddress);
         hatsTimeFrameModule = IHatsTimeFrameModule(_hatsTimeFrameModuleAddress);
-        _defaultCoefficient = defaultCoefficient > 0
-            ? defaultCoefficient
+        _defaultCoefficient = _initialDefaultCoefficient > 0
+            ? _initialDefaultCoefficient
             : 1e18;
     }
 

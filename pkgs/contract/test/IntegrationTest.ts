@@ -11,18 +11,22 @@ import {
 import BigBangJson from "../artifacts/contracts/bigbang/BigBang.sol/BigBang.json";
 import { type BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
-  type FractionToken,
-  deployFractionToken,
-} from "../helpers/deploy/FractionToken";
+  type ThanksToken,
+  type ThanksTokenFactory,
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../helpers/deploy/ThanksToken";
 import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
   type HatsHatCreatorModule,
+  type HatsFractionTokenModule,
   deployHatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
+  deployHatsFractionTokenModule,
 } from "../helpers/deploy/Hats";
 import {
   type PullSplitsFactory,
@@ -45,15 +49,18 @@ describe("IntegrationTest", () => {
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsHatCreatorModule_IMPL: HatsHatCreatorModule;
+  let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
-  let FractionToken: FractionToken;
+  let ThanksToken_IMPL: ThanksToken;
+  let ThanksTokenFactory: ThanksTokenFactory;
   let BigBang: BigBang;
   let HatsTimeFrameModuleByBigBang: HatsTimeFrameModule;
   let HatsHatCreatorModuleByBigBang: HatsHatCreatorModule;
+  let HatsFractionTokenModuleByBigBang: HatsFractionTokenModule;
   let SplitsCreatorByBigBang: SplitsCreator;
   let DeployedPullSplit: Awaited<ReturnType<typeof getPullSplitContract>>;
 
@@ -74,6 +81,9 @@ describe("IntegrationTest", () => {
   };
 
   before(async () => {
+    [deployer, address1, address2, address3] = await viem.getWalletClients();
+    publicClient = await viem.getPublicClient();
+
     const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
     Create2Deployer = _Create2Deployer;
 
@@ -92,6 +102,14 @@ describe("IntegrationTest", () => {
       await deployHatsHatCreatorModule("0.0.0", Create2Deployer.address);
     HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
+    const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
+      await deployHatsFractionTokenModule(
+        await deployer.getAddresses().then((addresses) => addresses[0]),
+        "0.0.0",
+        Create2Deployer.address,
+      );
+    HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
+
     const {
       SplitsWarehouse: _SplitsWarehouse,
       PullSplitsFactory: _PullSplitsFactory,
@@ -102,13 +120,36 @@ describe("IntegrationTest", () => {
     PullSplitsFactory = _PullSplitsFactory;
     PushSplitsFactory = _PushSplitsFactory;
 
-    const { FractionToken: _FractionToken } = await deployFractionToken(
-      "",
-      10000n,
-      Hats.address,
+    const { ThanksToken: _ThanksToken } = await deployThanksToken(
+      {
+        initialOwner: await deployer
+          .getAddresses()
+          .then((addresses) => addresses[0]),
+        name: "Test Thanks Token",
+        symbol: "TTT",
+        hatsAddress: Hats.address,
+        fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
+        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
+      },
       Create2Deployer.address,
     );
-    FractionToken = _FractionToken;
+    ThanksToken_IMPL = _ThanksToken;
+
+    const { ThanksTokenFactory: _ThanksTokenFactory } =
+      await deployThanksTokenFactory(
+        {
+          initialOwner: await deployer
+            .getAddresses()
+            .then((addresses) => addresses[0]),
+          implementation: ThanksToken_IMPL.address,
+          hatsAddress: Hats.address,
+          fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
+          hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
+        },
+        Create2Deployer.address,
+      );
+    ThanksTokenFactory = _ThanksTokenFactory;
 
     const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
       Create2Deployer.address,
@@ -122,10 +163,6 @@ describe("IntegrationTest", () => {
       );
 
     SplitsCreatorFactory = _SplitsCreatorFactory;
-
-    [deployer, address1, address2, address3] = await viem.getWalletClients();
-
-    publicClient = await viem.getPublicClient();
   });
 
   it("should deploy BigBang", async () => {
@@ -135,9 +172,10 @@ describe("IntegrationTest", () => {
         hatsModuleFacotryAddress: HatsModuleFactory.address,
         hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
         hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
+        hatsFractionTokenModule_impl: HatsFractionTokenModule_IMPL.address,
         splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
         splitsFactoryV2Address: PullSplitsFactory.address,
-        fractionTokenAddress: FractionToken.address,
+        thanksTokenFactoryAddress: ThanksTokenFactory.address,
       },
       Create2Deployer.address,
     );
@@ -149,6 +187,9 @@ describe("IntegrationTest", () => {
 
   it("should execute bigbang", async () => {
     await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+
+    // ThanksTokenFactoryにBigBangアドレスをセット
+    await ThanksTokenFactory.write.setBigBang([BigBang.address]);
 
     const txHash = await BigBang.write.bigbang(
       [
@@ -182,6 +223,8 @@ describe("IntegrationTest", () => {
             decodedLog.args.hatsTimeFrameModule;
           const hatsHatCreatorModuleAddress =
             decodedLog.args.hatsHatCreatorModule;
+          const hatsFractionTokenModuleAddress =
+            decodedLog.args.hatsFractionTokenModule;
           const splitsCreatorAddress = decodedLog.args.splitCreator;
 
           topHatId = decodedLog.args.topHatId;
@@ -194,6 +237,10 @@ describe("IntegrationTest", () => {
           HatsHatCreatorModuleByBigBang = await viem.getContractAt(
             "HatsHatCreatorModule",
             hatsHatCreatorModuleAddress,
+          );
+          HatsFractionTokenModuleByBigBang = await viem.getContractAt(
+            "HatsFractionTokenModule",
+            hatsFractionTokenModuleAddress,
           );
 
           SplitsCreatorByBigBang = await viem.getContractAt(
@@ -269,50 +316,55 @@ describe("IntegrationTest", () => {
 
   it("should mint FractionToken", async () => {
     // address1,address2にtokenをmint
-    await FractionToken.write.mintInitialSupply([
+    await HatsFractionTokenModuleByBigBang.write.mintInitialSupply([
       hat1_id,
       address1.account?.address!,
       0n,
     ]);
-    await FractionToken.write.mintInitialSupply([
+    await HatsFractionTokenModuleByBigBang.write.mintInitialSupply([
       hat1_id,
       address2.account?.address!,
       0n,
     ]);
 
     // Check balance for address1
-    const balance1 = await FractionToken.read.balanceOf([
-      address1.account?.address!,
-      address1.account?.address!,
+    const tokenId1 = await HatsFractionTokenModuleByBigBang.read.getTokenId([
       hat1_id,
+      address1.account?.address!,
+    ]);
+    const balance1 = await HatsFractionTokenModuleByBigBang.read.balanceOf([
+      address1.account?.address!,
+      tokenId1,
     ]);
     expect(balance1).to.equal(10000n);
 
     // Check balance for address2
-    const balance2 = await FractionToken.read.balanceOf([
-      address2.account?.address!,
-      address2.account?.address!,
+    const tokenId2 = await HatsFractionTokenModuleByBigBang.read.getTokenId([
       hat1_id,
+      address2.account?.address!,
+    ]);
+    const balance2 = await HatsFractionTokenModuleByBigBang.read.balanceOf([
+      address2.account?.address!,
+      tokenId2,
     ]);
     expect(balance2).to.equal(10000n);
 
     // Check that address3 has no balance yet
-    const balance3 = await FractionToken.read.balanceOf([
+    const balance3 = await HatsFractionTokenModuleByBigBang.read.balanceOf([
       address3.account?.address!,
-      address2.account?.address!,
-      hat1_id,
+      tokenId1,
     ]);
     expect(balance3).to.equal(0n);
   });
 
   it("should transfer and burn tokens", async () => {
-    const tokenId = await FractionToken.read.getTokenId([
+    const tokenId = await HatsFractionTokenModuleByBigBang.read.getTokenId([
       hat1_id,
       address1.account?.address!,
     ]);
 
     // address1のtokenの一部をaddress3に移動
-    await FractionToken.write.safeTransferFrom(
+    await HatsFractionTokenModuleByBigBang.write.safeTransferFrom(
       [
         address1.account?.address!,
         address3.account?.address!,
@@ -328,26 +380,27 @@ describe("IntegrationTest", () => {
     let balance: bigint;
 
     // address1のbalance
-    balance = await FractionToken.read.balanceOf([
+    balance = await HatsFractionTokenModuleByBigBang.read.balanceOf([
       address1.account?.address!,
-      address1.account?.address!,
-      hat1_id,
+      tokenId,
     ]);
     expect(balance).to.equal(9000n);
 
     // address2のbalance
-    balance = await FractionToken.read.balanceOf([
-      address2.account?.address!,
-      address2.account?.address!,
+    const tokenId2 = await HatsFractionTokenModuleByBigBang.read.getTokenId([
       hat1_id,
+      address2.account?.address!,
+    ]);
+    balance = await HatsFractionTokenModuleByBigBang.read.balanceOf([
+      address2.account?.address!,
+      tokenId2,
     ]);
     expect(balance).to.equal(10000n);
 
     // address3のbalance
-    balance = await FractionToken.read.balanceOf([
+    balance = await HatsFractionTokenModuleByBigBang.read.balanceOf([
       address3.account?.address!,
-      address1.account?.address!,
-      hat1_id,
+      tokenId,
     ]);
     expect(balance).to.equal(1000n);
   });

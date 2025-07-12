@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {IHatsModuleFactory} from "./IHatsModuleFactory.sol";
 import {ISplitsCreatorFactory} from "../splitscreator/ISplitsCreatorFactory.sol";
+import {IThanksTokenFactory} from "../thankstoken/IThanksTokenFactory.sol";
 import {HatsTimeFrameModule} from "../hatsmodules/timeframe/HatsTimeFrameModule.sol";
 import {HatsHatCreatorModule} from "../hatsmodules/hatcreator/HatsHatCreatorModule.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -22,9 +23,11 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
     address public HatsHatCreatorModule_IMPL;
 
+    address public HatsFractionTokenModule_IMPL;
+
     address public SplitsFactoryV2;
 
-    address public FractionToken;
+    address public ThanksTokenFactory;
 
     event Executed(
         address indexed creator,
@@ -36,7 +39,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         uint256 minterHatId,
         address hatsTimeFrameModule,
         address hatsHatCreatorModule,
-        address splitCreator
+        address hatsFractionTokenModule,
+        address splitCreator,
+        address thanksToken
     );
 
     /**
@@ -45,9 +50,10 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
      * @param _hatsModuleFactory Address of the hats module factory contract.
      * @param _hatsTimeFrameModule_IMPL Address of the hats time frame module implementation contract.
      * @param _hatsHatCreatorModule_IMPL Address of the hats hat creator module implementation contract.
+     * @param _hatsFractionTokenModule_IMPL Address of the fraction token contract.
      * @param _splitsCreatorFactory Address of the splits creator factory contract.
      * @param _splitFactoryV2 Address of the split factory V2 contract.
-     * @param _fractionToken Address of the fraction token contract.
+     * @param _thanksTokenFactory Address of the thanks token factory contract.
      */
     function initialize(
         address _initialOwner,
@@ -55,18 +61,20 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsModuleFactory,
         address _hatsTimeFrameModule_IMPL,
         address _hatsHatCreatorModule_IMPL,
+        address _hatsFractionTokenModule_IMPL,
         address _splitsCreatorFactory,
         address _splitFactoryV2,
-        address _fractionToken
+        address _thanksTokenFactory
     ) public initializer {
         __Ownable_init(_initialOwner);
         Hats = IHats(_hatsAddress);
         HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
         HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
         HatsHatCreatorModule_IMPL = _hatsHatCreatorModule_IMPL;
+        HatsFractionTokenModule_IMPL = _hatsFractionTokenModule_IMPL;
         SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
         SplitsFactoryV2 = _splitFactoryV2;
-        FractionToken = _fractionToken;
+        ThanksTokenFactory = _thanksTokenFactory;
     }
 
     /**
@@ -152,7 +160,16 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 6. HatterHatにHatModuleをMint
+        // 6. HatsHatFractionTokenModuleのデプロイ
+        address hatsFractionTokenModule = HatsModuleFactory.createHatsModule(
+            HatsFractionTokenModule_IMPL,
+            topHatId,
+            "",
+            abi.encode(_owner, "", 10_000),
+            0
+        );
+
+        // 7. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
         hatIds[1] = hatterHatId;
@@ -163,18 +180,28 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
         Hats.batchMintHats(hatIds, modules);
 
-        // 7. TopHatIdの権限を_ownerに譲渡
+        // 8. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
-        // 8. SplitCreatorをFactoryからデプロイ
+        // 9. SplitCreatorをFactoryからデプロイ
         address splitCreator = SplitsCreatorFactory
             .createSplitCreatorDeterministic(
                 topHatId,
                 address(Hats),
                 SplitsFactoryV2,
                 hatsTimeFrameModule,
-                FractionToken,
+                hatsFractionTokenModule,
                 keccak256(abi.encodePacked(topHatId))
+            );
+
+        // 10. ThanksTokenをFactoryからデプロイ
+        address thanksToken = IThanksTokenFactory(ThanksTokenFactory)
+            .createThanksTokenDeterministic(
+                string(abi.encodePacked("ThanksToken ", _topHatDetails)),
+                string(abi.encodePacked("THX", topHatId)),
+                _owner,
+                1e18, // デフォルト係数（1.0）
+                keccak256(abi.encodePacked(topHatId, "ThanksToken"))
             );
 
         emit Executed(
@@ -187,7 +214,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             minterHatId,
             hatsTimeFrameModule,
             hatsHatCreatorModule,
-            splitCreator
+            hatsFractionTokenModule,
+            splitCreator,
+            thanksToken
         );
 
         return topHatId;
@@ -221,12 +250,20 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         HatsHatCreatorModule_IMPL = _hatsHatCreatorModuleImpl;
     }
 
+    function setHatsFractionTokenModuleImpl(
+        address _hatsFractionTokenModuleImpl
+    ) external onlyOwner {
+        HatsFractionTokenModule_IMPL = _hatsFractionTokenModuleImpl;
+    }
+
     function setSplitsFactoryV2(address _splitsFactoryV2) external onlyOwner {
         SplitsFactoryV2 = _splitsFactoryV2;
     }
 
-    function setFractionToken(address _fractionToken) external onlyOwner {
-        FractionToken = _fractionToken;
+    function setThanksTokenFactory(
+        address _thanksTokenFactory
+    ) external onlyOwner {
+        ThanksTokenFactory = _thanksTokenFactory;
     }
 
     function _authorizeUpgrade(

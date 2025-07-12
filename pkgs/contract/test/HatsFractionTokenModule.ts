@@ -211,9 +211,9 @@ describe("HatsFractionTokenModule", () => {
       expect(await HatsFractionTokenModule.read.getDomain()).to.equal(1);
 
       // トークン供給量はエンコードした初期データと一致
-      expect(await HatsFractionTokenModule.read.getTokenSupply()).to.equal(
-        10000n,
-      );
+      expect(
+        await HatsFractionTokenModule.read.DEFAULT_TOKEN_SUPPLY(),
+      ).to.equal(10000n);
     });
 
     it("should mint tokens correctly", async () => {

@@ -103,11 +103,7 @@ describe("IntegrationTest", () => {
     HatsHatCreatorModule_IMPL = _HatsHatCreatorModule;
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
-      await deployHatsFractionTokenModule(
-        await deployer.getAddresses().then((addresses) => addresses[0]),
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
 
     const {

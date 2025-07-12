@@ -76,11 +76,7 @@ describe("HatsFractionTokenModule", () => {
     );
 
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
-      await deployHatsFractionTokenModule(
-        address1Validated,
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
 
     publicClient = await viem.getPublicClient();
@@ -90,8 +86,8 @@ describe("HatsFractionTokenModule", () => {
     it("should deploy fraction token module", async () => {
       // オーナーアドレス、トークンURI、トークン供給量をエンコード
       const initData = encodeAbiParameters(
-        [{ type: "address" }, { type: "string" }, { type: "uint256" }],
-        [address1Validated, "https://example.com/fraction-token", 10000n],
+        [{ type: "string" }, { type: "uint256" }],
+        ["https://example.com/fraction-token", 10000n],
       );
 
       // アシストクレジットのモジュールをデプロイ
@@ -197,11 +193,6 @@ describe("HatsFractionTokenModule", () => {
     });
 
     it("should have valid owner, token URI, domain, and token supply", async () => {
-      // オーナーアドレスはエンコードした初期データと一致
-      expect(
-        (await HatsFractionTokenModule.read.owner()).toLowerCase(),
-      ).to.equal(address1Validated.toLowerCase());
-
       // トークンURIはエンコードした初期データと一致
       expect(await HatsFractionTokenModule.read.uri([0n])).to.equal(
         "https://example.com/fraction-token",

@@ -62,7 +62,7 @@ contract ThanksToken is
         // Mint tokens
         _mint(to, amount);
 
-        emit TokensMinted(to, amount);
+        emit TokenMinted(msg.sender, to, amount);
 
         return true;
     }

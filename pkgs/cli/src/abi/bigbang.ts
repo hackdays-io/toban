@@ -151,6 +151,16 @@ export const BIGBANG_ABI = [
         type: "string",
       },
       {
+        internalType: "string",
+        name: "_memberHatDetails",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "_memberHatImageURI",
+        type: "string",
+      },
+      {
         internalType: "address",
         name: "_trustedForwarder",
         type: "address",

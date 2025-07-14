@@ -8,6 +8,8 @@ interface BigBangTaskArgs {
   tophatimageuri: string;
   hatterhatdetails: string;
   hatterhatimageuri: string;
+  memberhatdetails: string;
+  memberhatimageuri: string;
 }
 
 /**
@@ -19,6 +21,8 @@ task("bigbang", "bigbang")
   .addParam("tophatimageuri", "The image URI of the topHat.")
   .addParam("hatterhatdetails", "The details of the hatterHat.")
   .addParam("hatterhatimageuri", "The image URI of the hatterHat.")
+  .addParam("memberhatdetails", "The details of the memberHat.")
+  .addParam("memberhatimageuri", "The image URI of the memberHat.")
   .setAction(
     async (taskArgs: BigBangTaskArgs, hre: HardhatRuntimeEnvironment) => {
       console.log(
@@ -46,6 +50,8 @@ task("bigbang", "bigbang")
         taskArgs.tophatimageuri,
         taskArgs.hatterhatdetails,
         taskArgs.hatterhatimageuri,
+        taskArgs.memberhatdetails,
+        taskArgs.memberhatimageuri,
       ]);
 
       console.log(`tx: ${tx}`);

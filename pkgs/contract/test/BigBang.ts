@@ -181,6 +181,8 @@ describe("BigBang", () => {
         "tophatURI",
         "hatterhatDetails",
         "hatterhatURI",
+        "memberhatDetails",
+        "memberhatURI",
       ],
       { account: address1.account },
     );
@@ -415,6 +417,8 @@ describe("BigBang", () => {
   //         "tophatURI",
   //         "hatterhatDetails",
   //         "hatterhatURI",
+  //         "memberhatDetails",
+  //         "memberhatURI",
   //       ],
   //       { account: address1.account },
   //     );

@@ -84,7 +84,9 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _topHatDetails,
         string calldata _topHatImageURI,
         string calldata _hatterHatDetails,
-        string calldata _hatterHatImageURI
+        string calldata _hatterHatImageURI,
+        string calldata _memberHatDetails,
+        string calldata _memberHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
 
@@ -107,17 +109,14 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         );
 
         // 3. Create Member Hat ID
-        string memory defaultMemberHatName = "Member Hat for Organization";
-        string memory defaultMemberHatImage = _hatterHatImageURI;
-
         uint256 memberHatId = Hats.createHat(
             hatterHatId,
-            defaultMemberHatName,
+            _memberHatDetails,
             2,
             0x0000000000000000000000000000000000004A75,
             0x0000000000000000000000000000000000004A75,
             true,
-            defaultMemberHatImage
+            _memberHatImageURI
         );
 
         Hats.mintHat(memberHatId, _owner);

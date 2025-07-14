@@ -85,6 +85,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
      * @param _topHatImageURI The image URI of the topHat.
      * @param _hatterHatDetails The details of the hatterHat.
      * @param _hatterHatImageURI The image URI of the hatterHat.
+     * @param _memberHatDetails The details of the memberHat.
+     * @param _memberHatImageURI The image URI of the memberHat.
      * @return topHatId The ID used for navigating to the ProjectTop page after project creation.
      */
     function bigbang(
@@ -92,7 +94,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _topHatDetails,
         string calldata _topHatImageURI,
         string calldata _hatterHatDetails,
-        string calldata _hatterHatImageURI
+        string calldata _hatterHatImageURI,
+        string calldata _memberHatDetails,
+        string calldata _memberHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
         uint256 topHatId = Hats.mintTopHat(
@@ -113,17 +117,14 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         );
 
         // 3. Create Member Hat ID
-        string memory defaultMemberHatName = "Member Hat for Organization";
-        string memory defaultMemberHatImage = _hatterHatImageURI;
-
         uint256 memberHatId = Hats.createHat(
             hatterHatId,
-            defaultMemberHatName,
+            _memberHatDetails,
             2,
             0x0000000000000000000000000000000000004A75,
             0x0000000000000000000000000000000000004A75,
             true,
-            defaultMemberHatImage
+            _memberHatImageURI
         );
 
         Hats.mintHat(memberHatId, _owner);

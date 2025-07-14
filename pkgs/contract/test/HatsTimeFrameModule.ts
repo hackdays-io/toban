@@ -184,7 +184,18 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime - 1n).to.equal(expectedElapsedTime);
+    /**
+     * Using increaseTo, it sets the next block’s timestamp,
+     * but if you immediately query the time or run a transaction,
+     * the block may not be mined at exactly that timestamp,
+     * or the contract may use the previous block’s timestamp.
+     */
+
+    expect(elapsedTime).to.oneOf([
+      expectedElapsedTime,
+      expectedElapsedTime + 1n,
+      expectedElapsedTime - 1n,
+    ]);
 
     await time.increaseTo(initialTime + 200n);
 
@@ -197,7 +208,11 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime - 1n).to.equal(expectedElapsedTime);
+    expect(elapsedTime).to.oneOf([
+      expectedElapsedTime,
+      expectedElapsedTime + 1n,
+      expectedElapsedTime - 1n,
+    ]);
 
     await HatsTimeFrameModule.write.deactivate([roleHatId, address1Validated]);
 
@@ -216,7 +231,11 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime).to.equal(expectedElapsedTime);
+    expect(elapsedTime).to.oneOf([
+      expectedElapsedTime,
+      expectedElapsedTime + 1n,
+      expectedElapsedTime - 1n,
+    ]);
 
     // Reactivate the hat
     await HatsTimeFrameModule.write.reactivate([roleHatId, address1Validated]);
@@ -236,7 +255,11 @@ describe("HatsTimeFrameModule", () => {
       roleHatId,
     ]);
 
-    expect(elapsedTime - 1n).to.equal(expectedElapsedTime);
+    expect(elapsedTime).to.oneOf([
+      expectedElapsedTime,
+      expectedElapsedTime + 1n,
+      expectedElapsedTime - 1n,
+    ]);
   });
 
   it("mint hat previous time", async () => {

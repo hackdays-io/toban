@@ -112,7 +112,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         uint256 memberHatId = Hats.createHat(
             hatterHatId,
             _memberHatDetails,
-            2,
+            99,
             0x0000000000000000000000000000000000004A75,
             0x0000000000000000000000000000000000004A75,
             true,

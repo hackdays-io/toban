@@ -34,6 +34,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address indexed owner,
         uint256 indexed topHatId,
         uint256 hatterHatId,
+        uint256 memberHatId,
         uint256 operatorHatId,
         uint256 creatorHatId,
         uint256 minterHatId,
@@ -84,6 +85,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
      * @param _topHatImageURI The image URI of the topHat.
      * @param _hatterHatDetails The details of the hatterHat.
      * @param _hatterHatImageURI The image URI of the hatterHat.
+     * @param _memberHatDetails The details of the memberHat.
+     * @param _memberHatImageURI The image URI of the memberHat.
      * @return topHatId The ID used for navigating to the ProjectTop page after project creation.
      */
     function bigbang(
@@ -91,7 +94,9 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _topHatDetails,
         string calldata _topHatImageURI,
         string calldata _hatterHatDetails,
-        string calldata _hatterHatImageURI
+        string calldata _hatterHatImageURI,
+        string calldata _memberHatDetails,
+        string calldata _memberHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
         uint256 topHatId = Hats.mintTopHat(
@@ -111,7 +116,20 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 3. Create Fixed Roles under TopHat
+        // 3. Create Member Hat ID
+        uint256 memberHatId = Hats.createHat(
+            hatterHatId,
+            _memberHatDetails,
+            99,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _memberHatImageURI
+        );
+
+        Hats.mintHat(memberHatId, _owner);
+
+        // 4. Create Fixed Roles under TopHat
         uint256 operatorHatId = Hats.createHat(
             topHatId,
             _hatterHatDetails,
@@ -121,6 +139,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             true,
             _hatterHatImageURI
         );
+
         uint256 creatorHatId = Hats.createHat(
             operatorHatId,
             _hatterHatDetails,
@@ -140,7 +159,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 4. HatsHatCreatorModuleのデプロイ
+        // 5. HatsHatCreatorModuleのデプロイ
         address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
             HatsHatCreatorModule_IMPL,
             topHatId,
@@ -149,7 +168,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 5. HatsTimeFrameModuleのデプロイ
+        // 6. HatsTimeFrameModuleのデプロイ
         address hatsTimeFrameModule = HatsModuleFactory.createHatsModule(
             HatsTimeFrameModule_IMPL,
             topHatId,
@@ -158,7 +177,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 6. HatsHatFractionTokenModuleのデプロイ
+        // 7. HatsHatFractionTokenModuleのデプロイ
         address hatsFractionTokenModule = HatsModuleFactory.createHatsModule(
             HatsFractionTokenModule_IMPL,
             topHatId,
@@ -167,7 +186,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 7. HatterHatにHatModuleをMint
+        // 8. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
         hatIds[1] = hatterHatId;
@@ -178,10 +197,10 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
         Hats.batchMintHats(hatIds, modules);
 
-        // 8. TopHatIdの権限を_ownerに譲渡
+        // 9. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
-        // 9. SplitCreatorをFactoryからデプロイ
+        // 10. SplitCreatorをFactoryからデプロイ
         address splitCreator = SplitsCreatorFactory
             .createSplitCreatorDeterministic(
                 topHatId,
@@ -192,7 +211,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
                 keccak256(abi.encodePacked(topHatId))
             );
 
-        // 10. ThanksTokenをFactoryからデプロイ
+        // 11. ThanksTokenをFactoryからデプロイ
         address thanksToken = IThanksTokenFactory(ThanksTokenFactory)
             .createThanksTokenDeterministic(
                 string(abi.encodePacked("ThanksToken ", _topHatDetails)),
@@ -207,6 +226,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _owner,
             topHatId,
             hatterHatId,
+            memberHatId,
             operatorHatId,
             creatorHatId,
             minterHatId,

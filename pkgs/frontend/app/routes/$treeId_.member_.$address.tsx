@@ -356,7 +356,7 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
     <Box mt={10} mb={12}>
       <Flex justifyContent="space-between" alignItems="center" mb={4}>
         <Text fontSize="md" fontWeight="medium" color="gray.600">
-          {["144", "175"].includes(treeId || "")
+          {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
             : "アシストクレジット"}
           履歴

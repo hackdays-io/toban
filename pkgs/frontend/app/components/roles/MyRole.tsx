@@ -33,7 +33,7 @@ export const MyRole: FC<MyRoleProps> = (params) => {
             navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`)
           }
         >
-          {["144", "175"].includes(treeId || "")
+          {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
             : "アシストクレジット"}
           を送る

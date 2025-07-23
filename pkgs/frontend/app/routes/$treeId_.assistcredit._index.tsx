@@ -43,7 +43,7 @@ const WorkspaceWithBalance: FC = () => {
   return (
     <Box>
       <Heading pb={5}>
-        {["144", "175"].includes(treeId || "")
+        {["144", "175", "780"].includes(treeId || "")
           ? "ケアポイント"
           : "アシストクレジット"}
         の残高

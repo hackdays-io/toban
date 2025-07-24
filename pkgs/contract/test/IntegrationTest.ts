@@ -412,6 +412,12 @@ describe("IntegrationTest", () => {
           multiplierTop: 1n,
         },
       ],
+      {
+        roleWeight: 1n,
+        thanksTokenWeight: 0n,
+        thanksTokenReceivedWeight: 95n,
+        thanksTokenSentWeight: 5n,
+      },
     ]);
 
     const receipt = await publicClient.waitForTransactionReceipt({

@@ -764,6 +764,12 @@ describe("CreateSplit", () => {
           multiplierTop: 2n,
         },
       ],
+      {
+        roleWeight: 1n,
+        thanksTokenWeight: 0n,
+        thanksTokenReceivedWeight: 95n,
+        thanksTokenSentWeight: 5n,
+      },
     ]);
 
     const endWoreTime = await publicClient
@@ -964,7 +970,17 @@ describe("CreateSplit", () => {
       },
     ];
 
-    const previewResult = await SplitsCreator.read.preview([splitsInfo]);
+    const weightsInfo = {
+      roleWeight: 1n,
+      thanksTokenWeight: 0n,
+      thanksTokenReceivedWeight: 95n,
+      thanksTokenSentWeight: 5n,
+    };
+
+    const previewResult = await SplitsCreator.read.preview([
+      splitsInfo,
+      weightsInfo,
+    ]);
 
     const shareHolders = previewResult[0];
     const allocations = previewResult[1];

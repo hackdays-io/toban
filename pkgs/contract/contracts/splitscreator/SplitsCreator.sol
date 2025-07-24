@@ -10,9 +10,8 @@ import {IThanksToken} from "../thankstoken/IThanksToken.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
-import {Ownable} from "../splits/utils/Ownable.sol";
 
-contract SplitsCreator is ISplitsCreator, Clone, Ownable {
+contract SplitsCreator is ISplitsCreator, Clone {
     uint256 public roleWeight = 1;
     uint256 public thanksTokenWeight = 1;
 
@@ -38,19 +37,6 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
 
     function THANKS_TOKEN() public pure returns (IThanksToken) {
         return IThanksToken(_getArgAddress(140));
-    }
-
-    /**
-     * @notice Set the weights for role-based and Thanks Token-based calculations.
-     * @param _roleWeight The weight for role-based calculation.
-     * @param _thanksTokenWeight The weight for Thanks Token-based calculation.
-     */
-    function setWeights(
-        uint256 _roleWeight,
-        uint256 _thanksTokenWeight
-    ) external onlyOwner {
-        roleWeight = _roleWeight;
-        thanksTokenWeight = _thanksTokenWeight;
     }
 
     /**
@@ -180,28 +166,12 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
                     _splitInfo.hatId
                 );
 
-                uint256 roleBasedScore = wearerBalance *
+                uint256 wearerScore = wearerBalance *
                     roleMultiplier *
                     hatsTimeFrameMultiplier;
 
-                // --- Thanks Token based score calculation ---
-                uint256 thanksTokenBasedScore = 0;
-                if (address(THANKS_TOKEN()) != address(0)) {
-                    uint256 received = THANKS_TOKEN().balanceOf(
-                        _splitInfo.wearers[j]
-                    );
-                    uint256 sent = THANKS_TOKEN().mintedAmount(
-                        _splitInfo.wearers[j]
-                    );
-                    // Holding ratio 95%, Liquidity provider ratio 5%
-                    thanksTokenBasedScore = received * 95 + sent * 5;
-                }
-                // --- End of Thanks Token based score calculation ---
-
-                uint256 finalScore = (roleBasedScore * roleWeight) + (thanksTokenBasedScore * thanksTokenWeight);
-
                 shareHolders[shareHolderIndex] = _splitInfo.wearers[j];
-                allocations[shareHolderIndex] = finalScore;
+                allocations[shareHolderIndex] = wearerScore;
 
                 shareHolderIndex++;
 
@@ -222,23 +192,12 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
                         _splitInfo.hatId
                     );
 
-                    uint256 recipientRoleBasedScore = recipientBalance *
+                    uint256 recipientScore = recipientBalance *
                         roleMultiplier *
                         hatsTimeFrameMultiplier;
 
-                    // --- Thanks Token based score for recipients ---
-                    uint256 recipientThanksTokenBasedScore = 0;
-                    if (address(THANKS_TOKEN()) != address(0)) {
-                        uint256 received = THANKS_TOKEN().balanceOf(recipients[k]);
-                        uint256 sent = THANKS_TOKEN().mintedAmount(recipients[k]);
-                        recipientThanksTokenBasedScore = received * 95 + sent * 5;
-                    }
-                    // --- End of Thanks Token based score for recipients ---
-
-                    uint256 recipientFinalScore = (recipientRoleBasedScore * roleWeight) + (recipientThanksTokenBasedScore * thanksTokenWeight);
-
                     shareHolders[shareHolderIndex] = recipients[k];
-                    allocations[shareHolderIndex] = recipientFinalScore;
+                    allocations[shareHolderIndex] = recipientScore;
                     shareHolderIndex++;
                 }
             }

@@ -50,7 +50,8 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
                 _hats,
                 _splitFactoryV2,
                 _hatsTimeFrameModule,
-                _fractionToken
+                _fractionToken,
+                _thanksToken
             ),
             _getSalt(
                 _topHatId,

@@ -12,9 +12,6 @@ import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModul
 import {Clone} from "solady/src/utils/Clone.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
-    uint256 public roleWeight = 1;
-    uint256 public thanksTokenWeight = 1;
-
     function HATS() public pure returns (IHats) {
         return IHats(_getArgAddress(12));
     }
@@ -139,6 +136,10 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
         shareHolders = new address[](numOfShareHolders);
         allocations = new uint256[](numOfShareHolders);
+        uint256[] memory roleBasedAllocations = new uint256[](numOfShareHolders);
+        uint256[] memory thanksBasedAllocations = new uint256[](numOfShareHolders);
+        uint256 thanksBasedScoreNorm = 0;
+
         uint256 shareHolderIndex = 0;
 
         for (uint256 i = 0; i < _splitsInfo.length; i++) {
@@ -171,7 +172,10 @@ contract SplitsCreator is ISplitsCreator, Clone {
                     hatsTimeFrameMultiplier;
 
                 shareHolders[shareHolderIndex] = _splitInfo.wearers[j];
-                allocations[shareHolderIndex] = wearerScore;
+                roleBasedAllocations[shareHolderIndex] = wearerScore;
+                uint256 thanksBasedScore = getThanksTokenScore(_splitInfo.wearers[j]);
+                thanksBasedAllocations[shareHolderIndex] = thanksBasedScore;
+                thanksBasedScoreNorm += thanksBasedScore;
 
                 shareHolderIndex++;
 
@@ -197,16 +201,33 @@ contract SplitsCreator is ISplitsCreator, Clone {
                         hatsTimeFrameMultiplier;
 
                     shareHolders[shareHolderIndex] = recipients[k];
-                    allocations[shareHolderIndex] = recipientScore;
+                    roleBasedAllocations[shareHolderIndex] = recipientScore;
+                    thanksBasedScore = getThanksTokenScore(recipients[k]);
+                    thanksBasedAllocations[shareHolderIndex] = thanksBasedScore;
+                    thanksBasedScoreNorm += thanksBasedScore;
+
                     shareHolderIndex++;
                 }
             }
 
+            uint256 _roleWeight = 1;
+            uint256 _thanksTokenWeight = 0;
+
             for (uint256 l = 0; l < allocations.length; l++) {
                 if (l >= currentShareHolderIndex && l < shareHolderIndex) {
-                    allocations[l] =
-                        (allocations[l] * 10e5) /
+                    uint256 _roleBasedAllocation = 0;
+                    if (fractionTokenSupply > 0) {
+                        _roleBasedAllocation =
+                        (roleBasedAllocations[l] * 10e5) /
                         fractionTokenSupply;
+                    }
+                    uint256 _thanksBasedAllocation = 0;
+                    if (thanksBasedScoreNorm > 0) {
+                        _thanksBasedAllocation =
+                            (thanksBasedAllocations[l] * 10e5) /
+                            thanksBasedScoreNorm;
+                    }
+                    allocations[l] = (_roleBasedAllocation * _roleWeight + _thanksBasedAllocation * _thanksTokenWeight) / (_roleWeight + _thanksTokenWeight);
                 }
             }
         }
@@ -217,6 +238,17 @@ contract SplitsCreator is ISplitsCreator, Clone {
         }
 
         return (shareHolders, allocations, totalAllocation);
+    }
+
+    function getThanksTokenScore(
+        address _account
+    ) public view returns (uint256) {
+        uint256 thanksTokenReceivedWeight = 95;
+        uint256 thanksTokenSentWeight = 5;
+        if (address(THANKS_TOKEN()) == address(0)) return 0;
+        return
+            (THANKS_TOKEN().balanceOf(_account) * thanksTokenReceivedWeight +
+            THANKS_TOKEN().mintedAmount(_account) * thanksTokenSentWeight) / (thanksTokenReceivedWeight + thanksTokenSentWeight);
     }
 
     function _getHatsTimeFrameMultiplier(

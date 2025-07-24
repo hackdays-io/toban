@@ -13,9 +13,8 @@ import {Clone} from "solady/src/utils/Clone.sol";
 import {Ownable} from "../splits/utils/Ownable.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone, Ownable {
-    uint256 public roleWeight;
-    uint256 public thanksTokenWeight;
-    IThanksToken public thanksToken;
+    uint256 public roleWeight = 1;
+    uint256 public thanksTokenWeight = 1;
 
     function HATS() public pure returns (IHats) {
         return IHats(_getArgAddress(12));
@@ -37,6 +36,10 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
         return IHatsFractionTokenModule(_getArgAddress(108));
     }
 
+    function THANKS_TOKEN() public pure returns (IThanksToken) {
+        return IThanksToken(_getArgAddress(140));
+    }
+
     /**
      * @notice Set the weights for role-based and Thanks Token-based calculations.
      * @param _roleWeight The weight for role-based calculation.
@@ -48,14 +51,6 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
     ) external onlyOwner {
         roleWeight = _roleWeight;
         thanksTokenWeight = _thanksTokenWeight;
-    }
-
-    /**
-     * @notice Set the ThanksToken contract address.
-     * @param _thanksToken The address of the ThanksToken contract.
-     */
-    function setThanksToken(address _thanksToken) external onlyOwner {
-        thanksToken = IThanksToken(_thanksToken);
     }
 
     /**
@@ -191,11 +186,11 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
 
                 // --- Thanks Token based score calculation ---
                 uint256 thanksTokenBasedScore = 0;
-                if (address(thanksToken) != address(0)) {
-                    uint256 received = thanksToken.balanceOf(
+                if (address(THANKS_TOKEN()) != address(0)) {
+                    uint256 received = THANKS_TOKEN().balanceOf(
                         _splitInfo.wearers[j]
                     );
-                    uint256 sent = thanksToken.mintedAmount(
+                    uint256 sent = THANKS_TOKEN().mintedAmount(
                         _splitInfo.wearers[j]
                     );
                     // Holding ratio 95%, Liquidity provider ratio 5%
@@ -233,9 +228,9 @@ contract SplitsCreator is ISplitsCreator, Clone, Ownable {
 
                     // --- Thanks Token based score for recipients ---
                     uint256 recipientThanksTokenBasedScore = 0;
-                    if (address(thanksToken) != address(0)) {
-                        uint256 received = thanksToken.balanceOf(recipients[k]);
-                        uint256 sent = thanksToken.mintedAmount(recipients[k]);
+                    if (address(THANKS_TOKEN()) != address(0)) {
+                        uint256 received = THANKS_TOKEN().balanceOf(recipients[k]);
+                        uint256 sent = THANKS_TOKEN().mintedAmount(recipients[k]);
                         recipientThanksTokenBasedScore = received * 95 + sent * 5;
                     }
                     // --- End of Thanks Token based score for recipients ---

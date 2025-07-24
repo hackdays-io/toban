@@ -34,6 +34,10 @@ import {
 import { upgradeSplitsCreatorFacotry } from "../helpers/upgrade/splitsCreatorFactory";
 import { sqrt } from "../helpers/util/sqrt";
 import {
+  type ThanksToken,
+  deployThanksToken,
+} from "../helpers/deploy/ThanksToken";
+import {
   Create2Deployer,
   deployCreate2Deployer,
 } from "../helpers/deploy/Create2Factory";
@@ -89,6 +93,7 @@ describe("SplitsCreator Factory", () => {
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
   let SplitsCreator: SplitsCreator;
+  let ThanksToken: ThanksToken;
 
   let address1: WalletClient;
   let bigBangAddress: WalletClient;
@@ -210,6 +215,20 @@ describe("SplitsCreator Factory", () => {
       "HatsFractionTokenModule",
       hatsFractionTokenModuleAddress,
     );
+
+    const { ThanksToken: _ThanksToken } = await deployThanksToken(
+      {
+        initialOwner: address1.account?.address!,
+        name: "Test Thanks Token",
+        symbol: "TTT",
+        hatsAddress: Hats.address,
+        fractionTokenAddress: HatsFractionTokenModule.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
+        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
+      },
+      Create2Deployer.address,
+    );
+    ThanksToken = _ThanksToken;
   });
 
   it("Should deploy SplitsCreatorFactory", async () => {
@@ -230,6 +249,7 @@ describe("SplitsCreator Factory", () => {
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
+        ThanksToken.address,
         keccak256("0x1234"),
       ]),
     ).to.be.a("string");
@@ -249,6 +269,7 @@ describe("SplitsCreator Factory", () => {
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
+        ThanksToken.address,
         keccak256("0x1234"),
       ]);
 
@@ -259,6 +280,7 @@ describe("SplitsCreator Factory", () => {
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
+        ThanksToken.address,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -316,6 +338,7 @@ describe("CreateSplit", () => {
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
   let SplitsCreator: SplitsCreator;
+  let ThanksToken: ThanksToken;
 
   let address1: WalletClient;
   let address2: WalletClient;
@@ -476,6 +499,20 @@ describe("CreateSplit", () => {
       hatsFractionTokenModuleAddress,
     );
 
+    const { ThanksToken: _ThanksToken } = await deployThanksToken(
+      {
+        initialOwner: address1.account?.address!,
+        name: "Test Thanks Token",
+        symbol: "TTT",
+        hatsAddress: Hats.address,
+        fractionTokenAddress: HatsFractionTokenModule.address,
+        hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
+        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
+      },
+      Create2Deployer.address,
+    );
+    ThanksToken = _ThanksToken;
+
     const { SplitsCreatorFactory: _SplitsCreatorFactory } =
       await deploySplitsCreatorFactory(
         SplitsCreator_IMPL.address,
@@ -495,6 +532,7 @@ describe("CreateSplit", () => {
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
         hatsFractionTokenModuleAddress,
+        ThanksToken.address,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -750,11 +788,12 @@ describe("CreateSplit", () => {
           data: log.data,
           topics: log.topics,
         });
-        if (decodedLog.eventName == "SplitsCreated")
+        if (decodedLog.eventName == "SplitsCreated") {
           splitAddress = decodedLog.args.split;
-        shareHolders = decodedLog.args.shareHolders;
-        allocations = decodedLog.args.allocations;
-        totalAllocation = decodedLog.args.totalAllocation;
+          shareHolders = decodedLog.args.shareHolders;
+          allocations = decodedLog.args.allocations;
+          totalAllocation = decodedLog.args.totalAllocation;
+        }
       } catch (error) {
         shareHolders = [];
         allocations = [];

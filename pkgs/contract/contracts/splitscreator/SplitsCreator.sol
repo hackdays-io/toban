@@ -6,6 +6,7 @@ import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {ISplitsCreator} from "./ISplitsCreator.sol";
 import {ISplitFactoryV2} from "../splits/interfaces/ISplitFactoryV2.sol";
 import {SplitV2Lib} from "../splits/libraries/SplitV2.sol";
+import {IThanksToken} from "../thankstoken/IThanksToken.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
@@ -31,19 +32,24 @@ contract SplitsCreator is ISplitsCreator, Clone {
         return IHatsFractionTokenModule(_getArgAddress(108));
     }
 
+    function THANKS_TOKEN() public pure returns (IThanksToken) {
+        return IThanksToken(_getArgAddress(140));
+    }
+
     /**
      * @notice Creates a new split contract based on the provided splits information.
      * @param _splitsInfo An array of SplitsInfo structs containing details about roles, wearers, and multipliers.
      * @return The address of the newly created split contract.
      */
     function create(
-        SplitsInfo[] memory _splitsInfo
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo
     ) external returns (address) {
         (
             address[] memory shareHolders,
             uint256[] memory allocations,
             uint256 totalAllocation
-        ) = _calculateAllocations(_splitsInfo);
+        ) = _calculateAllocations(_splitsInfo, _weightsInfo);
 
         require(
             shareHolders.length > 1,
@@ -77,7 +83,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
      * @return totalAllocation Sum of all allocations.
      */
     function preview(
-        SplitsInfo[] memory _splitsInfo
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo
     )
         external
         view
@@ -88,7 +95,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
         )
     {
         (shareHolders, allocations, totalAllocation) = _calculateAllocations(
-            _splitsInfo
+            _splitsInfo,
+            _weightsInfo
         );
     }
 
@@ -100,7 +108,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
      * @return totalAllocation Sum of all allocations.
      */
     function _calculateAllocations(
-        SplitsInfo[] memory _splitsInfo
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo
     )
         internal
         view
@@ -131,6 +140,15 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
         shareHolders = new address[](numOfShareHolders);
         allocations = new uint256[](numOfShareHolders);
+        uint256[] memory roleBasedAllocations = new uint256[](numOfShareHolders);
+        uint256[] memory thanksBasedAllocations = new uint256[](numOfShareHolders);
+        uint256 thanksBasedScoreNorm = 0;
+
+        uint256 _roleWeight = _weightsInfo.roleWeight;
+        uint256 _thanksTokenWeight = _weightsInfo.thanksTokenWeight;
+        uint256 _thanksTokenReceivedWeight = _weightsInfo.thanksTokenReceivedWeight;
+        uint256 _thanksTokenSentWeight = _weightsInfo.thanksTokenSentWeight;
+
         uint256 shareHolderIndex = 0;
 
         for (uint256 i = 0; i < _splitsInfo.length; i++) {
@@ -163,7 +181,10 @@ contract SplitsCreator is ISplitsCreator, Clone {
                     hatsTimeFrameMultiplier;
 
                 shareHolders[shareHolderIndex] = _splitInfo.wearers[j];
-                allocations[shareHolderIndex] = wearerScore;
+                roleBasedAllocations[shareHolderIndex] = wearerScore;
+                uint256 thanksBasedScore = getThanksTokenScore(_splitInfo.wearers[j], _thanksTokenReceivedWeight, _thanksTokenSentWeight);
+                thanksBasedAllocations[shareHolderIndex] = thanksBasedScore;
+                thanksBasedScoreNorm += thanksBasedScore;
 
                 shareHolderIndex++;
 
@@ -189,16 +210,30 @@ contract SplitsCreator is ISplitsCreator, Clone {
                         hatsTimeFrameMultiplier;
 
                     shareHolders[shareHolderIndex] = recipients[k];
-                    allocations[shareHolderIndex] = recipientScore;
+                    roleBasedAllocations[shareHolderIndex] = recipientScore;
+                    thanksBasedScore = getThanksTokenScore(recipients[k], _thanksTokenReceivedWeight, _thanksTokenSentWeight);
+                    thanksBasedAllocations[shareHolderIndex] = thanksBasedScore;
+                    thanksBasedScoreNorm += thanksBasedScore;
+
                     shareHolderIndex++;
                 }
             }
 
             for (uint256 l = 0; l < allocations.length; l++) {
                 if (l >= currentShareHolderIndex && l < shareHolderIndex) {
-                    allocations[l] =
-                        (allocations[l] * 10e5) /
+                    uint256 _roleBasedAllocation = 0;
+                    if (fractionTokenSupply > 0) {
+                        _roleBasedAllocation =
+                        (roleBasedAllocations[l] * 10e5) /
                         fractionTokenSupply;
+                    }
+                    uint256 _thanksBasedAllocation = 0;
+                    if (thanksBasedScoreNorm > 0) {
+                        _thanksBasedAllocation =
+                            (thanksBasedAllocations[l] * 10e5) /
+                            thanksBasedScoreNorm;
+                    }
+                    allocations[l] = (_roleBasedAllocation * _roleWeight + _thanksBasedAllocation * _thanksTokenWeight) / (_roleWeight + _thanksTokenWeight);
                 }
             }
         }
@@ -209,6 +244,17 @@ contract SplitsCreator is ISplitsCreator, Clone {
         }
 
         return (shareHolders, allocations, totalAllocation);
+    }
+
+    function getThanksTokenScore(
+        address _account,
+        uint256 _thanksTokenReceivedWeight,
+        uint256 _thanksTokenSentWeight
+    ) public view returns (uint256) {
+        if (address(THANKS_TOKEN()) == address(0)) return 0;
+        return
+            (THANKS_TOKEN().balanceOf(_account) * _thanksTokenReceivedWeight +
+            THANKS_TOKEN().mintedAmount(_account) * _thanksTokenSentWeight) / (_thanksTokenReceivedWeight + _thanksTokenSentWeight);
     }
 
     function _getHatsTimeFrameMultiplier(

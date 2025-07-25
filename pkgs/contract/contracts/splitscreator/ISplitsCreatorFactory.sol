@@ -11,6 +11,7 @@ interface ISplitsCreatorFactory {
 		address _splitFactoryV2,
 		address _hatsTimeFrameModule,
 		address _fractionToken,
+		address _thanksToken,
 		bytes32 _salt
 	) external returns (address);
 }

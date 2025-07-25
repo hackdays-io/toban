@@ -181,18 +181,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         // 8. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
-        // 9. SplitCreatorをFactoryからデプロイ
-        address splitCreator = SplitsCreatorFactory
-            .createSplitCreatorDeterministic(
-                topHatId,
-                address(Hats),
-                SplitsFactoryV2,
-                hatsTimeFrameModule,
-                hatsFractionTokenModule,
-                keccak256(abi.encodePacked(topHatId))
-            );
-
-        // 10. ThanksTokenをFactoryからデプロイ
+        // 9. ThanksTokenをFactoryからデプロイ
         address thanksToken = IThanksTokenFactory(ThanksTokenFactory)
             .createThanksTokenDeterministic(
                 string(abi.encodePacked("ThanksToken ", _topHatDetails)),
@@ -200,6 +189,18 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
                 _owner,
                 1e18, // デフォルト係数（1.0）
                 keccak256(abi.encodePacked(topHatId, "ThanksToken"))
+            );
+
+        // 10. SplitCreatorをFactoryからデプロイ
+        address splitCreator = SplitsCreatorFactory
+            .createSplitCreatorDeterministic(
+                topHatId,
+                address(Hats),
+                SplitsFactoryV2,
+                hatsTimeFrameModule,
+                hatsFractionTokenModule,
+                thanksToken,
+                keccak256(abi.encodePacked(topHatId))
             );
 
         emit Executed(

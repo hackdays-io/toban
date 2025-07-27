@@ -18,6 +18,8 @@ export const bigbang = async (params: {
   topHatImageURI: string;
   hatterHatDetails: string;
   hatterHatImageURI: string;
+  memberHatDetails: string;
+  memberHatImageURI: string;
   trustedForwarder: Address;
 }) => {
   const stop = startLoading();
@@ -32,6 +34,8 @@ export const bigbang = async (params: {
       params.topHatImageURI,
       params.hatterHatDetails,
       params.hatterHatImageURI,
+      params.memberHatDetails,
+      params.memberHatImageURI,
       params.trustedForwarder,
     ],
   });

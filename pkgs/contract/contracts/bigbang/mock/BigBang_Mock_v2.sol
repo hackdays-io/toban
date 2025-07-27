@@ -34,6 +34,7 @@ contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
         address indexed owner,
         uint256 indexed topHatId,
         uint256 hatterHatId,
+        uint256 memberHatId,
         uint256 operatorHatId,
         uint256 creatorHatId,
         uint256 minterHatId,
@@ -91,7 +92,9 @@ contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _topHatDetails,
         string calldata _topHatImageURI,
         string calldata _hatterHatDetails,
-        string calldata _hatterHatImageURI
+        string calldata _hatterHatImageURI,
+        string calldata _memberHatDetails,
+        string calldata _memberHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
         uint256 topHatId = Hats.mintTopHat(
@@ -111,7 +114,20 @@ contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 3. Create Fixed Roles under TopHat
+        // 3. Create Member Hat ID
+        uint256 memberHatId = Hats.createHat(
+            hatterHatId,
+            _memberHatDetails,
+            99,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _memberHatImageURI
+        );
+
+        Hats.mintHat(memberHatId, _owner);
+
+        // 4. Create Fixed Roles under TopHat
         uint256 operatorHatId = Hats.createHat(
             topHatId,
             _hatterHatDetails,
@@ -140,7 +156,7 @@ contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 4. HatsHatCreatorModuleのデプロイ
+        // 5. HatsHatCreatorModuleのデプロイ
         address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
             HatsHatCreatorModule_IMPL,
             topHatId,
@@ -149,7 +165,7 @@ contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 5. HatsTimeFrameModuleのデプロイ
+        // 6. HatsTimeFrameModuleのデプロイ
         address hatsTimeFrameModule = HatsModuleFactory.createHatsModule(
             HatsTimeFrameModule_IMPL,
             topHatId,
@@ -208,6 +224,7 @@ contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
             _owner,
             topHatId,
             hatterHatId,
+            memberHatId,
             operatorHatId,
             creatorHatId,
             minterHatId,

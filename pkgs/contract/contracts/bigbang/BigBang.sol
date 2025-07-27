@@ -149,6 +149,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             true,
             _hatterHatImageURI
         );
+
         uint256 minterHatId = Hats.createHat(
             operatorHatId,
             _hatterHatDetails,
@@ -218,7 +219,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
                 string(abi.encodePacked("THX", topHatId)),
                 _owner,
                 1e18, // デフォルト係数（1.0）
-                keccak256(abi.encodePacked(topHatId, "ThanksToken"))
+                keccak256(abi.encodePacked(topHatId, "0"))
             );
 
         emit Executed(

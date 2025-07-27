@@ -194,6 +194,8 @@ describe("IntegrationTest", () => {
         "tophatURI",
         "hatterhatDetails",
         "hatterhatURI",
+        "memberhatDetails",
+        "memberhatURI",
       ],
       { account: deployer.account },
     );

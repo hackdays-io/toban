@@ -28,12 +28,12 @@ const WorkspaceMember: FC = () => {
         </Tabs.List>
         <Tabs.Content value="list">
           <Box mt={2}>
-            {treeId && <AssistCreditHistory treeId={treeId} limit={100} />}
+            {treeId && <AssistCreditHistory treeId={treeId} limit={500} />}
           </Box>
         </Tabs.Content>
         <Tabs.Content value="friendship">
           <Box mt={2}>
-            {treeId && <FriendshipRanking treeId={treeId} limit={200} />}
+            {treeId && <FriendshipRanking treeId={treeId} limit={500} />}
           </Box>
         </Tabs.Content>
         <Tabs.Content value="chart">

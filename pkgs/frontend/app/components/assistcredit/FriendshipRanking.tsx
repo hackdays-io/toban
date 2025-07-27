@@ -109,7 +109,6 @@ const FriendshipItem: FC<FriendshipItemProps> = ({
       bgColor={rankColors.cardBg}
       borderRadius={8}
       overflow="hidden"
-      border="1px solid"
       borderBottomColor={rankColors.borderColor}
     >
       <Grid
@@ -235,7 +234,7 @@ type SortType = "totalAmount" | "transactionCount";
  * フレンドシップランキングを表示するコンポーネント
  * 二人の間でのアシストクレジット総量と取引回数を表示
  */
-export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
+export const FriendshipRanking: FC<Props> = ({ treeId, limit = 500 }) => {
   const [sortBy, setSortBy] = useState<SortType>("totalAmount");
   const { data } = useGetTransferFractionTokens({
     where: {
@@ -299,16 +298,13 @@ export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
   }
 
   return (
-    <VStack gap={3} mt={4}>
+    <VStack gap={3}>
       <Box w="full" mb={2}>
-        <Text fontSize="sm" color="gray.600" textAlign="center">
-          コミュニティ内での友情ランキング
-        </Text>
-        <HStack justifyContent="center" mt={3} gap={2}>
+        <HStack justifyContent="center" gap={2}>
           <Button
             size="sm"
             variant={sortBy === "totalAmount" ? "solid" : "outline"}
-            colorScheme="purple"
+            bgColor={sortBy === "totalAmount" ? "blue.400" : "transparent"}
             onClick={() => setSortBy("totalAmount")}
           >
             総交換量順
@@ -316,7 +312,7 @@ export const FriendshipRanking: FC<Props> = ({ treeId, limit = 50 }) => {
           <Button
             size="sm"
             variant={sortBy === "transactionCount" ? "solid" : "outline"}
-            colorScheme="purple"
+            bgColor={sortBy === "transactionCount" ? "blue.400" : "transparent"}
             onClick={() => setSortBy("transactionCount")}
           >
             取引回数順

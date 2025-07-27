@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {ERC1155Supply} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {IHatsFractionTokenModule} from "./IHatsFractionTokenModule.sol";
 
 /**
@@ -21,8 +21,8 @@ import {IHatsFractionTokenModule} from "./IHatsFractionTokenModule.sol";
  */
 contract HatsFractionTokenModule is
     HatsModule,
-    Ownable,
     ERC1155,
+    ERC1155Supply,
     IHatsFractionTokenModule
 {
     // ============ State Variables ============
@@ -31,26 +31,27 @@ contract HatsFractionTokenModule is
     uint32 private DOMAIN;
 
     /// @notice The default token supply amount for initial minting
-    uint256 private TOKEN_SUPPLY;
+    uint256 public DEFAULT_TOKEN_SUPPLY;
+
+    /// @notice Maximum token supply per role user is 1 million
+    uint256 public immutable MAX_SUPPLY_PER_ROLE_USER = 1_000_000;
+
+    mapping(uint256 => address[]) private tokenRecipients;
 
     // ============ Constructor ============
 
     /**
      * @notice Initialize the contract with required parameters
      * @param _version The version of the contract for upgrade compatibility
-     * @param _tmpOwner The temporary owner of the contract (will be transferred during setup)
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) ERC1155("") {}
+    constructor(string memory _version) HatsModule(_version) ERC1155("") {}
 
     // ============ Initialization ============
 
     /**
-     * @notice Initializes the module with owner, URI, and token supply configuration
+     * @notice Initializes the module with URI, and token supply configuration
      * @dev This function is called once during module deployment via the factory
-     * @param _initData ABI-encoded data containing (address _owner, string _uri, uint256 _tokenSupply)
+     * @param _initData ABI-encoded data containing (string _uri, uint256 _defaultTokenSupply)
      *
      * Requirements:
      * - The hatId must be a top hat (ensures domain isolation)
@@ -60,17 +61,20 @@ contract HatsFractionTokenModule is
      * - Sets the base URI for token metadata
      * - Sets the token supply for initial minting
      * - Extracts and stores the domain from the top hat
-     * - Transfers ownership to the specified address
      */
     function _setUp(bytes calldata _initData) internal override {
-        (address _owner, string memory _uri, uint256 _tokenSupply) = abi.decode(
+        (string memory _uri, uint256 _defaultTokenSupply) = abi.decode(
             _initData,
-            (address, string, uint256)
+            (string, uint256)
         );
 
         _setURI(_uri);
 
-        TOKEN_SUPPLY = _tokenSupply;
+        DEFAULT_TOKEN_SUPPLY = _defaultTokenSupply;
+
+        if (_defaultTokenSupply > MAX_SUPPLY_PER_ROLE_USER) {
+            revert TokenSupplyExceedsMax();
+        }
 
         // Ensure this module is only used with top hats for proper domain isolation
         if (!HATS().isTopHat(hatId())) {
@@ -79,9 +83,6 @@ contract HatsFractionTokenModule is
 
         // Extract domain from the top hat for validation in future operations
         DOMAIN = HATS().getTopHatDomain(hatId());
-
-        // Transfer ownership to the specified address
-        _transferOwnership(_owner);
     }
 
     // ============ Minting Functions ============
@@ -111,7 +112,7 @@ contract HatsFractionTokenModule is
         _checkValidAction(_hatId, _wearer);
 
         uint256 _tokenId = getTokenId(_hatId, _wearer);
-        uint256 _initialAmount = _amount == 0 ? TOKEN_SUPPLY : _amount;
+        uint256 _initialAmount = _amount == 0 ? DEFAULT_TOKEN_SUPPLY : _amount;
 
         // Ensure this is the first time minting for this wearer-hat combination
         if (balanceOf(_wearer, _tokenId) > 0) {
@@ -120,7 +121,9 @@ contract HatsFractionTokenModule is
 
         _mint(_wearer, _tokenId, _initialAmount, "");
 
-        emit InitialTokensMinted(_hatId, _wearer, _tokenId, _initialAmount);
+        tokenRecipients[_tokenId].push(_wearer);
+
+        emit InitialMint(_hatId, _wearer, _tokenId, _initialAmount);
     }
 
     /**
@@ -188,7 +191,7 @@ contract HatsFractionTokenModule is
 
         _mint(_wearer, _tokenId, _amount, "");
 
-        emit AdditionalTokensMinted(_hatId, _wearer, _tokenId, _amount);
+        emit AdditionalMint(_hatId, _wearer, _tokenId, _amount);
     }
 
     /**
@@ -256,6 +259,10 @@ contract HatsFractionTokenModule is
         }
 
         super.safeTransferFrom(_from, _to, _id, _amount, _data);
+
+        if (!_containsRecipient(_id, _to)) {
+            tokenRecipients[_id].push(_to);
+        }
     }
 
     /**
@@ -269,7 +276,6 @@ contract HatsFractionTokenModule is
      *
      * Requirements:
      * - Standard ERC1155 batch transfer requirements
-     * - Cannot transfer all tokens for any token ID (must retain at least 1 of each)
      *
      * Effects:
      * - Transfers the specified amounts of tokens for each ID
@@ -282,35 +288,13 @@ contract HatsFractionTokenModule is
         uint256[] memory _amounts,
         bytes memory _data
     ) public override {
-        // Check each token ID to prevent complete transfers
+        super.safeBatchTransferFrom(_from, _to, _ids, _amounts, _data);
+
         for (uint256 i = 0; i < _ids.length; i++) {
-            if (balanceOf(_from, _ids[i]) == _amounts[i]) {
-                revert CannotTransferAllTokens();
+            if (!_containsRecipient(_ids[i], _to)) {
+                tokenRecipients[_ids[i]].push(_to);
             }
         }
-
-        super.safeBatchTransferFrom(_from, _to, _ids, _amounts, _data);
-    }
-
-    // ============ Administrative Functions ============
-
-    /**
-     * @notice Updates the default token supply for future initial minting
-     * @dev Only the contract owner can modify the token supply
-     * @param _newSupply The new default token supply amount
-     *
-     * Requirements:
-     * - Caller must be the contract owner
-     *
-     * Effects:
-     * - Updates TOKEN_SUPPLY for future mintInitialSupply calls with amount = 0
-     * - Does not affect existing token balances
-     */
-    function setTokenSupply(uint256 _newSupply) public onlyOwner {
-        uint256 _oldSupply = TOKEN_SUPPLY;
-        TOKEN_SUPPLY = _newSupply;
-
-        emit TokenSupplyUpdated(_oldSupply, _newSupply);
     }
 
     // ============ View Functions ============
@@ -339,12 +323,86 @@ contract HatsFractionTokenModule is
     }
 
     /**
-     * @notice Returns the current default token supply
-     * @dev This is the amount used when mintInitialSupply is called with amount = 0
-     * @return The current default token supply amount
+     * @notice Returns the recipients associated with a specific token ID
+     * @dev Used to retrieve all addresses that hold tokens for a given hat-wearer combination
+     * @param tokenId The ID of the token to query
+     * @return An array of addresses that are recipients of the specified token ID
      */
-    function getTokenSupply() public view returns (uint256) {
-        return TOKEN_SUPPLY;
+    function getTokenRecipients(
+        uint256 tokenId
+    ) public view returns (address[] memory) {
+        return tokenRecipients[tokenId];
+    }
+
+    /**
+     * @notice Returns the balance of tokens for a specific hat and wearer
+     * @dev Returns the total token supply if the account has the hat role but is not a recipient
+     * @param _account The address of the account to check balance for
+     * @param _wearer The address of the hat wearer
+     * @param _hatId The ID of the hat
+     * @return The balance of tokens for this account, wearer, and hat combination
+     *
+     * If the account has the hat role but is not a recipient, returns TOKEN_SUPPLY.
+     */
+    function balanceOf(
+        address _account,
+        address _wearer,
+        uint256 _hatId
+    ) public view returns (uint256) {
+        uint256 tokenId = getTokenId(_hatId, _wearer);
+
+        if (
+            HATS().isWearerOfHat(_account, _hatId) &&
+            !_containsRecipient(tokenId, _account)
+        ) {
+            return DEFAULT_TOKEN_SUPPLY;
+        }
+
+        return super.balanceOf(_account, tokenId);
+    }
+
+    /**
+     * @notice Returns the balances of multiple accounts for specific hats and wearers
+     * @dev Efficiently retrieves balances for multiple combinations in a single call
+     * @param _accounts Array of account addresses to check balances for
+     * @param _wearers Array of wearer addresses corresponding to each account
+     * @param _hatIds Array of hat IDs corresponding to each account and wearer
+     * @return An array of balances for each account, wearer, and hat combination
+     */
+    function balanceOfBatch(
+        address[] memory _accounts,
+        address[] memory _wearers,
+        uint256[] memory _hatIds
+    ) public view returns (uint256[] memory) {
+        uint256[] memory balances = new uint256[](_accounts.length);
+
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            balances[i] = balanceOf(_accounts[i], _wearers[i], _hatIds[i]);
+        }
+
+        return balances;
+    }
+
+    /**
+     * @notice Total supply of tokens for a specific hat and wearer
+     * @dev Returns the total supply of tokens for a given hat-wearer combination
+     * @param _hatId The ID of the hat
+     * @param _wearer The address of the hat wearer
+     * @return The total supply of tokens for this hat-wearer combination
+     *
+     * If no tokens have been minted for this combination, returns the default TOKEN_SUPPLY
+     */
+    function totalSupply(
+        address _wearer,
+        uint256 _hatId
+    ) public view returns (uint256) {
+        uint256 tokenId = getTokenId(_hatId, _wearer);
+
+        if (tokenRecipients[tokenId].length == 0) {
+            return DEFAULT_TOKEN_SUPPLY;
+        }
+
+        return super.totalSupply(tokenId);
     }
 
     // ============ Internal Validation Functions ============
@@ -405,5 +463,34 @@ contract HatsFractionTokenModule is
         for (uint256 i = 0; i < _hatIds.length; i++) {
             _checkValidAction(_hatIds[i], _wearers[i]);
         }
+    }
+
+    /**
+     * @notice Checks if a recipient is already associated with a token
+     * @dev Used to prevent duplicate recipients for a given token ID
+     * @param _tokenId The ID of the token to check
+     * @param _recipient The address of the recipient to check
+     * @return True if the recipient is already associated with the token, false otherwise
+     */
+    function _containsRecipient(
+        uint256 _tokenId,
+        address _recipient
+    ) private view returns (bool) {
+        address[] memory recipients = tokenRecipients[_tokenId];
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (recipients[i] == _recipient) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal override(ERC1155Supply, ERC1155) {
+        super._update(from, to, ids, values);
     }
 }

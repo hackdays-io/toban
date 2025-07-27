@@ -57,6 +57,12 @@ interface IHatsFractionTokenModule {
      */
     error WearerDoesNotHaveHat();
 
+    /**
+     * @notice Thrown when the token supply exceeds the maximum allowed limit
+     * @dev The module has a predefined maximum token supply that cannot be exceeded
+     */
+    error TokenSupplyExceedsMax();
+
     // ============ Events ============
 
     /**
@@ -73,7 +79,7 @@ interface IHatsFractionTokenModule {
      * @param tokenId The unique token ID generated for this hat-wearer combination
      * @param amount The amount of tokens minted
      */
-    event InitialTokensMinted(
+    event InitialMint(
         uint256 indexed hatId,
         address indexed wearer,
         uint256 indexed tokenId,
@@ -87,7 +93,7 @@ interface IHatsFractionTokenModule {
      * @param tokenId The token ID for this hat-wearer combination
      * @param amount The amount of additional tokens minted
      */
-    event AdditionalTokensMinted(
+    event AdditionalMint(
         uint256 indexed hatId,
         address indexed wearer,
         uint256 indexed tokenId,
@@ -156,14 +162,6 @@ interface IHatsFractionTokenModule {
         uint256 _amount
     ) external;
 
-    // ============ Administrative Functions ============
-
-    /**
-     * @notice Updates the default token supply for future initial minting
-     * @param _newSupply The new default token supply amount
-     */
-    function setTokenSupply(uint256 _newSupply) external;
-
     // ============ View Functions ============
 
     /**
@@ -184,8 +182,47 @@ interface IHatsFractionTokenModule {
     function getDomain() external view returns (uint32);
 
     /**
-     * @notice Returns the current default token supply
-     * @return The current default token supply amount
+     * @notice Returns an array of token recipients for a given token ID
+     * @return An array of addresses that are recipients of the specified token
      */
-    function getTokenSupply() external view returns (uint256);
+    function getTokenRecipients(
+        uint256 _tokenId
+    ) external view returns (address[] memory);
+
+    /**
+     * @notice Returns the balance of tokens for a specific hat and wearer
+     * @param _account The address of the account querying the balance
+     * @param _wearer The address of the hat wearer
+     * @param _hatId The ID of the hat for which the balance is being queried
+     * @return The balance of tokens for this hat-wearer combination
+     */
+    function balanceOf(
+        address _account,
+        address _wearer,
+        uint256 _hatId
+    ) external view returns (uint256);
+
+    /**
+     * @notice Returns the balance of tokens for multiple hat-wearers
+     * @param _accounts An array of account addresses querying their balances
+     * @param _wearers An array of hat wearer addresses
+     * @param _hatIds An array of hat IDs corresponding to each wearer
+     * @return An array of balances corresponding to each hat-wearer combination
+     */
+    function balanceOfBatch(
+        address[] memory _accounts,
+        address[] memory _wearers,
+        uint256[] memory _hatIds
+    ) external view returns (uint256[] memory);
+
+    /**
+     * @notice Returns the total supply of tokens for a specific hat and wearer
+     * @param _wearer The address of the hat wearer
+     * @param _hatId The ID of the hat
+     * @return The total supply of tokens for this hat-wearer combination
+     */
+    function totalSupply(
+        address _wearer,
+        uint256 _hatId
+    ) external view returns (uint256);
 }

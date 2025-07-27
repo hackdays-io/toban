@@ -139,7 +139,7 @@ const RoleHolderDetails: FC = () => {
 
       <HStack paddingTop={8} justifyContent="space-between">
         <Heading size="lg">
-          {["144", "175"].includes(treeId || "")
+          {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
             : "アシストクレジット"}
         </Heading>

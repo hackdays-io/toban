@@ -6,7 +6,7 @@ import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {ISplitsCreator} from "./ISplitsCreator.sol";
 import {ISplitFactoryV2} from "../splits/interfaces/ISplitFactoryV2.sol";
 import {SplitV2Lib} from "../splits/libraries/SplitV2.sol";
-import {IFractionToken} from "../fractiontoken/IFractionToken.sol";
+import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
 
@@ -27,8 +27,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
         return IHatsTimeFrameModule(_getArgAddress(76));
     }
 
-    function FRACTION_TOKEN() public pure returns (IFractionToken) {
-        return IFractionToken(_getArgAddress(108));
+    function FRACTION_TOKEN() public pure returns (IHatsFractionTokenModule) {
+        return IHatsFractionTokenModule(_getArgAddress(108));
     }
 
     /**

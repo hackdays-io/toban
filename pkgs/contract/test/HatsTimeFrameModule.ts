@@ -28,6 +28,10 @@ describe("HatsTimeFrameModule", () => {
   let address2Validated: Address;
 
   let topHatId: bigint;
+  let operatorTobanId: bigint;
+  let timeFrameTobanId: bigint;
+  let creatorTobanId: bigint;
+
   let roleHatId: bigint | undefined;
 
   let publicClient: PublicClient;
@@ -39,18 +43,51 @@ describe("HatsTimeFrameModule", () => {
     return client.account.address;
   };
 
+  const createHat = async (
+    publicClient: PublicClient,
+    topHatId: bigint,
+    roleName: string,
+  ): Promise<bigint> => {
+    let txHash = await Hats.write.createHat([
+      topHatId,
+      roleName,
+      100,
+      "0x0000000000000000000000000000000000004a75",
+      "0x0000000000000000000000000000000000004a75",
+      true,
+      "",
+    ]);
+    let receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    let hatId: bigint | undefined = undefined;
+    for (const log of receipt.logs) {
+      const decodedLog = decodeEventLog({
+        abi: Hats.abi,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decodedLog.eventName === "HatCreated") {
+        hatId = decodedLog.args.id;
+      }
+    }
+
+    if (!hatId) {
+      throw new Error("Hatter hat ID not found in transaction logs");
+    }
+    return hatId as bigint;
+  };
+
   before(async () => {
     const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
     Create2Deployer = _Create2Deployer;
+
     const { Hats: _Hats } = await deployHatsProtocol();
     const { HatsModuleFactory: _HatsModuleFactory } =
       await deployHatsModuleFactory(_Hats.address);
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        "0x0000000000000000000000000000000000000001",
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
 
     Hats = _Hats;
     HatsModuleFactory = _HatsModuleFactory;
@@ -69,14 +106,21 @@ describe("HatsTimeFrameModule", () => {
     topHatId = BigInt(
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
-
     publicClient = await viem.getPublicClient();
+
+    // Operator Tobanを作成
+    operatorTobanId = await createHat(publicClient, topHatId, "OperatorToban");
+    timeFrameTobanId = await createHat(
+      publicClient,
+      operatorTobanId,
+      "TimeFrameToban",
+    );
   });
 
   it("deploy time frame module", async () => {
     const initData = encodeAbiParameters(
-      [{ type: "address" }],
-      [address1Validated],
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
     // HatsModuleインスタンスをデプロイ
     await HatsModuleFactory.write.createHatsModule([
@@ -104,64 +148,12 @@ describe("HatsTimeFrameModule", () => {
     ).equal(HatsTimeFrameModule_IMPL.address.toLowerCase());
 
     // Hatter Hatを作成
-    let txHash = await Hats.write.createHat([
-      topHatId,
-      "",
-      100,
-      "0x0000000000000000000000000000000000004a75",
-      "0x0000000000000000000000000000000000004a75",
-      true,
-      "",
-    ]);
-    let receipt = await publicClient.waitForTransactionReceipt({
-      hash: txHash,
-    });
-
-    let hatterHatId: bigint | undefined;
-
-    for (const log of receipt.logs) {
-      const decodedLog = decodeEventLog({
-        abi: Hats.abi,
-        data: log.data,
-        topics: log.topics,
-      });
-      if (decodedLog.eventName === "HatCreated") {
-        hatterHatId = decodedLog.args.id;
-      }
-    }
-
-    if (!hatterHatId) {
-      throw new Error("Hatter hat ID not found in transaction logs");
-    }
-
+    let hatterHatId = await createHat(publicClient, topHatId, "");
     // Hatter HatをTimeFrameModuleにミント
     await Hats.write.mintHat([hatterHatId, HatsTimeFrameModule.address]);
 
     // Role hat をCreate
-    txHash = await Hats.write.createHat([
-      hatterHatId,
-      "Role Hat",
-      10,
-      "0x0000000000000000000000000000000000004a75",
-      "0x0000000000000000000000000000000000004a75",
-      true,
-      "",
-    ]);
-
-    receipt = await publicClient.waitForTransactionReceipt({
-      hash: txHash,
-    });
-
-    for (const log of receipt.logs) {
-      const decodedLog = decodeEventLog({
-        abi: Hats.abi,
-        data: log.data,
-        topics: log.topics,
-      });
-      if (decodedLog.eventName === "HatCreated") {
-        roleHatId = decodedLog.args.id;
-      }
-    }
+    roleHatId = await createHat(publicClient, hatterHatId, "Role Hat");
   });
 
   it("mint hat", async () => {
@@ -186,7 +178,7 @@ describe("HatsTimeFrameModule", () => {
 
     const currentTime1 = BigInt(await time.latest());
 
-    let expectedElapsedTime = currentTime1 - woreTime;
+    let expectedElapsedTime = currentTime1 - woreTime + 1n;
 
     let elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
       address1Validated,
@@ -199,7 +191,7 @@ describe("HatsTimeFrameModule", () => {
 
     const currentTime2 = BigInt(await time.latest());
 
-    expectedElapsedTime = currentTime2 - woreTime;
+    expectedElapsedTime = currentTime2 - woreTime + 1n;
 
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
       address1Validated,
@@ -238,7 +230,7 @@ describe("HatsTimeFrameModule", () => {
     const currentTime3 = BigInt(await time.latest());
 
     expectedElapsedTime =
-      totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
+      totalActiveTimeAfterDeactivation + (currentTime3 - woreTime) + 1n;
 
     elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
       address1Validated,

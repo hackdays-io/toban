@@ -3,30 +3,34 @@ pragma solidity ^0.8.24;
 
 import {IHatsHatCreatorModule} from "./IHatsHatCreatorModule.sol";
 import {HatsModule} from "../../hats/module/HatsModule.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
-    /// @dev Mapping to track addresses with hat creation authority
-    mapping(address => bool) public createHatAuthorities;
+contract HatsHatCreatorModule is HatsModule, IHatsHatCreatorModule {
+    uint256 private creatorHatId;
 
     /**
      * @dev Constructor to initialize the contract
      * @param _version The version of the contract
-     * @param _tmpOwner The owner of the contract
      */
-    constructor(
-        string memory _version,
-        address _tmpOwner
-    ) HatsModule(_version) Ownable(_tmpOwner) {}
+    constructor(string memory _version) HatsModule(_version) {}
 
     /**
-     * @dev Initializes the contract, setting up the owner
-     * @param _initData The initialization data (encoded owner address)
+     * @dev Initializes the contract, hold creator toban ID
+     * @param _initData The initialization data (encoded creator toban ID)
      */
     function _setUp(bytes calldata _initData) internal override {
-        address _owner = abi.decode(_initData, (address));
-        _grantCreateHatAuthority(_owner);
-        _transferOwnership(_owner);
+        uint256 _creatorHatId = abi.decode(_initData, (uint256));
+        creatorHatId = _creatorHatId;
+    }
+
+    /**
+     * @notice Checks if an address is authorized to create hats
+     * @param authority The address to check
+     * @return bool Whether the address is authorized
+     */
+    function _authorized(address authority) internal view returns (bool) {
+        return
+            HATS().isAdminOfHat(authority, creatorHatId) ||
+            HATS().isWearerOfHat(authority, creatorHatId);
     }
 
     /**
@@ -34,26 +38,8 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
      * @param authority The address to check
      * @return bool Whether the address has authority
      */
-    function hasCreateHatAuthority(
-        address authority
-    ) public view returns (bool) {
-        return createHatAuthorities[authority];
-    }
-
-    /**
-     * @notice Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function grantCreateHatAuthority(address authority) external onlyOwner {
-        _grantCreateHatAuthority(authority);
-    }
-
-    /**
-     * @notice Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function revokeCreateHatAuthority(address authority) external onlyOwner {
-        _revokeCreateHatAuthority(authority);
+    function hasAuthority(address authority) public view returns (bool) {
+        return _authorized(authority);
     }
 
     /**
@@ -76,7 +62,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         bool _mutable,
         string calldata _imageURI
     ) external returns (uint256) {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
 
         return
             HATS().createHat(
@@ -100,7 +86,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         uint256 hatId,
         string calldata newDetails
     ) external override {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
         HATS().changeHatDetails(hatId, newDetails);
         emit HatDetailsChanged(hatId, newDetails);
     }
@@ -115,7 +101,7 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         uint256 hatId,
         string calldata newImageURI
     ) external override {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
         HATS().changeHatImageURI(hatId, newImageURI);
         emit HatImageURIChanged(hatId, newImageURI);
     }
@@ -130,33 +116,8 @@ contract HatsHatCreatorModule is HatsModule, Ownable, IHatsHatCreatorModule {
         uint256 hatId,
         uint32 newMaxSupply
     ) external override {
-        require(hasCreateHatAuthority(msg.sender), "Not authorized");
+        require(hasAuthority(msg.sender), "Not authorized");
         HATS().changeHatMaxSupply(hatId, newMaxSupply);
         emit HatMaxSupplyChanged(hatId, newMaxSupply);
-    }
-
-    // Internal Functions
-
-    /**
-     * @dev Grants hat creation authority to an address
-     * @param authority The address to grant authority to
-     */
-    function _grantCreateHatAuthority(address authority) internal {
-        require(authority != address(0), "Invalid address");
-        require(!hasCreateHatAuthority(authority), "Already granted");
-
-        createHatAuthorities[authority] = true;
-        emit CreateHatAuthorityGranted(authority);
-    }
-
-    /**
-     * @dev Revokes hat creation authority from an address
-     * @param authority The address to revoke authority from
-     */
-    function _revokeCreateHatAuthority(address authority) internal {
-        require(hasCreateHatAuthority(authority), "Not granted");
-
-        createHatAuthorities[authority] = false;
-        emit CreateHatAuthorityRevoked(authority);
     }
 }

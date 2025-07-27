@@ -12,16 +12,14 @@ import {
   zeroAddress,
 } from "viem";
 import {
-  type FractionToken,
-  deployFractionToken,
-} from "../helpers/deploy/FractionToken";
-import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
+  type HatsFractionTokenModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
+  deployHatsFractionTokenModule,
 } from "../helpers/deploy/Hats";
 import {
   type PullSplitsFactory,
@@ -40,19 +38,57 @@ import {
   deployCreate2Deployer,
 } from "../helpers/deploy/Create2Factory";
 
+const createHat = async (
+  Hats: Hats,
+  publicClient: PublicClient,
+  topHatId: bigint,
+  roleName: string,
+): Promise<bigint> => {
+  let txHash = await Hats.write.createHat([
+    topHatId,
+    roleName,
+    100,
+    "0x0000000000000000000000000000000000004a75",
+    "0x0000000000000000000000000000000000004a75",
+    true,
+    "",
+  ]);
+  let receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  let hatId: bigint | undefined = undefined;
+  for (const log of receipt.logs) {
+    const decodedLog = decodeEventLog({
+      abi: Hats.abi,
+      data: log.data,
+      topics: log.topics,
+    });
+    if (decodedLog.eventName === "HatCreated") {
+      hatId = decodedLog.args.id;
+    }
+  }
+
+  if (!hatId) {
+    throw new Error("Hatter hat ID not found in transaction logs");
+  }
+  return hatId as bigint;
+};
+
 describe("SplitsCreator Factory", () => {
   let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsTimeFrameModule: HatsTimeFrameModule;
+  let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
+  let HatsFractionTokenModule: HatsFractionTokenModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
   let SplitsCreator: SplitsCreator;
-  let FractionToken: FractionToken;
 
   let address1: WalletClient;
   let bigBangAddress: WalletClient;
@@ -72,11 +108,7 @@ describe("SplitsCreator Factory", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        "0x0000000000000000000000000000000000000001",
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const {
@@ -88,14 +120,6 @@ describe("SplitsCreator Factory", () => {
     SplitsWarehouse = _SplitsWarehouse;
     PullSplitsFactory = _PullSplitsFactory;
     PushSplitsFactory = _PushSplitsFactory;
-
-    const { FractionToken: _FractionToken } = await deployFractionToken(
-      "",
-      10000n,
-      Hats.address,
-      Create2Deployer.address,
-    );
-    FractionToken = _FractionToken;
 
     const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
       Create2Deployer.address,
@@ -111,20 +135,39 @@ describe("SplitsCreator Factory", () => {
       "https://test.com/tophat.png",
     ]);
 
+    let publicClient = await viem.getPublicClient();
+
     topHatId = BigInt(
       "0x0000000100000000000000000000000000000000000000000000000000000000",
     );
+    // Operator Tobanを作成
+    let operatorTobanId = await createHat(
+      Hats,
+      publicClient,
+      topHatId,
+      "OperatorToban",
+    );
+    let timeFrameTobanId = await createHat(
+      Hats,
+      publicClient,
+      operatorTobanId,
+      "TimeFrameToban",
+    );
 
-    const initData = encodeAbiParameters(
-      [{ type: "address" }],
-      [address1.account?.address!],
+    const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
+    HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
+
+    const timeFrameInitData = encodeAbiParameters(
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
 
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
       topHatId,
       "0x",
-      initData,
+      timeFrameInitData,
       BigInt(0),
     ]);
 
@@ -139,6 +182,33 @@ describe("SplitsCreator Factory", () => {
     HatsTimeFrameModule = await viem.getContractAt(
       "HatsTimeFrameModule",
       hatsTimeFrameModuleAddress,
+    );
+
+    // Deploy HatsFractionTokenModule
+    const fractionTokenInitData = encodeAbiParameters(
+      [{ type: "string" }, { type: "uint256" }],
+      ["https://example.com/fraction-token", 10000n],
+    );
+
+    await HatsModuleFactory.write.createHatsModule([
+      HatsFractionTokenModule_IMPL.address,
+      topHatId,
+      "0x",
+      fractionTokenInitData,
+      BigInt(1),
+    ]);
+
+    const hatsFractionTokenModuleAddress =
+      await HatsModuleFactory.read.getHatsModuleAddress([
+        HatsFractionTokenModule_IMPL.address,
+        topHatId,
+        "0x",
+        BigInt(1),
+      ]);
+
+    HatsFractionTokenModule = await viem.getContractAt(
+      "HatsFractionTokenModule",
+      hatsFractionTokenModuleAddress,
     );
   });
 
@@ -159,7 +229,7 @@ describe("SplitsCreator Factory", () => {
         Hats.address,
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
-        FractionToken.address,
+        HatsFractionTokenModule.address,
         keccak256("0x1234"),
       ]),
     ).to.be.a("string");
@@ -178,7 +248,7 @@ describe("SplitsCreator Factory", () => {
         Hats.address,
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
-        FractionToken.address,
+        HatsFractionTokenModule.address,
         keccak256("0x1234"),
       ]);
 
@@ -188,7 +258,7 @@ describe("SplitsCreator Factory", () => {
         Hats.address,
         PullSplitsFactory.address,
         HatsTimeFrameModule.address,
-        FractionToken.address,
+        HatsFractionTokenModule.address,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -200,7 +270,7 @@ describe("SplitsCreator Factory", () => {
       (await SplitsCreator.read.HATS_TIME_FRAME_MODULE()).toLowerCase(),
     ).equal(HatsTimeFrameModule.address.toLowerCase());
     expect((await SplitsCreator.read.FRACTION_TOKEN()).toLowerCase()).equal(
-      FractionToken.address.toLowerCase(),
+      HatsFractionTokenModule.address.toLowerCase(),
     );
   });
 
@@ -238,13 +308,14 @@ describe("CreateSplit", () => {
   let HatsModuleFactory: HatsModuleFactory;
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsTimeFrameModule: HatsTimeFrameModule;
+  let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
+  let HatsFractionTokenModule: HatsFractionTokenModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
   let SplitsCreatorFactory: SplitsCreatorFactory;
   let SplitsCreator_IMPL: SplitsCreator;
   let SplitsCreator: SplitsCreator;
-  let FractionToken: FractionToken;
 
   let address1: WalletClient;
   let address2: WalletClient;
@@ -276,11 +347,7 @@ describe("CreateSplit", () => {
     HatsModuleFactory = _HatsModuleFactory;
 
     const { HatsTimeFrameModule: _HatsTimeFrameModule } =
-      await deployHatsTimeFrameModule(
-        "0x0000000000000000000000000000000000000001",
-        "0.0.0",
-        Create2Deployer.address,
-      );
+      await deployHatsTimeFrameModule("0.0.0", Create2Deployer.address);
     HatsTimeFrameModule_IMPL = _HatsTimeFrameModule;
 
     const {
@@ -293,14 +360,6 @@ describe("CreateSplit", () => {
     PullSplitsFactory = _PullSplitsFactory;
     PushSplitsFactory = _PushSplitsFactory;
 
-    const { FractionToken: _FractionToken } = await deployFractionToken(
-      "",
-      10000n,
-      Hats.address,
-      Create2Deployer.address,
-    );
-    FractionToken = _FractionToken;
-
     const { SplitsCreator: _SplitsCreator } = await deploySplitsCreator(
       Create2Deployer.address,
     );
@@ -311,33 +370,76 @@ describe("CreateSplit", () => {
 
     publicClient = await viem.getPublicClient();
 
-    await Hats.write.mintTopHat([
+    let txHash = await Hats.write.mintTopHat([
       address1.account?.address!,
       "Description",
       "https://test.com/tophat.png",
     ]);
 
-    topHatId = BigInt(
-      "0x0000000100000000000000000000000000000000000000000000000000000000",
+    // Wait for the transaction receipt
+    let receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    // Extract the TopHat ID from the logs
+    let topHatId: bigint | undefined = undefined;
+    for (const log of receipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: Hats.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName === "HatCreated") {
+          topHatId = decodedLog.args.id;
+          break; // TopHat will be the first hat created
+        }
+      } catch (error) {
+        // Handle any errors that occur during decoding
+        console.error("Error decoding log:", error);
+        throw error; // Continue to the next log if decoding fails
+      }
+    }
+
+    // Operator Tobanを作成
+    let operatorTobanId = await createHat(
+      Hats,
+      publicClient,
+      topHatId!,
+      "OperatorToban",
     );
 
-    const initData = encodeAbiParameters(
-      [{ type: "address" }],
-      [address1.account?.address!],
+    // Assign Operator Toban to address1
+    await Hats.write.mintHat([operatorTobanId, address1.account?.address!]);
+
+    let timeFrameTobanId = await createHat(
+      Hats,
+      publicClient,
+      operatorTobanId,
+      "TimeFrameToban",
+    );
+
+    const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
+      await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
+    HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
+
+    const timeFrameInitData = encodeAbiParameters(
+      [{ type: "uint256" }],
+      [timeFrameTobanId],
     );
 
     await HatsModuleFactory.write.createHatsModule([
       HatsTimeFrameModule_IMPL.address,
-      topHatId,
+      topHatId!,
       "0x",
-      initData,
+      timeFrameInitData,
       BigInt(0),
     ]);
 
     const hatsTimeFrameModuleAddress =
       await HatsModuleFactory.read.getHatsModuleAddress([
         HatsTimeFrameModule_IMPL.address,
-        topHatId,
+        topHatId!,
         "0x",
         BigInt(0),
       ]);
@@ -345,6 +447,33 @@ describe("CreateSplit", () => {
     HatsTimeFrameModule = await viem.getContractAt(
       "HatsTimeFrameModule",
       hatsTimeFrameModuleAddress,
+    );
+
+    // Deploy HatsFractionTokenModule
+    const fractionTokenInitData = encodeAbiParameters(
+      [{ type: "string" }, { type: "uint256" }],
+      ["https://example.com/fraction-token", 10000n],
+    );
+
+    await HatsModuleFactory.write.createHatsModule([
+      HatsFractionTokenModule_IMPL.address,
+      topHatId!,
+      "0x",
+      fractionTokenInitData,
+      BigInt(1),
+    ]);
+
+    const hatsFractionTokenModuleAddress =
+      await HatsModuleFactory.read.getHatsModuleAddress([
+        HatsFractionTokenModule_IMPL.address,
+        topHatId!,
+        "0x",
+        BigInt(1),
+      ]);
+
+    HatsFractionTokenModule = await viem.getContractAt(
+      "HatsFractionTokenModule",
+      hatsFractionTokenModuleAddress,
     );
 
     const { SplitsCreatorFactory: _SplitsCreatorFactory } =
@@ -359,20 +488,19 @@ describe("CreateSplit", () => {
       bigBangAddress.account?.address!,
     ]);
 
-    let txHash =
-      await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
-        [
-          topHatId,
-          Hats.address,
-          PullSplitsFactory.address,
-          HatsTimeFrameModule.address,
-          FractionToken.address,
-          keccak256("0x1234"),
-        ],
-        { account: bigBangAddress.account },
-      );
+    txHash = await SplitsCreatorFactory.write.createSplitCreatorDeterministic(
+      [
+        topHatId!,
+        Hats.address,
+        PullSplitsFactory.address,
+        HatsTimeFrameModule.address,
+        hatsFractionTokenModuleAddress,
+        keccak256("0x1234"),
+      ],
+      { account: bigBangAddress.account },
+    );
 
-    let receipt = await publicClient.waitForTransactionReceipt({
+    receipt = await publicClient.waitForTransactionReceipt({
       hash: txHash,
     });
 
@@ -393,7 +521,7 @@ describe("CreateSplit", () => {
     }
 
     txHash = await Hats.write.createHat([
-      topHatId,
+      topHatId!,
       "hatterHat",
       3,
       "0x0000000000000000000000000000000000004a75",
@@ -508,27 +636,27 @@ describe("CreateSplit", () => {
       })
       .then((block) => block.timestamp);
 
-    await FractionToken.write.mintInitialSupply([
+    await HatsFractionTokenModule.write.mintInitialSupply([
       hat1_id,
       address1.account?.address!,
       0n,
     ]);
-    await FractionToken.write.mintInitialSupply([
+    await HatsFractionTokenModule.write.mintInitialSupply([
       hat1_id,
       address2.account?.address!,
       0n,
     ]);
-    await FractionToken.write.mintInitialSupply([
+    await HatsFractionTokenModule.write.mintInitialSupply([
       hat2_id,
       address3.account?.address!,
       0n,
     ]);
 
-    const tokenId = await FractionToken.read.getTokenId([
+    const tokenId = await HatsFractionTokenModule.read.getTokenId([
       hat1_id,
       address1.account?.address!,
     ]);
-    await FractionToken.write.safeTransferFrom(
+    await HatsFractionTokenModule.write.safeTransferFrom(
       [
         address1.account?.address!,
         address4.account?.address!,
@@ -540,7 +668,7 @@ describe("CreateSplit", () => {
         account: address1.account!,
       },
     );
-    await FractionToken.write.safeTransferFrom(
+    await HatsFractionTokenModule.write.safeTransferFrom(
       [
         address1.account?.address!,
         address3.account?.address!,
@@ -553,26 +681,31 @@ describe("CreateSplit", () => {
       },
     );
 
-    const address1Balance = await FractionToken.read.balanceOf([
+    const address1Balance = await HatsFractionTokenModule.read.balanceOf([
       address1.account?.address!,
-      address1.account?.address!,
-      hat1_id,
+      tokenId,
     ]);
     expect(address1Balance).to.equal(6000n);
 
     // address2のbalance
-    const address2Balance = await FractionToken.read.balanceOf([
-      address2.account?.address!,
-      address2.account?.address!,
+    const address2TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat1_id,
+      address2.account?.address!,
+    ]);
+    const address2Balance = await HatsFractionTokenModule.read.balanceOf([
+      address2.account?.address!,
+      address2TokenId,
     ]);
     expect(address2Balance).to.equal(10000n);
 
     // address3のbalance
-    const address3Balance = await FractionToken.read.balanceOf([
-      address3.account?.address!,
-      address3.account?.address!,
+    const address3TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat2_id,
+      address3.account?.address!,
+    ]);
+    const address3Balance = await HatsFractionTokenModule.read.balanceOf([
+      address3.account?.address!,
+      address3TokenId,
     ]);
     expect(address3Balance).to.equal(10000n);
   });
@@ -639,36 +772,44 @@ describe("CreateSplit", () => {
     const sqrtAddress2Time = sqrt(address2Time);
     const sqrtAddress3Time = sqrt(address3Time);
 
-    const address1Balance = await FractionToken.read.balanceOf([
-      address1.account?.address!,
-      address1.account?.address!,
+    const address1TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat1_id,
+      address1.account?.address!,
+    ]);
+    const address1Balance = await HatsFractionTokenModule.read.balanceOf([
+      address1.account?.address!,
+      address1TokenId,
     ]);
     expect(address1Balance).to.equal(6000n);
 
-    const address3_address1Balance = await FractionToken.read.balanceOf([
-      address3.account?.address!,
-      address1.account?.address!,
-      hat1_id,
-    ]);
+    const address3_address1Balance =
+      await HatsFractionTokenModule.read.balanceOf([
+        address3.account?.address!,
+        address1TokenId,
+      ]);
 
-    const address4Balance = await FractionToken.read.balanceOf([
+    const address4Balance = await HatsFractionTokenModule.read.balanceOf([
       address4.account?.address!,
-      address1.account?.address!,
-      hat1_id,
+      address1TokenId,
     ]);
 
-    const address2Balance = await FractionToken.read.balanceOf([
-      address2.account?.address!,
-      address2.account?.address!,
+    const address2TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat1_id,
+      address2.account?.address!,
+    ]);
+    const address2Balance = await HatsFractionTokenModule.read.balanceOf([
+      address2.account?.address!,
+      address2TokenId,
     ]);
     expect(address2Balance).to.equal(10000n);
 
-    const address3Balance = await FractionToken.read.balanceOf([
-      address3.account?.address!,
-      address3.account?.address!,
+    const address3TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat2_id,
+      address3.account?.address!,
+    ]);
+    const address3Balance = await HatsFractionTokenModule.read.balanceOf([
+      address3.account?.address!,
+      address3TokenId,
     ]);
     expect(address3Balance).to.equal(10000n);
 
@@ -804,28 +945,36 @@ describe("CreateSplit", () => {
     const sqrtAddress2Time = sqrt(address2Time);
     const sqrtAddress3Time = sqrt(address3Time);
 
-    const address1Balance = await FractionToken.read.balanceOf([
-      address1.account?.address!,
-      address1.account?.address!,
+    const address1TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat1_id,
+      address1.account?.address!,
+    ]);
+    const address1Balance = await HatsFractionTokenModule.read.balanceOf([
+      address1.account?.address!,
+      address1TokenId,
     ]);
 
-    const address4Balance = await FractionToken.read.balanceOf([
+    const address4Balance = await HatsFractionTokenModule.read.balanceOf([
       address4.account?.address!,
-      address1.account?.address!,
-      hat1_id,
+      address1TokenId,
     ]);
 
-    const address2Balance = await FractionToken.read.balanceOf([
-      address2.account?.address!,
-      address2.account?.address!,
+    const address2TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat1_id,
+      address2.account?.address!,
+    ]);
+    const address2Balance = await HatsFractionTokenModule.read.balanceOf([
+      address2.account?.address!,
+      address2TokenId,
     ]);
 
-    const address3Balance = await FractionToken.read.balanceOf([
-      address3.account?.address!,
-      address3.account?.address!,
+    const address3TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat2_id,
+      address3.account?.address!,
+    ]);
+    const address3Balance = await HatsFractionTokenModule.read.balanceOf([
+      address3.account?.address!,
+      address3TokenId,
     ]);
 
     const allocation0 =

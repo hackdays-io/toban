@@ -31,7 +31,7 @@ export const VerticalBar = ({ treeId }: { treeId: string }) => {
     },
     orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Asc,
-    first: 100,
+    first: 500,
   });
 
   const { labels, amounts } = useMemo(() => {

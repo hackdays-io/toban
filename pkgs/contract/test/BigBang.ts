@@ -97,17 +97,6 @@ describe("BigBang", () => {
     PushSplitsFactory = _PushSplitsFactory;
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: await address1
-          .getAddresses()
-          .then((addresses) => addresses[0]),
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     ThanksToken_IMPL = _ThanksToken;

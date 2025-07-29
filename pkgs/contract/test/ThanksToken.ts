@@ -212,17 +212,6 @@ describe("ThanksToken", () => {
     );
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: await deployer
-          .getAddresses()
-          .then((addresses) => addresses[0]),
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     DeployedThanksToken = _ThanksToken;
@@ -241,6 +230,48 @@ describe("ThanksToken", () => {
         Create2Deployer.address,
       );
     ThanksTokenFactory = _ThanksTokenFactory;
+
+    // Set BigBang address on ThanksTokenFactory (temporarily set deployer for testing)
+    await ThanksTokenFactory.write.setBigBang([deployerAddress]);
+
+    // Create ThanksToken instance using factory
+    const createTxHash =
+      await ThanksTokenFactory.write.createThanksTokenDeterministic([
+        "Test Thanks Token",
+        "TTT",
+        deployerAddress,
+        1000000000000000000n, // 1.0 in wei
+        "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
+      ]);
+
+    const createReceipt = await publicClient.waitForTransactionReceipt({
+      hash: createTxHash,
+    });
+
+    let thanksTokenAddress: Address | undefined;
+    for (const log of createReceipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: ThanksTokenFactory.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName === "ThanksTokenCreated") {
+          thanksTokenAddress = decodedLog.args.tokenAddress as Address;
+          break;
+        }
+      } catch (error) {}
+    }
+
+    if (!thanksTokenAddress) {
+      throw new Error("ThanksToken address not found in transaction logs");
+    }
+
+    // Get the actual ThanksToken clone instance
+    DeployedThanksToken = await viem.getContractAt(
+      "ThanksToken",
+      thanksTokenAddress,
+    );
 
     let txHash2 = await Hats.write.createHat([
       topHatId,
@@ -306,7 +337,7 @@ describe("ThanksToken", () => {
   it("should initialize with correct name, symbol and owner", async () => {
     const name = await DeployedThanksToken.read.name();
     const symbol = await DeployedThanksToken.read.symbol();
-    const owner = await DeployedThanksToken.read.owner();
+    const owner = await DeployedThanksToken.read.WORKSPACE_OWNER();
     const deployerAddress = validateAddress(deployer);
 
     expect(name).to.equal("Test Thanks Token");

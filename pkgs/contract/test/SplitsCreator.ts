@@ -217,15 +217,6 @@ describe("SplitsCreator Factory", () => {
     );
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: address1.account?.address!,
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     ThanksToken = _ThanksToken;
@@ -500,15 +491,6 @@ describe("CreateSplit", () => {
     );
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: address1.account?.address!,
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     ThanksToken = _ThanksToken;

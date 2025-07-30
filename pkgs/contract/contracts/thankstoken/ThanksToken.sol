@@ -11,6 +11,8 @@ import {Clone} from "solady/src/utils/Clone.sol";
 contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     mapping(address => uint256) private _mintedAmount;
     mapping(address => uint256) private _addressCoefficient;
+    address[] private _participants;
+    mapping(address => bool) private _isParticipant;
 
     uint256 private constant SECONDS_PER_HOUR = 3600;
 
@@ -113,6 +115,15 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         // Mint tokens using ERC20's _mint
         _mint(to, amount);
 
+        if (!_isParticipant[msg.sender]) {
+            _participants.push(msg.sender);
+            _isParticipant[msg.sender] = true;
+        }
+        if (!_isParticipant[to]) {
+            _participants.push(to);
+            _isParticipant[to] = true;
+        }
+
         emit TokensMinted(to, amount);
 
         return true;
@@ -176,6 +187,10 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         address owner
     ) public view override returns (uint256) {
         return _mintedAmount[owner];
+    }
+
+    function getParticipants() public view returns (address[] memory) {
+        return _participants;
     }
 
     function addressCoefficient(

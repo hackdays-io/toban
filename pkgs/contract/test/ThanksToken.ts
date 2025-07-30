@@ -707,5 +707,66 @@ describe("ThanksToken", () => {
         expect(error.message).to.include("Amount exceeds mintable amount");
       }
     });
+
+    it("should track participants correctly", async () => {
+      // Note: previous tests have already minted from address1 to address2.
+      // So, participants should already include both.
+      let participants = await DeployedThanksToken.read.getParticipants();
+      expect(participants.map((p) => p.toLowerCase())).to.have.members([
+        address1Validated.toLowerCase(),
+        address2Validated.toLowerCase(),
+      ]);
+
+      // Increase time to accrue more mintable amount for address1
+      await time.increase(3600 * 5); // 5 hours
+
+      const relatedRoles = [
+        {
+          hatId,
+          wearer: address1Validated,
+        },
+      ];
+
+      const mintableAmount = await DeployedThanksToken.read.mintableAmount([
+        address1Validated,
+        relatedRoles,
+      ]);
+
+      // Mint from address1 to address3, who is a new participant
+      await DeployedThanksToken.write.mint(
+        [address3Validated, mintableAmount, relatedRoles],
+        { account: address1.account },
+      );
+
+      const newParticipants = await DeployedThanksToken.read.getParticipants();
+      expect(newParticipants).to.have.lengthOf(3);
+      expect(newParticipants.map((p) => p.toLowerCase())).to.have.members([
+        address1Validated.toLowerCase(),
+        address2Validated.toLowerCase(),
+        address3Validated.toLowerCase(),
+      ]);
+
+      // Mint again to an existing participant (address2) to ensure no duplicates are added
+      await time.increase(3600 * 5); // 5 more hours
+      const mintableAmount2 = await DeployedThanksToken.read.mintableAmount([
+        address1Validated,
+        relatedRoles,
+      ]);
+
+      expect(mintableAmount2 > 0n).to.be.true;
+
+      await DeployedThanksToken.write.mint(
+        [address2Validated, mintableAmount2, relatedRoles],
+        { account: address1.account },
+      );
+
+      const finalList = await DeployedThanksToken.read.getParticipants();
+      expect(finalList).to.have.lengthOf(3);
+      expect(finalList.map((p) => p.toLowerCase())).to.have.members([
+        address1Validated.toLowerCase(),
+        address2Validated.toLowerCase(),
+        address3Validated.toLowerCase(),
+      ]);
+    });
   });
 });

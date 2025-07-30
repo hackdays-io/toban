@@ -50,7 +50,7 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         return coefficient > 0 ? coefficient : 1e18;
     }
 
-        function NAME() public pure returns (string memory) {
+    function NAME() public pure returns (string memory) {
         return _getArgString(0);
     }
 

@@ -66,6 +66,10 @@ const createHat = async (
 };
 
 describe("ThanksToken", () => {
+  const tokenName =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~あいうえお";
+  const tokenSymbol = "ALL-CHARS-シンボル";
+
   let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
@@ -237,8 +241,8 @@ describe("ThanksToken", () => {
     // Create ThanksToken instance using factory
     const createTxHash =
       await ThanksTokenFactory.write.createThanksTokenDeterministic([
-        "Test Thanks Token",
-        "TTT",
+        tokenName,
+        tokenSymbol,
         deployerAddress,
         1000000000000000000n, // 1.0 in wei
         "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
@@ -340,8 +344,8 @@ describe("ThanksToken", () => {
     const owner = await DeployedThanksToken.read.WORKSPACE_OWNER();
     const deployerAddress = validateAddress(deployer);
 
-    expect(name).to.equal("Test Thanks Token");
-    expect(symbol).to.equal("TTT");
+    expect(name).to.equal(tokenName);
+    expect(symbol).to.equal(tokenSymbol);
     expect(owner.toLowerCase()).to.equal(deployerAddress.toLowerCase());
   });
 

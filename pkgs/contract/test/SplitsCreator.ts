@@ -976,27 +976,39 @@ describe("CreateSplit without thanks token weight", () => {
 
     expect(allocations.length).to.equal(5);
 
-    console.log("allocations[0]:", allocations[0]);
-    console.log("allocations[1]:", allocations[1]);
-    console.log("allocations[2]:", allocations[2]);
-    console.log("allocations[3]:", allocations[3]);
-    console.log("allocations[4]:", allocations[4]);
+    const PRECISION = 1000000000n;
 
-    // expect(allocations[0]).to.equal(
-    //   ((address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time,
-    // );
-    // expect(allocations[1]).to.equal(
-    //   ((address4Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time,
-    // );
-    // expect(allocations[2]).to.equal(
-    //   ((address3_address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time,
-    // );
-    // expect(allocations[3]).to.equal(
-    //   ((address2Balance * 1000000n) / 20000n) * 1n * sqrtAddress2Time,
-    // );
-    // expect(allocations[4]).to.equal(
-    //   ((address3Balance * 1000000n) / 10000n) * 2n * sqrtAddress3Time,
-    // );
+    // These are the allocations calculated within _calculateRoleAllocations,
+    // which are normalized per splitInfo (i.e., per hat).
+    const roleAllocationsFromContract = [
+      // address1 (wearer of hat1)
+      (address1Balance * 1n * sqrtAddress1Time * PRECISION) / 20000n,
+      // address4 (recipient of address1)
+      (address4Balance * 1n * sqrtAddress1Time * PRECISION) / 20000n,
+      // address3 (recipient of address1)
+      (address3_address1Balance * 1n * sqrtAddress1Time * PRECISION) / 20000n,
+      // address2 (wearer of hat1)
+      (address2Balance * 1n * sqrtAddress2Time * PRECISION) / 20000n,
+      // address3 (wearer of hat2)
+      (address3Balance * 2n * sqrtAddress3Time * PRECISION) / 10000n,
+    ];
+
+    // Sum of the above allocations, equivalent to `roleTotalAllocation` in SplitsCreator.sol
+    const roleTotalAllocation = roleAllocationsFromContract.reduce(
+      (sum, current) => sum + current,
+      0n,
+    );
+
+    // Final normalization performed in _calculateAllocations
+    const expectedAllocations = roleAllocationsFromContract.map(
+      (alloc) => (alloc * PRECISION) / roleTotalAllocation,
+    );
+
+    expect(allocations[0]).to.equal(expectedAllocations[0]);
+    expect(allocations[1]).to.equal(expectedAllocations[1]);
+    expect(allocations[2]).to.equal(expectedAllocations[2]);
+    expect(allocations[3]).to.equal(expectedAllocations[3]);
+    expect(allocations[4]).to.equal(expectedAllocations[4]);
 
     await address1.sendTransaction({
       account: address1.account!,
@@ -1066,28 +1078,20 @@ describe("CreateSplit without thanks token weight", () => {
       address: address3.account?.address!,
     });
 
-    console.log(
-      "Address1Diff:",
-      (Number(afterAddress1Balance) - Number(beforeAddress1Balance)) / 10 ** 18,
-    );
-    console.log(
-      "Address2Diff:",
-      (Number(afterAddress2Balance) - Number(beforeAddress2Balance)) / 10 ** 18,
-    );
-    console.log(
-      "Address3Diff:",
-      (Number(afterAddress3Balance) - Number(beforeAddress3Balance)) / 10 ** 18,
-    );
+    const address1Diff =
+      Number(afterAddress1Balance) - Number(beforeAddress1Balance);
+    const address2Diff =
+      Number(afterAddress2Balance) - Number(beforeAddress2Balance);
+    const address3Diff =
+      Number(afterAddress3Balance) - Number(beforeAddress3Balance);
 
-    expect(Number(afterAddress1Balance) - Number(beforeAddress1Balance)).gt(
-      500,
-    );
-    expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance)).gt(
-      249,
-    );
-    expect(Number(afterAddress3Balance) - Number(beforeAddress3Balance)).gt(
-      249,
-    );
+    console.log("Address1Diff:", address1Diff);
+    console.log("Address2Diff:", address2Diff);
+    console.log("Address3Diff:", address3Diff);
+
+    expect(address1Diff).gt(500);
+    expect(address2Diff).gt(249);
+    expect(address3Diff).gt(249);
   });
 
   it("should preview allocations correctly", async () => {
@@ -1115,8 +1119,6 @@ describe("CreateSplit without thanks token weight", () => {
     const allocations = previewResult[1];
     const totalAllocation = previewResult[2];
 
-    console.log("previewResult:\n", previewResult);
-
     // Create a map to aggregate allocations by address
     const aggregatedAllocations = new Map<string, bigint>();
 
@@ -1133,15 +1135,6 @@ describe("CreateSplit without thanks token weight", () => {
         aggregatedAllocations.set(address, allocation);
       }
     }
-
-    console.log("########################################################");
-    console.log("Aggregated allocations by address:");
-    for (const [address, allocation] of aggregatedAllocations) {
-      console.log(
-        `${address}: ${(Number(allocation) / Number(totalAllocation)).toFixed(6)}`,
-      );
-    }
-    console.log("########################################################");
 
     const endWoreTime = await publicClient
       .getBlock({
@@ -1252,12 +1245,6 @@ describe("CreateSplit without thanks token weight", () => {
     );
 
     expect(allocations.length).to.equal(5);
-
-    console.log("allocations[0]:", allocations[0]);
-    console.log("allocations[1]:", allocations[1]);
-    console.log("allocations[2]:", allocations[2]);
-    console.log("allocations[3]:", allocations[3]);
-    console.log("allocations[4]:", allocations[4]);
 
     expect(allocations[0]).to.equal(expectedAllocations[0]);
     expect(allocations[1]).to.equal(expectedAllocations[1]);
@@ -2065,7 +2052,7 @@ describe("CreateSplit with thanks token weight", () => {
       address1.account?.address!,
       address1TokenId,
     ]);
-    // expect(address1Balance).to.equal(6000n);
+    expect(address1Balance).to.equal(6000n);
 
     const address3_address1Balance =
       await HatsFractionTokenModule.read.balanceOf([
@@ -2086,7 +2073,7 @@ describe("CreateSplit with thanks token weight", () => {
       address2.account?.address!,
       address2TokenId,
     ]);
-    // expect(address2Balance).to.equal(10000n);
+    expect(address2Balance).to.equal(10000n);
 
     const address3TokenId = await HatsFractionTokenModule.read.getTokenId([
       hat2_id,
@@ -2096,33 +2083,90 @@ describe("CreateSplit with thanks token weight", () => {
       address3.account?.address!,
       address3TokenId,
     ]);
-    // expect(address3Balance).to.equal(10000n);
-
-    console.log("allocations:\n", allocations);
+    expect(address3Balance).to.equal(10000n);
 
     expect(allocations.length).to.equal(8);
 
-    console.log("allocations[0]:", allocations[0]);
-    console.log("allocations[1]:", allocations[1]);
-    console.log("allocations[2]:", allocations[2]);
-    console.log("allocations[3]:", allocations[3]);
-    console.log("allocations[4]:", allocations[4]);
+    const PRECISION = 1000000000n;
 
-    // expect(allocations[0]).to.equal(
-    //   ((address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time,
-    // );
-    // expect(allocations[1]).to.equal(
-    //   ((address4Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time,
-    // );
-    // expect(allocations[2]).to.equal(
-    //   ((address3_address1Balance * 1000000n) / 20000n) * 1n * sqrtAddress1Time,
-    // );
-    // expect(allocations[3]).to.equal(
-    //   ((address2Balance * 1000000n) / 20000n) * 1n * sqrtAddress2Time,
-    // );
-    // expect(allocations[4]).to.equal(
-    //   ((address3Balance * 1000000n) / 10000n) * 2n * sqrtAddress3Time,
-    // );
+    const { thanksTokenReceivedWeight, thanksTokenSentWeight } = weightsInfo;
+
+    const thanksParticipants = await ThanksToken.read.getParticipants();
+    let totalThanksBalance = 0n;
+    let totalThanksMinted = 0n;
+    for (const p of thanksParticipants) {
+      totalThanksBalance += await ThanksToken.read.balanceOf([p]);
+      totalThanksMinted += await ThanksToken.read.mintedAmount([p]);
+    }
+
+    const thanksTokenWeightSum =
+      thanksTokenReceivedWeight + thanksTokenSentWeight;
+
+    // Calculate thanks-based allocations
+    const thanksAllocations: { [key: string]: bigint } = {};
+    let thanksTotalAllocation = 0n;
+    for (const p of thanksParticipants) {
+      const balance = await ThanksToken.read.balanceOf([p]);
+      const minted = await ThanksToken.read.mintedAmount([p]);
+      const score =
+        (thanksTokenReceivedWeight * balance * PRECISION) / totalThanksBalance +
+        (thanksTokenSentWeight * minted * PRECISION) / totalThanksMinted;
+      thanksAllocations[p] = score / thanksTokenWeightSum;
+      thanksTotalAllocation += thanksAllocations[p];
+    }
+
+    // hat1 is for address1 and address2. Its fraction token supply is 20000.
+    const hat1Supply = 20000n;
+    // hat2 is for address3. Its fraction token supply is 10000.
+    const hat2Supply = 10000n;
+
+    // Calculate role-based allocations
+    const roleAllocations = [
+      (address1Balance * 1n * sqrtAddress1Time * PRECISION) / hat1Supply,
+      (address4Balance * 1n * sqrtAddress1Time * PRECISION) / hat1Supply,
+      (address3_address1Balance * 1n * sqrtAddress1Time * PRECISION) /
+        hat1Supply,
+      (address2Balance * 1n * sqrtAddress2Time * PRECISION) / hat1Supply,
+      (address3Balance * 2n * sqrtAddress3Time * PRECISION) / hat2Supply,
+    ];
+
+    // Sum of the above allocations, equivalent to `roleTotalAllocation` in SplitsCreator.sol
+    const roleTotalAllocation = roleAllocations.reduce(
+      (sum, current) => sum + current,
+      0n,
+    );
+
+    // Combine allocations with weights
+    const weightSum = weightsInfo.roleWeight + weightsInfo.thanksTokenWeight;
+
+    const expectedThanksAllocations = [];
+    for (const p of thanksParticipants) {
+      expectedThanksAllocations.push(
+        (thanksAllocations[p] * weightsInfo.thanksTokenWeight * PRECISION) /
+          thanksTotalAllocation /
+          weightSum,
+      );
+    }
+    const expectedRoleAllocations = roleAllocations.map(
+      (alloc) =>
+        (alloc * weightsInfo.roleWeight * PRECISION) /
+        roleTotalAllocation /
+        weightSum,
+    );
+
+    const expectedAllocations = [
+      ...expectedThanksAllocations,
+      ...expectedRoleAllocations,
+    ];
+
+    expect(allocations[0]).to.equal(expectedAllocations[0]);
+    expect(allocations[1]).to.equal(expectedAllocations[1]);
+    expect(allocations[2]).to.equal(expectedAllocations[2]);
+    expect(allocations[3]).to.equal(expectedAllocations[3]);
+    expect(allocations[4]).to.equal(expectedAllocations[4]);
+    expect(allocations[5]).to.equal(expectedAllocations[5]);
+    expect(allocations[6]).to.equal(expectedAllocations[6]);
+    expect(allocations[7]).to.equal(expectedAllocations[7]);
 
     await address1.sendTransaction({
       account: address1.account!,
@@ -2192,34 +2236,20 @@ describe("CreateSplit with thanks token weight", () => {
       address: address3.account?.address!,
     });
 
-    console.log("###########################################");
-    console.log("###########################################");
-    console.log("###########################################");
-    console.log(
-      "Address1Diff:",
-      (Number(afterAddress1Balance) - Number(beforeAddress1Balance)) / 10 ** 18,
-    );
-    console.log(
-      "Address2Diff:",
-      (Number(afterAddress2Balance) - Number(beforeAddress2Balance)) / 10 ** 18,
-    );
-    console.log(
-      "Address3Diff:",
-      (Number(afterAddress3Balance) - Number(beforeAddress3Balance)) / 10 ** 18,
-    );
-    console.log("###########################################");
-    console.log("###########################################");
-    console.log("###########################################");
+    const address1Diff =
+      Number(afterAddress1Balance) - Number(beforeAddress1Balance);
+    const address2Diff =
+      Number(afterAddress2Balance) - Number(beforeAddress2Balance);
+    const address3Diff =
+      Number(afterAddress3Balance) - Number(beforeAddress3Balance);
 
-    expect(Number(afterAddress1Balance) - Number(beforeAddress1Balance)).gt(
-      500,
-    );
-    expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance)).gt(
-      249,
-    );
-    expect(Number(afterAddress3Balance) - Number(beforeAddress3Balance)).gt(
-      249,
-    );
+    console.log("Address1Diff:", address1Diff);
+    console.log("Address2Diff:", address2Diff);
+    console.log("Address3Diff:", address3Diff);
+
+    expect(address1Diff).gt(500);
+    expect(address2Diff).gt(249);
+    expect(address3Diff).gt(249);
   });
 
   it("should preview allocations correctly", async () => {
@@ -2246,8 +2276,6 @@ describe("CreateSplit with thanks token weight", () => {
     const shareHolders = previewResult[0];
     const allocations = previewResult[1];
     const totalAllocation = previewResult[2];
-
-    console.log("previewResult:\n", previewResult);
 
     const endWoreTime = await publicClient
       .getBlock({
@@ -2381,12 +2409,6 @@ describe("CreateSplit with thanks token weight", () => {
       address3.account?.address!,
     ];
 
-    console.log("expectedShareHolders", expectedShareHolders);
-    console.log("shareHolders", shareHolders);
-    console.log("address1.account?.address!", address1.account?.address!);
-    console.log("address2.account?.address!", address2.account?.address!);
-    console.log("address3.account?.address!", address3.account?.address!);
-
     // Convert addresses to lowercase before comparing
     expect(shareHolders[0].toLowerCase()).to.equal(
       expectedShareHolders[0].toLowerCase(),
@@ -2413,15 +2435,6 @@ describe("CreateSplit with thanks token weight", () => {
       expectedShareHolders[7].toLowerCase(),
     );
     expect(allocations.length).to.equal(8);
-
-    console.log("allocations[0]:", allocations[0]);
-    console.log("allocations[1]:", allocations[1]);
-    console.log("allocations[2]:", allocations[2]);
-    console.log("allocations[3]:", allocations[3]);
-    console.log("allocations[4]:", allocations[4]);
-    console.log("allocations[5]:", allocations[5]);
-    console.log("allocations[6]:", allocations[6]);
-    console.log("allocations[7]:", allocations[7]);
 
     expect(allocations[0]).to.equal(expectedAllocations[0]);
     expect(allocations[1]).to.equal(expectedAllocations[1]);

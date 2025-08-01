@@ -1,3 +1,4 @@
+// solhint-disable
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.24;
@@ -6,11 +7,14 @@ import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {ISplitsCreator} from "./ISplitsCreator.sol";
 import {ISplitFactoryV2} from "../splits/interfaces/ISplitFactoryV2.sol";
 import {SplitV2Lib} from "../splits/libraries/SplitV2.sol";
+import {IThanksToken} from "../thankstoken/IThanksToken.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
+    uint256 private constant PRECISION = 10e8;
+
     function HATS() public pure returns (IHats) {
         return IHats(_getArgAddress(12));
     }
@@ -31,19 +35,24 @@ contract SplitsCreator is ISplitsCreator, Clone {
         return IHatsFractionTokenModule(_getArgAddress(108));
     }
 
+    function THANKS_TOKEN() public pure returns (IThanksToken) {
+        return IThanksToken(_getArgAddress(140));
+    }
+
     /**
      * @notice Creates a new split contract based on the provided splits information.
      * @param _splitsInfo An array of SplitsInfo structs containing details about roles, wearers, and multipliers.
      * @return The address of the newly created split contract.
      */
     function create(
-        SplitsInfo[] memory _splitsInfo
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo
     ) external returns (address) {
         (
             address[] memory shareHolders,
             uint256[] memory allocations,
             uint256 totalAllocation
-        ) = _calculateAllocations(_splitsInfo);
+        ) = _calculateAllocations(_splitsInfo, _weightsInfo);
 
         require(
             shareHolders.length > 1,
@@ -77,7 +86,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
      * @return totalAllocation Sum of all allocations.
      */
     function preview(
-        SplitsInfo[] memory _splitsInfo
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo
     )
         external
         view
@@ -88,18 +98,140 @@ contract SplitsCreator is ISplitsCreator, Clone {
         )
     {
         (shareHolders, allocations, totalAllocation) = _calculateAllocations(
-            _splitsInfo
+            _splitsInfo,
+            _weightsInfo
         );
     }
 
     /**
-     * @dev Internal function to calculate allocations for shareholders.
+     * @dev Internal function to calculate allocations for shareHolders.
+     *      It calculates role-based and thanks-based allocations separately,
+     *      normalizes them, applies weights, and then combines them.
      * @param _splitsInfo An array of SplitsInfo structs containing details about roles, wearers, and multipliers.
+     * @param _weightsInfo Struct containing weights for different allocation types.
      * @return shareHolders An array of shareholder addresses.
      * @return allocations Corresponding allocations for each shareholder.
      * @return totalAllocation Sum of all allocations.
      */
     function _calculateAllocations(
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo
+    )
+        internal
+        view
+        returns (
+            address[] memory shareHolders,
+            uint256[] memory allocations,
+            uint256 totalAllocation
+        )
+    {
+        address[] memory thanksShareHolders;
+        uint256[] memory thanksAllocations;
+        uint256 thanksTotalAllocation;
+        (thanksShareHolders, thanksAllocations, thanksTotalAllocation) = _calculateThanksAllocations(
+            _weightsInfo.thanksTokenReceivedWeight,
+            _weightsInfo.thanksTokenSentWeight
+        );
+
+        address[] memory roleShareHolders;
+        uint256[] memory roleAllocations;
+        uint256 roleTotalAllocation;
+        (roleShareHolders, roleAllocations, roleTotalAllocation) = _calculateRoleAllocations(_splitsInfo);
+
+        uint256 numOfThanksShareHolders = 0;
+        if (_weightsInfo.thanksTokenWeight > 0) {
+            numOfThanksShareHolders = thanksShareHolders.length;
+        }
+
+        uint256 numOfRoleShareHolders = 0;
+        if (_weightsInfo.roleWeight > 0) {
+            numOfRoleShareHolders = roleShareHolders.length;
+        }
+
+        uint256 numOfShareHolders = numOfThanksShareHolders + numOfRoleShareHolders;
+
+        shareHolders = new address[](numOfShareHolders);
+        allocations = new uint256[](numOfShareHolders);
+
+        uint256 weightSum = _weightsInfo.thanksTokenWeight + _weightsInfo.roleWeight;
+
+        totalAllocation = 0;
+
+        for (uint256 i = 0; i < numOfThanksShareHolders; i++) {
+            shareHolders[i] = thanksShareHolders[i];
+            uint256 thanksAllocation = allocations[i] = thanksAllocations[i] * _weightsInfo.thanksTokenWeight * PRECISION / thanksTotalAllocation / weightSum;
+            allocations[i] = thanksAllocation;
+            totalAllocation += thanksAllocation;
+        }
+
+        for (uint256 i = 0; i < numOfRoleShareHolders; i++) {
+            shareHolders[numOfThanksShareHolders + i] = roleShareHolders[i];
+            uint256 roleAllocation = roleAllocations[i] * _weightsInfo.roleWeight * PRECISION / roleTotalAllocation / weightSum;
+            allocations[numOfThanksShareHolders + i] = roleAllocation;
+            totalAllocation += roleAllocation;
+        }
+
+        return (shareHolders, allocations, totalAllocation);
+    }
+
+    function _calculateThanksAllocations(
+		uint256 thanksTokenReceivedWeight,
+		uint256 thanksTokenSentWeight
+	)
+        internal
+        view
+        returns (
+            address[] memory shareHolders,
+            uint256[] memory allocations,
+            uint256 totalAllocation
+        )
+    {
+        address[] memory thanksParticipants = THANKS_TOKEN().getParticipants();
+        uint256 thanksParticipantsCount = thanksParticipants.length;
+        uint256 totalThanksBalance = 0;
+        uint256 totalThanksMinted = 0;
+
+        for (uint256 i = 0; i < thanksParticipantsCount; i++) {
+            uint256 thanksBalance = THANKS_TOKEN().balanceOf(thanksParticipants[i]);
+            uint256 thanksMinted = THANKS_TOKEN().mintedAmount(thanksParticipants[i]);
+
+            totalThanksBalance += thanksBalance;
+            totalThanksMinted += thanksMinted;
+        }
+
+        shareHolders = new address[](thanksParticipantsCount);
+        allocations = new uint256[](thanksParticipantsCount);
+        uint256 shareHolderIndex = 0;
+
+        uint256 thanksTokenWeightSum = thanksTokenReceivedWeight + thanksTokenSentWeight;
+
+        if (totalThanksBalance > 0 && totalThanksMinted > 0) {
+            for (uint256 i = 0; i < thanksParticipantsCount; i++) {
+                uint256 thanksBalance = THANKS_TOKEN().balanceOf(thanksParticipants[i]);
+                uint256 thanksMinted = THANKS_TOKEN().mintedAmount(thanksParticipants[i]);
+
+                uint256 thanksScore =
+                    (
+                        (thanksTokenReceivedWeight * thanksBalance * PRECISION / totalThanksBalance) +
+                        (thanksTokenSentWeight * thanksMinted * PRECISION / totalThanksMinted)
+                    ) / thanksTokenWeightSum;
+
+                shareHolders[shareHolderIndex] = thanksParticipants[i];
+                allocations[shareHolderIndex] = thanksScore;
+                totalAllocation += thanksScore;
+                shareHolderIndex++;
+            }
+        }
+
+        totalAllocation = 0;
+        for (uint256 i = 0; i < allocations.length; i++) {
+            totalAllocation += allocations[i];
+        }
+
+        return (shareHolders, allocations, totalAllocation);
+    }
+
+    function _calculateRoleAllocations(
         SplitsInfo[] memory _splitsInfo
     )
         internal
@@ -197,7 +329,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
             for (uint256 l = 0; l < allocations.length; l++) {
                 if (l >= currentShareHolderIndex && l < shareHolderIndex) {
                     allocations[l] =
-                        (allocations[l] * 10e5) /
+                        (allocations[l] * PRECISION) /
                         fractionTokenSupply;
                 }
             }

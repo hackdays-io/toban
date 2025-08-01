@@ -10,18 +10,7 @@ export type ThanksTokenFactory = Awaited<
   ReturnType<typeof deployThanksTokenFactory>
 >["ThanksTokenFactory"];
 
-export const deployThanksToken = async (
-  params: {
-    initialOwner: Address;
-    name: string;
-    symbol: string;
-    hatsAddress: Address;
-    fractionTokenAddress: Address;
-    hatsTimeFrameModuleAddress: Address;
-    defaultCoefficient: bigint;
-  },
-  create2DeployerAddress?: string,
-) => {
+export const deployThanksToken = async (create2DeployerAddress?: string) => {
   const ThanksTokenFactory = await ethers.getContractFactory("ThanksToken");
   const ThanksTokenImplTx = await ThanksTokenFactory.getDeployTransaction();
   const ThanksTokenImplAddress = await deployContract_Create2(
@@ -32,38 +21,14 @@ export const deployThanksToken = async (
     create2DeployerAddress,
   );
 
-  const ThanksTokenInitData = ThanksTokenFactory.interface.encodeFunctionData(
-    "initialize",
-    [
-      params.initialOwner,
-      params.name,
-      params.symbol,
-      params.hatsAddress,
-      params.fractionTokenAddress,
-      params.hatsTimeFrameModuleAddress,
-      params.defaultCoefficient,
-    ],
-  );
-
-  const UpgradeableProxy = await ProxyFactory();
-  const ThanksTokenProxyTx = await UpgradeableProxy.getDeployTransaction(
-    ThanksTokenImplAddress,
-    ThanksTokenInitData,
-  );
-  const ThanksTokenAddress = await deployContract_Create2(
-    baseSalt,
-    ThanksTokenProxyTx.data || "0x",
-    ethers.keccak256(ThanksTokenProxyTx.data),
-    "ThanksToken",
-    create2DeployerAddress,
-  );
-
+  // ThanksToken is now a Clone implementation, no proxy or initialization needed
+  // The implementation contract is deployed and will be cloned by the factory
   const ThanksToken = await viem.getContractAt(
     "ThanksToken",
-    ThanksTokenAddress as Address,
+    ThanksTokenImplAddress as Address,
   );
 
-  return { ThanksToken, ThanksTokenImplAddress, ThanksTokenInitData };
+  return { ThanksToken, ThanksTokenImplAddress, ThanksTokenInitData: "0x" };
 };
 
 export const deployThanksTokenFactory = async (

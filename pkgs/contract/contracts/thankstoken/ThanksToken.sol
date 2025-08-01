@@ -5,46 +5,99 @@ import {IThanksToken} from "./IThanksToken.sol";
 import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
-import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Clone} from "solady/src/utils/Clone.sol";
 
-contract ThanksToken is
-    ERC20Upgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    IThanksToken
-{
-    IHats private hatsContract;
-    IHatsFractionTokenModule private fractionToken;
-    IHatsTimeFrameModule private hatsTimeFrameModule;
-
+contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     mapping(address => uint256) private _mintedAmount;
     mapping(address => uint256) private _addressCoefficient;
+    address[] private _participants;
+    mapping(address => bool) private _isParticipant;
 
-    uint256 private _defaultCoefficient;
     uint256 private constant SECONDS_PER_HOUR = 3600;
 
-    function initialize(
-        address _initialOwner,
-        string memory _name,
-        string memory _symbol,
-        address _hatsAddress,
-        address _fractionTokenAddress,
-        address _hatsTimeFrameModuleAddress,
-        uint256 _initialDefaultCoefficient
-    ) public initializer {
-        __ERC20_init(_name, _symbol);
-        __Ownable_init(_initialOwner);
-        __UUPSUpgradeable_init();
-        hatsContract = IHats(_hatsAddress);
-        fractionToken = IHatsFractionTokenModule(_fractionTokenAddress);
-        hatsTimeFrameModule = IHatsTimeFrameModule(_hatsTimeFrameModuleAddress);
-        _defaultCoefficient = _initialDefaultCoefficient > 0
-            ? _initialDefaultCoefficient
-            : 1e18;
+    // Clone data accessors
+    // The data is encoded using abi.encode in the following order:
+    // workspaceOwner, name, symbol, hatsAddress, fractionTokenAddress,
+    // hatsTimeFrameModuleAddress, defaultCoefficient
+
+    // With abi.encode:
+    // - offset 0: workspaceOwner (address) - 32 bytes
+    // - offset 32: offset to name data - 32 bytes
+    // - offset 64: offset to symbol data - 32 bytes
+    // - offset 96: hatsAddress (address) - 32 bytes
+    // - offset 128: fractionTokenAddress (address) - 32 bytes
+    // - offset 160: hatsTimeFrameModuleAddress (address) - 32 bytes
+    // - offset 192: defaultCoefficient (uint256) - 32 bytes
+    // - offset 224+: actual string data
+
+    function WORKSPACE_OWNER() public pure returns (address) {
+        return _getArgAddress(12); // 12 is the Clone offset
     }
 
+    function HATS() public pure returns (IHats) {
+        return IHats(_getArgAddress(108)); // 12 + 96
+    }
+
+    function FRACTION_TOKEN() public pure returns (IHatsFractionTokenModule) {
+        return IHatsFractionTokenModule(_getArgAddress(140)); // 12 + 128
+    }
+
+    function HATS_TIME_FRAME_MODULE() public pure returns (IHatsTimeFrameModule) {
+        return IHatsTimeFrameModule(_getArgAddress(172)); // 12 + 160
+    }
+
+    function DEFAULT_COEFFICIENT() public pure returns (uint256) {
+        uint256 coefficient = _getArgUint256(204); // 12 + 192
+        return coefficient > 0 ? coefficient : 1e18;
+    }
+
+    function NAME() public pure returns (string memory) {
+        return _getArgString(0);
+    }
+
+    function SYMBOL() public pure returns (string memory) {
+        return _getArgString(1);
+    }
+
+    // Helper function to read dynamic strings from clone args
+    function _getArgString(uint256 argIndex) internal pure returns (string memory) {
+        // Calculate offset to the string offset pointer
+        // Name is at offset 32 (after workspaceOwner), Symbol at offset 64
+        uint256 stringPointerOffset = 32 + (argIndex * 32);
+
+        // Read the offset to actual string data
+        uint256 stringDataOffset = _getArgUint256(stringPointerOffset);
+
+        // Read string length and data
+        uint256 stringLength = _getArgUint256(stringDataOffset);
+
+        bytes memory data = new bytes(stringLength);
+        for (uint256 i = 0; i < stringLength; i++) {
+            data[i] = bytes1(uint8(_getArgUint8(stringDataOffset + 32 + i)));
+        }
+
+        return string(data);
+    }
+
+    // Override ERC20 functions to use Clone data
+    function name() public pure override returns (string memory) {
+        return NAME();
+    }
+
+    function symbol() public pure override returns (string memory) {
+        return SYMBOL();
+    }
+
+    // Constructor is not called in Clone pattern, so we don't need to call ERC20 constructor
+
+    // Owner modifier
+    modifier onlyOwner() {
+        require(msg.sender == WORKSPACE_OWNER(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    // ThanksToken specific functions
     function mint(
         address to,
         uint256 amount,
@@ -59,8 +112,17 @@ contract ThanksToken is
         // Update minted amount
         _mintedAmount[msg.sender] += amount;
 
-        // Mint tokens
+        // Mint tokens using ERC20's _mint
         _mint(to, amount);
+
+        if (!_isParticipant[msg.sender]) {
+            _participants.push(msg.sender);
+            _isParticipant[msg.sender] = true;
+        }
+        if (!_isParticipant[to]) {
+            _participants.push(to);
+            _isParticipant[to] = true;
+        }
 
         emit TokensMinted(to, amount);
 
@@ -77,13 +139,13 @@ contract ThanksToken is
         for (uint256 i = 0; i < relatedRoles.length; i++) {
             RelatedRole memory role = relatedRoles[i];
 
-            uint256 shareBalance = fractionToken.balanceOf(
+            uint256 shareBalance = FRACTION_TOKEN().balanceOf(
                 owner,
                 role.wearer,
                 role.hatId
             );
 
-            uint256 shareTotalSupply = fractionToken.totalSupply(
+            uint256 shareTotalSupply = FRACTION_TOKEN().totalSupply(
                 role.wearer,
                 role.hatId
             );
@@ -93,7 +155,7 @@ contract ThanksToken is
                 continue;
             }
 
-            uint256 wearingTimeSeconds = hatsTimeFrameModule
+            uint256 wearingTimeSeconds = HATS_TIME_FRAME_MODULE()
                 .getWearingElapsedTime(role.wearer, role.hatId);
             uint256 wearingTimeHours = wearingTimeSeconds / 1 hours;
 
@@ -110,7 +172,7 @@ contract ThanksToken is
         // Apply address coefficient
         uint256 coefficient = _addressCoefficient[owner] > 0
             ? _addressCoefficient[owner]
-            : _defaultCoefficient;
+            : DEFAULT_COEFFICIENT();
         totalMintable = (totalMintable * coefficient) / 1e18;
 
         // Subtract already minted amount
@@ -127,14 +189,18 @@ contract ThanksToken is
         return _mintedAmount[owner];
     }
 
+    function getParticipants() public view returns (address[] memory) {
+        return _participants;
+    }
+
     function addressCoefficient(
         address owner
     ) public view override returns (uint256) {
         return _addressCoefficient[owner];
     }
 
-    function defaultCoefficient() public view override returns (uint256) {
-        return _defaultCoefficient;
+    function defaultCoefficient() public pure override returns (uint256) {
+        return DEFAULT_COEFFICIENT();
     }
 
     function setAddressCoefficient(
@@ -163,12 +229,6 @@ contract ThanksToken is
         }
     }
 
-    function setDefaultCoefficient(uint256 coefficient) public onlyOwner {
-        require(coefficient > 0, "Coefficient must be greater than 0");
-        _defaultCoefficient = coefficient;
-    }
-
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    // Note: setDefaultCoefficient is not available in Clone pattern
+    // as DEFAULT_COEFFICIENT is immutable from the clone data
 }

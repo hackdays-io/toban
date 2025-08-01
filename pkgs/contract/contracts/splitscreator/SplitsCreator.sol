@@ -121,77 +121,101 @@ contract SplitsCreator is ISplitsCreator, Clone {
         internal
         view
         returns (
-            address[] memory, // shareHolders
-            uint256[] memory, // allocations
-            uint256 // totalAllocation
+            address[] memory shareHolders,
+            uint256[] memory allocations,
+            uint256 totalAllocation
         )
     {
-        // --- Thanks Token Allocation Calculation ---
+        address[] memory thanksShareHolders;
+        uint256[] memory thanksAllocations;
+        uint256 thanksTotalAllocation;
+        (thanksShareHolders, thanksAllocations, thanksTotalAllocation) = _calculateThanksAllocations(
+            _weightsInfo.thanksTokenReceivedWeight,
+            _weightsInfo.thanksTokenSentWeight
+        );
+
+        address[] memory roleShareHolders;
+        uint256[] memory roleAllocations;
+        uint256 roleTotalAllocation;
+        (roleShareHolders, roleAllocations, roleTotalAllocation) = _calculateRoleAllocations(_splitsInfo);
+
+        uint256 numOfThanksShareHolders = 0;
+        if (_weightsInfo.thanksTokenWeight > 0) {
+            numOfThanksShareHolders = thanksShareHolders.length;
+        }
+
+        uint256 numOfRoleShareHolders = 0;
+        if (_weightsInfo.roleWeight > 0) {
+            numOfRoleShareHolders = roleShareHolders.length;
+        }
+
+        uint256 numOfShareHolders = numOfThanksShareHolders + numOfRoleShareHolders;
+
+        shareHolders = new address[](numOfShareHolders);
+        allocations = new uint256[](numOfShareHolders);
+
+        uint256 weightSum = _weightsInfo.thanksTokenWeight + _weightsInfo.roleWeight;
+
+        totalAllocation = 0;
+
+        for (uint256 i = 0; i < numOfThanksShareHolders; i++) {
+            shareHolders[i] = thanksShareHolders[i];
+            uint256 thanksAllocation = allocations[i] = thanksAllocations[i] * _weightsInfo.thanksTokenWeight * PRECISION / thanksTotalAllocation / weightSum;
+            allocations[i] = thanksAllocation;
+            totalAllocation += thanksAllocation;
+        }
+
+        for (uint256 i = 0; i < numOfRoleShareHolders; i++) {
+            shareHolders[numOfThanksShareHolders + i] = roleShareHolders[i];
+            uint256 roleAllocation = roleAllocations[i] * _weightsInfo.roleWeight * PRECISION / roleTotalAllocation / weightSum;
+            allocations[numOfThanksShareHolders + i] = roleAllocation;
+            totalAllocation += roleAllocation;
+        }
+
+        return (shareHolders, allocations, totalAllocation);
+    }
+
+    function _calculateThanksAllocations(
+		uint256 thanksTokenReceivedWeight,
+		uint256 thanksTokenSentWeight
+	)
+        internal
+        view
+        returns (
+            address[] memory shareHolders,
+            uint256[] memory allocations,
+            uint256 totalAllocation
+        )
+    {
         address[] memory thanksParticipants = THANKS_TOKEN().getParticipants();
         uint256 thanksParticipantsCount = thanksParticipants.length;
         uint256 totalThanksBalance = 0;
         uint256 totalThanksMinted = 0;
 
-        uint256 adjustedThanksWeight = 0;
+        for (uint256 i = 0; i < thanksParticipantsCount; i++) {
+            uint256 thanksBalance = THANKS_TOKEN().balanceOf(thanksParticipants[i]);
+            uint256 thanksMinted = THANKS_TOKEN().mintedAmount(thanksParticipants[i]);
 
-        if (_weightsInfo.thanksTokenWeight > 0 && thanksParticipantsCount > 0) {
-
-            adjustedThanksWeight = _weightsInfo.thanksTokenWeight * PRECISION / ((_weightsInfo.thanksTokenWeight + _weightsInfo.roleWeight) * (_weightsInfo.thanksTokenReceivedWeight + _weightsInfo.thanksTokenSentWeight));
-
-            for (uint256 i = 0; i < thanksParticipantsCount; i++) {
-                uint256 thanksBalance = THANKS_TOKEN().balanceOf(thanksParticipants[i]);
-                uint256 thanksMinted = THANKS_TOKEN().mintedAmount(thanksParticipants[i]);
-
-                totalThanksBalance += thanksBalance;
-                totalThanksMinted += thanksMinted;
-            }
+            totalThanksBalance += thanksBalance;
+            totalThanksMinted += thanksMinted;
         }
 
-        // --- Role Allocation Calculation ---
-        // First, count the number of shareholder entries to size the arrays
-        uint256 roleShareHoldersCount = 0;
-        if (_weightsInfo.roleWeight > 0) {
-            for (uint256 i = 0; i < _splitsInfo.length; i++) {
-                SplitsInfo memory _splitInfo = _splitsInfo[i];
-                for (uint256 si = 0; si < _splitInfo.wearers.length; si++) {
-                    address[] memory recipients = FRACTION_TOKEN()
-                        .getTokenRecipients(
-                            FRACTION_TOKEN().getTokenId(
-                                _splitInfo.hatId,
-                                _splitInfo.wearers[si]
-                            )
-                        );
-                    if (recipients.length == 0) {
-                        roleShareHoldersCount++;
-                    } else {
-                        roleShareHoldersCount += recipients.length;
-                    }
-                }
-            }
-        }
-
-        // --- Final Normalization and Combination ---
-        uint256 shareholdersCount = 0;
-        if (totalThanksBalance > 0 && totalThanksMinted > 0 && _weightsInfo.thanksTokenWeight > 0) {
-            shareholdersCount += thanksParticipantsCount;
-        }
-        if (roleShareHoldersCount > 0) {
-            shareholdersCount += roleShareHoldersCount;
-        }
-
-        address[] memory shareHolders = new address[](shareholdersCount);
-        uint256[] memory allocations = new uint256[](shareholdersCount);
-        uint256 totalAllocation = 0;
+        shareHolders = new address[](thanksParticipantsCount);
+        allocations = new uint256[](thanksParticipantsCount);
         uint256 shareHolderIndex = 0;
 
-        // Normalize and add Thanks Token allocations
-        if (totalThanksBalance > 0 && totalThanksMinted > 0 && _weightsInfo.thanksTokenWeight > 0) {
+        uint256 thanksTokenWeightSum = thanksTokenReceivedWeight + thanksTokenSentWeight;
+
+        if (totalThanksBalance > 0 && totalThanksMinted > 0) {
             for (uint256 i = 0; i < thanksParticipantsCount; i++) {
                 uint256 thanksBalance = THANKS_TOKEN().balanceOf(thanksParticipants[i]);
                 uint256 thanksMinted = THANKS_TOKEN().mintedAmount(thanksParticipants[i]);
 
                 uint256 thanksScore =
-                    (adjustedThanksWeight * _weightsInfo.thanksTokenReceivedWeight * thanksBalance / totalThanksBalance) + (adjustedThanksWeight * _weightsInfo.thanksTokenSentWeight * thanksMinted / totalThanksMinted);
+                    (
+                        (thanksTokenReceivedWeight * thanksBalance * PRECISION / totalThanksBalance) +
+                        (thanksTokenSentWeight * thanksMinted * PRECISION / totalThanksMinted)
+                    ) / thanksTokenWeightSum;
 
                 shareHolders[shareHolderIndex] = thanksParticipants[i];
                 allocations[shareHolderIndex] = thanksScore;
@@ -200,74 +224,114 @@ contract SplitsCreator is ISplitsCreator, Clone {
             }
         }
 
-        if (_weightsInfo.roleWeight > 0) {
-            for (uint256 i = 0; i < _splitsInfo.length; i++) {
-                SplitsInfo memory _splitInfo = _splitsInfo[i];
+        totalAllocation = 0;
+        for (uint256 i = 0; i < allocations.length; i++) {
+            totalAllocation += allocations[i];
+        }
 
-                uint256 roleMultiplier = _splitInfo.multiplierTop /
-                    _splitInfo.multiplierBottom;
+        return (shareHolders, allocations, totalAllocation);
+    }
 
-                uint256 fractionTokenSupply = 0;
-                uint256 currentShareHolderIndex = shareHolderIndex;
-                for (uint256 j = 0; j < _splitInfo.wearers.length; j++) {
-                    uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
+    function _calculateRoleAllocations(
+        SplitsInfo[] memory _splitsInfo
+    )
+        internal
+        view
+        returns (
+            address[] memory shareHolders,
+            uint256[] memory allocations,
+            uint256 totalAllocation
+        )
+    {
+        uint256 numOfShareHolders = 0;
+        for (uint256 i = 0; i < _splitsInfo.length; i++) {
+            SplitsInfo memory _splitInfo = _splitsInfo[i];
+            for (uint256 si = 0; si < _splitInfo.wearers.length; si++) {
+                address[] memory recipients = FRACTION_TOKEN()
+                    .getTokenRecipients(
+                        FRACTION_TOKEN().getTokenId(
+                            _splitInfo.hatId,
+                            _splitInfo.wearers[si]
+                        )
+                    );
+                if (recipients.length == 0) {
+                    numOfShareHolders++;
+                } else {
+                    numOfShareHolders += recipients.length;
+                }
+            }
+        }
+
+        shareHolders = new address[](numOfShareHolders);
+        allocations = new uint256[](numOfShareHolders);
+        uint256 shareHolderIndex = 0;
+
+        for (uint256 i = 0; i < _splitsInfo.length; i++) {
+            SplitsInfo memory _splitInfo = _splitsInfo[i];
+
+            uint256 roleMultiplier = _splitInfo.multiplierTop /
+                _splitInfo.multiplierBottom;
+
+            uint256 fractionTokenSupply = 0;
+            uint256 currentShareHolderIndex = shareHolderIndex;
+            for (uint256 j = 0; j < _splitInfo.wearers.length; j++) {
+                uint256 hatsTimeFrameMultiplier = _getHatsTimeFrameMultiplier(
+                    _splitInfo.wearers[j],
+                    _splitInfo.hatId
+                );
+
+                fractionTokenSupply += FRACTION_TOKEN().totalSupply(
+                    _splitInfo.wearers[j],
+                    _splitInfo.hatId
+                );
+
+                uint256 wearerBalance = FRACTION_TOKEN().balanceOf(
+                    _splitInfo.wearers[j],
+                    _splitInfo.wearers[j],
+                    _splitInfo.hatId
+                );
+
+                uint256 wearerScore = wearerBalance *
+                    roleMultiplier *
+                    hatsTimeFrameMultiplier;
+
+                shareHolders[shareHolderIndex] = _splitInfo.wearers[j];
+                allocations[shareHolderIndex] = wearerScore;
+
+                shareHolderIndex++;
+
+                address[] memory recipients = FRACTION_TOKEN()
+                    .getTokenRecipients(
+                        FRACTION_TOKEN().getTokenId(
+                            _splitInfo.hatId,
+                            _splitInfo.wearers[j]
+                        )
+                    );
+
+                for (uint256 k = 0; k < recipients.length; k++) {
+                    if (recipients[k] == _splitInfo.wearers[j]) continue;
+
+                    uint256 recipientBalance = FRACTION_TOKEN().balanceOf(
+                        recipients[k],
                         _splitInfo.wearers[j],
                         _splitInfo.hatId
                     );
 
-                    fractionTokenSupply += FRACTION_TOKEN().totalSupply(
-                        _splitInfo.wearers[j],
-                        _splitInfo.hatId
-                    );
-
-                    uint256 wearerBalance = FRACTION_TOKEN().balanceOf(
-                        _splitInfo.wearers[j],
-                        _splitInfo.wearers[j],
-                        _splitInfo.hatId
-                    );
-
-                    uint256 wearerScore = wearerBalance *
+                    uint256 recipientScore = recipientBalance *
                         roleMultiplier *
                         hatsTimeFrameMultiplier;
 
-                    shareHolders[shareHolderIndex] = _splitInfo.wearers[j];
-                    allocations[shareHolderIndex] = wearerScore;
-
+                    shareHolders[shareHolderIndex] = recipients[k];
+                    allocations[shareHolderIndex] = recipientScore;
                     shareHolderIndex++;
-
-                    address[] memory recipients = FRACTION_TOKEN()
-                        .getTokenRecipients(
-                            FRACTION_TOKEN().getTokenId(
-                                _splitInfo.hatId,
-                                _splitInfo.wearers[j]
-                            )
-                        );
-
-                    for (uint256 k = 0; k < recipients.length; k++) {
-                        if (recipients[k] == _splitInfo.wearers[j]) continue;
-
-                        uint256 recipientBalance = FRACTION_TOKEN().balanceOf(
-                            recipients[k],
-                            _splitInfo.wearers[j],
-                            _splitInfo.hatId
-                        );
-
-                        uint256 recipientScore = recipientBalance *
-                            roleMultiplier *
-                            hatsTimeFrameMultiplier;
-
-                        shareHolders[shareHolderIndex] = recipients[k];
-                        allocations[shareHolderIndex] = recipientScore;
-                        shareHolderIndex++;
-                    }
                 }
+            }
 
-                for (uint256 l = 0; l < allocations.length; l++) {
-                    if (l >= currentShareHolderIndex && l < shareHolderIndex) {
-                        allocations[l] =
-                            (allocations[l] * 10e5) /
-                            fractionTokenSupply;
-                    }
+            for (uint256 l = 0; l < allocations.length; l++) {
+                if (l >= currentShareHolderIndex && l < shareHolderIndex) {
+                    allocations[l] =
+                        (allocations[l] * 10e5) /
+                        fractionTokenSupply;
                 }
             }
         }

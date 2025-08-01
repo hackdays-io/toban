@@ -1272,9 +1272,9 @@ describe("CreateSplit with thanks token weight", () => {
 
   const weightsInfo = {
     roleWeight: 1n,
-    thanksTokenWeight: 10n,
-    thanksTokenReceivedWeight: 5n,
-    thanksTokenSentWeight: 95n,
+    thanksTokenWeight: 1n,
+    thanksTokenReceivedWeight: 95n,
+    thanksTokenSentWeight: 5n,
   };
 
   before(async () => {

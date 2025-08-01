@@ -11,7 +11,6 @@ import {IThanksToken} from "../thankstoken/IThanksToken.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
-import {console} from "hardhat/console.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
     uint256 private constant PRECISION = 1e5;
@@ -342,18 +341,6 @@ contract SplitsCreator is ISplitsCreator, Clone {
         }
 
         return (shareHolders, allocations, totalAllocation);
-    }
-
-    function getThanksTokenScore(
-        address _account,
-        uint256 _thanksTokenReceivedWeight,
-        uint256 _thanksTokenSentWeight,
-        uint256 _totalWeight
-    ) public view returns (uint256) {
-        if (address(THANKS_TOKEN()) == address(0) || _totalWeight == 0) return 0;
-        return
-            (THANKS_TOKEN().balanceOf(_account) * _thanksTokenReceivedWeight +
-                THANKS_TOKEN().mintedAmount(_account) * _thanksTokenSentWeight);
     }
 
     function _getHatsTimeFrameMultiplier(

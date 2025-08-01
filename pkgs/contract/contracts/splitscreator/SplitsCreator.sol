@@ -13,7 +13,7 @@ import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModul
 import {Clone} from "solady/src/utils/Clone.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
-    uint256 private constant PRECISION = 1e5;
+    uint256 private constant PRECISION = 10e8;
 
     function HATS() public pure returns (IHats) {
         return IHats(_getArgAddress(12));
@@ -329,7 +329,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
             for (uint256 l = 0; l < allocations.length; l++) {
                 if (l >= currentShareHolderIndex && l < shareHolderIndex) {
                     allocations[l] =
-                        (allocations[l] * 10e5) /
+                        (allocations[l] * PRECISION) /
                         fractionTokenSupply;
                 }
             }

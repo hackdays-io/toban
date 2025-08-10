@@ -31,7 +31,7 @@ export const VerticalBar = ({ treeId }: { treeId: string }) => {
     },
     orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Asc,
-    first: 100,
+    first: 500,
   });
 
   const { labels, amounts } = useMemo(() => {
@@ -65,7 +65,7 @@ export const VerticalBar = ({ treeId }: { treeId: string }) => {
       },
       title: {
         display: true,
-        text: `${["144", "175"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}の日次流通量`,
+        text: `${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}の日次流通量`,
       },
     },
   };

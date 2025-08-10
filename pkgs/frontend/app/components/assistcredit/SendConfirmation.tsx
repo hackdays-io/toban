@@ -82,7 +82,7 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
       <Text fontSize="md" color="gray.500" fontWeight="bold" textAlign="center">
         スワイプして
         <br />
-        {["144", "175"].includes(treeId || "")
+        {["144", "175", "780"].includes(treeId || "")
           ? "ケアポイント"
           : "アシストクレジット"}
         を送る

@@ -64,7 +64,7 @@ export const StickyNav: FC = () => {
                 </Icon>
               </IconButton>
               <Box fontWeight="bold" fontSize="sm">
-                {["144", "175"].includes(treeId || "")
+                {["144", "175", "780"].includes(treeId || "")
                   ? "CarePoint"
                   : "AssistCredit"}
               </Box>

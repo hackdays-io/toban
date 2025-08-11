@@ -3,16 +3,18 @@
     "Hats": "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137",
     "HatsModuleFactory": "0x0a3f85fa597B6a967271286aA0724811acDF5CD9",
     "PullSplitsFactory": "0x80f1B766817D04870f115fEBbcCADF8DBF75E017",
-    "BigBang": "\"0x2662b0Dc151bbD9C0e5F1b5bD8674b4eD3E92D0b\"",
+    "BigBang": "\"0x23a5899fb8F0c0FFfe9437eC3c1589a30ecc60E1\"",
     "FractionToken": "\"0xd6031f9543bEB0963e32CA2AC474de69D0515059\"",
-    "SplitsCreatorFactory": "\"0x447f22AB169eE89118E03f2f2DCbE8667010340D\"",
-    "SplitsCreator": "\"0x4BbA4e70437bF162F8EfB8de88E5ECb3C19e11e6\"",
-    "HatsTimeFrameModule": "\"0xa5449bAe3512a81D63a60E65E525B443a78de3b0\"",
-    "ProxyAdmin": "\"0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8\""
+    "SplitsCreatorFactory": "\"0x5359CCE1659e699EB91374fd1c1B31D2afF95Cd5\"",
+    "SplitsCreator": "\"0xcc1fce367cb146204e7Fdce4D6bD6896f92160A8\"",
+    "HatsTimeFrameModule": "\"0x669e5dE14354D1dBB0f7FC67640505B3c985652e\"",
+    "ProxyAdmin": "\"0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8\"",
+    "ThanksTokenFactory_Implementation": "\"0x17cc985B1bdEE805670E381e122Df67C226C8462\"",
+    "ThanksTokenFactory": "\"0xFD8Fc6C49E755DA5982D8A55Ed3310312Cd8Ad1d\""
   },
   "implementations": {
     "FractionToken_Implementation": "\"0x6d701256205019e40cE02e13D799ed2cd3BBE8e8\"",
-    "SplitsCreatorFactory_Implementation": "\"0x5850255ed6DC90476eea2739dAc0B2829ac7e825\"",
-    "BigBang_Implementation": "\"0xe5c4dd13786Acc50228Fe1878709d10ef863503B\""
+    "SplitsCreatorFactory_Implementation": "\"0x65d14703df1fE446121aaB67FA802F84E0e3C26f\"",
+    "BigBang_Implementation": "\"0x3746bBD64806F914B5EFCaDE5954346769e4C8a8\""
   }
 }

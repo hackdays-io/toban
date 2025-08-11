@@ -84,30 +84,6 @@ contract HatsTimeFrameModule is HatsModule, Ownable, IHatsTimeFrameModule {
     }
 
     /**
-     * @dev Mint hats for a specific address.
-     * @param _hatIds The ID of the hat that was minted.
-     * @param _wearers The address of the person who received the hat.
-     * @param _times sThe specific timestamp when the hat was minted.
-     */
-    function batchMintHat(uint256[] memory _hatIds, address[] memory _wearers, uint256[] memory _times) external {
-        require(hasOperationAuthority(msg.sender), "Not authorized");
-
-        uint256 length = _hatIds.length;
-
-        for (uint256 i = 0; i < length; ) {
-            _setWoreTime(_wearers[i], _hatIds[i], _times[i]);
-            isActive[_hatIds[i]][_wearers[i]] = true;
-            unchecked {
-                ++i;
-            }
-        }
-
-        HATS().batchMintHats(_hatIds, _wearers);
-
-        emit HatsMinted(_hatIds, _wearers, _times);
-    }
-
-    /**
      * @dev Deactivate the hat, pausing the contribution time.
      * Calculate the contribution time up to deactivation.
      * @param wearer The address of the person who received the hat.

@@ -20,9 +20,12 @@
     "upgrade:FractionToken": "npx hardhat run scripts/upgrade/fractionToken.ts",
     "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts",
     "bigbang": "npx hardhat bigbang",
+    "checkBigBangOwner": "npx hardhat checkBigBangOwner",
+    "checkBigBangSetting": "npx hardhat checkBigBangSetting",
+    "setBigBang": "npx hardhat setBigBang",
     "getWoreTime": "npx hardhat getWoreTime",
     "mintHat": "npx hardhat mintHat",
-    "batchMintHat": "npx hardhat batchMintHat"
+    "batchMintHats": "npx hardhat batchMintHats"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",

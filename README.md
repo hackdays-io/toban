@@ -246,6 +246,18 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     pnpm contract registerSubdomain --label <your label> --network sepolia
     ```
 
+  - #### **set BinBang Contract address**
+
+    ```bash
+    pnpm contract setBigBang --network sepolia
+    ```
+
+  - #### **check BigBang Setting of SplitsCreatorFactory Contract**
+
+    ```bash
+    pnpm contract checkBigBangSetting --network sepolia
+    ```
+
   - #### **call bigbang task**
 
     Please set params when you execute.
@@ -260,14 +272,8 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     pnpm contract getWoreTime --wearer 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
     ```
 
-  - #### **call mintHat task**
-
-    ```bash
-    pnpm contract mintHat --hatid 17011726346972053710434886519909386955065038130623101235576378067255296 --wearer 0x1295BDc0C102EB105dC0198fdC193588fe66A1e4 --network sepolia
-    ```
-
   - #### **call batchMintHat task**
 
     ```bash
-    pnpm contract batchMintHat --filepath ./data/sample.csv --network sepolia
+    pnpm contract batchMintHats --csvfile ./data/sample.csv --network sepolia
     ```

@@ -297,34 +297,6 @@ describe("HatsTimeFrameModule", () => {
     expect(woreTime).to.equal(initialTime + 5000n);
   });
 
-  it("batch mint hats previous time", async () => {
-    if (!roleHatId && !roleHatId2) {
-      throw new Error("Role hat ID is undefined");
-    }
-
-    const initialTime = BigInt(await time.latest());
-    await time.increaseTo(initialTime + 10000n);
-
-    await HatsTimeFrameModule.write.batchMintHat([
-      [roleHatId2 as bigint, roleHatId2 as bigint],
-      [address1Validated, address2Validated],
-      [initialTime + 5000n, initialTime + 5000n],
-    ]);
-
-    const woreTime1 = await HatsTimeFrameModule.read.getWoreTime([
-      address1Validated,
-      roleHatId2 as bigint,
-    ]);
-
-    const woreTime2 = await HatsTimeFrameModule.read.getWoreTime([
-      address2Validated,
-      roleHatId2 as bigint,
-    ]);
-
-    expect(woreTime1).to.equal(initialTime + 5000n);
-    expect(woreTime2).to.equal(initialTime + 5000n);
-  });
-
   it("renouce hat", async () => {
     if (!roleHatId) {
       throw new Error("Role hat ID is undefined");

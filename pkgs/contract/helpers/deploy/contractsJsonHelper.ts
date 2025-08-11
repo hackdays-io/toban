@@ -67,7 +67,7 @@ const _updateJson = ({
     obj[group] = value as Record<string, string>;
   } else {
     if (obj[group][name] === undefined) obj[group][name] = "";
-    obj[group][name] = JSON.stringify(value);
+    obj[group][name] = value as string;
   }
 };
 

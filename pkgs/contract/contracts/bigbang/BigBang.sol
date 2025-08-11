@@ -192,6 +192,19 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         FractionToken = _fractionToken;
     }
 
+    /**
+     * @dev Batch mint hats to specified addresses using the Hats protocol
+     * @param _hatIds Array of hat IDs to mint
+     * @param _wearers Array of addresses that will wear the hats
+     */
+    function batchMintHatsToWearers(
+        uint256[] calldata _hatIds,
+        address[] calldata _wearers
+    ) external onlyOwner {
+        require(_hatIds.length == _wearers.length, "Array lengths must match");
+        Hats.batchMintHats(_hatIds, _wearers);
+    }
+
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}

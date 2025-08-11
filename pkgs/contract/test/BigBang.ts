@@ -1,26 +1,29 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
 import {
+  Address,
   type PublicClient,
   type WalletClient,
-  Address,
   decodeEventLog,
-  zeroAddress,
 } from "viem";
 import { type BigBang, deployBigBang } from "../helpers/deploy/BigBang";
+import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 import {
   type FractionToken,
   deployFractionToken,
 } from "../helpers/deploy/FractionToken";
 import {
   type Hats,
+  type HatsHatCreatorModule,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
-  type HatsHatCreatorModule,
+  deployHatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
-  deployHatsHatCreatorModule,
 } from "../helpers/deploy/Hats";
 import {
   type PullSplitsFactory,
@@ -33,10 +36,6 @@ import {
   deploySplitsProtocol,
 } from "../helpers/deploy/Splits";
 import { upgradeBigBang } from "../helpers/upgrade/bigbang";
-import {
-  Create2Deployer,
-  deployCreate2Deployer,
-} from "../helpers/deploy/Create2Factory";
 
 describe("BigBang", () => {
   let Create2Deployer: Create2Deployer;
@@ -53,10 +52,14 @@ describe("BigBang", () => {
   let BigBang: BigBang;
 
   let address1: WalletClient;
+  let address2: WalletClient;
+  let address3: WalletClient;
+  let address4: WalletClient;
   let publicClient: PublicClient;
+  let testClient: any;
 
   before(async () => {
-    [address1] = await viem.getWalletClients();
+    [address1, address2, address3, address4] = await viem.getWalletClients();
 
     const { Create2Deployer: _Create2Deployer } = await deployCreate2Deployer();
     Create2Deployer = _Create2Deployer;
@@ -116,6 +119,7 @@ describe("BigBang", () => {
     SplitsCreatorFactory = _SplitsCreatorFactory;
 
     publicClient = await viem.getPublicClient();
+    testClient = await viem.getTestClient();
   });
 
   it("should deploy BigBang", async () => {
@@ -336,6 +340,199 @@ describe("BigBang", () => {
     expect((await BigBang.read.FractionToken()).toLowerCase()).equal(
       oldFractionTokenAddress.toLowerCase(),
     );
+  });
+
+  describe("batchMintHatsToWearers", () => {
+    // テスト用変数の定義
+    let topHatId: bigint; // トップハットのID
+    let hatterHatId: bigint; // ハッターハットのID
+    let testChildHatId: bigint; // テスト用子ハットのID（十分な供給量を持つ）
+    let testWearers: Address[]; // テスト用のハット着用者アドレス
+
+    before(async () => {
+      // テスト用の着用者アドレスを設定
+      testWearers = [address2.account?.address!, address3.account?.address!];
+
+      // SplitsCreatorFactoryにBigBangアドレスを設定（必要な初期化）
+      await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
+
+      // テスト用の新しいプロジェクトを作成するためにbigbangメソッドを実行
+      const txHash = await BigBang.write.bigbang(
+        [
+          address1.account?.address!, // オーナーとしてaddress1を使用
+          "batchTest_tophatDetails",
+          "batchTest_tophatURI",
+          "batchTest_hatterhatDetails",
+          "batchTest_hatterhatURI",
+        ],
+        { account: address1.account },
+      );
+
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      // bigbang実行結果からトップハットIDとハッターハットIDを抽出
+      for (const log of receipt.logs) {
+        try {
+          const decodedLog: any = decodeEventLog({
+            abi: BigBang.abi as any,
+            data: log.data,
+            topics: log.topics,
+          });
+          if (decodedLog.eventName === "Executed") {
+            topHatId = decodedLog.args.topHatId;
+            hatterHatId = decodedLog.args.hatterHatId;
+            break;
+          }
+        } catch (error) {}
+      }
+
+      // BigBangが子ハットの管理者として機能できるように、トップハットをBigBangに移譲
+      await Hats.write.transferHat(
+        [topHatId, address1.account?.address!, BigBang.address],
+        { account: address1.account },
+      );
+
+      // BigBangアドレスを偽装してHatsコントラクトにアクセスできるようにする
+      await testClient.impersonateAccount({
+        address: BigBang.address,
+      });
+
+      // BigBangアドレスにトランザクション実行用のETHを送金
+      await testClient.setBalance({
+        address: BigBang.address,
+        value: BigInt(10) * BigInt(10 ** 18), // 10 ETH
+      });
+
+      // テスト用の子ハットを作成（maxSupply=10で十分な供給量を確保）
+      const childHatTxHash = await Hats.write.createHat(
+        [
+          topHatId, // 管理者ハット
+          "Test Child Hat Details",
+          10, // maxSupply（テストに十分な数量）
+          address1.account?.address!, // 適格性チェック用アドレス
+          address1.account?.address!, // トグル機能用アドレス
+          true, // 変更可能フラグ
+          "testChildHatImageURI",
+        ],
+        { account: BigBang.address },
+      );
+
+      const childHatReceipt = await publicClient.waitForTransactionReceipt({
+        hash: childHatTxHash,
+      });
+
+      // 作成された子ハットのIDをイベントから抽出
+      for (const log of childHatReceipt.logs) {
+        try {
+          const decodedLog: any = decodeEventLog({
+            abi: Hats.abi as any,
+            data: log.data,
+            topics: log.topics,
+          });
+          if (decodedLog.eventName === "HatCreated") {
+            testChildHatId = decodedLog.args.id;
+            break;
+          }
+        } catch (error) {}
+      }
+
+      // 子ハットIDが正常に取得できたことを確認
+      expect(testChildHatId).to.not.be.undefined;
+    });
+
+    it("should successfully batch mint hats to wearers", async () => {
+      // テスト用のハットIDと着用者を準備
+      const hatIds = [testChildHatId, testChildHatId];
+      const wearers = testWearers;
+
+      // 初期状態で着用者がハットを持っていないことを確認
+      for (const wearer of wearers) {
+        expect(await Hats.read.balanceOf([wearer, testChildHatId])).to.equal(
+          0n,
+        );
+      }
+
+      // batchMintHatsToWearersメソッドを実行
+      const txHash = await BigBang.write.batchMintHatsToWearers(
+        [hatIds, wearers],
+        { account: address1.account },
+      );
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+      // 実行後に着用者がハットを持っていることを確認
+      for (const wearer of wearers) {
+        expect(await Hats.read.balanceOf([wearer, testChildHatId])).to.equal(
+          1n,
+        );
+      }
+    });
+
+    it("should revert when array lengths don't match", async () => {
+      // 配列の長さが一致しないケースをテスト（ハットID: 1個、着用者: 2個）
+      const hatIds = [testChildHatId];
+      const wearers = testWearers; // 2つのアドレスだが、ハットIDは1つのみ
+
+      // 配列の長さが一致しない場合にエラーが発生することを確認
+      await expect(
+        BigBang.write.batchMintHatsToWearers([hatIds, wearers], {
+          account: address1.account,
+        }),
+      ).to.be.rejectedWith("Array lengths must match");
+    });
+
+    it("should revert when called by non-owner", async () => {
+      // オーナー以外がメソッドを呼び出した場合のテスト
+      const hatIds = [testChildHatId, testChildHatId];
+      const wearers = testWearers;
+
+      // 非オーナー（address2）からの実行でアクセス制御エラーが発生することを確認
+      await expect(
+        BigBang.write.batchMintHatsToWearers([hatIds, wearers], {
+          account: address2.account,
+        }),
+      ).to.be.rejectedWith("OwnableUnauthorizedAccount");
+    });
+
+    it("should handle empty arrays", async () => {
+      // 空の配列を渡した場合の処理テスト
+      const hatIds: bigint[] = [];
+      const wearers: Address[] = [];
+
+      // 空の配列でもエラーが発生しないことを確認
+      const txHash = await BigBang.write.batchMintHatsToWearers(
+        [hatIds, wearers],
+        { account: address1.account },
+      );
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+    });
+
+    it("should handle single hat mint", async () => {
+      // 単一のハットミントのテスト
+      const hatIds = [testChildHatId];
+      const wearers = [address4.account?.address!];
+
+      // 初期状態で着用者がハットを持っていないことを確認
+      expect(await Hats.read.balanceOf([wearers[0], testChildHatId])).to.equal(
+        0n,
+      );
+
+      // 単一のアイテムでbatchMintHatsToWearersを実行
+      const txHash = await BigBang.write.batchMintHatsToWearers(
+        [hatIds, wearers],
+        { account: address1.account },
+      );
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+      // 実行後に着用者がハットを持っていることを確認
+      expect(await Hats.read.balanceOf([wearers[0], testChildHatId])).to.equal(
+        1n,
+      );
+    });
   });
 
   /**

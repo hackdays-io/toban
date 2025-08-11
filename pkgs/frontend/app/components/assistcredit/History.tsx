@@ -150,7 +150,7 @@ const AssistCreditItem: FC<ItemProps> = ({
 };
 
 /**
- * ワークスペース全体のアシストクレジット履歴を表示するコンポーネント
+ * ワークスペース全体のサンクストークン履歴を表示するコンポーネント
  */
 export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
   const { data } = useGetTransferFractionTokens({
@@ -180,7 +180,7 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
 };
 
 /**
- * ユーザーのアシストクレジット履歴を表示するコンポーネント
+ * ユーザーのサンクストークン履歴を表示するコンポーネント
  * txType が "sent" の場合は送信履歴、"received" の場合は受信履歴を表示する
  */
 export const UserAssistCreditHistory: FC<UserProps> = ({ data, txType }) => {

@@ -144,7 +144,7 @@ const AssistCreditSend: FC = () => {
           title={
             receiver
               ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
-              : `${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}を送信`
+              : "サンクストークンを送信"
           }
           backLink={
             receiver &&

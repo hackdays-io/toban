@@ -1,6 +1,7 @@
 import {
   AspectRatio,
   Box,
+  Flex,
   HStack,
   Heading,
   SimpleGrid,
@@ -8,6 +9,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
+import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import type { FC } from "react";
@@ -30,6 +32,12 @@ const WorkspaceTop: FC = () => {
 
   return (
     <>
+      {/* Thanks Token summary */}
+      <Box my={4}>
+        <Heading pb={3}>サンクストークン</Heading>
+        <ThanksTokenSummary treeId={treeId} />
+      </Box>
+
       <Box my={4}>
         <HStack justify="space-between" alignItems="center" pb={4}>
           <Heading>直近のアクティビティ</Heading>
@@ -61,36 +69,69 @@ const WorkspaceTop: FC = () => {
         </VStack>
       </Box>
 
-      {/* All roles */}
-      <Box my={4}>
-        <Heading py={4}>当番一覧</Heading>
-        <SimpleGrid columns={4} gap={4}>
-          {tree?.hats
-            ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
-            .map((h) => (
-              <Link key={`allrole${h.id}`} to={`/${treeId}/${h.id}`}>
-                <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
-                  <VRole iconSize="80px" />
-                </HatsListItemParser>
-              </Link>
-            ))}
-          <VStack>
-            <AspectRatio width="80px" ratio={1}>
-              <CommonButton
-                rounded="xl"
-                onClick={() => navigate(`/${treeId}/roles/new`)}
-                bgColor="gray.300"
-              >
-                <FaPlus />
-              </CommonButton>
-            </AspectRatio>
-            <Text>Add role</Text>
-          </VStack>
-        </SimpleGrid>
-      </Box>
+      {/* Removed all roles list from home. Moved to roles screen. */}
       <StickyNav />
     </>
   );
 };
 
 export default WorkspaceTop;
+
+const ThanksTokenSummary: FC<{ treeId?: string }> = ({ treeId }) => {
+  const { wallet } = useActiveWallet();
+  const navigate = useNavigate();
+
+  const { data } = useBalanceOfFractionTokens({
+    where: {
+      workspaceId: treeId,
+      owner: wallet?.account.address.toLowerCase(),
+    },
+    first: 100,
+  });
+
+  const totalBalance = (data?.balanceOfFractionTokens || []).reduce(
+    (acc, cur) => acc + Number(cur.balance || 0),
+    0,
+  );
+
+  // In current model, sendable equals owned balance
+  const sendable = totalBalance;
+
+  return (
+    <Flex
+      w="full"
+      bg="gray.50"
+      borderRadius={8}
+      borderWidth={1}
+      borderColor="gray.200"
+      p={4}
+      alignItems="center"
+      justifyContent="space-between"
+      gap={4}
+    >
+      <HStack gap={8}>
+        <VStack alignItems="start" gap={0}>
+          <Text fontSize="sm" color="gray.600">
+            残高
+          </Text>
+          <Text fontSize="2xl" fontWeight="bold">
+            {totalBalance.toLocaleString()}
+          </Text>
+        </VStack>
+        <VStack alignItems="start" gap={0}>
+          <Text fontSize="sm" color="gray.600">
+            送付可能量
+          </Text>
+          <Text fontSize="2xl" fontWeight="bold">
+            {sendable.toLocaleString()}
+          </Text>
+        </VStack>
+      </HStack>
+      <CommonButton
+        onClick={() => treeId && navigate(`/${treeId}/thankstoken/send`)}
+      >
+        送付画面へ
+      </CommonButton>
+    </Flex>
+  );
+};

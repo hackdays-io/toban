@@ -10,7 +10,7 @@ import {HatsHatCreatorModule} from "../../hatsmodules/hatcreator/HatsHatCreatorM
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract BigBang_Mock_v3 is OwnableUpgradeable, UUPSUpgradeable {
+contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
     IHats public Hats;
 
     IHatsModuleFactory public HatsModuleFactory;

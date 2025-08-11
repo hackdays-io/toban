@@ -66,6 +66,10 @@ const createHat = async (
 };
 
 describe("ThanksToken", () => {
+  const tokenName =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~あいうえお";
+  const tokenSymbol = "ALL-CHARS-シンボル";
+
   let Create2Deployer: Create2Deployer;
   let Hats: Hats;
   let HatsModuleFactory: HatsModuleFactory;
@@ -212,17 +216,6 @@ describe("ThanksToken", () => {
     );
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: await deployer
-          .getAddresses()
-          .then((addresses) => addresses[0]),
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     DeployedThanksToken = _ThanksToken;
@@ -241,6 +234,48 @@ describe("ThanksToken", () => {
         Create2Deployer.address,
       );
     ThanksTokenFactory = _ThanksTokenFactory;
+
+    // Set BigBang address on ThanksTokenFactory (temporarily set deployer for testing)
+    await ThanksTokenFactory.write.setBigBang([deployerAddress]);
+
+    // Create ThanksToken instance using factory
+    const createTxHash =
+      await ThanksTokenFactory.write.createThanksTokenDeterministic([
+        tokenName,
+        tokenSymbol,
+        deployerAddress,
+        1000000000000000000n, // 1.0 in wei
+        "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
+      ]);
+
+    const createReceipt = await publicClient.waitForTransactionReceipt({
+      hash: createTxHash,
+    });
+
+    let thanksTokenAddress: Address | undefined;
+    for (const log of createReceipt.logs) {
+      try {
+        const decodedLog = decodeEventLog({
+          abi: ThanksTokenFactory.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decodedLog.eventName === "ThanksTokenCreated") {
+          thanksTokenAddress = decodedLog.args.tokenAddress as Address;
+          break;
+        }
+      } catch (error) {}
+    }
+
+    if (!thanksTokenAddress) {
+      throw new Error("ThanksToken address not found in transaction logs");
+    }
+
+    // Get the actual ThanksToken clone instance
+    DeployedThanksToken = await viem.getContractAt(
+      "ThanksToken",
+      thanksTokenAddress,
+    );
 
     let txHash2 = await Hats.write.createHat([
       topHatId,
@@ -306,11 +341,11 @@ describe("ThanksToken", () => {
   it("should initialize with correct name, symbol and owner", async () => {
     const name = await DeployedThanksToken.read.name();
     const symbol = await DeployedThanksToken.read.symbol();
-    const owner = await DeployedThanksToken.read.owner();
+    const owner = await DeployedThanksToken.read.WORKSPACE_OWNER();
     const deployerAddress = validateAddress(deployer);
 
-    expect(name).to.equal("Test Thanks Token");
-    expect(symbol).to.equal("TTT");
+    expect(name).to.equal(tokenName);
+    expect(symbol).to.equal(tokenSymbol);
     expect(owner.toLowerCase()).to.equal(deployerAddress.toLowerCase());
   });
 
@@ -671,6 +706,67 @@ describe("ThanksToken", () => {
       } catch (error: any) {
         expect(error.message).to.include("Amount exceeds mintable amount");
       }
+    });
+
+    it("should track participants correctly", async () => {
+      // Note: previous tests have already minted from address1 to address2.
+      // So, participants should already include both.
+      let participants = await DeployedThanksToken.read.getParticipants();
+      expect(participants.map((p) => p.toLowerCase())).to.have.members([
+        address1Validated.toLowerCase(),
+        address2Validated.toLowerCase(),
+      ]);
+
+      // Increase time to accrue more mintable amount for address1
+      await time.increase(3600 * 5); // 5 hours
+
+      const relatedRoles = [
+        {
+          hatId,
+          wearer: address1Validated,
+        },
+      ];
+
+      const mintableAmount = await DeployedThanksToken.read.mintableAmount([
+        address1Validated,
+        relatedRoles,
+      ]);
+
+      // Mint from address1 to address3, who is a new participant
+      await DeployedThanksToken.write.mint(
+        [address3Validated, mintableAmount, relatedRoles],
+        { account: address1.account },
+      );
+
+      const newParticipants = await DeployedThanksToken.read.getParticipants();
+      expect(newParticipants).to.have.lengthOf(3);
+      expect(newParticipants.map((p) => p.toLowerCase())).to.have.members([
+        address1Validated.toLowerCase(),
+        address2Validated.toLowerCase(),
+        address3Validated.toLowerCase(),
+      ]);
+
+      // Mint again to an existing participant (address2) to ensure no duplicates are added
+      await time.increase(3600 * 5); // 5 more hours
+      const mintableAmount2 = await DeployedThanksToken.read.mintableAmount([
+        address1Validated,
+        relatedRoles,
+      ]);
+
+      expect(mintableAmount2 > 0n).to.be.true;
+
+      await DeployedThanksToken.write.mint(
+        [address2Validated, mintableAmount2, relatedRoles],
+        { account: address1.account },
+      );
+
+      const finalList = await DeployedThanksToken.read.getParticipants();
+      expect(finalList).to.have.lengthOf(3);
+      expect(finalList.map((p) => p.toLowerCase())).to.have.members([
+        address1Validated.toLowerCase(),
+        address2Validated.toLowerCase(),
+        address3Validated.toLowerCase(),
+      ]);
     });
   });
 });

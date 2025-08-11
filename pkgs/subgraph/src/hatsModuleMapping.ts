@@ -1,126 +1,113 @@
+import { Address, BigInt as GraphBigInt } from "@graphprotocol/graph-ts";
 import {
-  HatsHatCreatorModule,
-  HatsHatCreatorModuleAuthority,
-  HatsTimeFrameModule,
-  HatsTimeFrameModuleAuthority,
+  BalanceOfFractionToken,
+  HatsFractionTokenModule,
+  InitializedFractionToken,
+  TransferFractionToken,
 } from "../generated/schema";
 import {
-  CreateHatAuthorityGranted,
-  CreateHatAuthorityRevoked,
-} from "../generated/templates/HatsHatCreatorModule/HatsHatCreatorModule";
-import {
-  OperationAuthorityGranted,
-  OperationAuthorityRevoked,
-} from "../generated/templates/HatsTimeFrameModule/HatsTimeFrameModule";
+  InitialMint,
+  TransferSingle,
+} from "../generated/templates/HatsFractionTokenModule/HatsFractionTokenModule";
 
-export function handleOperationAuthorityGranted(
-  ev: OperationAuthorityGranted,
-): void {
-  const module = HatsTimeFrameModule.load(ev.address.toHex());
+export function handleRoleShareInitialMint(ev: InitialMint) {
+  const module = HatsFractionTokenModule.load(ev.address.toHex());
 
   if (module === null) {
     return;
   }
 
-  let authority = HatsTimeFrameModuleAuthority.load(
-    `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
+  let initializedEvent = InitializedFractionToken.load(
+    `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`,
   );
-  if (authority) {
-    authority.authorised = true;
-  } else {
-    authority = new HatsTimeFrameModuleAuthority(
-      `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
-    );
-    authority.workspaceId = module.workspaceId;
-    authority.hatsTimeFrameModule = module.id;
-    authority.address = ev.params.authority.toHex();
-    authority.authorised = true;
-    authority.blockNumber = ev.block.number;
-    authority.blockTimestamp = ev.block.timestamp;
-  }
-  authority.save();
+  if (initializedEvent) return;
+
+  initializedEvent = new InitializedFractionToken(
+    `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`,
+  );
+  initializedEvent.workspaceId = module.workspaceId;
+  initializedEvent.hatsFractionTokenModule = module.id;
+  initializedEvent.tokenId = ev.params.tokenId;
+  initializedEvent.workspaceId = module.workspaceId;
+  initializedEvent.hatId = ev.params.hatId;
+  initializedEvent.wearer = ev.params.wearer.toHex();
+  initializedEvent.blockNumber = ev.block.number;
+  initializedEvent.blockTimestamp = ev.block.timestamp;
+
+  initializedEvent.save();
 }
 
-export function handleOperationAuthorityRevoked(
-  ev: OperationAuthorityRevoked,
-): void {
-  const module = HatsTimeFrameModule.load(ev.address.toHex());
+export function handleRoleShareTransferSingle(ev: TransferSingle): void {
+  const initializedRoleShare = InitializedFractionToken.load(
+    `${ev.address.toHex()}-${ev.params.id.toHexString()}`,
+  );
 
-  if (module === null) {
+  if (initializedRoleShare === null) {
     return;
   }
 
-  let authority = HatsTimeFrameModuleAuthority.load(
-    `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
+  let transfer = TransferFractionToken.load(
+    `${ev.address.toHex()}-${ev.params.id.toHexString()}-${ev.params.to.toHexString()}-${ev.params.from.toHexString()}-${ev.block.number}`,
   );
-  if (authority) {
-    authority.authorised = false;
-  } else {
-    authority = new HatsTimeFrameModuleAuthority(
-      `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
-    );
-    authority.workspaceId = module.workspaceId;
-    authority.hatsTimeFrameModule = module.id;
-    authority.address = ev.params.authority.toHex();
-    authority.authorised = false;
-    authority.blockNumber = ev.block.number;
-    authority.blockTimestamp = ev.block.timestamp;
-  }
-  authority.save();
+  if (transfer) return;
+  transfer = new TransferFractionToken(
+    `${ev.address.toHex()}-${ev.params.id.toHexString()}-${ev.params.to.toHexString()}-${ev.params.from.toHexString()}-${ev.block.number}`,
+  );
+  transfer.hatsFractionTokenModule = initializedRoleShare.id;
+  transfer.from = ev.params.from.toHex();
+  transfer.to = ev.params.to.toHex();
+  transfer.tokenId = ev.params.id;
+  transfer.amount = ev.params.value;
+  transfer.workspaceId = initializedRoleShare.workspaceId;
+  transfer.blockTimestamp = ev.block.timestamp;
+  transfer.blockNumber = ev.block.number;
+
+  updateBalance(
+    ev.params.id,
+    ev.params.from,
+    ev.params.value.neg(),
+    initializedRoleShare,
+    ev.block.timestamp,
+  );
+
+  updateBalance(
+    ev.params.id,
+    ev.params.to,
+    ev.params.value,
+    initializedRoleShare,
+    ev.block.timestamp,
+  );
+
+  transfer.save();
 }
 
-export function handleCreateHatAuthorityGranted(
-  ev: CreateHatAuthorityGranted,
-): void {
-  const module = HatsHatCreatorModule.load(ev.address.toHex());
-
-  if (module === null) {
-    return;
-  }
-
-  let authority = HatsHatCreatorModuleAuthority.load(
-    `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
+function updateBalance(
+  tokenId: GraphBigInt,
+  account: Address,
+  amount: GraphBigInt,
+  initializedRoleShare: InitializedFractionToken,
+  timestamp: GraphBigInt,
+) {
+  let balance = BalanceOfFractionToken.load(
+    `${initializedRoleShare.id}-${tokenId.toHex()}-${account.toHex()}`,
   );
-  if (authority) {
-    authority.authorised = true;
-  } else {
-    authority = new HatsHatCreatorModuleAuthority(
-      `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
-    );
-    authority.workspaceId = module.workspaceId;
-    authority.hatsHatCreatorModule = module.id;
-    authority.address = ev.params.authority.toHex();
-    authority.authorised = true;
-    authority.blockNumber = ev.block.number;
-    authority.blockTimestamp = ev.block.timestamp;
-  }
-  authority.save();
-}
-
-export function handleCreateHatAuthorityRevoked(
-  ev: CreateHatAuthorityRevoked,
-): void {
-  const module = HatsHatCreatorModule.load(ev.address.toHex());
-
-  if (module === null) {
-    return;
+  if (balance) {
+    balance.balance = balance.balance.plus(amount);
+  } else if (account.toHex() !== "0x0000000000000000000000000000000000000000") {
+    balance = new BalanceOfFractionToken(`${tokenId}${account.toHex()}`);
+    balance.owner = account.toHex();
+    balance.tokenId = tokenId;
+    balance.balance = amount;
+    balance.updatedAt = timestamp;
   }
 
-  let authority = HatsHatCreatorModuleAuthority.load(
-    `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
-  );
-  if (authority) {
-    authority.authorised = false;
-  } else {
-    authority = new HatsHatCreatorModuleAuthority(
-      `${ev.address.toHex()}-${ev.params.authority.toHexString()}`,
-    );
-    authority.workspaceId = module.workspaceId;
-    authority.hatsHatCreatorModule = module.id;
-    authority.address = ev.params.authority.toHex();
-    authority.authorised = false;
-    authority.blockNumber = ev.block.number;
-    authority.blockTimestamp = ev.block.timestamp;
+  if (balance && initializedRoleShare) {
+    balance.workspaceId = initializedRoleShare.workspaceId;
+    balance.hatId = initializedRoleShare.hatId;
+    balance.wearer = initializedRoleShare.wearer;
   }
-  authority.save();
+
+  if (balance) {
+    balance.save();
+  }
 }

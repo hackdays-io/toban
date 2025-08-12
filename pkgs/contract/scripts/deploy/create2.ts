@@ -11,7 +11,10 @@ import {
   deploySplitsCreator,
   deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
-import { deployThanksTokenFactory } from "../../helpers/deploy/ThanksToken";
+import {
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../../helpers/deploy/ThanksToken";
 import { writeContractAddress } from "../../helpers/deploy/contractsJsonHelper";
 
 const deploy = async () => {
@@ -54,6 +57,10 @@ const deploy = async () => {
   } = await deploySplitsCreatorFactory(splitsCreatorAddress);
   const splitsCreatorFactoryAddress = SplitsCreatorFactory.address;
 
+  console.log("Deploying ThanksToken...");
+  const { ThanksToken } = await deployThanksToken();
+  const thanksTokenAddress = ThanksToken.address;
+
   console.log("Deploying ThanksTokenFactory...");
 
   const {
@@ -62,7 +69,7 @@ const deploy = async () => {
     ThanksTokenFactoryInitData,
   } = await deployThanksTokenFactory({
     initialOwner: deployerAddress as Address,
-    implementation: hatsFractionTokenModuleAddress,
+    implementation: thanksTokenAddress,
     hatsAddress: process.env.HATS_ADDRESS as Address,
     fractionTokenAddress: hatsFractionTokenModuleAddress,
     hatsTimeFrameModuleAddress: hatsTimeFrameModuleAddress,
@@ -91,6 +98,13 @@ const deploy = async () => {
     splitsCreatorFactoryAddress,
   );
   await SplitsCreatorFactoryContract.setBigBang(bigBangAddress);
+
+  // Set bigbang address to thanks token factory
+  const ThanksTokenFactoryContract = await ethers.getContractAt(
+    "ThanksTokenFactory",
+    thanksTokenFactoryAddress,
+  );
+  await ThanksTokenFactoryContract.setBigBang(bigBangAddress);
 
   console.log("Successfully deployed contracts!🎉");
   console.log("Verify contract with these commands...\n");

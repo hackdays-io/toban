@@ -12,37 +12,33 @@ import {
 
 export function handleRoleShareInitialMint(ev: InitialMint) {
   const module = HatsFractionTokenModule.load(ev.address.toHex());
+  const id = `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`;
 
   if (module === null) {
     return;
   }
 
-  let initializedEvent = InitializedFractionToken.load(
-    `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`,
-  );
+  let initializedEvent = InitializedFractionToken.load(id);
   if (initializedEvent) return;
 
-  initializedEvent = new InitializedFractionToken(
-    `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`,
-  );
-  initializedEvent.workspaceId = module.workspaceId;
+  initializedEvent = new InitializedFractionToken(id);
   initializedEvent.hatsFractionTokenModule = module.id;
   initializedEvent.tokenId = ev.params.tokenId;
-  initializedEvent.workspaceId = module.workspaceId;
   initializedEvent.hatId = ev.params.hatId;
   initializedEvent.wearer = ev.params.wearer.toHex();
-  initializedEvent.blockNumber = ev.block.number;
+  initializedEvent.workspaceId = module.workspaceId;
   initializedEvent.blockTimestamp = ev.block.timestamp;
+  initializedEvent.blockNumber = ev.block.number;
 
   initializedEvent.save();
 }
 
 export function handleRoleShareTransferSingle(ev: TransferSingle): void {
-  const initializedRoleShare = InitializedFractionToken.load(
-    `${ev.address.toHex()}-${ev.params.id.toHexString()}`,
-  );
+  const module = HatsFractionTokenModule.load(ev.address.toHex());
+  const id = `${ev.address.toHex()}-${ev.params.id.toHexString()}`;
+  const initializedRoleShare = InitializedFractionToken.load(id);
 
-  if (initializedRoleShare === null) {
+  if (initializedRoleShare === null || module === null) {
     return;
   }
 
@@ -53,12 +49,12 @@ export function handleRoleShareTransferSingle(ev: TransferSingle): void {
   transfer = new TransferFractionToken(
     `${ev.address.toHex()}-${ev.params.id.toHexString()}-${ev.params.to.toHexString()}-${ev.params.from.toHexString()}-${ev.block.number}`,
   );
-  transfer.hatsFractionTokenModule = initializedRoleShare.id;
+  transfer.hatsFractionTokenModule = module.id;
   transfer.from = ev.params.from.toHex();
   transfer.to = ev.params.to.toHex();
   transfer.tokenId = ev.params.id;
   transfer.amount = ev.params.value;
-  transfer.workspaceId = initializedRoleShare.workspaceId;
+  transfer.workspaceId = module.workspaceId;
   transfer.blockTimestamp = ev.block.timestamp;
   transfer.blockNumber = ev.block.number;
 
@@ -93,6 +89,7 @@ function updateBalance(
   );
   if (balance) {
     balance.balance = balance.balance.plus(amount);
+    balance.updatedAt = timestamp;
   } else if (account.toHex() !== "0x0000000000000000000000000000000000000000") {
     balance = new BalanceOfFractionToken(`${tokenId}${account.toHex()}`);
     balance.owner = account.toHex();

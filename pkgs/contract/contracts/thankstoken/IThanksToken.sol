@@ -58,6 +58,12 @@ interface IThanksToken is IERC20 {
     function defaultCoefficient() external view returns (uint256);
 
     /**
+     * @notice Returns the list of all participants (minters and recipients)
+     * @return The array of participant addresses
+     */
+    function getParticipants() external view returns (address[] memory);
+
+    /**
      * @notice Emitted when tokens are minted
      * @param to The recipient of the minted tokens
      * @param amount The amount of tokens minted

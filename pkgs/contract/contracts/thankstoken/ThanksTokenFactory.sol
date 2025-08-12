@@ -17,14 +17,14 @@ contract ThanksTokenFactory is
     address public fractionTokenAddress;
     address public hatsTimeFrameModuleAddress;
     address public BIG_BANG;
-    
+
     event ThanksTokenCreated(
-        address indexed tokenAddress, 
-        string name, 
-        string symbol, 
+        address indexed tokenAddress,
+        string name,
+        string symbol,
         address workspaceOwner
     );
-    
+
     function initialize(
         address _initialOwner,
         address _implementation,
@@ -39,7 +39,7 @@ contract ThanksTokenFactory is
         fractionTokenAddress = _fractionTokenAddress;
         hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
     }
-    
+
     function createThanksToken(
         string memory name,
         string memory symbol,
@@ -50,7 +50,7 @@ contract ThanksTokenFactory is
         if (_msgSender() != BIG_BANG) {
             revert("ThanksTokenFactory: Only BigBang can call this function");
         }
-        
+
         bytes memory initData = abi.encode(
             workspaceOwner,
             name,
@@ -60,17 +60,17 @@ contract ThanksTokenFactory is
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
-        
+
         address proxy = LibClone.clone(
             IMPLEMENTATION,
             initData
         );
-        
+
         emit ThanksTokenCreated(proxy, name, symbol, workspaceOwner);
-        
+
         return proxy;
     }
-    
+
     function createThanksTokenDeterministic(
         string memory name,
         string memory symbol,
@@ -81,7 +81,7 @@ contract ThanksTokenFactory is
         if (_msgSender() != BIG_BANG) {
             revert("ThanksTokenFactory: Only BigBang can call this function");
         }
-        
+
         bytes memory initData = abi.encode(
             workspaceOwner,
             name,
@@ -91,7 +91,7 @@ contract ThanksTokenFactory is
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
-        
+
         bytes32 saltHash = _getSalt(
             name,
             symbol,
@@ -99,18 +99,18 @@ contract ThanksTokenFactory is
             defaultCoefficient,
             salt
         );
-        
+
         address addr = LibClone.cloneDeterministic(
             IMPLEMENTATION,
             initData,
             saltHash
         );
-        
+
         emit ThanksTokenCreated(addr, name, symbol, workspaceOwner);
-        
+
         return addr;
     }
-    
+
     function predictThanksTokenAddress(
         string memory name,
         string memory symbol,
@@ -127,7 +127,7 @@ contract ThanksTokenFactory is
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
-        
+
         bytes32 saltHash = _getSalt(
             name,
             symbol,
@@ -135,7 +135,7 @@ contract ThanksTokenFactory is
             defaultCoefficient,
             salt
         );
-        
+
         return LibClone.predictDeterministicAddress(
             IMPLEMENTATION,
             initData,
@@ -143,7 +143,7 @@ contract ThanksTokenFactory is
             address(this)
         );
     }
-    
+
     function _getSalt(
         string memory name,
         string memory symbol,
@@ -161,26 +161,26 @@ contract ThanksTokenFactory is
             )
         );
     }
-    
+
     function setImplementation(address _implementation) public onlyOwner {
         IMPLEMENTATION = _implementation;
     }
-    
+
     function setHatsAddress(address _hatsAddress) public onlyOwner {
         hatsAddress = _hatsAddress;
     }
-    
+
     function setFractionTokenAddress(address _fractionTokenAddress) public onlyOwner {
         fractionTokenAddress = _fractionTokenAddress;
     }
-    
+
     function setHatsTimeFrameModuleAddress(address _hatsTimeFrameModuleAddress) public onlyOwner {
         hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
     }
-    
+
     function setBigBang(address _bigBang) public onlyOwner {
         BIG_BANG = _bigBang;
     }
-    
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

@@ -1,5 +1,9 @@
 import { Executed } from "../generated/BigBang/BigBang";
-import { HatsFractionTokenModule, Workspace } from "../generated/schema";
+import {
+  HatsFractionTokenModule,
+  ThanksToken,
+  Workspace,
+} from "../generated/schema";
 import { hatIdToTreeId } from "./helper/hat";
 
 export function handleExecuted(ev: Executed): void {
@@ -28,4 +32,9 @@ export function handleExecuted(ev: Executed): void {
     ev.params.hatsFractionTokenModule.toHex(),
   );
   newHatsFractionTokenModule.workspaceId = treeId;
+  newHatsFractionTokenModule.save();
+
+  const newThanksToken = new ThanksToken(ev.params.thanksToken.toHex());
+  newThanksToken.workspaceId = treeId;
+  newThanksToken.save();
 }

@@ -65,10 +65,9 @@ type BalanceOfFractionToken @entity {
 type ThanksToken @entity {
   id: ID!
   workspaceId: ID!
-  name: String!
-  symbol: String!
   mints: [MintThanksToken!]! @derivedFrom(field: "thanksToken")
   transfers: [TransferThanksToken!]! @derivedFrom(field: "thanksToken")
+  mintAmounts: [AmountOfMintThanksToken!]! @derivedFrom(field: "thanksToken")
   balances: [BalanceOfThanksToken!]! @derivedFrom(field: "thanksToken")
 }
 
@@ -92,6 +91,15 @@ type TransferThanksToken @entity {
   workspaceId: ID!
   blockTimestamp: BigInt!
   blockNumber: BigInt!
+}
+
+type AmountOfMintThanksToken @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  sender: String!
+  amount: BigInt!
+  workspaceId: ID!
+  updatedAt: BigInt!
 }
 
 type BalanceOfThanksToken @entity {

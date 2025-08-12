@@ -109,6 +109,12 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "memberHatId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "operatorHatId",
         "type": "uint256"
       },
@@ -345,6 +351,16 @@
       {
         "internalType": "string",
         "name": "_hatterHatImageURI",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_memberHatDetails",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_memberHatImageURI",
         "type": "string"
       }
     ],

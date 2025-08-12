@@ -31,7 +31,7 @@ dataSources:
       file: ./src/{{mappingFile}}.ts
   {{/contracts}}
 templates:
-  {{#hatsModuleContracts}}
+  {{#templatesContracts}}
   - kind: ethereum/contract
     name: {{ file }}
     network: {{ network }}
@@ -53,5 +53,5 @@ templates:
         - event: {{event}}
           handler: {{handler}}
         {{/handlers}}
-      file: ./src/hatsModuleMapping.ts
-  {{/hatsModuleContracts}}
+      file: ./src/{{mappingFile}}.ts
+  {{/templatesContracts}}

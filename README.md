@@ -275,7 +275,15 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     Please set params when you execute.
 
     ```bash
-    pnpm contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    pnpm contract bigbang \
+    --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 \
+    --tophatdetails "Dev Top Hat" \
+    --tophatimageuri "dev-tophat" \
+    --hatterhatdetails "Dev Hatter Hat" \
+    --hatterhatimageuri "dev-hatterhat" \
+    --memberhatdetails "Dev Member Hat" \
+    --memberhatimageuri "dev-memberhat" \
+    --network sepolia
     ```
 
   - #### **call getWoreTime task**

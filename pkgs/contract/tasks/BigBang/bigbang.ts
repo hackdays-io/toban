@@ -38,23 +38,39 @@ task("bigbang", "bigbang")
       // create BigBang instance
       const bigbang = await hre.viem.getContractAt("BigBang", BigBang);
 
-      const address = bobWalletClient.account?.address;
-      if (!address) {
-        throw new Error("Wallet client account address is undefined");
+      console.log("Calling bigbang with parameters:");
+      console.log(`  owner: ${taskArgs.owner}`);
+      console.log(`  tophatdetails: ${taskArgs.tophatdetails}`);
+      console.log(`  tophatimageuri: ${taskArgs.tophatimageuri}`);
+      console.log(`  hatterhatdetails: ${taskArgs.hatterhatdetails}`);
+      console.log(`  hatterhatimageuri: ${taskArgs.hatterhatimageuri}`);
+      console.log(`  memberhatdetails: ${taskArgs.memberhatdetails}`);
+      console.log(`  memberhatimageuri: ${taskArgs.memberhatimageuri}`);
+
+      try {
+        // call bigbang method with explicit gas limit
+        const tx = await bigbang.write.bigbang(
+          [
+            taskArgs.owner as `0x${string}`,
+            taskArgs.tophatdetails,
+            taskArgs.tophatimageuri,
+            taskArgs.hatterhatdetails,
+            taskArgs.hatterhatimageuri,
+            taskArgs.memberhatdetails,
+            taskArgs.memberhatimageuri,
+          ],
+          {
+            gas: 9000000n, // 9M gas limit
+          },
+        );
+
+        console.log(`Transaction hash: ${tx}`);
+        console.log("BigBang executed successfully!");
+      } catch (error) {
+        console.error("An unexpected error occurred:");
+        console.error(error);
+        throw error;
       }
-
-      // call bigbang method
-      const tx = await bigbang.write.bigbang([
-        address,
-        taskArgs.tophatdetails,
-        taskArgs.tophatimageuri,
-        taskArgs.hatterhatdetails,
-        taskArgs.hatterhatimageuri,
-        taskArgs.memberhatdetails,
-        taskArgs.memberhatimageuri,
-      ]);
-
-      console.log(`tx: ${tx}`);
 
       console.log(
         "################################### [END] ###################################",

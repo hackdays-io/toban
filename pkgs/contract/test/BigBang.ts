@@ -157,6 +157,24 @@ describe("BigBang", () => {
   });
 
   it("should execute bigbang", async () => {
+    // First deploy BigBang for this test if not already deployed
+    if (!BigBang) {
+      const { BigBang: _BigBang } = await deployBigBang(
+        {
+          hatsContractAddress: Hats.address,
+          hatsModuleFacotryAddress: HatsModuleFactory.address,
+          hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+          hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
+          hatsFractionTokenModule_impl: HatsFractionTokenModule_IMPL.address,
+          splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
+          splitsFactoryV2Address: PullSplitsFactory.address,
+          thanksTokenFactoryAddress: ThanksTokenFactory.address,
+        },
+        Create2Deployer.address,
+      );
+      BigBang = _BigBang;
+    }
+
     // SplitsCreatorFactoryにBigBangアドレスをセット
     await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
 

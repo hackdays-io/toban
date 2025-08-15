@@ -38,7 +38,7 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
     },
     sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      url: `https://sepolia.infura.io/v3/${ALCHEMY_API_KEY}`,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
     holesky: {

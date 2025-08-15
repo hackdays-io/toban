@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import { network } from "hardhat";
+import { ethers, network } from "hardhat";
 import type { Address } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
 import {
@@ -11,7 +11,10 @@ import {
   deploySplitsCreator,
   deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
-import { deployThanksToken } from "../../helpers/deploy/ThanksToken";
+import {
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../../helpers/deploy/ThanksToken";
 import {
   loadDeployedContractAddresses,
   writeContractAddress,
@@ -28,6 +31,10 @@ const deployAll = async () => {
     "##################################### [Deploy START] #####################################",
   );
 
+  // デプロイするウォレットアドレスを取得する
+  const [deployerSigner] = await ethers.getSigners();
+  const deployerAddress = await deployerSigner.getAddress();
+
   // Hats HatsModuleFactory PullSplitsFactoryコントラクトの各アドレスをjsonファイルから取得してくる。
   const {
     contracts: { Hats, HatsModuleFactory, PullSplitsFactory },
@@ -39,7 +46,20 @@ const deployAll = async () => {
   );
   const { HatsFractionTokenModule } = await deployHatsFractionTokenModule();
 
+  console.log("Deploying ThanksToken...");
   const { ThanksToken } = await deployThanksToken();
+  const thanksTokenAddress = ThanksToken.address;
+
+  console.log("Deploying ThanksTokenFactory...");
+
+  const { ThanksTokenFactory } = await deployThanksTokenFactory({
+    initialOwner: deployerAddress as Address,
+    implementation: thanksTokenAddress,
+    hatsAddress: process.env.HATS_ADDRESS as Address,
+    fractionTokenAddress: HatsFractionTokenModule.address,
+    hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
+  });
+  const thanksTokenFactoryAddress = ThanksTokenFactory.address;
 
   const { SplitsCreator } = await deploySplitsCreator();
 
@@ -55,11 +75,11 @@ const deployAll = async () => {
     hatsFractionTokenModule_impl: HatsFractionTokenModule.address,
     splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
     splitsFactoryV2Address: PullSplitsFactory as Address,
-    thanksTokenFactoryAddress: ThanksToken.address,
+    thanksTokenFactoryAddress: thanksTokenFactoryAddress,
   });
 
   console.log("BigBang deployed at", BigBang.address);
-  console.log("ThanksToken deployed at", ThanksToken.address);
+  console.log("ThanksTokenFactory deployed at", thanksTokenFactoryAddress);
   console.log("SplitsCreatorFactory deployed at", SplitsCreatorFactory.address);
   console.log("SplitsCreator deployed at", SplitsCreator.address);
   console.log("HatsTimeFrameModule deployed at", HatsTimeFrameModule.address);
@@ -77,8 +97,8 @@ const deployAll = async () => {
   });
   writeContractAddress({
     group: "contracts",
-    name: "ThanksToken",
-    value: ThanksToken.address,
+    name: "ThanksTokenFactory",
+    value: thanksTokenFactoryAddress,
     network: network.name,
   });
   writeContractAddress({

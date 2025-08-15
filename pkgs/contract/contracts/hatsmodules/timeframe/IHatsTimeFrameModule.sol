@@ -31,6 +31,18 @@ interface IHatsTimeFrameModule {
         uint256 hatId
     ) external view returns (uint256);
 
+    /**
+     * @dev Batch mint hats for multiple addresses with the same hat ID.
+     * @param hatId The ID of the hat to be minted for all wearers.
+     * @param wearers Array of addresses to receive the hat.
+     * @param times Array of specific timestamps when each hat was minted (0 for current time).
+     */
+    function batchMintHat(
+        uint256 hatId,
+        address[] calldata wearers,
+        uint256[] calldata times
+    ) external;
+
     function woreTime(
         uint256 hatId,
         address wearer
@@ -84,4 +96,9 @@ interface IHatsTimeFrameModule {
      * @notice Emitted when a hat is renounced
      */
     event HatRenounced(uint256 indexed hatId, address indexed wearer);
+
+    /**
+     * @notice Emitted when batch mint is completed
+     */
+    event BatchMintCompleted(uint256 indexed hatId, uint256 count);
 }

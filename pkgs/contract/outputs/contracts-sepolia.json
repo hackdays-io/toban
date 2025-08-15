@@ -10,7 +10,8 @@
     "HatsTimeFrameModule": "0xA6221434097e347eD30FE2e30F5E610cF41d08B8",
     "ProxyAdmin": "0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8",
     "ThanksToken": "0xb1183517df53A04F9E344f2F5CCf95b41D515701",
-    "HatsFractionTokenModule": "0xB867Cc5Fb5A297f77ed5dF2982fB158c551962f9"
+    "HatsFractionTokenModule": "0xB867Cc5Fb5A297f77ed5dF2982fB158c551962f9",
+    "ThanksTokenFactory": "0x1d6c8cf4a9366f20c0ec4617d0629bf0bc8c275c"
   },
   "implementations": {
     "FractionToken_Implementation": "0x6d701256205019e40cE02e13D799ed2cd3BBE8e8",

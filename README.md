@@ -260,7 +260,8 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
   - #### **call bigbang task**
 
-    Please set params when you execute.
+    ワークスペースを作成する際に実行されるメソッド.
+    必要なコントラクトが一式デプロイされる
 
     ```bash
     pnpm contract bigbang \
@@ -283,11 +284,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### **call mintHat task**
 
     ```bash
-    pnpm contract mintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --wearer 0xEef377Bdf67A227a744e386231fB3f264C158CDF --network sepolia
+    # --module には bigBangコントラクトの時に出力される hatsTimeFrameModule のアドレスを当てはめること！
+    pnpm contract mintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --wearer 0xEef377Bdf67A227a744e386231fB3f264C158CDF --module 0xA193a4CE929168A594744A53Fb17Ba4caBb507a4 --network sepolia
     ```
 
   - #### **call batchMintHats task**
 
     ```bash
-    pnpm contract batchMintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --csv ./data/example-wearers.csv --network sepolia
+    # --module には bigBangコントラクトの時に出力される hatsTimeFrameModule のアドレスを当てはめること！
+    pnpm contract batchMintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --csv ./data/example-wearers.csv --module 0xA193a4CE929168A594744A53Fb17Ba4caBb507a4 --network sepolia
     ```

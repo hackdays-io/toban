@@ -86,6 +86,10 @@ task("batchMintHat", "Batch mint hats to multiple addresses")
   )
   .addOptionalParam("addresses", "Comma-separated list of addresses")
   .addOptionalParam("batchsize", "Maximum batch size (default: 50)", "50")
+  .addOptionalParam(
+    "module",
+    "HatsTimeFrameModule instance address (clone). If omitted, uses the address from outputs",
+  )
   .setAction(
     async (
       taskArgs: {
@@ -93,6 +97,7 @@ task("batchMintHat", "Batch mint hats to multiple addresses")
         csv?: string;
         addresses?: string;
         batchsize: string;
+        module?: `0x${string}`;
       },
       hre: HardhatRuntimeEnvironment,
     ) => {
@@ -145,9 +150,11 @@ task("batchMintHat", "Batch mint hats to multiple addresses")
         contracts: { HatsTimeFrameModule },
       } = loadDeployedContractAddresses(hre.network.name);
 
+      const moduleAddress = (taskArgs.module ||
+        HatsTimeFrameModule) as `0x${string}`;
       const hatsTimeFrameModule = await hre.viem.getContractAt(
         "HatsTimeFrameModule",
-        HatsTimeFrameModule,
+        moduleAddress,
       );
 
       // Type assertion for new method that may not be in type definitions yet
@@ -192,6 +199,7 @@ task("batchMintHat", "Batch mint hats to multiple addresses")
           ]);
 
           console.log(`✅ Batch ${i + 1} transaction: ${tx}`);
+          console.log(`module: ${moduleAddress}`);
 
           // Wait for transaction confirmation
           const publicClient = await hre.viem.getPublicClient();

@@ -9,7 +9,7 @@
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
           "handler": "handleExecuted"
         }
       ]

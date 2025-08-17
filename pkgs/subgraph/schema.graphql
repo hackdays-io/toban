@@ -6,6 +6,7 @@ type Workspace @entity {
   hatsTimeFrameModule: HatsTimeFrameModule
   hatsHatCreatorModule: HatsHatCreatorModule
   splitCreator: String!
+  thanksToken: ThanksToken
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }
@@ -75,4 +76,45 @@ type BalanceOfFractionToken @entity {
   hatId: BigInt
   wearer: String
   updatedAt: BigInt!
+}
+
+type ThanksToken @entity {
+  id: ID!
+  workspaceId: ID!
+  address: String!
+  name: String!
+  symbol: String!
+  totalSupply: BigInt!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type ThanksTokenTransfer @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  from: String!
+  to: String!
+  amount: BigInt!
+  workspaceId: ID!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type ThanksTokenBalance @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  owner: String!
+  balance: BigInt!
+  workspaceId: ID!
+  updatedAt: BigInt!
+}
+
+type ThanksTokenMint @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  to: String!
+  amount: BigInt!
+  workspaceId: ID!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
 }

@@ -362,6 +362,7 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
       as="button"
       px={4}
       py={2}
+      cursor={"pointer"}
       borderLeftRadius={isLeftTab ? "md" : "0"}
       borderRightRadius={isLeftTab ? "0" : "md"}
       fontWeight={isActive ? "bold" : "medium"}

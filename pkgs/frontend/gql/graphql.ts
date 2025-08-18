@@ -1799,6 +1799,23 @@ export type GetTransferFractionTokensQueryVariables = Exact<{
 
 export type GetTransferFractionTokensQuery = { __typename?: 'Query', transferFractionTokens: Array<{ __typename?: 'TransferFractionToken', id: string, to: string, tokenId: any, workspaceId: string, from: string, blockTimestamp: any, blockNumber: any, amount: any }> };
 
+export type GetTransferThanksTokensQuery = {
+  __typename?: "Query";
+  transferThanksTokens: Array<{
+    __typename?: "TransferThanksToken";
+    amount: any;
+    from: string;
+    to: string;
+    tokenId: any;
+    blockNumber: any;
+    blockTimestamp: any;
+    hatId?: any | null;
+    id: string;
+    wearer?: string | null;
+    workspaceId?: string | null;
+  }>;
+};
+
 export type BalanceOfFractionTokensQueryVariables = Exact<{
   where?: InputMaybe<BalanceOfFractionToken_Filter>;
   orderBy?: InputMaybe<BalanceOfFractionToken_OrderBy>;

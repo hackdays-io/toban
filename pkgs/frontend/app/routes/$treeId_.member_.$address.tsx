@@ -3,9 +3,11 @@ import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
+import { useGetTransferThanksTokens } from "hooks/useThanksToken";
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { UserThanksHistory } from "~/components/thankstoken/History";
 import {
   useAddressesByNames,
   useIdentity,
@@ -296,14 +298,20 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
 }) => {
   const TX_HISTORY_LIMIT = 5;
 
-  const [activeTab, setActiveTab] = useState<"sent" | "received">("received");
+  const [assistCreditActiveTab, setAssistCreditActiveTab] = useState<
+    "sent" | "received"
+  >("received");
+
+  const [thanksTokenActiveTab, setThanksTokenActiveTab] = useState<
+    "sent" | "received"
+  >("received");
 
   const normalizedAddress = useMemo(
     () => (address ? address.toLowerCase() : address),
     [address],
   );
 
-  const { data: receivedData } = useGetTransferFractionTokens({
+  const { data: receivedAssistTokenData } = useGetTransferFractionTokens({
     where: {
       workspaceId: treeId,
       to: normalizedAddress,
@@ -313,7 +321,27 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
     first: TX_HISTORY_LIMIT,
   });
 
-  const { data: sentData } = useGetTransferFractionTokens({
+  const { data: sentAssistTokenData } = useGetTransferFractionTokens({
+    where: {
+      workspaceId: treeId,
+      from: normalizedAddress,
+    },
+    orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
+    first: TX_HISTORY_LIMIT,
+  });
+
+  const { data: receivedThanksTokenData } = useGetTransferThanksTokens({
+    where: {
+      workspaceId: treeId,
+      to: normalizedAddress,
+    },
+    orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
+    first: TX_HISTORY_LIMIT,
+  });
+
+  const { data: sentThanksTokenData } = useGetTransferThanksTokens({
     where: {
       workspaceId: treeId,
       from: normalizedAddress,
@@ -363,14 +391,14 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
         </Text>
         <Flex>
           <TabButton
-            isActive={activeTab === "received"}
-            onClick={() => setActiveTab("received")}
+            isActive={assistCreditActiveTab === "received"}
+            onClick={() => setAssistCreditActiveTab("received")}
             label="受信"
             isLeftTab={true}
           />
           <TabButton
-            isActive={activeTab === "sent"}
-            onClick={() => setActiveTab("sent")}
+            isActive={assistCreditActiveTab === "sent"}
+            onClick={() => setAssistCreditActiveTab("sent")}
             label="送信"
           />
         </Flex>
@@ -379,11 +407,50 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
       {treeId && address && (
         <Box mt={4}>
           <UserAssistCreditHistory
-            data={activeTab === "received" ? receivedData : sentData}
+            data={
+              assistCreditActiveTab === "received"
+                ? receivedAssistTokenData
+                : sentAssistTokenData
+            }
             treeId={treeId}
             userAddress={address}
             limit={TX_HISTORY_LIMIT}
-            txType={activeTab}
+            txType={assistCreditActiveTab}
+          />
+        </Box>
+      )}
+
+      <Flex justifyContent="space-between" alignItems="center" mb={4} mt={4}>
+        <Text fontSize="md" fontWeight="medium" color="gray.600">
+          サンクストークン履歴
+        </Text>
+        <Flex>
+          <TabButton
+            isActive={thanksTokenActiveTab === "received"}
+            onClick={() => setThanksTokenActiveTab("received")}
+            label="受信"
+            isLeftTab={true}
+          />
+          <TabButton
+            isActive={thanksTokenActiveTab === "sent"}
+            onClick={() => setThanksTokenActiveTab("sent")}
+            label="送信"
+          />
+        </Flex>
+      </Flex>
+
+      {treeId && address && (
+        <Box mt={4}>
+          <UserThanksHistory
+            data={
+              thanksTokenActiveTab === "received"
+                ? receivedThanksTokenData
+                : sentThanksTokenData
+            }
+            treeId={treeId}
+            userAddress={address}
+            limit={TX_HISTORY_LIMIT}
+            txType={thanksTokenActiveTab}
           />
         </Box>
       )}

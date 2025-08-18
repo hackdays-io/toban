@@ -20,7 +20,11 @@ interface IThanksToken is IERC20 {
      * @param relatedRoles Array of roles related to the sender
      * @return success Whether the operation was successful
      */
-    function mint(address to, uint256 amount, RelatedRole[] memory relatedRoles) external returns (bool);
+    function mint(
+        address to,
+        uint256 amount,
+        RelatedRole[] memory relatedRoles
+    ) external returns (bool);
 
     /**
      * @notice Calculates the total amount that can be minted by an address
@@ -28,7 +32,10 @@ interface IThanksToken is IERC20 {
      * @param relatedRoles Array of roles related to the owner
      * @return amount The mintable amount
      */
-    function mintableAmount(address owner, RelatedRole[] memory relatedRoles) external view returns (uint256);
+    function mintableAmount(
+        address owner,
+        RelatedRole[] memory relatedRoles
+    ) external view returns (uint256);
 
     /**
      * @notice Returns the total amount an address has minted
@@ -61,5 +68,5 @@ interface IThanksToken is IERC20 {
      * @param to The recipient of the minted tokens
      * @param amount The amount of tokens minted
      */
-    event TokensMinted(address indexed to, uint256 amount);
+    event TokenMinted(address indexed from, address indexed to, uint256 amount);
 }

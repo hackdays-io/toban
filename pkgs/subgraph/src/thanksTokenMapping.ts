@@ -97,7 +97,7 @@ function updateBalance(
   account: Address,
   amount: GraphBigInt,
   timestamp: GraphBigInt,
-) {
+): void {
   let balance = BalanceOfThanksToken.load(
     `${thanksToken.id}-${account.toHex()}`,
   );

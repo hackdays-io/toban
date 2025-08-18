@@ -10,7 +10,7 @@ import {
   TransferSingle,
 } from "../generated/templates/HatsFractionTokenModule/HatsFractionTokenModule";
 
-export function handleRoleShareInitialMint(ev: InitialMint) {
+export function handleRoleShareInitialMint(ev: InitialMint): void {
   const module = HatsFractionTokenModule.load(ev.address.toHex());
   const id = `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`;
 
@@ -83,7 +83,7 @@ function updateBalance(
   amount: GraphBigInt,
   initializedRoleShare: InitializedFractionToken,
   timestamp: GraphBigInt,
-) {
+): void {
   let balance = BalanceOfFractionToken.load(
     `${initializedRoleShare.id}-${tokenId.toHex()}-${account.toHex()}`,
   );

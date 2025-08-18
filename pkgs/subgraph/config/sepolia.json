@@ -1,9 +1,9 @@
 {
   "network": "sepolia",
-  "startBlock": 7578217,
+  "startBlock": 9010696,
   "contracts": [
     {
-      "address": "0xc498cCBc53FB6A31D947fF1631bF69b2F1224445",
+      "address": "0xa60689d4D4d49A587E4eAD4B3C2b8542C56BE10F",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],

@@ -51,6 +51,7 @@ contract ThanksTokenFactory is
             revert("ThanksTokenFactory: Only BigBang can call this function");
         }
 
+        // ここのFracionToken、HatsTimeFrameModuleはワークスペースごとに変わるのでFactoryにセットされているものではなく、外部から引数で渡す必要がある。
         bytes memory initData = abi.encode(
             workspaceOwner,
             name,
@@ -61,10 +62,7 @@ contract ThanksTokenFactory is
             defaultCoefficient
         );
 
-        address proxy = LibClone.clone(
-            IMPLEMENTATION,
-            initData
-        );
+        address proxy = LibClone.clone(IMPLEMENTATION, initData);
 
         emit ThanksTokenCreated(proxy, name, symbol, workspaceOwner);
 
@@ -136,12 +134,13 @@ contract ThanksTokenFactory is
             salt
         );
 
-        return LibClone.predictDeterministicAddress(
-            IMPLEMENTATION,
-            initData,
-            saltHash,
-            address(this)
-        );
+        return
+            LibClone.predictDeterministicAddress(
+                IMPLEMENTATION,
+                initData,
+                saltHash,
+                address(this)
+            );
     }
 
     function _getSalt(
@@ -151,15 +150,16 @@ contract ThanksTokenFactory is
         uint256 defaultCoefficient,
         bytes32 salt
     ) internal pure returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                name,
-                symbol,
-                workspaceOwner,
-                defaultCoefficient,
-                salt
-            )
-        );
+        return
+            keccak256(
+                abi.encodePacked(
+                    name,
+                    symbol,
+                    workspaceOwner,
+                    defaultCoefficient,
+                    salt
+                )
+            );
     }
 
     function setImplementation(address _implementation) public onlyOwner {
@@ -170,11 +170,15 @@ contract ThanksTokenFactory is
         hatsAddress = _hatsAddress;
     }
 
-    function setFractionTokenAddress(address _fractionTokenAddress) public onlyOwner {
+    function setFractionTokenAddress(
+        address _fractionTokenAddress
+    ) public onlyOwner {
         fractionTokenAddress = _fractionTokenAddress;
     }
 
-    function setHatsTimeFrameModuleAddress(address _hatsTimeFrameModuleAddress) public onlyOwner {
+    function setHatsTimeFrameModuleAddress(
+        address _hatsTimeFrameModuleAddress
+    ) public onlyOwner {
         hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
     }
 
@@ -182,5 +186,7 @@ contract ThanksTokenFactory is
         BIG_BANG = _bigBang;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }

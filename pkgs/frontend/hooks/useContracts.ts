@@ -2,6 +2,7 @@ import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import { HATS_ABI } from "abi/hats";
 import { HATS_HAT_CREATOR_MODULE_ABI } from "abi/hatsHatCreatorModule";
 import { HATS_TIME_FRAME_MODULE_ABI } from "abi/hatsTimeFrameModule";
+import { THANKS_TOKEN_ABI } from "abi/thankstoken";
 import type { Address } from "viem";
 
 export const BIGBANG_ADDRESS = import.meta.env.VITE_BIGBANG_ADDRESS;
@@ -34,3 +35,8 @@ export const fractionTokenBaseConfig = {
   address: FRACTION_TOKEN_ADDRESS as Address,
   abi: FRACTION_TOKEN_ABI,
 };
+
+export const thanksTokenBaseConfig = (thanksTokenAddress: Address) => ({
+  address: thanksTokenAddress,
+  abi: THANKS_TOKEN_ABI,
+});

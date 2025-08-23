@@ -127,8 +127,6 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             _memberHatImageURI
         );
 
-        Hats.mintHat(memberHatId, _owner);
-
         // 4. Create Fixed Roles under TopHat
         uint256 operatorHatId = Hats.createHat(
             topHatId,

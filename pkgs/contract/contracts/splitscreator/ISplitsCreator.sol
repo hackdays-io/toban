@@ -10,6 +10,13 @@ interface ISplitsCreator {
 		address[] wearers;
 	}
 
+	struct WeightsInfo {
+		uint256 roleWeight;
+		uint256 thanksTokenWeight;
+		uint256 thanksTokenReceivedWeight;
+		uint256 thanksTokenSentWeight;
+	}
+
 	event SplitsCreated(
 		address split,
 		address[] shareHolders,
@@ -17,5 +24,5 @@ interface ISplitsCreator {
 		uint256 totalAllocation
 	);
 
-	function create(SplitsInfo[] memory _splitInfos) external returns (address);
+	function create(SplitsInfo[] memory _splitInfos, WeightsInfo memory _weightsInfo) external returns (address);
 }

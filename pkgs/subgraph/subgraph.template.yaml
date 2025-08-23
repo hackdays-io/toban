@@ -31,7 +31,7 @@ dataSources:
       file: ./src/{{mappingFile}}.ts
   {{/contracts}}
 templates:
-  {{#hatsModuleContracts}}
+  {{#templatesContracts}}
   - kind: ethereum/contract
     name: {{ file }}
     network: {{ network }}
@@ -53,28 +53,5 @@ templates:
         - event: {{event}}
           handler: {{handler}}
         {{/handlers}}
-      file: ./src/hatsModuleMapping.ts
-  {{/hatsModuleContracts}}
-  - kind: ethereum/contract
-    name: ThanksToken
-    network: {{ network }}
-    source:
-      abi: ThanksToken
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.5
-      language: wasm/assemblyscript
-      entities:
-        - ThanksToken
-        - ThanksTokenBalance
-        - ThanksTokenMint
-        - ThanksTokenTransfer
-      abis:
-        - name: ThanksToken
-          file: ./abis/ThanksToken.json
-      eventHandlers:
-        - event: TokensMinted(indexed address,uint256)
-          handler: handleTokensMinted
-        - event: Transfer(indexed address,indexed address,uint256)
-          handler: handleTransfer
-      file: ./src/thanksTokenMapping.ts
+      file: ./src/{{mappingFile}}.ts
+  {{/templatesContracts}}

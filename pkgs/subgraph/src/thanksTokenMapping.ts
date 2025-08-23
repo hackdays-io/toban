@@ -1,104 +1,119 @@
+// MintThanksToken
+// AmountOfMintThanksToken
+// TransferThanksToken
+// BalanceOfThanksToken
+
 import { Address, BigInt as GraphBigInt } from "@graphprotocol/graph-ts";
-import { TokensMinted, Transfer } from "../generated/ThanksToken/ThanksToken";
 import {
+  AmountOfMintThanksToken,
+  BalanceOfThanksToken,
+  MintThanksToken,
   ThanksToken,
-  ThanksTokenBalance,
-  ThanksTokenMint,
-  ThanksTokenTransfer,
+  TransferThanksToken,
 } from "../generated/schema";
+import {
+  TokenMinted,
+  Transfer,
+} from "../generated/templates/ThanksToken/ThanksToken";
 
-export function handleTokensMinted(ev: TokensMinted): void {
-  // Create mint record
-  const id = `${ev.transaction.hash.toHex()}${ev.logIndex.toString()}`;
-  const mint = new ThanksTokenMint(id);
+export function handleTokenMinted(ev: TokenMinted): void {
+  const thanksToken = ThanksToken.load(ev.address.toHex());
 
-  mint.thanksToken = ev.address.toHex();
-  mint.to = ev.params.to.toHex();
-  mint.amount = ev.params.amount;
-  mint.workspaceId = getWorkspaceIdFromThanksToken(ev.address.toHex());
-  mint.blockTimestamp = ev.block.timestamp;
-  mint.blockNumber = ev.block.number;
-
-  // Update balance for recipient
-  updateThanksTokenBalance(
-    ev.address.toHex(),
-    ev.params.to,
-    ev.params.amount,
-    getWorkspaceIdFromThanksToken(ev.address.toHex()),
-    ev.block.timestamp,
-  );
-
-  mint.save();
-}
-
-export function handleTransfer(ev: Transfer): void {
-  // Skip mint/burn events (handled by TokensMinted and specific burn events)
-  if (
-    ev.params.from.toHex() == "0x0000000000000000000000000000000000000000" ||
-    ev.params.to.toHex() == "0x0000000000000000000000000000000000000000"
-  ) {
+  if (thanksToken === null) {
     return;
   }
 
-  // Create transfer record
-  const id = `${ev.transaction.hash.toHex()}${ev.logIndex.toString()}`;
-  const transfer = new ThanksTokenTransfer(id);
+  let tokenMinted = MintThanksToken.load(
+    `${ev.params.from.toHex()}-${ev.params.to.toHex()}-${ev.block.number}`,
+  );
+  if (tokenMinted) return;
 
-  transfer.thanksToken = ev.address.toHex();
+  tokenMinted = new MintThanksToken(
+    `${ev.params.from.toHex()}-${ev.params.to.toHex()}-${ev.block.number}`,
+  );
+  tokenMinted.thanksToken = thanksToken.id;
+  tokenMinted.from = ev.params.from.toHex();
+  tokenMinted.to = ev.params.to.toHex();
+  tokenMinted.amount = ev.params.amount;
+  tokenMinted.workspaceId = thanksToken.workspaceId;
+  tokenMinted.blockTimestamp = ev.block.timestamp;
+  tokenMinted.blockNumber = ev.block.number;
+
+  tokenMinted.save();
+
+  let amountOfMint = AmountOfMintThanksToken.load(
+    `${thanksToken.id}-${ev.params.from.toHex()}`,
+  );
+  if (amountOfMint) {
+    amountOfMint.amount = amountOfMint.amount.plus(ev.params.amount);
+    amountOfMint.updatedAt = ev.block.timestamp;
+  } else {
+    amountOfMint = new AmountOfMintThanksToken(
+      `${thanksToken.id}-${ev.params.from.toHex()}`,
+    );
+    amountOfMint.thanksToken = thanksToken.id;
+    amountOfMint.sender = ev.params.from.toHex();
+    amountOfMint.amount = ev.params.amount;
+    amountOfMint.workspaceId = thanksToken.workspaceId;
+    amountOfMint.updatedAt = ev.block.timestamp;
+  }
+}
+
+export function handleTransfer(ev: Transfer): void {
+  const thanksToken = ThanksToken.load(ev.address.toHex());
+
+  if (thanksToken === null) {
+    return;
+  }
+
+  let transfer = TransferThanksToken.load(
+    `${ev.address.toHex()}-${ev.params.from.toHex()}-${ev.params.to.toHex()}-${ev.params.value.toString()}-${ev.block.number}`,
+  );
+  if (transfer) return;
+
+  transfer = new TransferThanksToken(
+    `${ev.address.toHex()}-${ev.params.from.toHex()}-${ev.params.to.toHex()}-${ev.params.value.toString()}-${ev.block.number}`,
+  );
+  transfer.thanksToken = thanksToken.id;
   transfer.from = ev.params.from.toHex();
   transfer.to = ev.params.to.toHex();
   transfer.amount = ev.params.value;
-  transfer.workspaceId = getWorkspaceIdFromThanksToken(ev.address.toHex());
+  transfer.workspaceId = thanksToken.workspaceId;
   transfer.blockTimestamp = ev.block.timestamp;
   transfer.blockNumber = ev.block.number;
+  transfer.save();
 
-  // Update balances
-  updateThanksTokenBalance(
-    ev.address.toHex(),
+  updateBalance(
+    thanksToken,
     ev.params.from,
     ev.params.value.neg(),
-    getWorkspaceIdFromThanksToken(ev.address.toHex()),
     ev.block.timestamp,
   );
-  updateThanksTokenBalance(
-    ev.address.toHex(),
-    ev.params.to,
-    ev.params.value,
-    getWorkspaceIdFromThanksToken(ev.address.toHex()),
-    ev.block.timestamp,
-  );
-
-  transfer.save();
+  updateBalance(thanksToken, ev.params.to, ev.params.value, ev.block.timestamp);
 }
 
-function updateThanksTokenBalance(
-  thanksTokenAddress: string,
+function updateBalance(
+  thanksToken: ThanksToken,
   account: Address,
   amount: GraphBigInt,
-  workspaceId: string,
   timestamp: GraphBigInt,
 ): void {
-  const balanceId = `${thanksTokenAddress}${account.toHex()}`;
-  let balance = ThanksTokenBalance.load(balanceId);
-
+  let balance = BalanceOfThanksToken.load(
+    `${thanksToken.id}-${account.toHex()}`,
+  );
   if (balance) {
     balance.balance = balance.balance.plus(amount);
-  } else if (account.toHex() != "0x0000000000000000000000000000000000000000") {
-    balance = new ThanksTokenBalance(balanceId);
-    balance.thanksToken = thanksTokenAddress;
+    balance.updatedAt = timestamp;
+  } else if (account.toHex() !== "0x0000000000000000000000000000000000000000") {
+    balance = new BalanceOfThanksToken(`${thanksToken.id}-${account.toHex()}`);
+    balance.thanksToken = thanksToken.id;
     balance.owner = account.toHex();
     balance.balance = amount;
-    balance.workspaceId = workspaceId;
+    balance.workspaceId = thanksToken.workspaceId;
+    balance.updatedAt = timestamp;
   }
 
   if (balance) {
-    balance.updatedAt = timestamp;
     balance.save();
   }
-}
-
-// Helper function to get workspace ID from ThanksToken address
-function getWorkspaceIdFromThanksToken(thanksTokenAddress: string): string {
-  const thanksToken = ThanksToken.load(thanksTokenAddress);
-  return thanksToken ? thanksToken.workspaceId : "";
 }

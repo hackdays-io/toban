@@ -5,6 +5,7 @@ import {IHats} from "../../hats/src/Interfaces/IHats.sol";
 import {IHatsModuleFactory} from "../IHatsModuleFactory.sol";
 import {ISplitsCreatorFactory} from "../../splitscreator/ISplitsCreatorFactory.sol";
 import {HatsTimeFrameModule} from "../../hatsmodules/timeframe/HatsTimeFrameModule.sol";
+import {IThanksTokenFactory} from "../../thankstoken/IThanksTokenFactory.sol";
 import {HatsHatCreatorModule} from "../../hatsmodules/hatcreator/HatsHatCreatorModule.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -22,21 +23,26 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
 
     address public HatsHatCreatorModule_IMPL;
 
+    address public HatsFractionTokenModule_IMPL;
+
     address public SplitsFactoryV2;
 
-    address public FractionToken;
+    address public ThanksTokenFactory;
 
     event Executed(
         address indexed creator,
         address indexed owner,
         uint256 indexed topHatId,
         uint256 hatterHatId,
+        uint256 memberHatId,
         uint256 operatorHatId,
         uint256 creatorHatId,
         uint256 minterHatId,
         address hatsTimeFrameModule,
         address hatsHatCreatorModule,
-        address splitCreator
+        address hatsFractionTokenModule,
+        address splitCreator,
+        address thanksToken
     );
 
     /**
@@ -45,9 +51,10 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
      * @param _hatsModuleFactory Address of the hats module factory contract.
      * @param _hatsTimeFrameModule_IMPL Address of the hats time frame module implementation contract.
      * @param _hatsHatCreatorModule_IMPL Address of the hats hat creator module implementation contract.
+     * @param _hatsFractionTokenModule_IMPL Address of the fraction token contract.
      * @param _splitsCreatorFactory Address of the splits creator factory contract.
      * @param _splitFactoryV2 Address of the split factory V2 contract.
-     * @param _fractionToken Address of the fraction token contract.
+     * @param _thanksTokenFactory Address of the thanks token factory contract.
      */
     function initialize(
         address _initialOwner,
@@ -55,18 +62,20 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsModuleFactory,
         address _hatsTimeFrameModule_IMPL,
         address _hatsHatCreatorModule_IMPL,
+        address _hatsFractionTokenModule_IMPL,
         address _splitsCreatorFactory,
         address _splitFactoryV2,
-        address _fractionToken
+        address _thanksTokenFactory
     ) public initializer {
         __Ownable_init(_initialOwner);
         Hats = IHats(_hatsAddress);
         HatsModuleFactory = IHatsModuleFactory(_hatsModuleFactory);
         HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
         HatsHatCreatorModule_IMPL = _hatsHatCreatorModule_IMPL;
+        HatsFractionTokenModule_IMPL = _hatsFractionTokenModule_IMPL;
         SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
         SplitsFactoryV2 = _splitFactoryV2;
-        FractionToken = _fractionToken;
+        ThanksTokenFactory = _thanksTokenFactory;
     }
 
     /**
@@ -83,10 +92,11 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         string calldata _topHatDetails,
         string calldata _topHatImageURI,
         string calldata _hatterHatDetails,
-        string calldata _hatterHatImageURI
+        string calldata _hatterHatImageURI,
+        string calldata _memberHatDetails,
+        string calldata _memberHatImageURI
     ) external returns (uint256) {
         // 1. TopHatのMint
-
         uint256 topHatId = Hats.mintTopHat(
             address(this), // target: Tophat's wearer address. topHatのみがHatterHatを作成できるためTophatを指定する
             _topHatDetails,
@@ -94,7 +104,6 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         );
 
         // 2. HatterHatの作成
-
         uint256 hatterHatId = Hats.createHat(
             topHatId, // _admin: The id of the Hat that will control who wears the newly created hat
             _hatterHatDetails,
@@ -105,7 +114,20 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 3. Create Fixed Roles under TopHat
+        // 3. Create Member Hat ID
+        uint256 memberHatId = Hats.createHat(
+            hatterHatId,
+            _memberHatDetails,
+            99,
+            0x0000000000000000000000000000000000004A75,
+            0x0000000000000000000000000000000000004A75,
+            true,
+            _memberHatImageURI
+        );
+
+        Hats.mintHat(memberHatId, _owner);
+
+        // 4. Create Fixed Roles under TopHat
         uint256 operatorHatId = Hats.createHat(
             topHatId,
             _hatterHatDetails,
@@ -134,7 +156,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             _hatterHatImageURI
         );
 
-        // 4. HatsHatCreatorModuleのデプロイ
+        // 5. HatsHatCreatorModuleのデプロイ
         address hatsHatCreatorModule = HatsModuleFactory.createHatsModule(
             HatsHatCreatorModule_IMPL,
             topHatId,
@@ -143,7 +165,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 5. HatsTimeFrameModuleのデプロイ
+        // 6. HatsTimeFrameModuleのデプロイ
         address hatsTimeFrameModule = HatsModuleFactory.createHatsModule(
             HatsTimeFrameModule_IMPL,
             topHatId,
@@ -152,7 +174,16 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 6. HatterHatにHatModuleをMint
+        // 6. HatsHatFractionTokenModuleのデプロイ
+        address hatsFractionTokenModule = HatsModuleFactory.createHatsModule(
+            HatsFractionTokenModule_IMPL,
+            topHatId,
+            "",
+            abi.encode("", 10_000),
+            0
+        );
+
+        // 7. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
         hatIds[1] = hatterHatId;
@@ -163,17 +194,28 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
 
         Hats.batchMintHats(hatIds, modules);
 
-        // 7. TopHatIdの権限を_ownerに譲渡
+        // 8. TopHatIdの権限を_ownerに譲渡
         Hats.transferHat(topHatId, address(this), _owner);
 
-        // 8. SplitCreatorをFactoryからデプロイ
+        // 9. ThanksTokenをFactoryからデプロイ
+        address thanksToken = IThanksTokenFactory(ThanksTokenFactory)
+            .createThanksTokenDeterministic(
+                string(abi.encodePacked("ThanksToken ", _topHatDetails)),
+                string(abi.encodePacked("THX", topHatId)),
+                _owner,
+                1e18, // デフォルト係数（1.0）
+                keccak256(abi.encodePacked(topHatId, "ThanksToken"))
+            );
+
+        // 10. SplitCreatorをFactoryからデプロイ
         address splitCreator = SplitsCreatorFactory
             .createSplitCreatorDeterministic(
                 topHatId,
                 address(Hats),
                 SplitsFactoryV2,
                 hatsTimeFrameModule,
-                FractionToken,
+                hatsFractionTokenModule,
+                thanksToken,
                 keccak256(abi.encodePacked(topHatId))
             );
 
@@ -182,12 +224,15 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             _owner,
             topHatId,
             hatterHatId,
+            memberHatId,
             operatorHatId,
             creatorHatId,
             minterHatId,
             hatsTimeFrameModule,
             hatsHatCreatorModule,
-            splitCreator
+            hatsFractionTokenModule,
+            splitCreator,
+            thanksToken
         );
 
         return topHatId;
@@ -221,19 +266,20 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
         HatsHatCreatorModule_IMPL = _hatsHatCreatorModuleImpl;
     }
 
+    function setHatsFractionTokenModuleImpl(
+        address _hatsFractionTokenModuleImpl
+    ) external onlyOwner {
+        HatsFractionTokenModule_IMPL = _hatsFractionTokenModuleImpl;
+    }
+
     function setSplitsFactoryV2(address _splitsFactoryV2) external onlyOwner {
         SplitsFactoryV2 = _splitsFactoryV2;
     }
 
-    function setFractionToken(address _fractionToken) external onlyOwner {
-        FractionToken = _fractionToken;
-    }
-
-    /**
-     * 検証用に追加した関数
-     */
-    function testUpgradeFunction() external pure returns (string memory) {
-        return "testUpgradeFunction";
+    function setThanksTokenFactory(
+        address _thanksTokenFactory
+    ) external onlyOwner {
+        ThanksTokenFactory = _thanksTokenFactory;
     }
 
     function _authorizeUpgrade(

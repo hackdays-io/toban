@@ -1,8 +1,9 @@
 import { ethers, network } from "hardhat";
 import type { Address } from "viem";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
-import { deployFractionToken } from "../../helpers/deploy/FractionToken";
+// import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import {
+  deployHatsFractionTokenModule,
   deployHatsHatCreatorModule,
   deployHatsTimeFrameModule,
 } from "../../helpers/deploy/Hats";
@@ -10,6 +11,10 @@ import {
   deploySplitsCreator,
   deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
+import {
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../../helpers/deploy/ThanksToken";
 import { writeContractAddress } from "../../helpers/deploy/contractsJsonHelper";
 
 const deploy = async () => {
@@ -17,29 +22,42 @@ const deploy = async () => {
     "##################################### [Create2 Deploy START] #####################################",
   );
 
+  const [deployerSigner] = await ethers.getSigners();
+  const deployerAddress = await deployerSigner.getAddress();
+
   // Deploy HatsTimeFrameModule (non-upgradeable)
-  const { HatsTimeFrameModule } = await deployHatsTimeFrameModule(
-    "0x0000000000000000000000000000000000000001",
-    "0.0.0",
-  );
+  const { HatsTimeFrameModule } = await deployHatsTimeFrameModule("0.0.0");
   const hatsTimeFrameModuleAddress = HatsTimeFrameModule.address;
 
-  const { HatsHatCreatorModule } = await deployHatsHatCreatorModule(
-    "0x0000000000000000000000000000000000000001",
-    "0.0.0",
-  ); // zero address 以外のアドレスを仮に渡す
+  const { HatsHatCreatorModule } = await deployHatsHatCreatorModule("0.0.0"); // zero address 以外のアドレスを仮に渡す
   const hatsHatCreatorModuleAddress = HatsHatCreatorModule.address;
+
+  const { HatsFractionTokenModule } =
+    await deployHatsFractionTokenModule("0.0.0");
+  const hatsFractionTokenModuleAddress = HatsFractionTokenModule.address;
+
+  console.log("Deploying ThanksToken...");
+  const { ThanksToken } = await deployThanksToken();
+  const thanksTokenAddress = ThanksToken.address;
+
+  console.log("Deploying ThanksTokenFactory...");
+
+  const {
+    ThanksTokenFactory,
+    ThanksTokenFactoryImplAddress,
+    ThanksTokenFactoryInitData,
+  } = await deployThanksTokenFactory({
+    initialOwner: deployerAddress as Address,
+    implementation: thanksTokenAddress,
+    hatsAddress: process.env.HATS_ADDRESS as Address,
+    fractionTokenAddress: hatsFractionTokenModuleAddress,
+    hatsTimeFrameModuleAddress: hatsTimeFrameModuleAddress,
+  });
+  const thanksTokenFactoryAddress = ThanksTokenFactory.address;
 
   // Deploy SplitsCreator (non-upgradeable)
   const { SplitsCreator } = await deploySplitsCreator();
   const splitsCreatorAddress = SplitsCreator.address;
-
-  // Deploy FractionToken implementation and proxy
-  console.log("Deploying FractionToken...");
-
-  const { FractionToken, FractionTokenImplAddress, FractionTokenInitData } =
-    await deployFractionToken("", 10000n, process.env.HATS_ADDRESS as Address);
-  const fractionTokenAddress = FractionToken.address;
 
   // Deploy SplitsCreatorFactory implementation and proxy
   console.log("Deploying SplitsCreatorFactory...");
@@ -60,9 +78,10 @@ const deploy = async () => {
       .HATS_MODULE_FACTORY_ADDRESS as Address,
     hatsTimeFrameModule_impl: hatsTimeFrameModuleAddress,
     hatsHatCreatorModule_impl: hatsHatCreatorModuleAddress,
+    hatsFractionTokenModule_impl: hatsFractionTokenModuleAddress,
     splitsCreatorFactoryAddress: splitsCreatorFactoryAddress,
     splitsFactoryV2Address: process.env.PULL_SPLITS_FACTORY_ADDRESS as Address,
-    fractionTokenAddress: fractionTokenAddress,
+    thanksTokenFactoryAddress: thanksTokenFactoryAddress,
   });
   const bigBangAddress = BigBang.address;
 
@@ -73,21 +92,36 @@ const deploy = async () => {
   );
   await SplitsCreatorFactoryContract.setBigBang(bigBangAddress);
 
+  // Set bigbang address to thanks token factory
+  const ThanksTokenFactoryContract = await ethers.getContractAt(
+    "ThanksTokenFactory",
+    thanksTokenFactoryAddress,
+  );
+  await ThanksTokenFactoryContract.setBigBang(bigBangAddress);
+
   console.log("Successfully deployed contracts!🎉");
   console.log("Verify contract with these commands...\n");
 
   console.log(
     "HatsTimeframeModule module:\n",
-    `pnpm contract hardhat verify ${hatsTimeFrameModuleAddress} 0.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsTimeFrameModuleAddress} 0.0.0 --network ${network.name}\n`,
   );
   console.log(
     "HatsHatCreatorModule module:\n",
-    `pnpm contract hardhat verify ${hatsHatCreatorModuleAddress} 0.0.0 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsHatCreatorModuleAddress} 0.0.0 --network ${network.name}\n`,
   );
   console.log(
-    "FractionToken:\n",
-    `pnpm contract hardhat verify ${FractionTokenImplAddress} --network ${network.name} &&`,
-    `pnpm contract hardhat verify ${fractionTokenAddress} ${FractionTokenImplAddress} ${FractionTokenInitData} --network ${network.name}\n`,
+    "HatsFractionTokenModule:\n",
+    `pnpm contract hardhat verify ${hatsFractionTokenModuleAddress} 0.0.0 --network ${network.name}\n`,
+  );
+  console.log(
+    "ThanksToken:\n",
+    `pnpm contract hardhat verify ${thanksTokenAddress} --network ${network.name}\n`,
+  );
+  console.log(
+    "ThanksTokenFactory:\n",
+    `pnpm contract hardhat verify ${ThanksTokenFactoryImplAddress} --network ${network.name} &&`,
+    `pnpm contract hardhat verify ${thanksTokenFactoryAddress} ${ThanksTokenFactoryImplAddress} ${ThanksTokenFactoryInitData} --network ${network.name}\n`,
   );
   console.log(
     "SplitsCreator:\n",
@@ -113,18 +147,18 @@ const deploy = async () => {
   });
   writeContractAddress({
     group: "contracts",
+    name: "ThanksTokenFactory_Implementation",
+    value: ThanksTokenFactoryImplAddress,
+    network: network.name,
+  });
+  writeContractAddress({
+    group: "contracts",
     name: "SplitsCreator",
     value: splitsCreatorAddress,
     network: network.name,
   });
 
   // Save upgradeable contracts implementations
-  writeContractAddress({
-    group: "implementations",
-    name: "FractionToken_Implementation",
-    value: FractionTokenImplAddress,
-    network: network.name,
-  });
   writeContractAddress({
     group: "implementations",
     name: "SplitsCreatorFactory_Implementation",
@@ -141,8 +175,14 @@ const deploy = async () => {
   // Save upgradeable contracts proxies
   writeContractAddress({
     group: "contracts",
-    name: "FractionToken",
-    value: fractionTokenAddress,
+    name: "HatsTimeFrameModule",
+    value: hatsTimeFrameModuleAddress,
+    network: network.name,
+  });
+  writeContractAddress({
+    group: "contracts",
+    name: "ThanksTokenFactory",
+    value: thanksTokenFactoryAddress,
     network: network.name,
   });
   writeContractAddress({

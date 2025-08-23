@@ -1,14 +1,12 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 import { Executed } from "../generated/BigBang/BigBang";
 import {
-  HatsHatCreatorModule,
-  HatsTimeFrameModule,
+  HatsFractionTokenModule,
   ThanksToken,
   Workspace,
 } from "../generated/schema";
 import {
-  HatsHatCreatorModule as HatsHatCreatorModuleTemplate,
-  HatsTimeFrameModule as HatsTimeFrameModuleTemplate,
+  HatsFractionTokenModule as HatsFractionTokenModuleTemplate,
   ThanksToken as ThanksTokenTemplate,
 } from "../generated/templates";
 import { hatIdToTreeId } from "./helper/hat";
@@ -19,10 +17,17 @@ export function handleExecuted(ev: Executed): void {
 
   workspace.topHatId = ev.params.topHatId;
   workspace.creator = ev.params.creator.toHex();
+  workspace.owner = ev.params.owner.toHex();
   workspace.topHatId = ev.params.topHatId;
   workspace.hatterHatId = ev.params.hatterHatId;
+  workspace.memberHatId = ev.params.memberHatId;
+  workspace.operatorHatId = ev.params.operatorHatId;
+  workspace.creatorHatId = ev.params.creatorHatId;
+  workspace.minterHatId = ev.params.minterHatId;
   workspace.hatsTimeFrameModule = ev.params.hatsTimeFrameModule.toHex();
   workspace.hatsHatCreatorModule = ev.params.hatsHatCreatorModule.toHex();
+  workspace.hatsFractionTokenModule = ev.params.hatsFractionTokenModule.toHex();
+  workspace.thanksToken = ev.params.thanksToken.toHex();
   workspace.splitCreator = ev.params.splitCreator.toHex();
   workspace.thanksToken = ev.params.thanksToken.toHex();
   workspace.blockTimestamp = ev.block.timestamp;
@@ -30,33 +35,17 @@ export function handleExecuted(ev: Executed): void {
 
   workspace.save();
 
-  // Create ThanksToken entity and start indexing
-  const thanksToken = new ThanksToken(ev.params.thanksToken.toHex());
-  thanksToken.workspaceId = treeId;
-  thanksToken.address = ev.params.thanksToken.toHex();
-  thanksToken.name = `ThanksToken ${ev.params.topHatId.toString()}`;
-  thanksToken.symbol = `THX${ev.params.topHatId.toString()}`;
-  thanksToken.totalSupply = BigInt.fromI32(0);
-  thanksToken.blockTimestamp = ev.block.timestamp;
-  thanksToken.blockNumber = ev.block.number;
-  thanksToken.save();
+  const newHatsFractionTokenModule = new HatsFractionTokenModule(
+    ev.params.hatsFractionTokenModule.toHex(),
+  );
+  newHatsFractionTokenModule.workspaceId = treeId;
+  newHatsFractionTokenModule.save();
+
+  HatsFractionTokenModuleTemplate.create(ev.params.hatsFractionTokenModule);
+
+  const newThanksToken = new ThanksToken(ev.params.thanksToken.toHex());
+  newThanksToken.workspaceId = treeId;
+  newThanksToken.save();
 
   ThanksTokenTemplate.create(ev.params.thanksToken);
-
-  // Create new index from template for HatsModules
-  const newHatsHatCreatorModule = new HatsHatCreatorModule(
-    ev.params.hatsHatCreatorModule.toHex(),
-  );
-  newHatsHatCreatorModule.workspaceId = treeId;
-  newHatsHatCreatorModule.save();
-
-  HatsHatCreatorModuleTemplate.create(ev.params.hatsHatCreatorModule);
-
-  const newHatsTimeFrameModule = new HatsTimeFrameModule(
-    ev.params.hatsTimeFrameModule.toHex(),
-  );
-  newHatsTimeFrameModule.workspaceId = treeId;
-  newHatsTimeFrameModule.save();
-
-  HatsTimeFrameModuleTemplate.create(ev.params.hatsTimeFrameModule);
 }

@@ -1,258 +1,123 @@
-import { gql } from "@apollo/client/core";
-import { useQuery } from "@apollo/client/react/hooks";
-import type { OrderDirection } from "gql/graphql";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import type { Address } from "viem";
+import { thanksTokenBaseConfig } from "./useContracts";
+import { useBalanceOfFractionTokens } from "./useFractionToken";
+import { useTreeInfo } from "./useHats";
+import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
+import { useGetWorkspace } from "./useWorkspace";
 
-// GraphQL queries for ThanksToken
-
-const queryGetThanksTokenBalances = gql(`
-  query GetThanksTokenBalances($where: ThanksTokenBalance_filter = {}, $orderBy: ThanksTokenBalance_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 100) {
-    thanksTokenBalances(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
-      id
-      thanksToken {
-        id
-        address
-        name
-        symbol
-        workspaceId
-      }
-      owner
-      balance
-      workspaceId
-      updatedAt
-    }
-  }
-`);
-
-const queryGetThanksTokenTransfers = gql(`
-  query GetThanksTokenTransfers($where: ThanksTokenTransfer_filter = {}, $orderBy: ThanksTokenTransfer_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
-    thanksTokenTransfers(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
-      id
-      thanksToken {
-        id
-        address
-        name
-        symbol
-        workspaceId
-      }
-      from
-      to
-      amount
-      workspaceId
-      blockTimestamp
-      blockNumber
-    }
-  }
-`);
-
-const queryGetThanksTokenMints = gql(`
-  query GetThanksTokenMints($where: ThanksTokenMint_filter = {}, $orderBy: ThanksTokenMint_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
-    thanksTokenMints(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
-      id
-      thanksToken {
-        id
-        address
-        name
-        symbol
-        workspaceId
-      }
-      to
-      amount
-      workspaceId
-      blockTimestamp
-      blockNumber
-    }
-  }
-`);
-
-const queryGetThanksTokenByWorkspace = gql(`
-  query GetThanksTokenByWorkspace($workspaceId: ID!) {
-    workspace(id: $workspaceId) {
-      id
-      thanksToken {
-        id
-        address
-        name
-        symbol
-        totalSupply
-        workspaceId
-      }
-    }
-  }
-`);
-
-// Custom hooks
-
-export const useThanksTokenBalances = (params: {
-  where?: Record<string, unknown>;
-  orderBy?: string;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
-  const result = useQuery(queryGetThanksTokenBalances, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
-  });
-
-  return result;
-};
-
-export const useThanksTokenTransfers = (params: {
-  where?: Record<string, unknown>;
-  orderBy?: string;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
-  const result = useQuery(queryGetThanksTokenTransfers, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
-  });
-
-  return result;
-};
-
-export const useThanksTokenMints = (params: {
-  where?: Record<string, unknown>;
-  orderBy?: string;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
-  const result = useQuery(queryGetThanksTokenMints, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
-  });
-
-  return result;
-};
-
-export const useThanksTokenByWorkspace = (workspaceId?: string) => {
-  const result = useQuery(queryGetThanksTokenByWorkspace, {
-    variables: { workspaceId: workspaceId || "" },
-    skip: !workspaceId,
-  });
-
-  return result;
-};
-
-// Hook to get user's ThanksToken balance for a specific workspace
-export const useUserThanksTokenBalance = (workspaceId?: string) => {
+export const useThanksToken = (treeId: string) => {
+  const { data } = useGetWorkspace(treeId);
+  const treeInfo = useTreeInfo(Number(treeId));
   const { wallet } = useActiveWallet();
+  const [mintableAmount, setMintableAmount] = useState<bigint>();
 
-  const { data } = useThanksTokenBalances({
+  const walletAddress = wallet?.account.address?.toLowerCase();
+  const myRoles = useMemo(() => {
+    const roles = treeInfo?.hats || [];
+    return (
+      roles.filter((hat) => hat.wearers?.some((w) => w.id === walletAddress)) ||
+      []
+    );
+  }, [treeInfo, walletAddress]);
+
+  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
     where: {
-      workspaceId,
-      owner: wallet?.account?.address?.toLowerCase(),
+      workspaceId: treeId,
+      owner: wallet?.account.address.toLowerCase(),
     },
-    first: 1,
+    first: 100,
   });
 
-  const balance = data?.thanksTokenBalances?.[0]?.balance || "0";
+  const relatedRoles = useMemo(() => {
+    return [
+      ...(balanceOfFractionTokens?.balanceOfFractionTokens.map((d) => {
+        return {
+          hatId: d.hatId,
+          wearer: d.wearer as `0x${string}`,
+        };
+      }) || []),
+      ...(myRoles.map((mr) => {
+        return {
+          hatId: BigInt(mr.id),
+          wearer: walletAddress as `0x${string}`,
+        };
+      }) || []),
+    ];
+  }, [balanceOfFractionTokens, myRoles, walletAddress]);
+
+  useEffect(() => {
+    const fetchMintableAmount = async () => {
+      if (!relatedRoles.length || !data?.workspace?.thanksToken.id) return;
+
+      const amount = await publicClient.readContract({
+        ...thanksTokenBaseConfig(
+          data?.workspace?.thanksToken.id as `0x${string}`,
+        ),
+        functionName: "mintableAmount",
+        args: [walletAddress as `0x${string}`, relatedRoles],
+      });
+      setMintableAmount(amount);
+    };
+
+    fetchMintableAmount();
+  }, [relatedRoles, data?.workspace?.thanksToken.id, walletAddress]);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const mintThanksToken = useCallback(
+    async (to: Address, amount: bigint) => {
+      if (!wallet || !relatedRoles.length) return;
+      setIsLoading(true);
+
+      let txHash: `0x${string}` | undefined = undefined;
+      let error = "";
+
+      try {
+        txHash = await wallet.writeContract({
+          ...thanksTokenBaseConfig(
+            data?.workspace?.thanksToken.id as `0x${string}`,
+          ),
+          functionName: "mint",
+          args: [to, amount, relatedRoles],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        setIsLoading(false);
+      } catch (_) {
+        error = "トークンの送信に失敗しました";
+        setIsLoading(false);
+      }
+
+      return { txHash, error };
+    },
+    [relatedRoles, wallet, data?.workspace?.thanksToken.id],
+  );
+
+  return { mintableAmount, mintThanksToken, isLoading };
+};
+
+export const useUserThanksTokenBalance = (workspaceId?: string) => {
+  // Placeholder for now - this hook was in the HEAD version but not implemented
   return {
-    balance: Number(balance),
-    data: data?.thanksTokenBalances?.[0],
+    balance: 0,
+    data: null,
   };
 };
 
-// Hook for ThanksToken activity (both transfers and mints)
 export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
-  const { data: transfers } = useThanksTokenTransfers({
-    where: { workspaceId },
-    orderBy: "blockTimestamp",
-    orderDirection: "desc" as OrderDirection,
-    first: Math.ceil(limit / 2),
-  });
-
-  const { data: mints } = useThanksTokenMints({
-    where: { workspaceId },
-    orderBy: "blockTimestamp",
-    orderDirection: "desc" as OrderDirection,
-    first: Math.ceil(limit / 2),
-  });
-
-  // Combine and sort activities by timestamp
-  const activities = [
-    ...(transfers?.thanksTokenTransfers?.map((t: unknown) => ({
-      ...(t as Record<string, unknown>),
-      type: "transfer" as const,
-    })) || []),
-    ...(mints?.thanksTokenMints?.map((m: unknown) => ({
-      ...(m as Record<string, unknown>),
-      type: "mint" as const,
-    })) || []),
-  ]
-    .sort((a: unknown, b: unknown) => {
-      const aActivity = a as { blockTimestamp: string };
-      const bActivity = b as { blockTimestamp: string };
-      return (
-        Number(bActivity.blockTimestamp) - Number(aActivity.blockTimestamp)
-      );
-    })
-    .slice(0, limit);
-
-  return { activities, isLoading: false };
-};
-
-// Contract interaction hooks (placeholder for future implementation)
-export const useThanksToken = () => {
-  const { wallet } = useActiveWallet();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const mintThanksToken = useCallback(
-    async (params: {
-      to: Address;
-      amount: bigint;
-      relatedRoles: { hatId: bigint; wearer: Address }[];
-    }) => {
-      if (!wallet) return;
-
-      setIsLoading(true);
-      try {
-        // TODO: Implement ThanksToken minting
-        console.log("Minting ThanksToken:", params);
-        // This will be implemented when ThanksToken contract integration is added
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [wallet],
-  );
-
-  const transferThanksToken = useCallback(
-    async (params: {
-      to: Address;
-      amount: bigint;
-    }) => {
-      if (!wallet) return;
-
-      setIsLoading(true);
-      try {
-        // TODO: Implement ThanksToken transfer
-        console.log("Transferring ThanksToken:", params);
-        // This will be implemented when ThanksToken contract integration is added
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [wallet],
-  );
-
+  // Placeholder for now - this hook was in the HEAD version but not implemented
   return {
-    isLoading,
-    mintThanksToken,
-    transferThanksToken,
+    activities: [] as Array<{
+      type: "transfer" | "mint";
+      from?: string;
+      to: string;
+      amount: string;
+      blockTimestamp: string;
+      thanksToken: {
+        symbol: string;
+      };
+    }>,
+    isLoading: false,
   };
 };

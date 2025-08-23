@@ -2,6 +2,7 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-viem";
 import "@openzeppelin/hardhat-upgrades";
+import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 import "hardhat-gas-reporter";
 import type { HardhatUserConfig } from "hardhat/config";

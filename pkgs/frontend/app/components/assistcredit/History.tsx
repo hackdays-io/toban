@@ -170,7 +170,7 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
           key={`th_${token.id}`}
           from={token.from}
           to={token.to}
-          hatId={token.hatId}
+          hatId={token.tokenId}
           amount={token.amount}
           timestamp={token.blockTimestamp}
         />
@@ -203,7 +203,7 @@ export const UserAssistCreditHistory: FC<UserProps> = ({ data, txType }) => {
           key={`${txType}_${token.id}`}
           from={token.from}
           to={token.to}
-          hatId={token.hatId}
+          hatId={token.tokenId}
           amount={token.amount}
           timestamp={token.blockTimestamp}
         />

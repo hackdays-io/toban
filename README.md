@@ -33,12 +33,18 @@ Therefore, we created Role Based Rewards Distribution system to track contributi
 
 Core features are
 
-1. Manage responsibilities and rights on rolls
+1. Manage responsibilities and rights on roles
 2. Track little contributions with P2P token transfer
-3. Determine the rewards rate based on roll and engaged period
-4. Distribute rewards quickly to a large number of people
+3. Send Thanks Token(*)
+4. Determine the rewards rate based on role and engaged period, and Fraction Token
+5. Distribute rewards quickly to a large number of people
+
+(*) In the implementation, what we refer to as a "Thanks Token" may also be called a "Fraction Token." In the application interface, it might appear as "Assist Credit" or "Role Share," depending on the version. However, all of these terms refer to the same concept.
 
 These solutions were combined with ideas from [Hats Protocol](https://www.hatsprotocol.xyz/), [Splits](https://splits.org), and [Protocol Guild](https://protocol-guild.readthedocs.io/en/latest/).
+
+
+
 
 ## Live
 

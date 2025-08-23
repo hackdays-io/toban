@@ -71,8 +71,6 @@ const deploy = async () => {
     initialOwner: deployerAddress as Address,
     implementation: thanksTokenAddress,
     hatsAddress: process.env.HATS_ADDRESS as Address,
-    fractionTokenAddress: hatsFractionTokenModuleAddress,
-    hatsTimeFrameModuleAddress: hatsTimeFrameModuleAddress,
   });
   const thanksTokenFactoryAddress = ThanksTokenFactory.address;
 

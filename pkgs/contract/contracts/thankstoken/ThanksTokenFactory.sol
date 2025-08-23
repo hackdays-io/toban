@@ -13,9 +13,7 @@ contract ThanksTokenFactory is
     IThanksTokenFactory
 {
     address public IMPLEMENTATION;
-    address public hatsAddress;
-    address public fractionTokenAddress;
-    address public hatsTimeFrameModuleAddress;
+    address public HATS;
     address public BIG_BANG;
 
     event ThanksTokenCreated(
@@ -28,16 +26,12 @@ contract ThanksTokenFactory is
     function initialize(
         address _initialOwner,
         address _implementation,
-        address _hatsAddress,
-        address _fractionTokenAddress,
-        address _hatsTimeFrameModuleAddress
+        address _hatsAddress
     ) public initializer {
         __Ownable_init(_initialOwner);
         __UUPSUpgradeable_init();
         IMPLEMENTATION = _implementation;
-        hatsAddress = _hatsAddress;
-        fractionTokenAddress = _fractionTokenAddress;
-        hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
+        HATS = _hatsAddress;
     }
 
     function createThanksToken(
@@ -45,6 +39,8 @@ contract ThanksTokenFactory is
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) public override returns (address) {
         if (_msgSender() != BIG_BANG) {
@@ -55,16 +51,13 @@ contract ThanksTokenFactory is
             workspaceOwner,
             name,
             symbol,
-            hatsAddress,
-            fractionTokenAddress,
+            HATS,
+            hatsFractionTokenAddress,
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
 
-        address proxy = LibClone.clone(
-            IMPLEMENTATION,
-            initData
-        );
+        address proxy = LibClone.clone(IMPLEMENTATION, initData);
 
         emit ThanksTokenCreated(proxy, name, symbol, workspaceOwner);
 
@@ -76,6 +69,8 @@ contract ThanksTokenFactory is
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) public override returns (address) {
         if (_msgSender() != BIG_BANG) {
@@ -86,8 +81,8 @@ contract ThanksTokenFactory is
             workspaceOwner,
             name,
             symbol,
-            hatsAddress,
-            fractionTokenAddress,
+            HATS,
+            hatsFractionTokenAddress,
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
@@ -116,14 +111,16 @@ contract ThanksTokenFactory is
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) public view override returns (address) {
         bytes memory initData = abi.encode(
             workspaceOwner,
             name,
             symbol,
-            hatsAddress,
-            fractionTokenAddress,
+            HATS,
+            hatsFractionTokenAddress,
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
@@ -136,12 +133,13 @@ contract ThanksTokenFactory is
             salt
         );
 
-        return LibClone.predictDeterministicAddress(
-            IMPLEMENTATION,
-            initData,
-            saltHash,
-            address(this)
-        );
+        return
+            LibClone.predictDeterministicAddress(
+                IMPLEMENTATION,
+                initData,
+                saltHash,
+                address(this)
+            );
     }
 
     function _getSalt(
@@ -151,15 +149,16 @@ contract ThanksTokenFactory is
         uint256 defaultCoefficient,
         bytes32 salt
     ) internal pure returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                name,
-                symbol,
-                workspaceOwner,
-                defaultCoefficient,
-                salt
-            )
-        );
+        return
+            keccak256(
+                abi.encodePacked(
+                    name,
+                    symbol,
+                    workspaceOwner,
+                    defaultCoefficient,
+                    salt
+                )
+            );
     }
 
     function setImplementation(address _implementation) public onlyOwner {
@@ -167,20 +166,14 @@ contract ThanksTokenFactory is
     }
 
     function setHatsAddress(address _hatsAddress) public onlyOwner {
-        hatsAddress = _hatsAddress;
-    }
-
-    function setFractionTokenAddress(address _fractionTokenAddress) public onlyOwner {
-        fractionTokenAddress = _fractionTokenAddress;
-    }
-
-    function setHatsTimeFrameModuleAddress(address _hatsTimeFrameModuleAddress) public onlyOwner {
-        hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
+        HATS = _hatsAddress;
     }
 
     function setBigBang(address _bigBang) public onlyOwner {
         BIG_BANG = _bigBang;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }

@@ -228,8 +228,6 @@ describe("ThanksToken", () => {
             .then((addresses) => addresses[0]),
           implementation: DeployedThanksToken.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: HatsFractionTokenModule.address,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
         },
         Create2Deployer.address,
       );
@@ -245,6 +243,8 @@ describe("ThanksToken", () => {
         tokenSymbol,
         deployerAddress,
         1000000000000000000n, // 1.0 in wei
+        HatsFractionTokenModule?.address as Address,
+        HatsTimeFrameModule?.address as Address,
         "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
       ]);
 

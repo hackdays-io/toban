@@ -1,7 +1,11 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
-import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
+import {
+  OrderDirection,
+  TransferFractionToken_OrderBy,
+  TransferThanksToken_OrderBy,
+} from "gql/graphql";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useGetTransferThanksTokens } from "hooks/useThanksToken";
 import type { TextRecords } from "namestone-sdk";
@@ -336,7 +340,7 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
       workspaceId: treeId,
       to: normalizedAddress,
     },
-    orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: TX_HISTORY_LIMIT,
   });
@@ -346,7 +350,7 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
       workspaceId: treeId,
       from: normalizedAddress,
     },
-    orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
+    orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: TX_HISTORY_LIMIT,
   });

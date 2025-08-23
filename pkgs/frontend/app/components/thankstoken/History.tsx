@@ -172,7 +172,7 @@ export const UserThanksHistory: FC<UserProps> = ({ data, txType }) => {
           key={`${txType}_${token.id}`}
           from={token.from}
           to={token.to}
-          hatId={token.hatId}
+          hatId={token.id}
           amount={token.amount}
           timestamp={token.blockTimestamp}
         />

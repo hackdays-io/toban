@@ -1,38 +1,49 @@
+import { gql } from "@apollo/client/core";
+import { useQuery } from "@apollo/client/react/hooks";
 import type {
   GetTransferThanksTokensQuery,
+  GetTransferThanksTokensQueryVariables,
   OrderDirection,
-  TransferFractionToken_Filter,
-  TransferFractionToken_OrderBy,
+  TransferThanksToken_Filter,
+  TransferThanksToken_OrderBy,
 } from "gql/graphql";
 
-type TokenItemType = {
-  data: GetTransferThanksTokensQuery;
-};
+const queryGetTransferThanksTokens = gql(`
+  query GetTransferThanksTokens($where: TransferThanksToken_filter = {},
+    $orderBy: TransferThanksToken_orderBy,
+    $orderDirection: OrderDirection = asc,
+    $first: Int = 10) {
+    transferThanksTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+      id
+      to
+      from
+      workspaceId
+      blockTimestamp
+      thanksToken {
+        id
+      }
+      amount
+    }
+  }
+`);
 
 export const useGetTransferThanksTokens = (params: {
-  where?: TransferFractionToken_Filter;
-  orderBy?: TransferFractionToken_OrderBy;
+  where?: TransferThanksToken_Filter;
+  orderBy?: TransferThanksToken_OrderBy;
   orderDirection?: OrderDirection;
   first?: number;
-}): TokenItemType => {
-  /* create mock result */
-  const result: TokenItemType = {
-    data: {
-      transferThanksTokens: [
-        {
-          amount: 1,
-          from: "0x123",
-          to: "0x456",
-          tokenId: 1,
-          blockNumber: 1,
-          blockTimestamp: new Date(),
-          hatId: null,
-          id: "1",
-          wearer: null,
-          workspaceId: null,
-        },
-      ],
+}) => {
+  const result = useQuery<
+    GetTransferThanksTokensQuery,
+    GetTransferThanksTokensQueryVariables
+  >(queryGetTransferThanksTokens, {
+    variables: {
+      where: params.where,
+      orderBy: params.orderBy,
+      orderDirection: params.orderDirection,
+      first: params.first,
     },
-  };
+  });
+
   return result;
 };

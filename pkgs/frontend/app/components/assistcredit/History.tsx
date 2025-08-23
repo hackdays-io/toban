@@ -203,7 +203,7 @@ export const UserAssistCreditHistory: FC<UserProps> = ({ data, txType }) => {
           key={`${txType}_${token.id}`}
           from={token.from}
           to={token.to}
-          hatId={token.hatId}
+          hatId={token.hatId || ""}
           amount={token.amount}
           timestamp={token.blockTimestamp}
         />

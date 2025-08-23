@@ -170,7 +170,9 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
         new Set(
           data.transferFractionTokens
             .filter(({ workspaceId }) => Number(workspaceId) > 0)
-            .map(({ wearer, hatId }) => JSON.stringify({ wearer, hatId })),
+            .map(({ to: wearer, hatsFractionTokenModule: { id: hatId } }) =>
+              JSON.stringify({ wearer, hatId }),
+            ),
         ),
       );
 
@@ -508,6 +510,9 @@ const queryGetTransferFractionTokens = gql(`
       blockTimestamp
       blockNumber
       amount
+      hatsFractionTokenModule {
+        id
+      }
     }
   }
 `);

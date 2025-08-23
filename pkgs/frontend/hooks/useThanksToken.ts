@@ -1,3 +1,6 @@
+import { gql } from "@apollo/client/core";
+import { useQuery } from "@apollo/client/react/hooks";
+import type { OrderDirection } from "gql/graphql";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import type { Address } from "viem";
@@ -7,6 +10,59 @@ import { useTreeInfo } from "./useHats";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
 import { useGetWorkspace } from "./useWorkspace";
+
+// GraphQL queries for ThanksToken data from Goldsky
+const queryGetThanksTokenBalances = gql(`
+  query GetThanksTokenBalances($where: BalanceOfThanksToken_filter = {}, $orderBy: BalanceOfThanksToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 100) {
+    balanceOfThanksTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+      id
+      thanksToken {
+        id
+        workspaceId
+      }
+      owner
+      balance
+      workspaceId
+      updatedAt
+    }
+  }
+`);
+
+const queryGetThanksTokenMints = gql(`
+  query GetThanksTokenMints($where: MintThanksToken_filter = {}, $orderBy: MintThanksToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
+    mintThanksTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+      id
+      thanksToken {
+        id
+        workspaceId
+      }
+      from
+      to
+      amount
+      workspaceId
+      blockTimestamp
+      blockNumber
+    }
+  }
+`);
+
+const queryGetThanksTokenTransfers = gql(`
+  query GetThanksTokenTransfers($where: TransferThanksToken_filter = {}, $orderBy: TransferThanksToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
+    transferThanksTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+      id
+      thanksToken {
+        id
+        workspaceId
+      }
+      from
+      to
+      amount
+      workspaceId
+      blockTimestamp
+      blockNumber
+    }
+  }
+`);
 
 export const useThanksToken = (treeId: string) => {
   const { data } = useGetWorkspace(treeId);
@@ -98,26 +154,93 @@ export const useThanksToken = (treeId: string) => {
 };
 
 export const useUserThanksTokenBalance = (workspaceId?: string) => {
-  // Placeholder for now - this hook was in the HEAD version but not implemented
+  const { wallet } = useActiveWallet();
+
+  const { data } = useQuery(queryGetThanksTokenBalances, {
+    variables: {
+      where: {
+        workspaceId,
+        owner: wallet?.account?.address?.toLowerCase(),
+      },
+      first: 1,
+    },
+    skip: !workspaceId || !wallet?.account?.address,
+  });
+
+  const balance = data?.balanceOfThanksTokens?.[0]?.balance || "0";
   return {
-    balance: 0,
-    data: null,
+    balance: Number(balance),
+    data: data?.balanceOfThanksTokens?.[0],
   };
 };
 
 export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
-  // Placeholder for now - this hook was in the HEAD version but not implemented
+  const { data: transfersData, loading: transfersLoading } = useQuery(
+    queryGetThanksTokenTransfers,
+    {
+      variables: {
+        where: { workspaceId },
+        orderBy: "blockTimestamp",
+        orderDirection: "desc" as OrderDirection,
+        first: Math.ceil(limit / 2),
+      },
+      skip: !workspaceId,
+    },
+  );
+
+  const { data: mintsData, loading: mintsLoading } = useQuery(
+    queryGetThanksTokenMints,
+    {
+      variables: {
+        where: { workspaceId },
+        orderBy: "blockTimestamp",
+        orderDirection: "desc" as OrderDirection,
+        first: Math.ceil(limit / 2),
+      },
+      skip: !workspaceId,
+    },
+  );
+
+  const activities = useMemo(() => {
+    const transfers =
+      transfersData?.transferThanksTokens?.map(
+        (t: {
+          id: string;
+          from: string;
+          to: string;
+          amount: string;
+          blockTimestamp: string;
+          [key: string]: unknown;
+        }) => ({
+          ...t,
+          type: "transfer" as const,
+          thanksToken: { symbol: "THX" },
+        }),
+      ) || [];
+
+    const mints =
+      mintsData?.mintThanksTokens?.map(
+        (m: {
+          id: string;
+          from: string;
+          to: string;
+          amount: string;
+          blockTimestamp: string;
+          [key: string]: unknown;
+        }) => ({
+          ...m,
+          type: "mint" as const,
+          thanksToken: { symbol: "THX" },
+        }),
+      ) || [];
+
+    return [...transfers, ...mints]
+      .sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp))
+      .slice(0, limit);
+  }, [transfersData, mintsData, limit]);
+
   return {
-    activities: [] as Array<{
-      type: "transfer" | "mint";
-      from?: string;
-      to: string;
-      amount: string;
-      blockTimestamp: string;
-      thanksToken: {
-        symbol: string;
-      };
-    }>,
-    isLoading: false,
+    activities,
+    isLoading: transfersLoading || mintsLoading,
   };
 };

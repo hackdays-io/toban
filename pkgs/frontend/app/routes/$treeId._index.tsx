@@ -1,7 +1,10 @@
 import { Box, Flex, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useTreeInfo } from "hooks/useHats";
-import { useUserThanksTokenBalance } from "hooks/useThanksToken";
+import {
+  useThanksToken,
+  useUserThanksTokenBalance,
+} from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
 import type { FC } from "react";
 import { FaPlus } from "react-icons/fa6";
@@ -73,8 +76,9 @@ const ThanksTokenSummary: FC<{ treeId?: string; receivedTotal?: number }> = ({
 }) => {
   const navigate = useNavigate();
   const { balance: thanksTokenBalance } = useUserThanksTokenBalance(treeId);
+  const { mintableAmount } = useThanksToken(treeId || "");
 
-  const sendable = thanksTokenBalance;
+  const sendable = mintableAmount ? Number(mintableAmount) / 1e18 : 0;
 
   return (
     <VStack align="stretch" gap={3}>

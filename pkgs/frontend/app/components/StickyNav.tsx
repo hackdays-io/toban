@@ -57,14 +57,14 @@ export const StickyNav: FC = () => {
           </GridItem>
 
           <GridItem textAlign="center">
-            <Link to={`/${treeId}/thankstoken/send`}>
+            <Link to={`/${treeId}/assistcredit`}>
               <IconButton backgroundColor="transparent" color="blue.500">
                 <Icon fontSize={30}>
                   <FaCoins size="30px" />
                 </Icon>
               </IconButton>
               <Box fontWeight="bold" fontSize="sm">
-                Thanks Token
+                Assist Credit
               </Box>
             </Link>
           </GridItem>

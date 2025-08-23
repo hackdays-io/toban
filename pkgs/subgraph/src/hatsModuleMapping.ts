@@ -10,6 +10,8 @@ import {
   TransferSingle,
 } from "../generated/templates/HatsFractionTokenModule/HatsFractionTokenModule";
 
+// failed to process trigger: block #9045576 (0x9f9f…1ec3), transaction 23157f0c260a4aa62d2000c834b6e1fc67c353dd4de4d6bca19e5b41fdf29f49: error while executing at wasm backtrace: 0: 0x365c - <unknown>!src/hatsModuleMapping/updateBalance 1: 0x3b8b - <unknown>!src/hatsModuleMapping/handleRoleShareTransferSingle: Entity BalanceOfFractionToken[634718699214179794530190354350675720613565149972855461858442661081604627901740x777ee5eeed30c3712bee6c83260d786857d9c556]: missing value for non-nullable field `hatsFractionTokenModule`: Entity BalanceOfFractionToken[634718699214179794530190354350675720613565149972855461858442661081604627901740x777ee5eeed30c3712bee6c83260d786857d9c556]: missing value for non-nullable field `hatsFractionTokenModule`
+
 export function handleRoleShareInitialMint(ev: InitialMint): void {
   const module = HatsFractionTokenModule.load(ev.address.toHex());
   const id = `${ev.address.toHex()}-${ev.params.tokenId.toHexString()}`;
@@ -31,6 +33,14 @@ export function handleRoleShareInitialMint(ev: InitialMint): void {
   initializedEvent.blockNumber = ev.block.number;
 
   initializedEvent.save();
+
+  updateBalance(
+    ev.params.tokenId,
+    ev.params.wearer,
+    ev.params.amount,
+    initializedEvent,
+    ev.block.timestamp,
+  );
 }
 
 export function handleRoleShareTransferSingle(ev: TransferSingle): void {
@@ -91,7 +101,9 @@ function updateBalance(
     balance.balance = balance.balance.plus(amount);
     balance.updatedAt = timestamp;
   } else if (account.toHex() !== "0x0000000000000000000000000000000000000000") {
-    balance = new BalanceOfFractionToken(`${tokenId}${account.toHex()}`);
+    balance = new BalanceOfFractionToken(
+      `${initializedRoleShare.id}-${tokenId.toHex()}-${account.toHex()}`,
+    );
     balance.owner = account.toHex();
     balance.tokenId = tokenId;
     balance.balance = amount;
@@ -99,6 +111,8 @@ function updateBalance(
   }
 
   if (balance && initializedRoleShare) {
+    balance.hatsFractionTokenModule =
+      initializedRoleShare.hatsFractionTokenModule;
     balance.workspaceId = initializedRoleShare.workspaceId;
     balance.hatId = initializedRoleShare.hatId;
     balance.wearer = initializedRoleShare.wearer;

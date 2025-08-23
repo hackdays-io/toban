@@ -5,6 +5,10 @@ import {
   Workspace,
 } from "../generated/schema";
 import { hatIdToTreeId } from "./helper/hat";
+import {
+  ThanksToken as ThanksTokenTemplate,
+  HatsFractionTokenModule as HatsFractionTokenModuleTemplate,
+} from "../generated/templates";
 
 export function handleExecuted(ev: Executed): void {
   const treeId = hatIdToTreeId(ev.params.topHatId.toHexString());
@@ -34,7 +38,11 @@ export function handleExecuted(ev: Executed): void {
   newHatsFractionTokenModule.workspaceId = treeId;
   newHatsFractionTokenModule.save();
 
+  HatsFractionTokenModuleTemplate.create(ev.params.hatsFractionTokenModule);
+
   const newThanksToken = new ThanksToken(ev.params.thanksToken.toHex());
   newThanksToken.workspaceId = treeId;
   newThanksToken.save();
+
+  ThanksTokenTemplate.create(ev.params.thanksToken);
 }

@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { thanksTokenBaseConfig } from "./useContracts";
 import { useTreeInfo } from "./useHats";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
 import { useGetWorkspace } from "./useWorkspace";
+import { useBalanceOfFractionTokens } from "./useFractionToken";
+import type { Address } from "viem";
+import { toast } from "react-toastify";
 
 export const useThanksToken = (treeId: string) => {
   const { data } = useGetWorkspace(treeId);
@@ -20,28 +23,76 @@ export const useThanksToken = (treeId: string) => {
     );
   }, [treeInfo, walletAddress]);
 
-  useEffect(() => {
-    const fetchMintableAmount = async () => {
-      if (!myRoles.length || !data?.workspace?.thanksToken.id) return;
-      const relatedRole = myRoles.map((mr) => {
+  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
+    where: {
+      workspaceId: treeId,
+      owner: wallet?.account.address.toLowerCase(),
+    },
+    first: 100,
+  });
+
+  const relatedRoles = useMemo(() => {
+    return [
+      ...(balanceOfFractionTokens?.balanceOfFractionTokens.map((d) => {
+        return {
+          hatId: d.hatId,
+          wearer: d.wearer as `0x${string}`,
+        };
+      }) || []),
+      ...(myRoles.map((mr) => {
         return {
           hatId: BigInt(mr.id),
           wearer: walletAddress as `0x${string}`,
         };
-      });
+      }) || []),
+    ];
+  }, [balanceOfFractionTokens, myRoles, walletAddress]);
+
+  useEffect(() => {
+    const fetchMintableAmount = async () => {
+      if (!relatedRoles.length || !data?.workspace?.thanksToken.id) return;
 
       const amount = await publicClient.readContract({
         ...thanksTokenBaseConfig(
           data?.workspace?.thanksToken.id as `0x${string}`,
         ),
         functionName: "mintableAmount",
-        args: [walletAddress as `0x${string}`, relatedRole],
+        args: [walletAddress as `0x${string}`, relatedRoles],
       });
       setMintableAmount(amount);
     };
 
     fetchMintableAmount();
-  }, [myRoles, data, walletAddress]);
+  }, [relatedRoles, data?.workspace?.thanksToken.id, walletAddress]);
 
-  return { mintableAmount };
+  const [isLoading, setIsLoading] = useState(false);
+  const mintThanksToken = useCallback(
+    async (to: Address, amount: bigint) => {
+      if (!wallet || !relatedRoles.length) return;
+      setIsLoading(true);
+
+      let txHash: `0x${string}` | undefined = undefined;
+      let error = "";
+
+      try {
+        txHash = await wallet.writeContract({
+          ...thanksTokenBaseConfig(
+            data?.workspace?.thanksToken.id as `0x${string}`,
+          ),
+          functionName: "mint",
+          args: [to, amount, relatedRoles],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        setIsLoading(false);
+      } catch (_) {
+        error = "トークンの送信に失敗しました";
+        setIsLoading(false);
+      }
+
+      return { txHash, error };
+    },
+    [relatedRoles, wallet, data?.workspace?.thanksToken.id],
+  );
+
+  return { mintableAmount, mintThanksToken, isLoading };
 };

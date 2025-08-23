@@ -129,79 +129,77 @@ const AssistCreditSend: FC = () => {
   ]);
 
   return (
-    <>
-      <Grid
-        gridTemplateRows={
-          !receiver
-            ? "auto auto auto 1fr"
-            : isSend
-              ? "auto 1fr"
-              : "auto auto 1fr auto"
+    <Grid
+      gridTemplateRows={
+        !receiver
+          ? "auto auto auto 1fr"
+          : isSend
+            ? "auto 1fr"
+            : "auto auto 1fr auto"
+      }
+      minH="calc(100vh - 100px)"
+    >
+      <PageHeader
+        title={
+          receiver
+            ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
+            : `${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}を送信`
         }
-        minH="calc(100vh - 100px)"
-      >
-        <PageHeader
-          title={
-            receiver
-              ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
-              : `${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}を送信`
-          }
-          backLink={
-            receiver &&
-            (isSend
-              ? () => {
-                  setIsSend(false);
-                  setAmount(10);
-                }
-              : () => {
-                  setReceiver(undefined);
-                  setAmount(10);
-                })
-          }
+        backLink={
+          receiver &&
+          (isSend
+            ? () => {
+                setIsSend(false);
+                setAmount(10);
+              }
+            : () => {
+                setReceiver(undefined);
+                setAmount(10);
+              })
+        }
+      />
+
+      {isSend ? (
+        <SendConfirmation
+          amount={amount}
+          me={me.identity}
+          receiver={receiver}
+          onSend={send}
         />
-
-        {isSend ? (
-          <SendConfirmation
-            amount={amount}
-            me={me.identity}
-            receiver={receiver}
-            onSend={send}
-          />
-        ) : (
-          <>
-            <Box my={6}>
-              <HatsListItemParser
-                imageUri={hat?.imageUri}
-                detailUri={hat?.details}
-              >
-                <RoleWithBalance
-                  wearer={address as Address}
-                  balance={balanceOfToken ? Number(balanceOfToken) : undefined}
-                />
-              </HatsListItemParser>
-            </Box>
-
-            {!receiver ? (
-              <UserList
-                searchText={searchText}
-                setSearchText={setSearchText}
-                users={users}
-                onSelectUser={setReceiver}
+      ) : (
+        <>
+          <Box my={6}>
+            <HatsListItemParser
+              imageUri={hat?.imageUri}
+              detailUri={hat?.details}
+            >
+              <RoleWithBalance
+                wearer={address as Address}
+                balance={balanceOfToken ? Number(balanceOfToken) : undefined}
               />
-            ) : (
-              <AmountSelector
-                amount={amount}
-                setAmount={setAmount}
-                onNext={() => setIsSend(true)}
-                isLoading={isLoading}
-                me={me.identity}
-                receiver={receiver}
-              />
-            )}
-          </>
-        )}
-      </Grid>
-    </>
+            </HatsListItemParser>
+          </Box>
+
+          {!receiver ? (
+            <UserList
+              searchText={searchText}
+              setSearchText={setSearchText}
+              users={users}
+              onSelectUser={setReceiver}
+            />
+          ) : (
+            <AmountSelector
+              amount={amount}
+              setAmount={setAmount}
+              onNext={() => setIsSend(true)}
+              isLoading={isLoading}
+              me={me.identity}
+              receiver={receiver}
+            />
+          )}
+        </>
+      )}
+    </Grid>
   );
 };
 

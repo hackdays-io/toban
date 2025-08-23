@@ -7,6 +7,7 @@ import type {
   TransferThanksToken_Filter,
   TransferThanksToken_OrderBy,
 } from "gql/graphql";
+import { formatEther } from "viem";
 
 const queryGetTransferThanksTokens = gql(`
   query GetTransferThanksTokens($where: TransferThanksToken_filter = {},
@@ -44,6 +45,23 @@ export const useGetTransferThanksTokens = (params: {
       first: params.first,
     },
   });
+  const convertAmountInResponse = (
+    data: GetTransferThanksTokensQuery | undefined,
+  ) => {
+    if (data === undefined || data.transferThanksTokens === undefined) {
+      return data;
+    }
+    return {
+      ...data,
+      transferThanksTokens: data.transferThanksTokens.map((token) => ({
+        ...token,
+        amount: formatEther(token.amount),
+      })),
+    };
+  };
 
-  return result;
+  return {
+    ...result,
+    data: convertAmountInResponse(result.data),
+  };
 };

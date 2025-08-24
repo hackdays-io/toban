@@ -13,9 +13,7 @@ contract ThanksTokenFactory is
     IThanksTokenFactory
 {
     address public IMPLEMENTATION;
-    address public hatsAddress;
-    address public fractionTokenAddress;
-    address public hatsTimeFrameModuleAddress;
+    address public HATS;
     address public BIG_BANG;
 
     event ThanksTokenCreated(
@@ -28,16 +26,12 @@ contract ThanksTokenFactory is
     function initialize(
         address _initialOwner,
         address _implementation,
-        address _hatsAddress,
-        address _fractionTokenAddress,
-        address _hatsTimeFrameModuleAddress
+        address _hatsAddress
     ) public initializer {
         __Ownable_init(_initialOwner);
         __UUPSUpgradeable_init();
         IMPLEMENTATION = _implementation;
-        hatsAddress = _hatsAddress;
-        fractionTokenAddress = _fractionTokenAddress;
-        hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
+        HATS = _hatsAddress;
     }
 
     function createThanksToken(
@@ -45,6 +39,8 @@ contract ThanksTokenFactory is
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) public override returns (address) {
         if (_msgSender() != BIG_BANG) {
@@ -56,8 +52,8 @@ contract ThanksTokenFactory is
             workspaceOwner,
             name,
             symbol,
-            hatsAddress,
-            fractionTokenAddress,
+            HATS,
+            hatsFractionTokenAddress,
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
@@ -74,6 +70,8 @@ contract ThanksTokenFactory is
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) public override returns (address) {
         if (_msgSender() != BIG_BANG) {
@@ -84,8 +82,8 @@ contract ThanksTokenFactory is
             workspaceOwner,
             name,
             symbol,
-            hatsAddress,
-            fractionTokenAddress,
+            HATS,
+            hatsFractionTokenAddress,
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
@@ -114,14 +112,16 @@ contract ThanksTokenFactory is
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) public view override returns (address) {
         bytes memory initData = abi.encode(
             workspaceOwner,
             name,
             symbol,
-            hatsAddress,
-            fractionTokenAddress,
+            HATS,
+            hatsFractionTokenAddress,
             hatsTimeFrameModuleAddress,
             defaultCoefficient
         );
@@ -167,19 +167,7 @@ contract ThanksTokenFactory is
     }
 
     function setHatsAddress(address _hatsAddress) public onlyOwner {
-        hatsAddress = _hatsAddress;
-    }
-
-    function setFractionTokenAddress(
-        address _fractionTokenAddress
-    ) public onlyOwner {
-        fractionTokenAddress = _fractionTokenAddress;
-    }
-
-    function setHatsTimeFrameModuleAddress(
-        address _hatsTimeFrameModuleAddress
-    ) public onlyOwner {
-        hatsTimeFrameModuleAddress = _hatsTimeFrameModuleAddress;
+        HATS = _hatsAddress;
     }
 
     function setBigBang(address _bigBang) public onlyOwner {

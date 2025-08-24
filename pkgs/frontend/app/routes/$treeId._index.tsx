@@ -8,6 +8,7 @@ import {
 import { useActiveWallet } from "hooks/useWallet";
 import type { FC } from "react";
 import { FaPlus } from "react-icons/fa6";
+import { formatEther } from "viem";
 import { StickyNav } from "~/components/StickyNav";
 import { CommonButton } from "~/components/common/CommonButton";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
@@ -78,8 +79,6 @@ const ThanksTokenSummary: FC<{ treeId?: string; receivedTotal?: number }> = ({
   const { balance: thanksTokenBalance } = useUserThanksTokenBalance(treeId);
   const { mintableAmount } = useThanksToken(treeId || "");
 
-  const sendable = mintableAmount ? Number(mintableAmount) / 1e18 : 0;
-
   return (
     <VStack align="stretch" gap={3}>
       {/* Big rounded card */}
@@ -101,7 +100,9 @@ const ThanksTokenSummary: FC<{ treeId?: string; receivedTotal?: number }> = ({
 
           <HStack gap={2} align="baseline">
             <Text fontSize={{ base: "4xl", sm: "5xl" }} fontWeight="bold">
-              {sendable.toLocaleString()}
+              {Math.ceil(
+                Number(formatEther(mintableAmount || 0n)),
+              ).toLocaleString()}
             </Text>
             <Text fontSize="xs" color="gray.500">
               thanks

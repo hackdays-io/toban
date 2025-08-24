@@ -7,6 +7,8 @@ interface IThanksTokenFactory {
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) external returns (address);
 
@@ -15,6 +17,8 @@ interface IThanksTokenFactory {
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) external returns (address);
 
@@ -23,6 +27,8 @@ interface IThanksTokenFactory {
         string memory symbol,
         address workspaceOwner,
         uint256 defaultCoefficient,
+        address hatsFractionTokenAddress,
+        address hatsTimeFrameModuleAddress,
         bytes32 salt
     ) external view returns (address);
 }

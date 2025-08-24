@@ -176,7 +176,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
-        // 7. HatsHatFractionTokenModuleのデプロイ
+        // 7. HatsFractionTokenModuleのデプロイ
         address hatsFractionTokenModule = HatsModuleFactory.createHatsModule(
             HatsFractionTokenModule_IMPL,
             topHatId,
@@ -202,10 +202,12 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         // 9. ThanksTokenをFactoryからデプロイ
         address thanksToken = IThanksTokenFactory(ThanksTokenFactory)
             .createThanksTokenDeterministic(
-                string(abi.encodePacked("ThanksToken ", _topHatDetails)),
-                string(abi.encodePacked("THX", topHatId)),
+                "ThanksToken",
+                "THX",
                 _owner,
-                1e18, // デフォルト係数（1.0）
+                1e18,
+                hatsFractionTokenModule,
+                hatsTimeFrameModule,
                 keccak256(abi.encodePacked(topHatId, "0"))
             );
 

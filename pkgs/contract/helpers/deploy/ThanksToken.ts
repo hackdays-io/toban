@@ -36,8 +36,6 @@ export const deployThanksTokenFactory = async (
     initialOwner: Address;
     implementation: Address;
     hatsAddress: Address;
-    fractionTokenAddress: Address;
-    hatsTimeFrameModuleAddress: Address;
   },
   create2DeployerAddress?: string,
 ) => {
@@ -58,8 +56,6 @@ export const deployThanksTokenFactory = async (
       params.initialOwner,
       params.implementation,
       params.hatsAddress,
-      params.fractionTokenAddress,
-      params.hatsTimeFrameModuleAddress,
     ]);
 
   const UpgradeableProxy = await ProxyFactory();

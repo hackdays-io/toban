@@ -47,6 +47,7 @@ contract ThanksTokenFactory is
             revert("ThanksTokenFactory: Only BigBang can call this function");
         }
 
+        // ここのFracionToken、HatsTimeFrameModuleはワークスペースごとに変わるのでFactoryにセットされているものではなく、外部から引数で渡す必要がある。
         bytes memory initData = abi.encode(
             workspaceOwner,
             name,

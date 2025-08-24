@@ -1,14 +1,19 @@
 import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react/hooks";
-import type {
-  GetTransferThanksTokensQuery,
-  GetTransferThanksTokensQueryVariables,
-  OrderDirection,
-  TransferThanksToken_Filter,
+import {
+  type GetThanksTokenBalancesQuery,
+  type GetThanksTokenBalancesQueryVariables,
+  type GetThanksTokenMintsQuery,
+  type GetThanksTokenMintsQueryVariables,
+  type GetThanksTokenTransfersQuery,
+  type GetThanksTokenTransfersQueryVariables,
+  type MintThanksToken_Filter,
+  MintThanksToken_OrderBy,
+  type OrderDirection,
+  type TransferThanksToken_Filter,
   TransferThanksToken_OrderBy,
 } from "gql/graphql";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
 import { formatEther } from "viem";
 import type { Address } from "viem";
 import { thanksTokenBaseConfig } from "./useContracts";
@@ -18,21 +23,70 @@ import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
 import { useGetWorkspace } from "./useWorkspace";
 
-const queryGetTransferThanksTokens = gql(`
-  query GetTransferThanksTokens($where: TransferThanksToken_filter = {},
-    $orderBy: TransferThanksToken_orderBy,
-    $orderDirection: OrderDirection = asc,
-    $first: Int = 10) {
-    transferThanksTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+// GraphQL queries for ThanksToken data from Goldsky
+const queryGetThanksTokenBalances = gql(`
+  query GetThanksTokenBalances($where: BalanceOfThanksToken_filter = {}, $orderBy: BalanceOfThanksToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 100) {
+    balanceOfThanksTokens(
+      where: $where
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      first: $first
+    ) {
       id
-      to
-      from
-      workspaceId
-      blockTimestamp
       thanksToken {
         id
+        workspaceId
       }
+      owner
+      balance
+      workspaceId
+      updatedAt
+    }
+  }
+`);
+
+const queryGetThanksTokenMints = gql(`
+  query GetThanksTokenMints($where: MintThanksToken_filter = {}, $orderBy: MintThanksToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
+    mintThanksTokens(
+      where: $where
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      first: $first
+    ) {
+      id
+      thanksToken {
+        id
+        workspaceId
+      }
+      from
+      to
       amount
+      workspaceId
+      blockTimestamp
+      blockNumber
+    }
+  }
+`);
+
+const queryGetThanksTokenTransfers = gql(`
+  query GetThanksTokenTransfers($where: TransferThanksToken_filter = {}, $orderBy: TransferThanksToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
+    transferThanksTokens(
+      where: $where
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      first: $first
+    ) {
+      id
+      thanksToken {
+        id
+        workspaceId
+      }
+      from
+      to
+      amount
+      workspaceId
+      blockTimestamp
+      blockNumber
     }
   }
 `);
@@ -44,9 +98,9 @@ export const useGetTransferThanksTokens = (params: {
   first?: number;
 }) => {
   const result = useQuery<
-    GetTransferThanksTokensQuery,
-    GetTransferThanksTokensQueryVariables
-  >(queryGetTransferThanksTokens, {
+    GetThanksTokenTransfersQuery,
+    GetThanksTokenTransfersQueryVariables
+  >(queryGetThanksTokenTransfers, {
     variables: {
       where: params.where,
       orderBy: params.orderBy,
@@ -54,8 +108,9 @@ export const useGetTransferThanksTokens = (params: {
       first: params.first,
     },
   });
+
   const convertAmountInResponse = (
-    data: GetTransferThanksTokensQuery | undefined,
+    data: GetThanksTokenTransfersQuery | undefined,
   ) => {
     if (data === undefined || data.transferThanksTokens === undefined) {
       return data;
@@ -63,6 +118,46 @@ export const useGetTransferThanksTokens = (params: {
     return {
       ...data,
       transferThanksTokens: data.transferThanksTokens.map((token) => ({
+        ...token,
+        amount: formatEther(token.amount),
+      })),
+    };
+  };
+
+  return {
+    ...result,
+    data: convertAmountInResponse(result.data),
+  };
+};
+
+export const useGetMintThanksTokens = (params: {
+  where?: MintThanksToken_Filter;
+  orderBy?: MintThanksToken_OrderBy;
+  orderDirection?: OrderDirection;
+  first?: number;
+}) => {
+  const result = useQuery<
+    GetThanksTokenMintsQuery,
+    GetThanksTokenMintsQueryVariables
+  >(queryGetThanksTokenMints, {
+    variables: {
+      where: params.where,
+      orderBy: params.orderBy,
+      orderDirection: params.orderDirection,
+      first: params.first,
+    },
+  });
+
+  const convertAmountInResponse = (
+    data: GetThanksTokenMintsQuery | undefined,
+  ) => {
+    if (data === undefined || data.mintThanksTokens === undefined) {
+      return data;
+    }
+
+    return {
+      ...data,
+      mintThanksTokens: data.mintThanksTokens.map((token) => ({
         ...token,
         amount: formatEther(token.amount),
       })),
@@ -162,4 +257,83 @@ export const useThanksToken = (treeId: string) => {
   );
 
   return { mintableAmount, mintThanksToken, isLoading };
+};
+
+export const useUserThanksTokenBalance = (workspaceId?: string) => {
+  const { wallet } = useActiveWallet();
+
+  const { data } = useQuery<
+    GetThanksTokenBalancesQuery,
+    GetThanksTokenBalancesQueryVariables
+  >(queryGetThanksTokenBalances, {
+    variables: {
+      where: {
+        workspaceId,
+        owner: wallet?.account?.address?.toLowerCase(),
+      },
+      first: 1,
+    },
+    skip: !workspaceId || !wallet?.account?.address,
+  });
+
+  const balance = data?.balanceOfThanksTokens?.[0]?.balance || "0";
+  return {
+    balance: Number(balance),
+    data: data?.balanceOfThanksTokens?.[0],
+  };
+};
+
+export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
+  const { data: transfersData, loading: transfersLoading } = useQuery<
+    GetThanksTokenTransfersQuery,
+    GetThanksTokenTransfersQueryVariables
+  >(queryGetThanksTokenTransfers, {
+    variables: {
+      where: { workspaceId },
+      orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+      orderDirection: "desc" as OrderDirection,
+      first: limit,
+    },
+    skip: !workspaceId,
+  });
+
+  const { data: mintsData, loading: mintsLoading } = useQuery<
+    GetThanksTokenMintsQuery,
+    GetThanksTokenMintsQueryVariables
+  >(queryGetThanksTokenMints, {
+    variables: {
+      where: { workspaceId },
+      orderBy: MintThanksToken_OrderBy.BlockTimestamp,
+      orderDirection: "desc" as OrderDirection,
+      first: limit,
+    },
+    skip: !workspaceId,
+  });
+
+  const activities = useMemo(() => {
+    const transfers =
+      transfersData?.transferThanksTokens?.map((t) => ({
+        ...t,
+        type: "transfer" as const,
+        thanksToken: { symbol: "THX" },
+      })) || [];
+
+    const mints =
+      mintsData?.mintThanksTokens?.map((m) => ({
+        ...m,
+        type: "mint" as const,
+        thanksToken: { symbol: "THX" },
+      })) || [];
+
+    return [...transfers, ...mints]
+      .sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp))
+      .slice(0, limit);
+  }, [transfersData, mintsData, limit]);
+
+  return {
+    activities,
+    transfers: transfersData,
+    mints: mintsData,
+    isLoading: transfersLoading || mintsLoading,
+  };
 };

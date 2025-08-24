@@ -1,3 +1,4 @@
+import { BigInt } from "@graphprotocol/graph-ts";
 import { Executed } from "../generated/BigBang/BigBang";
 import {
   HatsFractionTokenModule,
@@ -19,6 +20,7 @@ export function handleExecuted(ev: Executed): void {
   workspace.owner = ev.params.owner.toHex();
   workspace.topHatId = ev.params.topHatId;
   workspace.hatterHatId = ev.params.hatterHatId;
+  workspace.memberHatId = ev.params.memberHatId;
   workspace.operatorHatId = ev.params.operatorHatId;
   workspace.creatorHatId = ev.params.creatorHatId;
   workspace.minterHatId = ev.params.minterHatId;
@@ -27,6 +29,7 @@ export function handleExecuted(ev: Executed): void {
   workspace.hatsFractionTokenModule = ev.params.hatsFractionTokenModule.toHex();
   workspace.thanksToken = ev.params.thanksToken.toHex();
   workspace.splitCreator = ev.params.splitCreator.toHex();
+  workspace.thanksToken = ev.params.thanksToken.toHex();
   workspace.blockTimestamp = ev.block.timestamp;
   workspace.blockNumber = ev.block.number;
 

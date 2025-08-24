@@ -2,12 +2,16 @@ import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useParams } from "@remix-run/react";
 import {
+  MintThanksToken_OrderBy,
   OrderDirection,
   TransferFractionToken_OrderBy,
   TransferThanksToken_OrderBy,
 } from "gql/graphql";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
-import { useGetTransferThanksTokens } from "hooks/useThanksToken";
+import {
+  useGetMintThanksTokens,
+  useGetTransferThanksTokens,
+} from "hooks/useThanksToken";
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -335,25 +339,45 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
     first: TX_HISTORY_LIMIT,
   });
 
-  const { data: receivedThanksTokenData } = useGetTransferThanksTokens({
+  const { data: receivedThanksTokenData } = useGetMintThanksTokens({
     where: {
       workspaceId: treeId,
       to: normalizedAddress,
     },
-    orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+    orderBy: MintThanksToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: TX_HISTORY_LIMIT,
   });
 
-  const { data: sentThanksTokenData } = useGetTransferThanksTokens({
+  const { data: sentThanksTokenData } = useGetMintThanksTokens({
     where: {
       workspaceId: treeId,
       from: normalizedAddress,
     },
-    orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+    orderBy: MintThanksToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: TX_HISTORY_LIMIT,
   });
+
+  // const { data: receivedThanksTokenData } = useGetTransferThanksTokens({
+  //   where: {
+  //     workspaceId: treeId,
+  //     to: normalizedAddress,
+  //   },
+  //   orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+  //   orderDirection: OrderDirection.Desc,
+  //   first: TX_HISTORY_LIMIT,
+  // });
+
+  // const { data: sentThanksTokenData } = useGetTransferThanksTokens({
+  //   where: {
+  //     workspaceId: treeId,
+  //     from: normalizedAddress,
+  //   },
+  //   orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+  //   orderDirection: OrderDirection.Desc,
+  //   first: TX_HISTORY_LIMIT,
+  // });
 
   // タブボタンコンポーネント
   const TabButton: FC<{

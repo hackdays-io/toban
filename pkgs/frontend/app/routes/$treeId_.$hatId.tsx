@@ -57,7 +57,7 @@ const RoleDetails: FC = () => {
   // 各wearerのWearingElapsedTimeを取得
   const { data } = useGetWorkspace(treeId);
   const hatsTimeFrameModuleAddress = useMemo(
-    () => data?.workspace?.hatsTimeFrameModule?.id,
+    () => data?.workspace?.hatsTimeFrameModule,
     [data],
   );
   const timeList = useWearingElapsedTime(

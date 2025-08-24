@@ -170,7 +170,9 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
         new Set(
           data.transferFractionTokens
             .filter(({ workspaceId }) => Number(workspaceId) > 0)
-            .map(({ wearer, hatId }) => JSON.stringify({ wearer, hatId })),
+            .map(({ to, tokenId }) =>
+              JSON.stringify({ wearer: to, hatId: tokenId }),
+            ),
         ),
       );
 
@@ -205,10 +207,7 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
 
 export const useGetTokenId = () => {
   const getTokenId = useCallback(
-    (params: {
-      hatId: bigint;
-      account: Address;
-    }) => {
+    (params: { hatId: bigint; account: Address }) => {
       return BigInt(
         keccak256(
           encodePacked(["uint256", "address"], [params.hatId, params.account]),
@@ -499,15 +498,23 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
 const queryGetTransferFractionTokens = gql(`
   query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
-    transferFractionTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
+    transferFractionTokens(
+      where: $where
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      first: $first
+    ) {
       id
+      from
       to
       tokenId
       workspaceId
-      from
       blockTimestamp
       blockNumber
       amount
+      hatsFractionTokenModule {
+        id
+      }
     }
   }
 `);

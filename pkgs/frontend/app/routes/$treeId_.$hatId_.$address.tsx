@@ -41,23 +41,17 @@ const RoleHolderDetails: FC = () => {
   // HatsTimeFrameModuleのアドレスを取得
   const { data } = useGetWorkspace(treeId);
   const hatsTimeFrameModuleAuthorities = useMemo(() => {
-    return data?.workspace?.hatsTimeFrameModule?.authorities?.filter(
-      (a) => a.authorised === true,
-    );
-  }, [data]);
+    return [];
+  }, []);
   const hatsTimeFrameModuleAddress = useMemo(
-    () => data?.workspace?.hatsTimeFrameModule?.id,
+    () => data?.workspace?.hatsTimeFrameModule,
     [data],
   );
 
   // ログインユーザーがこのhatの権限を持っているかどうか
   const isAuthorised = useMemo(() => {
-    if (!me) return false;
-
-    return hatsTimeFrameModuleAuthorities?.some(
-      (a) => a.address.toLowerCase() === me.toLowerCase(),
-    );
-  }, [me, hatsTimeFrameModuleAuthorities]);
+    return false; // Simplified for now since authorities are not implemented
+  }, []);
 
   // wearerの名前とアイコンを取得
   const addresses = useMemo(() => (address ? [address] : undefined), [address]);

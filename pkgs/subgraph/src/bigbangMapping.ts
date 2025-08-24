@@ -1,9 +1,14 @@
+import { BigInt } from "@graphprotocol/graph-ts";
 import { Executed } from "../generated/BigBang/BigBang";
 import {
   HatsFractionTokenModule,
   ThanksToken,
   Workspace,
 } from "../generated/schema";
+import {
+  HatsFractionTokenModule as HatsFractionTokenModuleTemplate,
+  ThanksToken as ThanksTokenTemplate,
+} from "../generated/templates";
 import { hatIdToTreeId } from "./helper/hat";
 
 export function handleExecuted(ev: Executed): void {
@@ -15,6 +20,7 @@ export function handleExecuted(ev: Executed): void {
   workspace.owner = ev.params.owner.toHex();
   workspace.topHatId = ev.params.topHatId;
   workspace.hatterHatId = ev.params.hatterHatId;
+  workspace.memberHatId = ev.params.memberHatId;
   workspace.operatorHatId = ev.params.operatorHatId;
   workspace.creatorHatId = ev.params.creatorHatId;
   workspace.minterHatId = ev.params.minterHatId;
@@ -23,6 +29,7 @@ export function handleExecuted(ev: Executed): void {
   workspace.hatsFractionTokenModule = ev.params.hatsFractionTokenModule.toHex();
   workspace.thanksToken = ev.params.thanksToken.toHex();
   workspace.splitCreator = ev.params.splitCreator.toHex();
+  workspace.thanksToken = ev.params.thanksToken.toHex();
   workspace.blockTimestamp = ev.block.timestamp;
   workspace.blockNumber = ev.block.number;
 
@@ -34,7 +41,11 @@ export function handleExecuted(ev: Executed): void {
   newHatsFractionTokenModule.workspaceId = treeId;
   newHatsFractionTokenModule.save();
 
+  HatsFractionTokenModuleTemplate.create(ev.params.hatsFractionTokenModule);
+
   const newThanksToken = new ThanksToken(ev.params.thanksToken.toHex());
   newThanksToken.workspaceId = treeId;
   newThanksToken.save();
+
+  ThanksTokenTemplate.create(ev.params.thanksToken);
 }

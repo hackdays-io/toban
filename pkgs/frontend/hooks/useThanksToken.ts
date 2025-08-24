@@ -182,7 +182,6 @@ export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
         where: { workspaceId },
         orderBy: "blockTimestamp",
         orderDirection: "desc" as OrderDirection,
-        first: Math.ceil(limit / 2),
       },
       skip: !workspaceId,
     },
@@ -195,7 +194,6 @@ export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
         where: { workspaceId },
         orderBy: "blockTimestamp",
         orderDirection: "desc" as OrderDirection,
-        first: Math.ceil(limit / 2),
       },
       skip: !workspaceId,
     },
@@ -241,6 +239,8 @@ export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
 
   return {
     activities,
+    transfers: transfersData,
+    mints: mintsData,
     isLoading: transfersLoading || mintsLoading,
   };
 };

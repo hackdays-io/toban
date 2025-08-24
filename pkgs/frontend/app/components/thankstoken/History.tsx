@@ -6,6 +6,7 @@ import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { UserIcon } from "../icon/UserIcon";
+import { formatEther } from "viem";
 
 interface Props {
   treeId: string;
@@ -114,7 +115,7 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
             fontWeight="semibold"
             color={isTransfer ? "green.600" : "blue.600"}
           >
-            {Number(activity.amount).toLocaleString()}{" "}
+            {Number(formatEther(BigInt(activity.amount))).toLocaleString()}{" "}
             <Box fontSize="xs" as="span">
               {activity.thanksToken.symbol}
             </Box>

@@ -3,22 +3,18 @@
     "Hats": "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137",
     "HatsModuleFactory": "0x0a3f85fa597B6a967271286aA0724811acDF5CD9",
     "PullSplitsFactory": "0x80f1B766817D04870f115fEBbcCADF8DBF75E017",
-    "BigBang": "0x20C5b90cF61910121b9551A6Ead3c86677fDB653",
+    "BigBang": "0xA764F51dcaE050DBFf8404D0bf5C089E4Fb85AdD",
     "FractionToken": "0xd6031f9543bEB0963e32CA2AC474de69D0515059",
-    "SplitsCreatorFactory": "0x5ACb776FA709C40225860886E2834B93B5Df267e",
-    "SplitsCreator": "0xb2eBc21791b0Dd1E88fAf89454dE6cC4d10d6103",
-    "HatsTimeFrameModule": "0xA6221434097e347eD30FE2e30F5E610cF41d08B8",
+    "SplitsCreatorFactory": "0xBBe355703d205dd1e0086fa836D01825601C1DDf",
+    "SplitsCreator": "0xC0D7B4E0485d71aDA9ffF9365E4e1938F8195dDa",
+    "HatsTimeFrameModule": "0xadC508C3BA5eD8b3A6D06e2eC8D17162d2DD6F4f",
     "ProxyAdmin": "0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8",
-    "ThanksToken": "0xb1183517df53A04F9E344f2F5CCf95b41D515701",
-    "HatsFractionTokenModule": "0xB867Cc5Fb5A297f77ed5dF2982fB158c551962f9",
-    "ThanksTokenFactory": "0x83D299D27080E48F313662FA1aA0B0F775A0c657",
-    "ThanksTokenFactory_Implementation": "0x6704B46B6966E918cE2b7fD2eBdfD5A04b9454c7"
+    "ThanksTokenFactory_Implementation": "0xE0A3E42D126e545303A9C92423D4847D2ff68913",
+    "ThanksTokenFactory": "0x6b36bDEA3E0495e5f5bEBEE17c8170cBc93b7238"
   },
   "implementations": {
     "FractionToken_Implementation": "0x6d701256205019e40cE02e13D799ed2cd3BBE8e8",
-    "SplitsCreatorFactory_Implementation": "0x96363e7529d296e5ae783AE7B33e8c1191a6FFC3",
-    "BigBang_Implementation": "0xE36Cf2DcfeF3015b6979406052E9265be894EA53",
-    "HatsTimeFrameModule_Implementation": "0xA6221434097e347eD30FE2e30F5E610cF41d08B8",
-    "HatsFractionTokenModule_Implementation": "0xB867Cc5Fb5A297f77ed5dF2982fB158c551962f9"
+    "SplitsCreatorFactory_Implementation": "0x95394Da0460DCF87fC76F5b868D9251bf9738553",
+    "BigBang_Implementation": "0x1B956C5af5B5CA963F3005Dd6DB349713b7e9bbE"
   }
 }

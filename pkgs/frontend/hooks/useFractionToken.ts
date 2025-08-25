@@ -517,13 +517,26 @@ export const useGetTransferFractionTokens = (params: {
   orderBy?: TransferFractionToken_OrderBy;
   orderDirection?: OrderDirection;
   first?: number;
+  // 期間指定パラメータ
+  dateRange?: {
+    startDate?: string;
+    endDate?: string;
+  };
 }) => {
   const result = useQuery<
     GetTransferFractionTokensQuery,
     GetTransferFractionTokensQueryVariables
   >(queryGetTransferFractionTokens, {
     variables: {
-      where: params.where,
+      where: {
+        ...params.where,
+        ...(params.dateRange?.startDate && {
+          blockTimestamp_gte: params.dateRange.startDate,
+        }),
+        ...(params.dateRange?.endDate && {
+          blockTimestamp_lte: params.dateRange.endDate,
+        }),
+      },
       orderBy: params.orderBy,
       orderDirection: params.orderDirection,
       first: params.first,

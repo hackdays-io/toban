@@ -1,16 +1,17 @@
 import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
 import { Link } from "@remix-run/react";
-import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import type { GetTransferFractionTokensQuery } from "gql/graphql";
+import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useGetHat } from "hooks/useHats";
-import { type FC, useMemo } from "react";
+import { type FC, useMemo, useState } from "react";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { HatsListItemParser } from "../common/HatsListItemParser";
 import { UserIcon } from "../icon/UserIcon";
+import DateRangePicker from "../ui/daterangepicker";
 
 interface Props {
   treeId: string;
@@ -153,6 +154,13 @@ const AssistCreditItem: FC<ItemProps> = ({
  * ワークスペース全体のアシストクレジット履歴を表示するコンポーネント
  */
 export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - 30);
+    return { from, to };
+  });
+
   const { data } = useGetTransferFractionTokens({
     where: {
       workspaceId: treeId,
@@ -160,10 +168,24 @@ export const AssistCreditHistory: FC<Props> = ({ treeId, limit }) => {
     orderBy: TransferFractionToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: limit,
+    dateRange: {
+      startDate: Math.floor(dateRange.from.getTime() / 1000).toString(),
+      endDate: Math.floor(dateRange.to.getTime() / 1000).toString(),
+    },
   });
 
   return (
     <VStack gap={2}>
+      <DateRangePicker
+        onUpdate={(values) =>
+          setDateRange({
+            from: values.range.from as Date,
+            to: values.range.to as Date,
+          })
+        }
+        initialDateFrom={dateRange.from}
+        initialDateTo={dateRange.to}
+      />
       {data?.transferFractionTokens.map((token) => (
         <AssistCreditItem
           treeId={treeId}

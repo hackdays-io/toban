@@ -4,6 +4,10 @@ import { viem } from "hardhat";
 import type { Address, PublicClient, WalletClient } from "viem";
 import { decodeEventLog, encodeAbiParameters } from "viem";
 import {
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
+import {
   type Hats,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
@@ -11,10 +15,6 @@ import {
   deployHatsProtocol,
   deployHatsTimeFrameModule,
 } from "../helpers/deploy/Hats";
-import {
-  Create2Deployer,
-  deployCreate2Deployer,
-} from "../helpers/deploy/Create2Factory";
 
 describe("HatsTimeFrameModule", () => {
   let Create2Deployer: Create2Deployer;
@@ -286,5 +286,227 @@ describe("HatsTimeFrameModule", () => {
     ]);
 
     expect(woreTime).to.equal(0n);
+  });
+
+  describe("batchMintHat", () => {
+    it("should mint multiple hats successfully", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test to avoid conflicts
+      const testRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "Test Batch Role Hat",
+      );
+
+      const wearers = [address1Validated, address2Validated];
+      const times = [0n, 0n]; // Use current timestamp
+
+      const initialTime = BigInt(await time.latest());
+
+      await HatsTimeFrameModule.write.batchMintHat([
+        testRoleHatId,
+        wearers,
+        times,
+      ]);
+
+      const afterMintTime = BigInt(await time.latest());
+
+      // Check both addresses received hats
+      expect(
+        await Hats.read.balanceOf([address1Validated, testRoleHatId]),
+      ).to.equal(1n);
+      expect(
+        await Hats.read.balanceOf([address2Validated, testRoleHatId]),
+      ).to.equal(1n);
+
+      // Check wore times are set correctly
+      const woreTime1 = await HatsTimeFrameModule.read.getWoreTime([
+        address1Validated,
+        testRoleHatId,
+      ]);
+      const woreTime2 = await HatsTimeFrameModule.read.getWoreTime([
+        address2Validated,
+        testRoleHatId,
+      ]);
+
+      expect(Number(woreTime1)).to.be.greaterThanOrEqual(Number(initialTime));
+      expect(Number(woreTime1)).to.be.lessThanOrEqual(Number(afterMintTime));
+      expect(Number(woreTime2)).to.be.greaterThanOrEqual(Number(initialTime));
+      expect(Number(woreTime2)).to.be.lessThanOrEqual(Number(afterMintTime));
+
+      // Check both are active
+      expect(
+        await HatsTimeFrameModule.read.isActive([
+          testRoleHatId,
+          address1Validated,
+        ]),
+      ).to.be.true;
+      expect(
+        await HatsTimeFrameModule.read.isActive([
+          testRoleHatId,
+          address2Validated,
+        ]),
+      ).to.be.true;
+    });
+
+    it("should revert if not authorized", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test
+      const testRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "Test Auth Role Hat",
+      );
+
+      const wearers = [address1Validated];
+      const times = [0n];
+
+      // Switch to unauthorized account
+      const HatsTimeFrameModuleUnauthorized = await viem.getContractAt(
+        "HatsTimeFrameModule",
+        HatsTimeFrameModule.address,
+        { client: { wallet: address2 } },
+      );
+
+      await expect(
+        HatsTimeFrameModuleUnauthorized.write.batchMintHat([
+          testRoleHatId,
+          wearers,
+          times,
+        ]),
+      ).to.be.rejectedWith("Not authorized");
+    });
+
+    it("should revert if array lengths mismatch", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test
+      const testRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "Test Array Role Hat",
+      );
+
+      const wearers = [address1Validated, address2Validated];
+      const times = [0n]; // Mismatched length
+
+      await expect(
+        HatsTimeFrameModule.write.batchMintHat([testRoleHatId, wearers, times]),
+      ).to.be.rejectedWith("Array length mismatch");
+    });
+
+    it("should revert if wearers array is empty", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test
+      const testRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "Test Empty Role Hat",
+      );
+
+      const wearers: Address[] = [];
+      const times: bigint[] = [];
+
+      await expect(
+        HatsTimeFrameModule.write.batchMintHat([testRoleHatId, wearers, times]),
+      ).to.be.rejectedWith("Empty wearers array");
+    });
+
+    it("should revert if batch size exceeds limit", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test
+      const testRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "Test Large Role Hat",
+      );
+
+      // Create arrays with 101 items (exceeds limit of 100)
+      const wearers = Array(101).fill(address1Validated) as Address[];
+      const times = Array(101).fill(0n) as bigint[];
+
+      await expect(
+        HatsTimeFrameModule.write.batchMintHat([testRoleHatId, wearers, times]),
+      ).to.be.rejectedWith("Batch size too large");
+    });
+
+    it("should revert if any hat already minted", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test
+      const testRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "Test Existing Role Hat",
+      );
+
+      // First mint a hat to address1
+      await HatsTimeFrameModule.write.mintHat([
+        testRoleHatId,
+        address1Validated,
+        0n,
+      ]);
+
+      // Try to batch mint including the already minted address
+      const wearers = [address1Validated, address2Validated];
+      const times = [0n, 0n];
+
+      await expect(
+        HatsTimeFrameModule.write.batchMintHat([testRoleHatId, wearers, times]),
+      ).to.be.rejectedWith("Hat already minted");
+    });
+
+    it("should handle mixed timestamps correctly", async () => {
+      if (!roleHatId) {
+        throw new Error("Role hat ID is undefined");
+      }
+
+      // Create new hat for this test
+      const newRoleHatId = await createHat(
+        publicClient,
+        roleHatId,
+        "New Role Hat",
+      );
+
+      const currentTime = BigInt(await time.latest());
+      const pastTime = currentTime - 1000n;
+
+      const wearers = [address1Validated, address2Validated];
+      const times = [pastTime, 0n]; // One past time, one current time
+
+      await HatsTimeFrameModule.write.batchMintHat([
+        newRoleHatId,
+        wearers,
+        times,
+      ]);
+
+      const woreTime1 = await HatsTimeFrameModule.read.getWoreTime([
+        address1Validated,
+        newRoleHatId,
+      ]);
+      const woreTime2 = await HatsTimeFrameModule.read.getWoreTime([
+        address2Validated,
+        newRoleHatId,
+      ]);
+
+      expect(woreTime1).to.equal(pastTime);
+      expect(Number(woreTime2)).to.be.greaterThan(Number(currentTime));
+    });
   });
 });

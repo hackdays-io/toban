@@ -62,6 +62,7 @@ describe("IntegrationTest", () => {
   let HatsHatCreatorModuleByBigBang: HatsHatCreatorModule;
   let HatsFractionTokenModuleByBigBang: HatsFractionTokenModule;
   let SplitsCreatorByBigBang: SplitsCreator;
+  let ThanksTokenByBigBang: ThanksToken;
   let DeployedPullSplit: Awaited<ReturnType<typeof getPullSplitContract>>;
 
   let topHatId: bigint;
@@ -117,17 +118,6 @@ describe("IntegrationTest", () => {
     PushSplitsFactory = _PushSplitsFactory;
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: await deployer
-          .getAddresses()
-          .then((addresses) => addresses[0]),
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     ThanksToken_IMPL = _ThanksToken;
@@ -194,6 +184,8 @@ describe("IntegrationTest", () => {
         "tophatURI",
         "hatterhatDetails",
         "hatterhatURI",
+        "memberhatDetails",
+        "memberhatURI",
       ],
       { account: deployer.account },
     );
@@ -222,6 +214,7 @@ describe("IntegrationTest", () => {
           const hatsFractionTokenModuleAddress =
             decodedLog.args.hatsFractionTokenModule;
           const splitsCreatorAddress = decodedLog.args.splitCreator;
+          const thanksTokenAddress = decodedLog.args.thanksToken;
 
           topHatId = decodedLog.args.topHatId;
           hatterHatId = decodedLog.args.hatterHatId;
@@ -237,6 +230,10 @@ describe("IntegrationTest", () => {
           HatsFractionTokenModuleByBigBang = await viem.getContractAt(
             "HatsFractionTokenModule",
             hatsFractionTokenModuleAddress,
+          );
+          ThanksTokenByBigBang = await viem.getContractAt(
+            "ThanksToken",
+            thanksTokenAddress,
           );
 
           SplitsCreatorByBigBang = await viem.getContractAt(
@@ -401,6 +398,14 @@ describe("IntegrationTest", () => {
     expect(balance).to.equal(1000n);
   });
 
+  it("should ThanksToken", async () => {
+    const zeroAddressBalance = await ThanksTokenByBigBang.read.balanceOf([
+      zeroAddress,
+    ]);
+
+    console.log("Zero address balance:", zeroAddressBalance);
+  });
+
   it("should create PullSplits contract", async () => {
     // address1とaddress2に50%ずつ配分するSplitを作成
     const tx = await SplitsCreatorByBigBang.write.create([
@@ -412,6 +417,12 @@ describe("IntegrationTest", () => {
           multiplierTop: 1n,
         },
       ],
+      {
+        roleWeight: 1n,
+        thanksTokenWeight: 0n,
+        thanksTokenReceivedWeight: 95n,
+        thanksTokenSentWeight: 5n,
+      },
     ]);
 
     const receipt = await publicClient.waitForTransactionReceipt({

@@ -9,7 +9,7 @@ interface IThanksTokenFactory {
         uint256 defaultCoefficient,
         bytes32 salt
     ) external returns (address);
-    
+
     function createThanksTokenDeterministic(
         string memory name,
         string memory symbol,
@@ -17,7 +17,7 @@ interface IThanksTokenFactory {
         uint256 defaultCoefficient,
         bytes32 salt
     ) external returns (address);
-    
+
     function predictThanksTokenAddress(
         string memory name,
         string memory symbol,

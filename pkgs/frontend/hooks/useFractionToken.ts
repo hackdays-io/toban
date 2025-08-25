@@ -500,16 +500,14 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 const queryGetTransferFractionTokens = gql(`
   query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
     transferFractionTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
-      amount
-      from
+      id
       to
       tokenId
-      blockNumber
-      blockTimestamp
-      hatId
-      id
-      wearer
       workspaceId
+      from
+      blockTimestamp
+      blockNumber
+      amount
     }
   }
 `);
@@ -519,13 +517,26 @@ export const useGetTransferFractionTokens = (params: {
   orderBy?: TransferFractionToken_OrderBy;
   orderDirection?: OrderDirection;
   first?: number;
+  // 期間指定パラメータ
+  dateRange?: {
+    startDate?: string;
+    endDate?: string;
+  };
 }) => {
   const result = useQuery<
     GetTransferFractionTokensQuery,
     GetTransferFractionTokensQueryVariables
   >(queryGetTransferFractionTokens, {
     variables: {
-      where: params.where,
+      where: {
+        ...params.where,
+        ...(params.dateRange?.startDate && {
+          blockTimestamp_gte: params.dateRange.startDate,
+        }),
+        ...(params.dateRange?.endDate && {
+          blockTimestamp_lte: params.dateRange.endDate,
+        }),
+      },
       orderBy: params.orderBy,
       orderDirection: params.orderDirection,
       first: params.first,

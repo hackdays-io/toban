@@ -9,15 +9,31 @@
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
           "handler": "handleExecuted"
         }
       ]
     },
     {
-      "address": "0xBe3eC807B3062bfbADDa16c05C060d223F727fa3",
-      "file": "FractionToken",
-      "mappingFile": "fractionTokenMapping",
+      "address": "",
+      "file": "ThanksToken",
+      "mappingFile": "thanksTokenMapping",
+      "entities": [{ "name": "TokenMinted" }, { "name": "Transfer" }],
+      "handlers": [
+        {
+          "event": "TokenMinted(indexed address,uint256,uint256)",
+          "handler": "handleTokenMinted"
+        },
+        {
+          "event": "Transfer(indexed address,indexed address,uint256)",
+          "handler": "handleTransfer"
+        }
+      ]
+    }
+  ],
+  "hatsModuleContracts": [
+    {
+      "file": "HatsFractionTokenModule",
       "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
       "handlers": [
         {
@@ -27,42 +43,6 @@
         {
           "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
           "handler": "handleTransferSingle"
-        }
-      ]
-    }
-  ],
-  "hatsModuleContracts": [
-    {
-      "file": "HatsHatCreatorModule",
-      "entities": [
-        { "name": "CreateHatAuthorityGranted" },
-        { "name": "CreateHatAuthorityRevoked" }
-      ],
-      "handlers": [
-        {
-          "event": "CreateHatAuthorityGranted(indexed address)",
-          "handler": "handleCreateHatAuthorityGranted"
-        },
-        {
-          "event": "CreateHatAuthorityRevoked(indexed address)",
-          "handler": "handleCreateHatAuthorityRevoked"
-        }
-      ]
-    },
-    {
-      "file": "HatsTimeFrameModule",
-      "entities": [
-        { "name": "OperationAuthorityGranted" },
-        { "name": "OperationAuthorityRevoked" }
-      ],
-      "handlers": [
-        {
-          "event": "OperationAuthorityGranted(indexed address)",
-          "handler": "handleOperationAuthorityGranted"
-        },
-        {
-          "event": "OperationAuthorityRevoked(indexed address)",
-          "handler": "handleOperationAuthorityRevoked"
         }
       ]
     }

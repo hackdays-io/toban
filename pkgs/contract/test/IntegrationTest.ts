@@ -42,6 +42,7 @@ import {
   Create2Deployer,
   deployCreate2Deployer,
 } from "../helpers/deploy/Create2Factory";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("IntegrationTest", () => {
   let Create2Deployer: Create2Deployer;
@@ -130,8 +131,6 @@ describe("IntegrationTest", () => {
             .then((addresses) => addresses[0]),
           implementation: ThanksToken_IMPL.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
         },
         Create2Deployer.address,
       );
@@ -254,7 +253,9 @@ describe("IntegrationTest", () => {
 
           expect(CheckHatsTimeFrameModule).to.equal(hatsTimeFrameModuleAddress);
         }
-      } catch (error) {}
+      } catch (error) {
+        continue;
+      }
     }
   });
 
@@ -399,11 +400,69 @@ describe("IntegrationTest", () => {
   });
 
   it("should ThanksToken", async () => {
-    const zeroAddressBalance = await ThanksTokenByBigBang.read.balanceOf([
-      zeroAddress,
-    ]);
+    const thanksTokenTimeFrameModule =
+      await ThanksTokenByBigBang.read.HATS_TIME_FRAME_MODULE();
+    expect(thanksTokenTimeFrameModule).to.be.equal(
+      HatsTimeFrameModuleByBigBang.address,
+    );
 
-    console.log("Zero address balance:", zeroAddressBalance);
+    const thanksTokenFractionTokenModule =
+      await ThanksTokenByBigBang.read.FRACTION_TOKEN();
+    expect(thanksTokenFractionTokenModule).to.be.equal(
+      HatsFractionTokenModuleByBigBang.address,
+    );
+
+    await time.increase(7200);
+
+    const mintableAmountOfAddress1Before =
+      await ThanksTokenByBigBang.read.mintableAmount([
+        address1.account?.address!,
+        [
+          {
+            hatId: hat1_id,
+            wearer: address1.account?.address!,
+          },
+        ],
+      ]);
+
+    await ThanksTokenByBigBang.write.mint(
+      [
+        address2.account?.address!,
+        1000n,
+        [
+          {
+            hatId: hat1_id,
+            wearer: address1.account?.address!,
+          },
+        ],
+      ],
+      { account: address1.account },
+    );
+
+    const address2Balance = await ThanksTokenByBigBang.read.balanceOf([
+      address2.account?.address!,
+    ]);
+    expect(address2Balance).to.equal(1000n);
+
+    const address1MintedAmount = await ThanksTokenByBigBang.read.mintedAmount([
+      address1.account?.address!,
+    ]);
+    expect(address1MintedAmount).to.equal(1000n);
+
+    const mintableAmountOfAddress1After =
+      await ThanksTokenByBigBang.read.mintableAmount([
+        address1.account?.address!,
+        [
+          {
+            hatId: hat1_id,
+            wearer: address1.account?.address!,
+          },
+        ],
+      ]);
+
+    expect(mintableAmountOfAddress1After).to.equal(
+      mintableAmountOfAddress1Before - 1000n,
+    );
   });
 
   it("should create PullSplits contract", async () => {
@@ -419,7 +478,7 @@ describe("IntegrationTest", () => {
       ],
       {
         roleWeight: 1n,
-        thanksTokenWeight: 0n,
+        thanksTokenWeight: 1n,
         thanksTokenReceivedWeight: 95n,
         thanksTokenSentWeight: 5n,
       },
@@ -454,8 +513,8 @@ describe("IntegrationTest", () => {
       }
     }
 
-    expect(shareHolders.length).to.equal(3);
-    expect(allocations.length).to.equal(3);
+    expect(shareHolders.length).to.equal(5);
+    expect(allocations.length).to.equal(5);
 
     DeployedPullSplit = await viem.getContractAt("PullSplit", splitAddress);
 
@@ -548,19 +607,19 @@ describe("IntegrationTest", () => {
       address: address3.account?.address!,
     });
 
-    // withdrawのガス代を引いて大体0.45ETH増えているはず
+    // withdrawのガス代を引いて大体0.25ETH増えているはず
     expect(Number(afterAddress1Balance) - Number(beforeAddress1Balance))
-      .gt(449900000000000000)
-      .lt(450100000000000000);
+      .gt(249900000000000000)
+      .lt(250100000000000000);
 
-    // withdrawのガス代を引いて大体0.5ETH増えているはず
+    // withdrawのガス代を引いて大体0.72ETH増えているはず
     expect(Number(afterAddress2Balance) - Number(beforeAddress2Balance))
-      .gt(499900000000000000)
-      .lt(500100000000000000);
+      .gt(724900000000000000)
+      .lt(725100000000000000);
 
-    // 0.05ETH増えているはず
+    // 0.025ETH増えているはず
     expect(Number(afterAddress3Balance) - Number(beforeAddress3Balance))
-      .gt(49900000000000000)
-      .lt(50100000000000000);
+      .gt(24900000000000000)
+      .lt(25010000000000000);
   });
 });

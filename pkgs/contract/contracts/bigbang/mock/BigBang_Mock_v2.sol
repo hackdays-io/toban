@@ -203,7 +203,9 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
                 string(abi.encodePacked("ThanksToken ", _topHatDetails)),
                 string(abi.encodePacked("THX", topHatId)),
                 _owner,
-                1e18, // デフォルト係数（1.0）
+                1e18,
+                hatsFractionTokenModule,
+                hatsTimeFrameModule,
                 keccak256(abi.encodePacked(topHatId, "ThanksToken"))
             );
 

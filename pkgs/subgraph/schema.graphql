@@ -1,78 +1,154 @@
 type Workspace @entity {
   id: ID!
   creator: String!
+  owner: String!
   topHatId: BigInt!
   hatterHatId: BigInt!
-  hatsTimeFrameModule: HatsTimeFrameModule
-  hatsHatCreatorModule: HatsHatCreatorModule
+  operatorHatId: BigInt!
+  creatorHatId: BigInt!
+  minterHatId: BigInt!
+  hatsTimeFrameModule: String!
+  hatsHatCreatorModule: String!
+  hatsFractionTokenModule: HatsFractionTokenModule
+  thanksToken: ThanksToken!
   splitCreator: String!
+  thanksToken: ThanksToken
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }
 
-type HatsTimeFrameModule @entity {
+type HatsFractionTokenModule @entity {
   id: ID!
   workspaceId: ID!
-  authorities: [HatsTimeFrameModuleAuthority!]!
-    @derivedFrom(field: "hatsTimeFrameModule")
-}
-
-type HatsTimeFrameModuleAuthority @entity {
-  id: ID!
-  workspaceId: ID!
-  hatsTimeFrameModule: HatsTimeFrameModule!
-  address: String!
-  authorised: Boolean!
-  blockTimestamp: BigInt!
-  blockNumber: BigInt!
-}
-
-type HatsHatCreatorModule @entity {
-  id: ID!
-  workspaceId: ID!
-  authorities: [HatsHatCreatorModuleAuthority!]!
-    @derivedFrom(field: "hatsHatCreatorModule")
-}
-
-type HatsHatCreatorModuleAuthority @entity {
-  id: ID!
-  workspaceId: ID!
-  hatsHatCreatorModule: HatsHatCreatorModule!
-  address: String!
-  authorised: Boolean!
-  blockTimestamp: BigInt!
-  blockNumber: BigInt!
+  initializedTokens: [InitializedFractionToken!]!
+    @derivedFrom(field: "hatsFractionTokenModule")
+  transfers: [TransferFractionToken!]!
+    @derivedFrom(field: "hatsFractionTokenModule")
+  balances: [BalanceOfFractionToken!]!
+    @derivedFrom(field: "hatsFractionTokenModule")
 }
 
 type InitializedFractionToken @entity {
   id: ID!
-  workspaceId: ID!
-  wearer: String!
+  hatsFractionTokenModule: HatsFractionTokenModule!
+  tokenId: BigInt!
   hatId: BigInt!
+  wearer: String!
+  workspaceId: ID!
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }
 
 type TransferFractionToken @entity {
   id: ID!
+  hatsFractionTokenModule: HatsFractionTokenModule!
   from: String!
   to: String!
   tokenId: BigInt!
   amount: BigInt!
-  workspaceId: ID
-  hatId: BigInt
-  wearer: String
+  workspaceId: ID!
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }
 
 type BalanceOfFractionToken @entity {
   id: ID!
+  hatsFractionTokenModule: HatsFractionTokenModule!
   owner: String!
   tokenId: BigInt!
   balance: BigInt!
-  workspaceId: ID
-  hatId: BigInt
-  wearer: String
+  workspaceId: ID!
+  hatId: BigInt!
+  wearer: String!
   updatedAt: BigInt!
+}
+
+type ThanksToken @entity {
+  id: ID!
+  workspaceId: ID!
+  mints: [MintThanksToken!]! @derivedFrom(field: "thanksToken")
+  transfers: [TransferThanksToken!]! @derivedFrom(field: "thanksToken")
+  mintAmounts: [AmountOfMintThanksToken!]! @derivedFrom(field: "thanksToken")
+  balances: [BalanceOfThanksToken!]! @derivedFrom(field: "thanksToken")
+}
+
+type MintThanksToken @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  from: String!
+  to: String!
+  amount: BigInt!
+  workspaceId: ID!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type TransferThanksToken @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  from: String!
+  to: String!
+  amount: BigInt!
+  workspaceId: ID!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type AmountOfMintThanksToken @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  sender: String!
+  amount: BigInt!
+  workspaceId: ID!
+  updatedAt: BigInt!
+}
+
+type BalanceOfThanksToken @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  owner: String!
+  balance: BigInt!
+  workspaceId: ID!
+  updatedAt: BigInt!
+}
+
+type ThanksToken @entity {
+  id: ID!
+  workspaceId: ID!
+  address: String!
+  name: String!
+  symbol: String!
+  totalSupply: BigInt!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type ThanksTokenTransfer @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  from: String!
+  to: String!
+  amount: BigInt!
+  workspaceId: ID!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type ThanksTokenBalance @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  owner: String!
+  balance: BigInt!
+  workspaceId: ID!
+  updatedAt: BigInt!
+}
+
+type ThanksTokenMint @entity {
+  id: ID!
+  thanksToken: ThanksToken!
+  to: String!
+  amount: BigInt!
+  workspaceId: ID!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
 }

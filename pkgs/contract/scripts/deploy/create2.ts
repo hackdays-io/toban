@@ -32,21 +32,31 @@ const deploy = async () => {
   const { HatsHatCreatorModule } = await deployHatsHatCreatorModule("0.0.0"); // zero address 以外のアドレスを仮に渡す
   const hatsHatCreatorModuleAddress = HatsHatCreatorModule.address;
 
-  // Deploy SplitsCreator (non-upgradeable)
-  const { SplitsCreator } = await deploySplitsCreator();
-  const splitsCreatorAddress = SplitsCreator.address;
-
-  // Deploy FractionToken implementation and proxy
-  console.log("Deploying FractionToken...");
-
-  // const { FractionToken, FractionTokenImplAddress, FractionTokenInitData } =
-  //   await deployFractionToken("", 10000n, process.env.HATS_ADDRESS as Address);
-  // const fractionTokenAddress = FractionToken.address;
-
   const { HatsFractionTokenModule } =
     await deployHatsFractionTokenModule("0.0.0");
   const hatsFractionTokenModuleAddress = HatsFractionTokenModule.address;
 
+  console.log("Deploying ThanksToken...");
+  const { ThanksToken } = await deployThanksToken();
+  const thanksTokenAddress = ThanksToken.address;
+
+  console.log("Deploying ThanksTokenFactory...");
+
+  const {
+    ThanksTokenFactory,
+    ThanksTokenFactoryImplAddress,
+    ThanksTokenFactoryInitData,
+  } = await deployThanksTokenFactory({
+    initialOwner: deployerAddress as Address,
+    implementation: thanksTokenAddress,
+    hatsAddress: process.env.HATS_ADDRESS as Address,
+  });
+  const thanksTokenFactoryAddress = ThanksTokenFactory.address;
+
+  // Deploy SplitsCreator (non-upgradeable)
+  const { SplitsCreator } = await deploySplitsCreator();
+  const splitsCreatorAddress = SplitsCreator.address;
+  
   // Deploy SplitsCreatorFactory implementation and proxy
   console.log("Deploying SplitsCreatorFactory...");
 
@@ -122,8 +132,12 @@ const deploy = async () => {
     `pnpm contract hardhat verify ${hatsFractionTokenModuleAddress} 0.0.0 --network ${network.name}\n`,
   );
   console.log(
+    "ThanksToken:\n",
+    `pnpm contract hardhat verify ${thanksTokenAddress} --network ${network.name}\n`,
+  );
+  console.log(
     "ThanksTokenFactory:\n",
-    `pnpm contract hardhat verify ${thanksTokenFactoryAddress} --network ${network.name} &&`,
+    `pnpm contract hardhat verify ${ThanksTokenFactoryImplAddress} --network ${network.name} &&`,
     `pnpm contract hardhat verify ${thanksTokenFactoryAddress} ${ThanksTokenFactoryImplAddress} ${ThanksTokenFactoryInitData} --network ${network.name}\n`,
   );
   console.log(

@@ -97,13 +97,9 @@ describe("BigBang", () => {
     const { ThanksTokenFactory: _ThanksTokenFactory } =
       await deployThanksTokenFactory(
         {
-          initialOwner: await address1
-            .getAddresses()
-            .then((addresses) => addresses[0]),
+          initialOwner: address1.account?.address!,
           implementation: ThanksToken_IMPL.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
         },
         Create2Deployer.address,
       );

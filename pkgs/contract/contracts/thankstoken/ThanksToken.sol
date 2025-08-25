@@ -43,7 +43,11 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         return IHatsFractionTokenModule(_getArgAddress(140)); // 12 + 128
     }
 
-    function HATS_TIME_FRAME_MODULE() public pure returns (IHatsTimeFrameModule) {
+    function HATS_TIME_FRAME_MODULE()
+        public
+        pure
+        returns (IHatsTimeFrameModule)
+    {
         return IHatsTimeFrameModule(_getArgAddress(172)); // 12 + 160
     }
 
@@ -61,7 +65,9 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     }
 
     // Helper function to read dynamic strings from clone args
-    function _getArgString(uint256 argIndex) internal pure returns (string memory) {
+    function _getArgString(
+        uint256 argIndex
+    ) internal pure returns (string memory) {
         // Calculate offset to the string offset pointer
         // Name is at offset 32 (after workspaceOwner), Symbol at offset 64
         uint256 stringPointerOffset = 32 + (argIndex * 32);
@@ -93,7 +99,10 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
 
     // Owner modifier
     modifier onlyOwner() {
-        require(msg.sender == WORKSPACE_OWNER(), "Ownable: caller is not the owner");
+        require(
+            msg.sender == WORKSPACE_OWNER(),
+            "Ownable: caller is not the owner"
+        );
         _;
     }
 
@@ -124,7 +133,7 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
             _isParticipant[to] = true;
         }
 
-        emit TokensMinted(to, amount);
+        emit TokenMinted(msg.sender, to, amount);
 
         return true;
     }

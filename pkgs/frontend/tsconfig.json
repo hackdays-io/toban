@@ -7,7 +7,7 @@
     "**/.client/**/*.ts",
     "**/.client/**/*.tsx"
   ],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "gql"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": [

@@ -235,8 +235,6 @@ describe("SplitsCreator Factory", () => {
           initialOwner: deployer.account?.address!, // Use deployer as initial owner
           implementation: ThanksToken_IMPL.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: hatsFractionTokenModuleAddress,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
         },
         Create2Deployer.address,
       );
@@ -255,6 +253,8 @@ describe("SplitsCreator Factory", () => {
           "TTK",
           bigBangAddress.account?.address!,
           1000000000000000000n, // 1.0 in wei (default coefficient)
+          hatsFractionTokenModuleAddress,
+          hatsTimeFrameModuleAddress,
           "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
         ],
         { account: bigBangAddress.account },
@@ -579,8 +579,6 @@ describe("CreateSplit without thanks token weight", () => {
           initialOwner: deployer.account?.address!, // Use deployer as initial owner
           implementation: ThanksToken_IMPL.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: hatsFractionTokenModuleAddress,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
         },
         Create2Deployer.address,
       );
@@ -599,6 +597,8 @@ describe("CreateSplit without thanks token weight", () => {
           "TTK",
           bigBangAddress.account?.address!,
           1000000000000000000n, // 1.0 in wei (default coefficient)
+          hatsFractionTokenModuleAddress,
+          hatsTimeFrameModuleAddress,
           "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
         ],
         { account: bigBangAddress.account },
@@ -1453,8 +1453,6 @@ describe("CreateSplit with thanks token weight", () => {
           initialOwner: deployer.account?.address!, // Use deployer as initial owner
           implementation: ThanksToken_IMPL.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: hatsFractionTokenModuleAddress,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
         },
         Create2Deployer.address,
       );
@@ -1473,6 +1471,8 @@ describe("CreateSplit with thanks token weight", () => {
           "TTK",
           bigBangAddress.account?.address!,
           1000000000000000000n, // 1.0 in wei (default coefficient)
+          hatsFractionTokenModuleAddress,
+          hatsTimeFrameModuleAddress,
           "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
         ],
         { account: bigBangAddress.account },
@@ -1757,8 +1757,6 @@ describe("CreateSplit with thanks token weight", () => {
             initialOwner: deployer.account?.address!, // Use deployer as initial owner
             implementation: ThanksToken_IMPL.address,
             hatsAddress: Hats.address,
-            fractionTokenAddress: HatsFractionTokenModule.address,
-            hatsTimeFrameModuleAddress: HatsTimeFrameModule.address,
           },
           Create2Deployer.address,
         );
@@ -1777,6 +1775,8 @@ describe("CreateSplit with thanks token weight", () => {
             "TTK",
             bigBangAddress.account?.address!,
             10000000000000000000n, // 10.0 in wei (higher coefficient for testing)
+            HatsFractionTokenModule?.address as Address,
+            HatsTimeFrameModule?.address as Address,
             "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
           ],
           { account: bigBangAddress.account },

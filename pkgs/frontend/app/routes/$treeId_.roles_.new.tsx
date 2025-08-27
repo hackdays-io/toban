@@ -71,7 +71,7 @@ const NewRole: FC = () => {
   const { wallet } = useActiveWallet();
   const { data: workspace } = useGetWorkspace(treeId);
   const { createHat } = useCreateHatFromHatCreatorModule(
-    workspace?.workspace?.hatsHatCreatorModule?.id as Address,
+    workspace?.workspace?.hatsHatCreatorModule as Address,
   );
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { uploadImageFileToIpfs } = useUploadImageFileToIpfs();

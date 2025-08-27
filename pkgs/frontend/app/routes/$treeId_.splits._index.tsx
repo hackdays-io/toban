@@ -18,11 +18,17 @@ import {
   useSplitsCreatorRelatedSplits,
   useUserEarnings,
 } from "hooks/useSplitsCreator";
-import { currentChain, publicClient } from "hooks/useViem";
+import { publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
-import { type MouseEvent, useEffect, useMemo } from "react";
-import { type FC, useCallback, useState } from "react";
+import {
+  type FC,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { FaAngleDown, FaRegCopy } from "react-icons/fa6";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
@@ -164,7 +170,7 @@ const SplitInfoItem: FC<SplitInfoItemProps> = ({ split, name }) => {
 const SplitsIndex: FC = () => {
   const { treeId } = useParams();
 
-  const { data } = useGetWorkspace(treeId);
+  const { data } = useGetWorkspace({ workspaceId: treeId || "" });
 
   const splitCreatorAddress = useMemo(() => {
     return data?.workspace?.splitCreator as Address;

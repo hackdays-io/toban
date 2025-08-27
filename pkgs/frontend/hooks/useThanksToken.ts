@@ -7,6 +7,8 @@ import {
   type GetThanksTokenMintsQueryVariables,
   type GetThanksTokenTransfersQuery,
   type GetThanksTokenTransfersQueryVariables,
+  type GetThanksTokensQuery,
+  type GetThanksTokensQueryVariables,
   type MintThanksToken_Filter,
   MintThanksToken_OrderBy,
   type OrderDirection,
@@ -14,10 +16,10 @@ import {
   TransferThanksToken_OrderBy,
 } from "gql/graphql";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatEther } from "viem";
 import type { Address } from "viem";
+import { formatEther } from "viem";
 import { thanksTokenBaseConfig } from "./useContracts";
-import { useBalanceOfFractionTokens } from "./useFractionToken";
+import { useGetBalanceOfFractionTokens } from "./useFractionToken";
 import { useTreeInfo } from "./useHats";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
@@ -87,6 +89,17 @@ const queryGetThanksTokenTransfers = gql(`
       workspaceId
       blockTimestamp
       blockNumber
+    }
+  }
+`);
+
+const queryGetThanksTokens = gql(`
+  query GetThanksTokens($where: ThanksToken_filter, $first: Int = 100) {
+    thanksTokens(
+      where: $where
+      first: $first
+    ) {
+      workspaceId
     }
   }
 `);
@@ -171,7 +184,7 @@ export const useGetMintThanksTokens = (params: {
 };
 
 export const useThanksToken = (treeId: string) => {
-  const { data } = useGetWorkspace(treeId);
+  const { data } = useGetWorkspace({ workspaceId: treeId });
   const treeInfo = useTreeInfo(Number(treeId));
   const { wallet } = useActiveWallet();
   const [mintableAmount, setMintableAmount] = useState<bigint>();
@@ -185,7 +198,7 @@ export const useThanksToken = (treeId: string) => {
     );
   }, [treeInfo, walletAddress]);
 
-  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
+  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
     where: {
       workspaceId: treeId,
       owner: wallet?.account.address.toLowerCase(),
@@ -336,4 +349,15 @@ export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
     mints: mintsData,
     isLoading: transfersLoading || mintsLoading,
   };
+};
+
+export const useGetThanksTokens = (
+  variables?: GetThanksTokensQueryVariables,
+) => {
+  const result = useQuery<GetThanksTokensQuery, GetThanksTokensQueryVariables>(
+    queryGetThanksTokens,
+    { variables },
+  );
+
+  return result;
 };

@@ -7,7 +7,7 @@ import {
   useNamesByAddresses,
 } from "hooks/useENS";
 import {
-  useBalanceOfFractionTokens,
+  useGetBalanceOfFractionTokens,
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
@@ -33,7 +33,7 @@ const AssistCreditSend: FC = () => {
   const { treeId, hatId, address } = useParams();
   const me = useActiveWalletIdentity();
 
-  const { data } = useBalanceOfFractionTokens({
+  const { data } = useGetBalanceOfFractionTokens({
     where: {
       workspaceId: treeId,
       hatId: BigInt(hatId ?? "").toString(),

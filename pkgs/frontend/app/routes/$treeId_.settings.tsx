@@ -485,7 +485,7 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
   treeId,
   treeInfo,
 }) => {
-  const { data, refetch } = useGetWorkspace(treeId);
+  const { data, refetch } = useGetWorkspace({ workspaceId: treeId || "" });
   const {
     grantCreateHatAuthority,
     isLoading: isGrantCreateHatAuthorityLoading,

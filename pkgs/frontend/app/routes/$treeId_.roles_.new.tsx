@@ -69,7 +69,7 @@ const NewRole: FC = () => {
   });
 
   const { wallet } = useActiveWallet();
-  const { data: workspace } = useGetWorkspace(treeId);
+  const { data: workspace } = useGetWorkspace({ workspaceId: treeId || "" });
   const { createHat } = useCreateHatFromHatCreatorModule(
     workspace?.workspace?.hatsHatCreatorModule as Address,
   );

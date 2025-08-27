@@ -8,3 +8,11 @@ export const goldskyClient = new ApolloClient({
   }),
   cache: new InMemoryCache(),
 });
+
+export const hatsApolloClient = new ApolloClient({
+  ssrMode: typeof window === "undefined",
+  link: new HttpLink({
+    uri: import.meta.env.VITE_HATS_GRAPHQL_ENDPOINT,
+  }),
+  cache: new InMemoryCache(),
+});

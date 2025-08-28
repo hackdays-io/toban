@@ -25,19 +25,16 @@ const WorkspaceTop: FC = () => {
 
   return (
     <>
-      {/* Thanks Token summary */}
-      <Box my={4}>
-        <Heading pb={3}>サンクストークン</Heading>
-        {/* If you have a total received value, pass it as receivedTotal */}
-        <ThanksTokenSummary treeId={treeId} /* receivedTotal={514230} */ />
+      <Box mb={4}>
+        <ThanksTokenSummary treeId={treeId} />
       </Box>
 
       {/* Recent activity */}
-      <Box my={4}>
+      <Box my={8}>
         <HStack justify="space-between" alignItems="center" pb={4}>
           <Heading fontSize="xl">直近のアクティビティ</Heading>
           <Link to={`/${treeId}/thankstoken/history`}>
-            <CommonButton size="xs" bgColor="green.400">
+            <CommonButton size="xs" bgColor="yellow.400">
               もっと見る
             </CommonButton>
           </Link>
@@ -71,10 +68,7 @@ const WorkspaceTop: FC = () => {
 
 export default WorkspaceTop;
 
-const ThanksTokenSummary: FC<{ treeId?: string; receivedTotal?: number }> = ({
-  treeId,
-  receivedTotal,
-}) => {
+const ThanksTokenSummary: FC<{ treeId?: string }> = ({ treeId }) => {
   const navigate = useNavigate();
   const { balance: thanksTokenBalance } = useUserThanksTokenBalance(treeId);
   const { mintableAmount } = useThanksToken(treeId || "");
@@ -100,18 +94,14 @@ const ThanksTokenSummary: FC<{ treeId?: string; receivedTotal?: number }> = ({
 
           <HStack gap={2} align="baseline">
             <Text fontSize={{ base: "4xl", sm: "5xl" }} fontWeight="bold">
-              {Math.ceil(
-                Number(formatEther(mintableAmount || 0n)),
-              ).toLocaleString()}
+              {Number(formatEther(mintableAmount || 0n)).toLocaleString()}
             </Text>
             <Text fontSize="xs" color="gray.500">
-              thanks
+              THX
             </Text>
           </HStack>
 
           <CommonButton
-            w="56"
-            h="12"
             fontSize="md"
             borderRadius="xl"
             bgColor="yellow.400"
@@ -119,29 +109,25 @@ const ThanksTokenSummary: FC<{ treeId?: string; receivedTotal?: number }> = ({
             onClick={() => treeId && navigate(`/${treeId}/thankstoken/send`)}
           >
             <HStack gap={2}>
-              <FaPlus />
-              <Text>送る</Text>
+              <Text>サンクストークンを送る</Text>
             </HStack>
           </CommonButton>
         </VStack>
       </Box>
 
-      {/* Optional “受け取ったThanks” line */}
-      {typeof receivedTotal === "number" && (
-        <Box maxW="sm" mx="auto" w="full" pt={1}>
-          <Text fontSize="sm" color="gray.600">
-            受け取ったThanks
+      <Box maxW="sm" mx="auto" w="full" pt={1}>
+        <Text fontSize="sm" color="gray.600">
+          受け取ったサンクストークン
+        </Text>
+        <HStack gap={2} align="baseline">
+          <Text fontSize="3xl" fontWeight="bold">
+            {Number(formatEther(BigInt(thanksTokenBalance))).toLocaleString()}
           </Text>
-          <HStack gap={2} align="baseline">
-            <Text fontSize="3xl" fontWeight="bold">
-              {receivedTotal.toLocaleString()}
-            </Text>
-            <Text fontSize="xs" color="gray.500">
-              thanks
-            </Text>
-          </HStack>
-        </Box>
-      )}
+          <Text fontSize="xs" color="gray.500">
+            THX
+          </Text>
+        </HStack>
+      </Box>
     </VStack>
   );
 };

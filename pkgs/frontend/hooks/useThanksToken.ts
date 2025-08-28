@@ -225,7 +225,12 @@ export const useThanksToken = (treeId: string) => {
 
   useEffect(() => {
     const fetchMintableAmount = async () => {
-      if (!relatedRoles.length || !data?.workspace?.thanksToken.id) return;
+      if (
+        !relatedRoles.length ||
+        !data?.workspace?.thanksToken.id ||
+        !walletAddress
+      )
+        return;
 
       const amount = await publicClient.readContract({
         ...thanksTokenBaseConfig(

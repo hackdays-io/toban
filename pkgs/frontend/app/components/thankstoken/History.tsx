@@ -23,16 +23,7 @@ interface UserProps extends Props {
 
 interface ActivityItemProps {
   treeId: string;
-  activity: {
-    type: "transfer" | "mint";
-    from?: string;
-    to: string;
-    amount: string;
-    blockTimestamp: string;
-    thanksToken: {
-      symbol: string;
-    };
-  };
+  activity: GetThanksTokenMintsQuery["mintThanksTokens"][0];
 }
 
 const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
@@ -40,33 +31,26 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
   activity,
 }) => {
   const addresses = useMemo(() => {
-    if (activity.type === "transfer" && activity.from) {
-      return [activity.from, activity.to];
-    }
-    return [activity.to];
+    return [activity.from, activity.to].filter(Boolean);
   }, [activity]);
 
   const { names } = useNamesByAddresses(addresses);
-
   const fromUser = useMemo(() => {
-    return activity.type === "transfer" ? names?.[0]?.[0] : null;
-  }, [names, activity.type]);
+    return names?.[0]?.[0];
+  }, [names]);
 
   const toUser = useMemo(() => {
-    return activity.type === "transfer" ? names?.[1]?.[0] : names?.[0]?.[0];
-  }, [names, activity.type]);
-
-  const isTransfer = activity.type === "transfer";
+    return names?.[1]?.[0];
+  }, [names]);
 
   return (
     <Box
-      h="60px"
       py={3}
       px={2}
       w="full"
       borderColor="gray.200"
       position="relative"
-      bgColor={isTransfer ? "green.100" : "blue.100"}
+      bgColor="green.100"
       borderRadius={5}
       overflow="hidden"
     >
@@ -76,7 +60,7 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
         h="100%"
         top={0}
         left={0}
-        bgColor={isTransfer ? "green.300" : "blue.300"}
+        bgColor="green.300"
         opacity={0.5}
       />
       <Box
@@ -90,52 +74,39 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
         borderTop="30px solid transparent"
         borderBottom="30px solid transparent"
         borderLeft="60px solid"
-        borderLeftColor={isTransfer ? "green.300" : "blue.300"}
+        borderLeftColor="green.300"
         opacity={0.5}
         marginRight={2}
       />
       <Grid
         position="relative"
-        gridTemplateColumns={isTransfer ? "37.5% 25% 37.5%" : "50% 50%"}
+        gridTemplateColumns="37.5% 25% 37.5%"
         justifyContent="space-between"
         alignItems="center"
       >
-        {isTransfer && activity.from && (
-          <Link to={`/${treeId}/member/${activity.from}`}>
-            <Flex alignItems="center" gap={2}>
-              <UserIcon
-                size="25px"
-                userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
-              />
-              <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                {fromUser?.name || abbreviateAddress(activity.from)}
-              </Text>
-            </Flex>
-          </Link>
-        )}
+        <Link to={`/${treeId}/member/${activity.from}`}>
+          <Flex alignItems="center" gap={2}>
+            <UserIcon
+              size="25px"
+              userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
+            />
+            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+              {fromUser?.name || abbreviateAddress(activity.from)}
+            </Text>
+          </Flex>
+        </Link>
 
-        <Box textAlign={isTransfer ? "left" : "center"}>
-          <Text fontSize="xs" lineHeight={1} color="gray.600">
-            {isTransfer ? "送信" : "発行"}
-          </Text>
-          <Text
-            fontSize="lg"
-            fontWeight="semibold"
-            color={isTransfer ? "green.600" : "blue.600"}
-          >
+        <Box textAlign="center">
+          <Text fontSize="lg" fontWeight="semibold" color="green.600">
             {Number(formatEther(BigInt(activity.amount))).toLocaleString()}{" "}
             <Box fontSize="xs" as="span">
-              {activity.thanksToken.symbol}
+              THX
             </Box>
           </Text>
         </Box>
 
         <Link to={`/${treeId}/member/${activity.to}`}>
-          <Flex
-            justifyContent={isTransfer ? "flex-end" : "flex-start"}
-            alignItems="center"
-            gap={2}
-          >
+          <Flex justifyContent="flex-end" alignItems="center" gap={2}>
             <Text fontSize="sm" fontWeight="medium" color="gray.700">
               {toUser?.name || abbreviateAddress(activity.to)}
             </Text>
@@ -154,9 +125,9 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
  * ワークスペース全体のサンクストークン履歴を表示するコンポーネント
  */
 export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
-  const { activities } = useThanksTokenActivity(treeId, limit);
+  const { mints } = useThanksTokenActivity(treeId, limit);
 
-  if (!activities || activities.length === 0) {
+  if (!mints || mints.mintThanksTokens.length === 0) {
     return (
       <Box p={4} textAlign="center" color="gray.500">
         アクティビティはまだありません
@@ -166,11 +137,11 @@ export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
 
   return (
     <VStack gap={2}>
-      {activities.map((activity, index) => (
+      {mints.mintThanksTokens.map((mint, index) => (
         <ThanksTokenActivityItem
-          key={`activity_${activity.type}_${index}`}
+          key={`activity_${mint.id}`}
           treeId={treeId}
-          activity={activity}
+          activity={mint}
         />
       ))}
     </VStack>

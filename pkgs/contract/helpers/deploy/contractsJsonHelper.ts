@@ -48,7 +48,22 @@ const resetContractAddressesJson = ({ network }: { network: string }): void => {
 
 const loadDeployedContractAddresses = (network: string) => {
   const filePath = getFilePath({ network: network });
-  return jsonfile.readFileSync(filePath);
+  const data = jsonfile.readFileSync(filePath);
+
+  // Clean up any double-escaped JSON strings
+  const cleanData = JSON.parse(JSON.stringify(data), (key, value) => {
+    if (
+      typeof value === "string" &&
+      value.startsWith('"') &&
+      value.endsWith('"')
+    ) {
+      // Remove extra quotes from double-escaped strings
+      return value.slice(1, -1);
+    }
+    return value;
+  });
+
+  return cleanData;
 };
 
 const _updateJson = ({
@@ -67,7 +82,9 @@ const _updateJson = ({
     obj[group] = value as Record<string, string>;
   } else {
     if (obj[group][name] === undefined) obj[group][name] = "";
-    obj[group][name] = JSON.stringify(value);
+    // Don't double-stringify string values
+    obj[group][name] =
+      typeof value === "string" ? value : JSON.stringify(value);
   }
 };
 

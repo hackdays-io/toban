@@ -1,30 +1,22 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
-import {
-  type PublicClient,
-  type WalletClient,
-  Address,
-  decodeEventLog,
-  zeroAddress,
-} from "viem";
+import { type PublicClient, type WalletClient, decodeEventLog } from "viem";
 import { type BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
-  type ThanksToken,
-  type ThanksTokenFactory,
-  deployThanksToken,
-  deployThanksTokenFactory,
-} from "../helpers/deploy/ThanksToken";
+  Create2Deployer,
+  deployCreate2Deployer,
+} from "../helpers/deploy/Create2Factory";
 import {
   type Hats,
+  type HatsFractionTokenModule,
+  type HatsHatCreatorModule,
   type HatsModuleFactory,
   type HatsTimeFrameModule,
-  type HatsHatCreatorModule,
-  type HatsFractionTokenModule,
+  deployHatsFractionTokenModule,
+  deployHatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
-  deployHatsHatCreatorModule,
-  deployHatsFractionTokenModule,
 } from "../helpers/deploy/Hats";
 import {
   type PullSplitsFactory,
@@ -36,11 +28,12 @@ import {
   deploySplitsCreatorFactory,
   deploySplitsProtocol,
 } from "../helpers/deploy/Splits";
-import { upgradeBigBang } from "../helpers/upgrade/bigbang";
 import {
-  Create2Deployer,
-  deployCreate2Deployer,
-} from "../helpers/deploy/Create2Factory";
+  type ThanksToken,
+  type ThanksTokenFactory,
+  deployThanksToken,
+  deployThanksTokenFactory,
+} from "../helpers/deploy/ThanksToken";
 
 describe("BigBang", () => {
   let Create2Deployer: Create2Deployer;
@@ -153,6 +146,24 @@ describe("BigBang", () => {
   });
 
   it("should execute bigbang", async () => {
+    // First deploy BigBang for this test if not already deployed
+    if (!BigBang) {
+      const { BigBang: _BigBang } = await deployBigBang(
+        {
+          hatsContractAddress: Hats.address,
+          hatsModuleFacotryAddress: HatsModuleFactory.address,
+          hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
+          hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
+          hatsFractionTokenModule_impl: HatsFractionTokenModule_IMPL.address,
+          splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
+          splitsFactoryV2Address: PullSplitsFactory.address,
+          thanksTokenFactoryAddress: ThanksTokenFactory.address,
+        },
+        Create2Deployer.address,
+      );
+      BigBang = _BigBang;
+    }
+
     // SplitsCreatorFactoryにBigBangアドレスをセット
     await SplitsCreatorFactory.write.setBigBang([BigBang.address]);
 

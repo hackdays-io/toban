@@ -351,13 +351,24 @@ export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
   };
 };
 
-export const useGetThanksTokens = (
-  variables?: GetThanksTokensQueryVariables,
+export const useGetHoldingThanksTokens = (
+  owner?: Address,
+  variables?: GetThanksTokenBalancesQueryVariables,
 ) => {
-  const result = useQuery<GetThanksTokensQuery, GetThanksTokensQueryVariables>(
-    queryGetThanksTokens,
-    { variables },
-  );
+  console.log({
+    ...variables,
+    where: { ...variables?.where, owner: owner?.toLowerCase() },
+  });
+  const { data } = useQuery<
+    GetThanksTokenBalancesQuery,
+    GetThanksTokenBalancesQueryVariables
+  >(queryGetThanksTokenBalances, {
+    variables: {
+      ...variables,
+      where: { ...variables?.where, owner: owner?.toLowerCase() },
+    },
+    skip: !owner,
+  });
 
-  return result;
+  return data?.balanceOfThanksTokens || [];
 };

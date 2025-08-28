@@ -4,10 +4,11 @@ import { Link, useNavigate } from "@remix-run/react";
 import axios from "axios";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHatsByWorkspaceIds, useGetWorkspaces } from "hooks/useHats";
-import { useGetThanksTokens } from "hooks/useThanksToken";
+import { useGetHoldingThanksTokens } from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
+import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
@@ -140,20 +141,18 @@ const Workspace: FC = () => {
     [assistedHats],
   );
 
-  const { data: thanksTokensData } = useGetThanksTokens({
+  const excludeWorkspaceIds = useMemo(() => {
+    const ids = [...joinedWorkspaceIds, ...assistedWorkspaceIds];
+    return ids.length > 0 ? ids : undefined;
+  }, [joinedWorkspaceIds, assistedWorkspaceIds]);
+  const holdingThanksToken = useGetHoldingThanksTokens(me as Address, {
     where: {
-      id: me,
-      workspaceId_not_in:
-        loadingJoined || loadingAssisted
-          ? []
-          : [...joinedWorkspaceIds, ...assistedWorkspaceIds],
+      workspaceId_not_in: excludeWorkspaceIds,
     },
   });
-  const thankedWorkspaceIds = useMemo(() => {
-    if (!thanksTokensData) return [];
-    return thanksTokensData.thanksTokens.map((t) => t.workspaceId);
-  }, [thanksTokensData]);
-  const { hats: thankedHats } = useGetHatsByWorkspaceIds(thankedWorkspaceIds);
+  const { hats: thankedHats } = useGetHatsByWorkspaceIds(
+    holdingThanksToken.map((t) => t.workspaceId),
+  );
   const thankedWorkspaces = useMemo(() => {
     if (!thankedHats) return [];
     return thankedHats.map(
@@ -167,18 +166,30 @@ const Workspace: FC = () => {
 
   return (
     <Box data-testid="workspace-page">
-      <WorkspaceSection
-        title="役割をもっているワークスペース"
-        workspaces={joinedWorkspaces}
-      />
-      <WorkspaceSection
-        title="お手伝いしているワークスペース"
-        workspaces={assistedWorkspaces}
-      />
-      <WorkspaceSection
-        title="ありがとうをもらったワークスペース"
-        workspaces={thankedWorkspaces}
-      />
+      {[...joinedWorkspaces, ...assistedWorkspaces, ...thankedWorkspaces]
+        .length === 0 && (
+        <Text mx={2} fontStyle="italic" color="gray.400">
+          ワークスペースに参加していません。
+        </Text>
+      )}
+      {joinedWorkspaces.length > 0 && (
+        <WorkspaceSection
+          title="役割をもっているワークスペース"
+          workspaces={joinedWorkspaces}
+        />
+      )}
+      {assistedWorkspaces.length > 0 && (
+        <WorkspaceSection
+          title="お手伝いしているワークスペース"
+          workspaces={assistedWorkspaces}
+        />
+      )}
+      {thankedWorkspaces.length > 0 && (
+        <WorkspaceSection
+          title="ありがとうをもらったワークスペース"
+          workspaces={thankedWorkspaces}
+        />
+      )}
       <BasicButton mt={7} onClick={() => navigate("/workspace/new")}>
         新しいワークスペースを作成
       </BasicButton>

@@ -2,17 +2,12 @@ import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react/hooks";
 import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import type {
-  BalanceOfFractionToken_Filter,
-  BalanceOfFractionToken_OrderBy,
   BalanceOfFractionTokensQuery,
   BalanceOfFractionTokensQueryVariables,
   GetTransferFractionTokensQuery,
   GetTransferFractionTokensQueryVariables,
-  OrderDirection,
-  TransferFractionToken_Filter,
-  TransferFractionToken_OrderBy,
 } from "gql/graphql";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   type Address,
   decodeEventLog,
@@ -519,22 +514,14 @@ const queryGetTransferFractionTokens = gql(`
   }
 `);
 
-export const useGetTransferFractionTokens = (params: {
-  where?: TransferFractionToken_Filter;
-  orderBy?: TransferFractionToken_OrderBy;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
+export const useGetTransferFractionTokens = (
+  variables: GetTransferFractionTokensQueryVariables,
+) => {
   const result = useQuery<
     GetTransferFractionTokensQuery,
     GetTransferFractionTokensQueryVariables
   >(queryGetTransferFractionTokens, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
+    variables,
   });
 
   return result;
@@ -555,22 +542,14 @@ const queryBalanceOfFractionTokens = gql(`
   }
 `);
 
-export const useBalanceOfFractionTokens = (params: {
-  where?: BalanceOfFractionToken_Filter;
-  orderBy?: BalanceOfFractionToken_OrderBy;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
+export const useGetBalanceOfFractionTokens = (
+  variables: BalanceOfFractionTokensQueryVariables,
+) => {
   const result = useQuery<
     BalanceOfFractionTokensQuery,
     BalanceOfFractionTokensQueryVariables
   >(queryBalanceOfFractionTokens, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
+    variables,
   });
 
   return result;

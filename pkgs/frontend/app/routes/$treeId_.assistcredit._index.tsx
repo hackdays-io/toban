@@ -1,6 +1,6 @@
 import { Box, Heading, VStack } from "@chakra-ui/react";
 import { useParams } from "@remix-run/react";
-import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
+import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHats } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
@@ -14,7 +14,7 @@ const WorkspaceWithBalance: FC = () => {
 
   const { wallet } = useActiveWallet();
 
-  const { data } = useBalanceOfFractionTokens({
+  const { data } = useGetBalanceOfFractionTokens({
     where: {
       workspaceId: treeId,
       owner: wallet?.account.address.toLowerCase(),

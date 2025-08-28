@@ -1,7 +1,7 @@
 import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
+import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
 import { useActiveWallet } from "hooks/useWallet";
@@ -38,7 +38,7 @@ const RoleDetails: FC = () => {
   // wearer
   const { names: wearerNames } = useNamesByAddresses(wearerIds);
 
-  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
+  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
     where: {
       hatId: BigInt(hatId || 0).toString(10),
     },
@@ -55,7 +55,7 @@ const RoleDetails: FC = () => {
   const { names: holderNames } = useNamesByAddresses(assistantMembers);
 
   // 各wearerのWearingElapsedTimeを取得
-  const { data } = useGetWorkspace(treeId);
+  const { data } = useGetWorkspace({ workspaceId: treeId || "" });
   const hatsTimeFrameModuleAddress = useMemo(
     () => data?.workspace?.hatsTimeFrameModule,
     [data],

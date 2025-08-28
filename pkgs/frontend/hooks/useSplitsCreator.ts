@@ -17,7 +17,7 @@ export const useSplitsCreator = (treeId: string) => {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data } = useGetWorkspace(treeId);
+  const { data } = useGetWorkspace({ workspaceId: treeId });
   const splitsCreatorAddress = useMemo(() => {
     return data?.workspace?.splitCreator as Address;
   }, [data?.workspace?.splitCreator]);

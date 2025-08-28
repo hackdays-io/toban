@@ -1,9 +1,9 @@
-import { Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import type { TooltipItem } from "chart.js";
+import { Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
 import { BalanceOfFractionToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
+import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useMemo } from "react";
 import { Chart } from "react-chartjs-2";
 import { abbreviateAddress } from "utils/wallet";
@@ -32,7 +32,7 @@ interface TreemapTooltipItem extends TooltipItem<"treemap"> {
 }
 
 export const Treemap = ({ treeId }: { treeId: string }) => {
-  const { data: gqlData } = useBalanceOfFractionTokens({
+  const { data: gqlData } = useGetBalanceOfFractionTokens({
     where: {
       workspaceId: treeId,
     },

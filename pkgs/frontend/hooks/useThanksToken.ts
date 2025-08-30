@@ -7,8 +7,6 @@ import {
   type GetThanksTokenMintsQueryVariables,
   type GetThanksTokenTransfersQuery,
   type GetThanksTokenTransfersQueryVariables,
-  type GetThanksTokensQuery,
-  type GetThanksTokensQueryVariables,
   type MintThanksToken_Filter,
   MintThanksToken_OrderBy,
   type OrderDirection,
@@ -360,10 +358,6 @@ export const useGetHoldingThanksTokens = (
   owner?: Address,
   variables?: GetThanksTokenBalancesQueryVariables,
 ) => {
-  console.log({
-    ...variables,
-    where: { ...variables?.where, owner: owner?.toLowerCase() },
-  });
   const { data } = useQuery<
     GetThanksTokenBalancesQuery,
     GetThanksTokenBalancesQueryVariables

@@ -1,8 +1,9 @@
 import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
+import { hatIdHexToDecimal, treeIdToTopHatId } from "@hatsprotocol/sdk-v1-core";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
-import { useTreeInfo } from "hooks/useHats";
+import { useGetHatById } from "hooks/useHats";
 import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -22,36 +23,30 @@ const RoleDetails: FC = () => {
   const { wallet } = useActiveWallet();
   const me = wallet?.account?.address;
 
-  const tree = useTreeInfo(Number(treeId));
+  const { hat } = useGetHatById(hatId || "");
 
-  const hat = useMemo(() => {
-    if (!tree || !tree.hats) return;
-    return tree.hats.find((h) => h.id === hatId);
-  }, [tree, hatId]);
-
-  const wearers = useMemo(() => hat?.wearers, [hat]);
   const wearerIds = useMemo(
-    () => wearers?.map(({ id }) => id.toLowerCase()) || [],
-    [wearers],
+    () => (hat ? hat.wearers.map((w) => w.id) : []),
+    [hat],
   );
 
   // wearer
   const { names: wearerNames } = useNamesByAddresses(wearerIds);
 
-  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
+  const { data: balanceOfFractionTokensData } = useGetBalanceOfFractionTokens({
     where: {
-      hatId: BigInt(hatId || 0).toString(10),
+      hatId: String(hatIdHexToDecimal(hatId || "")),
     },
   });
-  const assistantMembers = useMemo(() => {
-    return Array.from(
-      new Set(
-        balanceOfFractionTokens?.balanceOfFractionTokens
-          .filter((h) => !wearerIds.includes(h.owner.toLowerCase()))
-          .map((h) => h.owner.toLowerCase()),
-      ),
-    );
-  }, [balanceOfFractionTokens, wearerIds]);
+  const assistantMembers = useMemo(
+    () =>
+      balanceOfFractionTokensData
+        ? balanceOfFractionTokensData.balanceOfFractionTokens
+            .filter((h) => !wearerIds.includes(h.owner))
+            .map((h) => h.owner)
+        : [],
+    [balanceOfFractionTokensData, wearerIds],
+  );
   const { names: holderNames } = useNamesByAddresses(assistantMembers);
 
   // 各wearerのWearingElapsedTimeを取得
@@ -66,22 +61,17 @@ const RoleDetails: FC = () => {
     wearerIds,
   );
 
-  const isAuthorized = useMemo(() => {
-    if (!me) return false;
-
-    const topHat = tree?.hats?.find((h) => h.levelAtLocalTree === 0);
-
-    return (
-      wearerIds.includes(me.toLowerCase()) ||
-      topHat?.wearers?.some((w) => w.id.toLowerCase() === me.toLowerCase())
-    );
-  }, [me, wearerIds, tree]);
+  const { hat: topHat } = useGetHatById(
+    String(treeIdToTopHatId(Number(treeId))),
+  );
+  const isAuthorized = useMemo(
+    () => topHat?.wearers?.some((w) => w.id === me?.toLowerCase()),
+    [me, topHat],
+  );
 
   const navigate = useNavigate();
 
-  if (!hat) return;
-
-  return (
+  return hat ? (
     <Box>
       <HatsListItemParser imageUri={hat.imageUri} detailUri={hat.details}>
         <RoleName treeId={treeId} />
@@ -181,6 +171,12 @@ const RoleDetails: FC = () => {
       </VStack>
 
       <StickyNav />
+    </Box>
+  ) : (
+    <Box minHeight="50vh" alignContent="center" justifyItems="center">
+      <Text width="fit" fontSize="lg" fontWeight="bold" color="gray.400">
+        ロールが見つかりませんでした
+      </Text>
     </Box>
   );
 };

@@ -24,6 +24,8 @@ export const useBigBang = () => {
       topHatImageURI: string;
       hatterHatDetails: string;
       hatterHatImageURI: string;
+      memberHatDetails: string;
+      memberHatImageURI: string;
     }) => {
       if (!wallet) return;
 
@@ -40,6 +42,8 @@ export const useBigBang = () => {
             params.topHatImageURI,
             params.hatterHatDetails,
             params.hatterHatImageURI,
+            params.memberHatDetails,
+            params.memberHatImageURI,
           ],
         });
 

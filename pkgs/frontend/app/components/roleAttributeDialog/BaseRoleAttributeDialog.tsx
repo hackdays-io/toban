@@ -94,19 +94,19 @@ export const BaseRoleAttributeDialog = ({
             <DialogTitle fontWeight="medium">
               {DIALOG_TITLE_MAP[type][mode]}
             </DialogTitle>
-            <DialogBody p={0} mt={8}>
-              <Box>
-                <InputName name={name} setName={setName} mt={0} />
-                <InputDescription
-                  description={description}
-                  setDescription={setDescription}
-                  mt={6}
-                />
-                <InputLink link={link} setLink={setLink} mt={6} />
-              </Box>
-            </DialogBody>
           </DialogHeader>
-          <DialogFooter my={8}>
+          <DialogBody>
+            <Box>
+              <InputName name={name} setName={setName} mt={0} />
+              <InputDescription
+                description={description}
+                setDescription={setDescription}
+                mt={6}
+              />
+              <InputLink link={link} setLink={setLink} mt={6} />
+            </Box>
+          </DialogBody>
+          <DialogFooter>
             <VStack gap={4} align="stretch" w="full">
               <DialogActionTrigger asChild>
                 <Button

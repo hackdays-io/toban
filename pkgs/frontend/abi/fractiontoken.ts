@@ -2,12 +2,38 @@ export const FRACTION_TOKEN_ABI = [
   {
     inputs: [
       {
+        internalType: "string",
+        name: "_version",
+        type: "string",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "target",
         type: "address",
       },
     ],
     name: "AddressEmptyCode",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "ArrayLengthMismatch",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "CallerNotHatAdminOrWearer",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "CannotTransferAllTokens",
     type: "error",
   },
   {
@@ -113,24 +139,23 @@ export const FRACTION_TOKEN_ABI = [
     type: "error",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "implementation",
-        type: "address",
-      },
-    ],
-    name: "ERC1967InvalidImplementation",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "ERC1967NonPayable",
-    type: "error",
-  },
-  {
     inputs: [],
     name: "FailedCall",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "HatIdMustBeTopHat",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "InitialSupplyNotMinted",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "InvalidHatIdForDomain",
     type: "error",
   },
   {
@@ -144,42 +169,50 @@ export const FRACTION_TOKEN_ABI = [
     type: "error",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-    ],
-    name: "OwnableInvalidOwner",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "account",
-        type: "address",
-      },
-    ],
-    name: "OwnableUnauthorizedAccount",
+    inputs: [],
+    name: "TokenAlreadyMinted",
     type: "error",
   },
   {
     inputs: [],
-    name: "UUPSUnauthorizedCallContext",
+    name: "TokenSupplyExceedsMax",
     type: "error",
   },
   {
+    inputs: [],
+    name: "WearerDoesNotHaveHat",
+    type: "error",
+  },
+  {
+    anonymous: false,
     inputs: [
       {
-        internalType: "bytes32",
-        name: "slot",
-        type: "bytes32",
+        indexed: true,
+        internalType: "uint256",
+        name: "hatId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "wearer",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "tokenId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
       },
     ],
-    name: "UUPSUnsupportedProxiableUUID",
-    type: "error",
+    name: "AdditionalMint",
+    type: "event",
   },
   {
     anonymous: false,
@@ -211,6 +244,12 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         indexed: true,
+        internalType: "uint256",
+        name: "hatId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
         internalType: "address",
         name: "wearer",
         type: "address",
@@ -218,13 +257,13 @@ export const FRACTION_TOKEN_ABI = [
       {
         indexed: true,
         internalType: "uint256",
-        name: "hatId",
+        name: "tokenId",
         type: "uint256",
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: "uint256",
-        name: "tokenId",
+        name: "amount",
         type: "uint256",
       },
     ],
@@ -248,19 +287,50 @@ export const FRACTION_TOKEN_ABI = [
     anonymous: false,
     inputs: [
       {
+        indexed: false,
+        internalType: "uint256",
+        name: "oldSupply",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "newSupply",
+        type: "uint256",
+      },
+    ],
+    name: "TokenSupplyUpdated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
         indexed: true,
-        internalType: "address",
-        name: "previousOwner",
-        type: "address",
+        internalType: "uint256",
+        name: "hatId",
+        type: "uint256",
       },
       {
         indexed: true,
         internalType: "address",
-        name: "newOwner",
+        name: "wearer",
         type: "address",
       },
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "tokenId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
     ],
-    name: "OwnershipTransferred",
+    name: "TokensBurned",
     type: "event",
   },
   {
@@ -357,21 +427,8 @@ export const FRACTION_TOKEN_ABI = [
     type: "event",
   },
   {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "implementation",
-        type: "address",
-      },
-    ],
-    name: "Upgraded",
-    type: "event",
-  },
-  {
     inputs: [],
-    name: "TOKEN_SUPPLY",
+    name: "DEFAULT_TOKEN_SUPPLY",
     outputs: [
       {
         internalType: "uint256",
@@ -384,12 +441,38 @@ export const FRACTION_TOKEN_ABI = [
   },
   {
     inputs: [],
-    name: "UPGRADE_INTERFACE_VERSION",
+    name: "HATS",
     outputs: [
       {
-        internalType: "string",
+        internalType: "contract IHats",
         name: "",
-        type: "string",
+        type: "address",
+      },
+    ],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "IMPLEMENTATION",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "MAX_SUPPLY_PER_ROLE_USER",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -423,17 +506,17 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         internalType: "address",
-        name: "account",
+        name: "_account",
         type: "address",
       },
       {
         internalType: "address",
-        name: "wearer",
+        name: "_wearer",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "hatId",
+        name: "_hatId",
         type: "uint256",
       },
     ],
@@ -452,17 +535,17 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         internalType: "address[]",
-        name: "accounts",
+        name: "_accounts",
         type: "address[]",
       },
       {
         internalType: "address[]",
-        name: "wearers",
+        name: "_wearers",
         type: "address[]",
       },
       {
         internalType: "uint256[]",
-        name: "hatIds",
+        name: "_hatIds",
         type: "uint256[]",
       },
     ],
@@ -504,23 +587,46 @@ export const FRACTION_TOKEN_ABI = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "from",
-        type: "address",
+        internalType: "uint256[]",
+        name: "_hatIds",
+        type: "uint256[]",
       },
       {
-        internalType: "address",
-        name: "wearer",
-        type: "address",
+        internalType: "address[]",
+        name: "_wearers",
+        type: "address[]",
       },
+      {
+        internalType: "uint256[]",
+        name: "_amounts",
+        type: "uint256[]",
+      },
+    ],
+    name: "batchMintInitialSupply",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
       {
         internalType: "uint256",
-        name: "hatId",
+        name: "_hatId",
         type: "uint256",
       },
       {
+        internalType: "address",
+        name: "_wearer",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_target",
+        type: "address",
+      },
+      {
         internalType: "uint256",
-        name: "value",
+        name: "_amount",
         type: "uint256",
       },
     ],
@@ -549,15 +655,28 @@ export const FRACTION_TOKEN_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "getDomain",
+    outputs: [
+      {
+        internalType: "uint32",
+        name: "",
+        type: "uint32",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
-        name: "hatId",
+        name: "_hatId",
         type: "uint256",
       },
       {
         internalType: "address",
-        name: "account",
+        name: "_wearer",
         type: "address",
       },
     ],
@@ -592,31 +711,16 @@ export const FRACTION_TOKEN_ABI = [
     type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_initialOwner",
-        type: "address",
-      },
+    inputs: [],
+    name: "hatId",
+    outputs: [
       {
         internalType: "uint256",
-        name: "_tokenSupply",
+        name: "",
         type: "uint256",
       },
-      {
-        internalType: "address",
-        name: "_hatsAddress",
-        type: "address",
-      },
-      {
-        internalType: "string",
-        name: "_uri",
-        type: "string",
-      },
     ],
-    name: "initialize",
-    outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "pure",
     type: "function",
   },
   {
@@ -647,17 +751,17 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         internalType: "uint256",
-        name: "hatId",
+        name: "_hatId",
         type: "uint256",
       },
       {
         internalType: "address",
-        name: "account",
+        name: "_wearer",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "amount",
+        name: "_amount",
         type: "uint256",
       },
     ],
@@ -670,17 +774,17 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         internalType: "uint256",
-        name: "hatId",
+        name: "_hatId",
         type: "uint256",
       },
       {
         internalType: "address",
-        name: "account",
+        name: "_wearer",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "amount",
+        name: "_amount",
         type: "uint256",
       },
     ],
@@ -709,63 +813,30 @@ export const FRACTION_TOKEN_ABI = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "owner",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "proxiableUUID",
-    outputs: [
-      {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "renounceOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "address",
-        name: "from",
+        name: "_from",
         type: "address",
       },
       {
         internalType: "address",
-        name: "to",
+        name: "_to",
         type: "address",
       },
       {
         internalType: "uint256[]",
-        name: "tokenIds",
+        name: "_ids",
         type: "uint256[]",
       },
       {
         internalType: "uint256[]",
-        name: "amounts",
+        name: "_amounts",
         type: "uint256[]",
       },
       {
         internalType: "bytes",
-        name: "data",
+        name: "_data",
         type: "bytes",
       },
     ],
@@ -778,27 +849,27 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         internalType: "address",
-        name: "from",
+        name: "_from",
         type: "address",
       },
       {
         internalType: "address",
-        name: "to",
+        name: "_to",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "tokenId",
+        name: "_id",
         type: "uint256",
       },
       {
         internalType: "uint256",
-        name: "amount",
+        name: "_amount",
         type: "uint256",
       },
       {
         internalType: "bytes",
-        name: "data",
+        name: "_data",
         type: "bytes",
       },
     ],
@@ -821,6 +892,19 @@ export const FRACTION_TOKEN_ABI = [
       },
     ],
     name: "setApprovalForAll",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "_initData",
+        type: "bytes",
+      },
+    ],
+    name: "setUp",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -861,12 +945,12 @@ export const FRACTION_TOKEN_ABI = [
     inputs: [
       {
         internalType: "address",
-        name: "wearer",
+        name: "_wearer",
         type: "address",
       },
       {
         internalType: "uint256",
-        name: "hatId",
+        name: "_hatId",
         type: "uint256",
       },
     ],
@@ -903,43 +987,38 @@ export const FRACTION_TOKEN_ABI = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
-      },
-    ],
-    name: "transferOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "newImplementation",
-        type: "address",
-      },
-      {
-        internalType: "bytes",
-        name: "data",
-        type: "bytes",
-      },
-    ],
-    name: "upgradeToAndCall",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "uint256",
-        name: "tokenId",
+        name: "",
         type: "uint256",
       },
     ],
     name: "uri",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "version",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "version_",
     outputs: [
       {
         internalType: "string",

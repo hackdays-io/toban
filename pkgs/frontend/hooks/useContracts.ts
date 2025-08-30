@@ -31,10 +31,10 @@ export const hatsHatCreatorContractBaseConfig = (
   abi: HATS_HAT_CREATOR_MODULE_ABI,
 });
 
-export const fractionTokenBaseConfig = {
-  address: FRACTION_TOKEN_ADDRESS as Address,
+export const fractionTokenBaseConfig = (fractionTokenAddress: Address) => ({
+  address: fractionTokenAddress,
   abi: FRACTION_TOKEN_ABI,
-};
+});
 
 export const thanksTokenBaseConfig = (thanksTokenAddress: Address) => ({
   address: thanksTokenAddress,

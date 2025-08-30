@@ -4,6 +4,7 @@ type Workspace @entity {
   owner: String!
   topHatId: BigInt!
   hatterHatId: BigInt!
+  memberHatId: BigInt!
   operatorHatId: BigInt!
   creatorHatId: BigInt!
   minterHatId: BigInt!
@@ -110,17 +111,6 @@ type BalanceOfThanksToken @entity {
   balance: BigInt!
   workspaceId: ID!
   updatedAt: BigInt!
-}
-
-type ThanksToken @entity {
-  id: ID!
-  workspaceId: ID!
-  address: String!
-  name: String!
-  symbol: String!
-  totalSupply: BigInt!
-  blockTimestamp: BigInt!
-  blockNumber: BigInt!
 }
 
 type ThanksTokenTransfer @entity {

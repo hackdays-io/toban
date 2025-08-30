@@ -96,6 +96,7 @@ const AssistCreditSend: FC = () => {
   const [isSend, setIsSend] = useState(false);
 
   const { transferFractionToken, isLoading } = useTransferFractionToken(
+    treeId as string,
     BigInt(hatId || 0),
     address as Address,
   );

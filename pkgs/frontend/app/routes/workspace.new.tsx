@@ -143,11 +143,11 @@ const WorkspaceNew: FC = () => {
         throw new Error("Failed to execute bigbang");
       }
 
-      const { topHatId, memberHatId } = parsedLog.args;
+      const { topHatId } = parsedLog.args;
       const treeId = hatIdToTreeId(topHatId);
       // wait for 3 seconds to ensure the subgraph is updated
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      navigate(`/${treeId}/${hatIdDecimalToHex(memberHatId)}`);
+      navigate(`/${treeId}`);
     } catch (error) {
       console.error(error);
       alert(`エラーが発生しました。${error}`);
@@ -157,15 +157,9 @@ const WorkspaceNew: FC = () => {
   };
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      h="calc(100vh - 72px)"
-      w="100%"
-      overflow="hidden"
-    >
+    <Box display="flex" flexDirection="column" w="100%" overflow="hidden">
       {/* Fixed Header */}
-      <Box w="100%" bg="white" position="sticky" top={0} zIndex={10}>
+      <Box w="100%" position="sticky" top={0} zIndex={10}>
         {!workspaceData ? (
           <PageHeader title="ワークスペースを新規作成" />
         ) : (
@@ -174,7 +168,7 @@ const WorkspaceNew: FC = () => {
       </Box>
 
       {/* Scrollable Content */}
-      <Box flex="1" overflowY="auto" pb={4} position="relative">
+      <Box pb={4} position="relative">
         <AnimatePresence mode="wait">
           {!workspaceData ? (
             <MotionBox
@@ -327,7 +321,7 @@ const WorkspaceNew: FC = () => {
       </Box>
 
       {/* Fixed Footer */}
-      <Box w="100%" bg="white" position="sticky" bottom={0} py={4} zIndex={10}>
+      <Box w="100%" position="sticky" bottom={0} py={4} zIndex={10}>
         {!workspaceData ? (
           <BasicButton
             onClick={handleUploadWorkspaceData}

@@ -58,8 +58,8 @@ const WorkspaceWithBalance: FC = () => {
   return (
     <Box>
       {/* All roles */}
-      <Box my={4}>
-        <Heading py={4}>当番一覧</Heading>
+      <Box pt={5}>
+        <Heading pb={4}>当番一覧</Heading>
         <SimpleGrid columns={4} gap={4}>
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
@@ -86,8 +86,8 @@ const WorkspaceWithBalance: FC = () => {
       </Box>
 
       {/* My roles */}
-      <Box my={4}>
-        <Heading py={4}>担当当番</Heading>
+      <Box pt={10}>
+        <Heading pb={4}>担当当番</Heading>
         <VStack gap={3} align="stretch">
           {tree?.hats
             ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
@@ -105,31 +105,33 @@ const WorkspaceWithBalance: FC = () => {
       </Box>
 
       {/* Role Share */}
-      <Heading pb={5}>
-        {["144", "175", "780"].includes(treeId || "")
-          ? "ケアポイント"
-          : "アシストクレジット"}
-        の残高
-      </Heading>
-      <VStack width="full" gapY={5}>
-        {wallet &&
-          hatsWithBalance.map(({ hat, balance, wearer }) => (
-            <HatsListItemParser
-              key={hat.id}
-              imageUri={hat.imageUri}
-              detailUri={hat.details}
-            >
-              <RoleWithBalance
-                balance={Number(balance)}
-                treeId={treeId}
-                hatId={hat.id}
-                wearer={wearer as Address}
-                address={wallet?.account.address}
-                showSendButton
-              />
-            </HatsListItemParser>
-          ))}
-      </VStack>
+      <Box pt={14}>
+        <Heading pb={4}>
+          {["144", "175", "780"].includes(treeId || "")
+            ? "ケアポイント"
+            : "アシストクレジット"}
+          の残高
+        </Heading>
+        <VStack width="full" gapY={5}>
+          {wallet &&
+            hatsWithBalance.map(({ hat, balance, wearer }) => (
+              <HatsListItemParser
+                key={hat.id}
+                imageUri={hat.imageUri}
+                detailUri={hat.details}
+              >
+                <RoleWithBalance
+                  balance={Number(balance)}
+                  treeId={treeId}
+                  hatId={hat.id}
+                  wearer={wearer as Address}
+                  address={wallet?.account.address}
+                  showSendButton
+                />
+              </HatsListItemParser>
+            ))}
+        </VStack>
+      </Box>
       <StickyNav />
     </Box>
   );

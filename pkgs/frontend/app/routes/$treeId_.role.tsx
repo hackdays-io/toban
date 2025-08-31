@@ -11,14 +11,14 @@ import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHats, useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
+import { FaPlus } from "react-icons/fa6";
 import type { Address } from "viem";
 import { StickyNav } from "~/components/StickyNav";
-import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import RoleWithBalance from "~/components/roles/RoleWithBalance";
-import { MyRole } from "~/components/roles/MyRole";
-import { VRole } from "~/components/roles/VRole";
 import CommonButton from "~/components/common/CommonButton";
-import { FaPlus } from "react-icons/fa6";
+import { HatsListItemParser } from "~/components/common/HatsListItemParser";
+import { MyRole } from "~/components/roles/MyRole";
+import RoleWithBalance from "~/components/roles/RoleWithBalance";
+import { VRole } from "~/components/roles/VRole";
 
 const WorkspaceWithBalance: FC = () => {
   const navigate = useNavigate();
@@ -55,21 +55,28 @@ const WorkspaceWithBalance: FC = () => {
       .filter((data) => !!data);
   }, [hats, data]);
 
+  // 0002は管理系のハットなのでここでは除外
+  const tobanList = useMemo(() => {
+    return tree?.hats?.filter(
+      (h) =>
+        Number(h.levelAtLocalTree) >= 2 &&
+        h.prettyId?.startsWith(`${tree?.id}.0001`),
+    );
+  }, [tree]);
+
   return (
     <Box>
       {/* All roles */}
       <Box pt={5}>
         <Heading pb={4}>当番一覧</Heading>
         <SimpleGrid columns={4} gap={4}>
-          {tree?.hats
-            ?.filter((h) => Number(h.levelAtLocalTree) >= 2)
-            .map((h) => (
-              <Link key={`allrole${h.id}`} to={`/${treeId}/${h.id}`}>
-                <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
-                  <VRole iconSize="80px" />
-                </HatsListItemParser>
-              </Link>
-            ))}
+          {tobanList?.map((h) => (
+            <Link key={`allrole${h.id}`} to={`/${treeId}/${h.id}`}>
+              <HatsListItemParser imageUri={h.imageUri} detailUri={h.details}>
+                <VRole iconSize="80px" />
+              </HatsListItemParser>
+            </Link>
+          ))}
           <VStack>
             <AspectRatio width="80px" ratio={1}>
               <CommonButton

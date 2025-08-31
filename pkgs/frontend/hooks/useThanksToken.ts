@@ -141,6 +141,19 @@ export const useGetTransferThanksTokens = (params: {
   };
 };
 
+export const useGetBalanceOfThanksTokens = (
+  params: GetThanksTokenBalancesQueryVariables,
+) => {
+  const result = useQuery<
+    GetThanksTokenBalancesQuery,
+    GetThanksTokenBalancesQueryVariables
+  >(queryGetThanksTokenBalances, {
+    variables: params,
+  });
+
+  return result;
+};
+
 export const useGetMintThanksTokens = (params: {
   where?: MintThanksToken_Filter;
   orderBy?: MintThanksToken_OrderBy;

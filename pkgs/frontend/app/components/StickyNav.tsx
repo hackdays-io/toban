@@ -64,7 +64,7 @@ export const StickyNav: FC = () => {
                 </Icon>
               </IconButton>
               <Box fontWeight="bold" fontSize="sm">
-                Assist Credit
+                Role
               </Box>
             </Link>
           </GridItem>

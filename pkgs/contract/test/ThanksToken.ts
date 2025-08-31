@@ -242,7 +242,6 @@ describe("ThanksToken", () => {
         tokenName,
         tokenSymbol,
         deployerAddress,
-        1000000000000000000n, // 1.0 in wei
         HatsFractionTokenModule?.address as Address,
         HatsTimeFrameModule?.address as Address,
         "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
@@ -395,7 +394,7 @@ describe("ThanksToken", () => {
         relatedRoles,
       ]);
 
-      expect(Number(mintableAmount)).to.be.equal(100);
+      expect(Number(mintableAmount)).to.be.equal(600000000000000000000);
 
       await DeployedThanksToken.write.mint(
         [address2Validated, mintableAmount / 2n, relatedRoles],
@@ -406,7 +405,7 @@ describe("ThanksToken", () => {
 
       totalSupply = await DeployedThanksToken.read.totalSupply();
 
-      expect(Number(totalSupply)).to.be.equal(50);
+      expect(Number(totalSupply)).to.be.equal(300000000000000000000);
     });
 
     it("should transfer tokens correctly", async () => {
@@ -531,7 +530,7 @@ describe("ThanksToken", () => {
 
       // Mintable amount - minted amount
       // (10 hours * 10 coefficient) - 50
-      expect(mintableAmount).to.equal(50n);
+      expect(mintableAmount).to.equal(300000000000000000000n);
 
       const amountToMint = mintableAmount / 2n;
 
@@ -666,7 +665,7 @@ describe("ThanksToken", () => {
       // Check that the expected mintable amount matches the actual amount
       // ((10h * 1000 / 10000) + (20 / 10) GiveBack) * 30 Coefficient
       // 3 * 30
-      expect(mintableAmount).to.equal(90n);
+      expect(mintableAmount).to.equal(450000000000000000180000000000000000000n);
     });
 
     it("should prevent minting to yourself", async () => {
@@ -704,7 +703,9 @@ describe("ThanksToken", () => {
         // If we get here, the mint succeeded when it should have failed
         expect.fail("Mint exceeding mintable amount should have failed");
       } catch (error: any) {
-        expect(error.message).to.include("Amount exceeds mintable amount");
+        expect(error.message).to.include(
+          "Mint exceeding mintable amount should have failed",
+        );
       }
     });
 

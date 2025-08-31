@@ -252,7 +252,6 @@ describe("SplitsCreator Factory", () => {
           "Test ThanksToken",
           "TTK",
           bigBangAddress.account?.address!,
-          1000000000000000000n, // 1.0 in wei (default coefficient)
           hatsFractionTokenModuleAddress,
           hatsTimeFrameModuleAddress,
           "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
@@ -596,7 +595,6 @@ describe("CreateSplit without thanks token weight", () => {
           "Test ThanksToken",
           "TTK",
           bigBangAddress.account?.address!,
-          1000000000000000000n, // 1.0 in wei (default coefficient)
           hatsFractionTokenModuleAddress,
           hatsTimeFrameModuleAddress,
           "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
@@ -1470,7 +1468,6 @@ describe("CreateSplit with thanks token weight", () => {
           "Test ThanksToken",
           "TTK",
           bigBangAddress.account?.address!,
-          1000000000000000000n, // 1.0 in wei (default coefficient)
           hatsFractionTokenModuleAddress,
           hatsTimeFrameModuleAddress,
           "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
@@ -1774,7 +1771,6 @@ describe("CreateSplit with thanks token weight", () => {
             "Test ThanksToken",
             "TTK",
             bigBangAddress.account?.address!,
-            10000000000000000000n, // 10.0 in wei (higher coefficient for testing)
             HatsFractionTokenModule?.address as Address,
             HatsTimeFrameModule?.address as Address,
             "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,

@@ -38,7 +38,6 @@ contract ThanksTokenFactory is
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         address hatsFractionTokenAddress,
         address hatsTimeFrameModuleAddress,
         bytes32 salt
@@ -54,8 +53,7 @@ contract ThanksTokenFactory is
             symbol,
             HATS,
             hatsFractionTokenAddress,
-            hatsTimeFrameModuleAddress,
-            defaultCoefficient
+            hatsTimeFrameModuleAddress
         );
 
         address proxy = LibClone.clone(IMPLEMENTATION, initData);
@@ -69,7 +67,6 @@ contract ThanksTokenFactory is
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         address hatsFractionTokenAddress,
         address hatsTimeFrameModuleAddress,
         bytes32 salt
@@ -84,17 +81,10 @@ contract ThanksTokenFactory is
             symbol,
             HATS,
             hatsFractionTokenAddress,
-            hatsTimeFrameModuleAddress,
-            defaultCoefficient
+            hatsTimeFrameModuleAddress
         );
 
-        bytes32 saltHash = _getSalt(
-            name,
-            symbol,
-            workspaceOwner,
-            defaultCoefficient,
-            salt
-        );
+        bytes32 saltHash = _getSalt(name, symbol, workspaceOwner, salt);
 
         address addr = LibClone.cloneDeterministic(
             IMPLEMENTATION,
@@ -111,7 +101,6 @@ contract ThanksTokenFactory is
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         address hatsFractionTokenAddress,
         address hatsTimeFrameModuleAddress,
         bytes32 salt
@@ -122,17 +111,10 @@ contract ThanksTokenFactory is
             symbol,
             HATS,
             hatsFractionTokenAddress,
-            hatsTimeFrameModuleAddress,
-            defaultCoefficient
+            hatsTimeFrameModuleAddress
         );
 
-        bytes32 saltHash = _getSalt(
-            name,
-            symbol,
-            workspaceOwner,
-            defaultCoefficient,
-            salt
-        );
+        bytes32 saltHash = _getSalt(name, symbol, workspaceOwner, salt);
 
         return
             LibClone.predictDeterministicAddress(
@@ -147,19 +129,9 @@ contract ThanksTokenFactory is
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         bytes32 salt
     ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    name,
-                    symbol,
-                    workspaceOwner,
-                    defaultCoefficient,
-                    salt
-                )
-            );
+        return keccak256(abi.encodePacked(name, symbol, workspaceOwner, salt));
     }
 
     function setImplementation(address _implementation) public onlyOwner {

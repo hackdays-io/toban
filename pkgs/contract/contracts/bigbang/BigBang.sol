@@ -17,8 +17,6 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
     ISplitsCreatorFactory public SplitsCreatorFactory;
 
-    uint32 private maxTobanSupply = 10;
-
     address public HatsTimeFrameModule_IMPL;
 
     address public HatsHatCreatorModule_IMPL;
@@ -205,7 +203,6 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
                 "ThanksToken",
                 "THX",
                 _owner,
-                1e18,
                 hatsFractionTokenModule,
                 hatsTimeFrameModule,
                 keccak256(abi.encodePacked(topHatId, "0"))

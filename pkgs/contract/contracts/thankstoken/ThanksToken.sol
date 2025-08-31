@@ -7,6 +7,7 @@ import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFracti
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
+import "hardhat/console.sol";
 
 contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     mapping(address => uint256) private _mintedAmount;
@@ -15,6 +16,8 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     mapping(address => bool) private _isParticipant;
 
     uint256 private constant SECONDS_PER_HOUR = 3600;
+
+    uint256 private constant DEFAULT_COEFFICIENT = 1e18;
 
     // Clone data accessors
     // The data is encoded using abi.encode in the following order:
@@ -49,11 +52,6 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         returns (IHatsTimeFrameModule)
     {
         return IHatsTimeFrameModule(_getArgAddress(172)); // 12 + 160
-    }
-
-    function DEFAULT_COEFFICIENT() public pure returns (uint256) {
-        uint256 coefficient = _getArgUint256(204); // 12 + 192
-        return coefficient > 0 ? coefficient : 1e18;
     }
 
     function NAME() public pure returns (string memory) {
@@ -166,10 +164,10 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
 
             uint256 wearingTimeSeconds = HATS_TIME_FRAME_MODULE()
                 .getWearingElapsedTime(role.wearer, role.hatId);
-            uint256 wearingTimeHours = wearingTimeSeconds / 1 hours;
+            uint256 wearingTime10Minutes = wearingTimeSeconds / 10 minutes;
 
             // Calculate mintable amount based on role tenure (hours) and share ownership
-            uint256 roleBasedAmount = (wearingTimeHours * shareBalance) /
+            uint256 roleBasedAmount = (wearingTime10Minutes * shareBalance) /
                 shareTotalSupply;
 
             totalMintable += roleBasedAmount;
@@ -181,8 +179,9 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         // Apply address coefficient
         uint256 coefficient = _addressCoefficient[owner] > 0
             ? _addressCoefficient[owner]
-            : DEFAULT_COEFFICIENT();
-        totalMintable = (totalMintable * coefficient) / 1e18;
+            : DEFAULT_COEFFICIENT;
+
+        totalMintable = ((totalMintable * coefficient) / 1e18) * 1 ether;
 
         // Subtract already minted amount
         if (totalMintable > _mintedAmount[owner]) {
@@ -209,7 +208,7 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     }
 
     function defaultCoefficient() public pure override returns (uint256) {
-        return DEFAULT_COEFFICIENT();
+        return DEFAULT_COEFFICIENT;
     }
 
     function setAddressCoefficient(

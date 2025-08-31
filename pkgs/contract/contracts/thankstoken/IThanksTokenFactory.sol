@@ -6,7 +6,6 @@ interface IThanksTokenFactory {
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         address hatsFractionTokenAddress,
         address hatsTimeFrameModuleAddress,
         bytes32 salt
@@ -16,7 +15,6 @@ interface IThanksTokenFactory {
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         address hatsFractionTokenAddress,
         address hatsTimeFrameModuleAddress,
         bytes32 salt
@@ -26,7 +24,6 @@ interface IThanksTokenFactory {
         string memory name,
         string memory symbol,
         address workspaceOwner,
-        uint256 defaultCoefficient,
         address hatsFractionTokenAddress,
         address hatsTimeFrameModuleAddress,
         bytes32 salt

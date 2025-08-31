@@ -5,6 +5,7 @@ import {
   type PublicClient,
   type WalletClient,
   decodeEventLog,
+  formatEther,
   parseEther,
   zeroAddress,
 } from "viem";
@@ -412,7 +413,7 @@ describe("IntegrationTest", () => {
       HatsFractionTokenModuleByBigBang.address,
     );
 
-    await time.increase(7200);
+    await time.increase(3600 * 24);
 
     const mintableAmountOfAddress1Before =
       await ThanksTokenByBigBang.read.mintableAmount([
@@ -428,7 +429,7 @@ describe("IntegrationTest", () => {
     await ThanksTokenByBigBang.write.mint(
       [
         address2.account?.address!,
-        1000n,
+        1n,
         [
           {
             hatId: hat1_id,
@@ -442,12 +443,12 @@ describe("IntegrationTest", () => {
     const address2Balance = await ThanksTokenByBigBang.read.balanceOf([
       address2.account?.address!,
     ]);
-    expect(address2Balance).to.equal(1000n);
+    expect(address2Balance).to.equal(1n);
 
     const address1MintedAmount = await ThanksTokenByBigBang.read.mintedAmount([
       address1.account?.address!,
     ]);
-    expect(address1MintedAmount).to.equal(1000n);
+    expect(address1MintedAmount).to.equal(1n);
 
     const mintableAmountOfAddress1After =
       await ThanksTokenByBigBang.read.mintableAmount([
@@ -461,7 +462,7 @@ describe("IntegrationTest", () => {
       ]);
 
     expect(mintableAmountOfAddress1After).to.equal(
-      mintableAmountOfAddress1Before - 1000n,
+      mintableAmountOfAddress1Before - 1n,
     );
   });
 

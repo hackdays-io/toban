@@ -1,48 +1,48 @@
 {
   "network": "base",
-  "startBlock": 26196920,
+  "startBlock": 34960441,
   "contracts": [
     {
-      "address": "0xc498cCBc53FB6A31D947fF1631bF69b2F1224445",
+      "address": "0xf4A9308cD49A466629BdF8d19066FeB8385fF213",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
           "handler": "handleExecuted"
+        }
+      ]
+    }
+  ],
+  "templatesContracts": [
+    {
+      "file": "HatsFractionTokenModule",
+      "mappingFile": "hatsModuleMapping",
+      "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
+      "handlers": [
+        {
+          "event": "InitialMint(indexed uint256,indexed address,indexed uint256,uint256)",
+          "handler": "handleRoleShareInitialMint"
+        },
+        {
+          "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
+          "handler": "handleRoleShareTransferSingle"
         }
       ]
     },
     {
-      "address": "",
       "file": "ThanksToken",
       "mappingFile": "thanksTokenMapping",
       "entities": [{ "name": "TokenMinted" }, { "name": "Transfer" }],
       "handlers": [
         {
-          "event": "TokenMinted(indexed address,uint256,uint256)",
+          "event": "TokenMinted(indexed address,indexed address,uint256)",
           "handler": "handleTokenMinted"
         },
         {
           "event": "Transfer(indexed address,indexed address,uint256)",
           "handler": "handleTransfer"
-        }
-      ]
-    }
-  ],
-  "hatsModuleContracts": [
-    {
-      "file": "HatsFractionTokenModule",
-      "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
-      "handlers": [
-        {
-          "event": "InitialMint(indexed address,indexed uint256,indexed uint256)",
-          "handler": "handleInitialMint"
-        },
-        {
-          "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
-          "handler": "handleTransferSingle"
         }
       ]
     }

@@ -10,10 +10,9 @@ type Workspace @entity {
   minterHatId: BigInt!
   hatsTimeFrameModule: String!
   hatsHatCreatorModule: String!
-  hatsFractionTokenModule: HatsFractionTokenModule
+  hatsFractionTokenModule: HatsFractionTokenModule!
   thanksToken: ThanksToken!
   splitCreator: String!
-  thanksToken: ThanksToken
   blockTimestamp: BigInt!
   blockNumber: BigInt!
 }

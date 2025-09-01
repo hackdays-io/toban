@@ -13,9 +13,9 @@
     "update:sepolia": "goldsky subgraph update toban-sepolia/1.0.3",
     "delete:sepolia": "goldsky subgraph delete toban-sepolia/1.0.3",
     "prepare:base": "mustache config/base.json subgraph.template.yaml > subgraph.yaml",
-    "deploy:base": "goldsky subgraph deploy toban-base/0.0.0 --path .",
-    "update:base": "goldsky subgraph update toban-base/0.0.0",
-    "delete:base": "goldsky subgraph delete toban-base/0.0.0",
+    "deploy:base": "goldsky subgraph deploy toban-base/0.0.1 --path .",
+    "update:base": "goldsky subgraph update toban-base/0.0.1",
+    "delete:base": "goldsky subgraph delete toban-base/0.0.1",
     "create-local": "graph create --node http://localhost:8020/ poap-xyz/poap",
     "remove-local": "graph remove --node http://localhost:8020/ poap-xyz/poap",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 poap-xyz/poap"

@@ -28,6 +28,8 @@ interface AmountSelectorProps {
   isLoading: boolean;
   me?: NameData;
   receiver?: NameData;
+  max?: number;
+  step?: number;
 }
 
 const AmountSelector = ({
@@ -37,13 +39,15 @@ const AmountSelector = ({
   isLoading,
   me,
   receiver,
+  max,
+  step,
 }: AmountSelectorProps) => {
   const slider = useSlider({
     defaultValue: [0],
     min: 0,
-    max: 2000,
+    max: max || 2000,
     thumbAlignment: "center",
-    step: 100,
+    step: step || 50,
   });
 
   const [inputValue, setInputValue] = useState<string>(amount.toString());

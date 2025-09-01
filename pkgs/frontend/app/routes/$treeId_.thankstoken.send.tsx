@@ -146,6 +146,8 @@ const ThanksTokenSend: FC = () => {
               isLoading={isLoading}
               me={me.identity}
               receiver={receiver}
+              max={500}
+              step={20}
             />
           )}
         </>

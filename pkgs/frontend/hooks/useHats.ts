@@ -640,7 +640,6 @@ export const useAssignableHats = (treeId: number) => {
 /////////////////////////////////////
 /////// Start subgraph section //////
 /////////////////////////////////////
-
 const queryGetHat = gql(`
   query MyQuery($id: ID) {
     hat(id: $id) {

@@ -7,7 +7,7 @@ import { useGetBalanceOfThanksTokens } from "hooks/useThanksToken";
 import { useMemo } from "react";
 import { Chart } from "react-chartjs-2";
 import { abbreviateAddress } from "utils/wallet";
-import { formatEther } from "viem";
+import { formatEther, zeroAddress } from "viem";
 
 ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
 
@@ -44,21 +44,24 @@ export const TreemapHoldings = ({ treeId }: { treeId: string }) => {
     () =>
       Array.from(
         new Set(
-          gqlData?.balanceOfThanksTokens?.map((item) => item.owner) || [],
+          gqlData?.balanceOfThanksTokens?.map((item) =>
+            item.owner?.toLowerCase(),
+          ) || [],
         ),
-      ),
+      ).filter((addr) => {
+        return addr !== zeroAddress;
+      }),
     [gqlData?.balanceOfThanksTokens],
   );
 
   const { names } = useNamesByAddresses(addresses);
 
-  const processedData = (() => {
-    if (!gqlData?.balanceOfThanksTokens)
-      return [] as Array<{ owner: string; balance: number }>;
-
+  const processedData = useMemo(() => {
     const ownerBalances: Record<string, number> = {};
 
-    for (const item of gqlData.balanceOfThanksTokens) {
+    for (const item of gqlData?.balanceOfThanksTokens || []) {
+      if (item.owner === zeroAddress) continue;
+
       const ownerLabel =
         names?.find(
           (nameData) =>
@@ -74,27 +77,29 @@ export const TreemapHoldings = ({ treeId }: { treeId: string }) => {
       owner,
       balance,
     }));
-  })();
+  }, [gqlData, names]);
 
-  const data = {
-    datasets: [
-      {
-        tree: processedData,
-        key: "balance",
-        backgroundColor: "#A0D8EF",
-        borderColor: "white",
-        borderWidth: 2,
-        spacing: 1,
-        labels: {
-          display: true,
-          formatter: (ctx: FormatterContext) => {
-            if (ctx.type !== "data") return "";
-            return ctx.raw._data?.owner || "";
+  const data = useMemo(() => {
+    return {
+      datasets: [
+        {
+          tree: processedData,
+          key: "balance",
+          backgroundColor: "#A0D8EF",
+          borderColor: "white",
+          borderWidth: 2,
+          spacing: 1,
+          labels: {
+            display: true,
+            formatter: (ctx: FormatterContext) => {
+              if (ctx.type !== "data") return "";
+              return ctx.raw._data?.owner || "";
+            },
           },
         },
-      },
-    ],
-  };
+      ],
+    };
+  }, [processedData]);
 
   const options = {
     responsive: true,

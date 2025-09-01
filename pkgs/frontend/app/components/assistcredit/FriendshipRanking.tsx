@@ -8,9 +8,16 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { Link } from "@remix-run/react";
-import { OrderDirection, TransferThanksToken_OrderBy } from "gql/graphql";
+import {
+  MintThanksToken_OrderBy,
+  OrderDirection,
+  TransferThanksToken_OrderBy,
+} from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useGetTransferThanksTokens } from "hooks/useThanksToken";
+import {
+  useGetMintThanksTokens,
+  useGetTransferThanksTokens,
+} from "hooks/useThanksToken";
 import { type FC, useMemo, useState } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -236,22 +243,22 @@ type SortType = "totalAmount" | "transactionCount";
  */
 export const FriendshipRanking: FC<Props> = ({ treeId, limit = 500 }) => {
   const [sortBy, setSortBy] = useState<SortType>("totalAmount");
-  const { data } = useGetTransferThanksTokens({
+  const { data } = useGetMintThanksTokens({
     where: {
       workspaceId: treeId,
     },
-    orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+    orderBy: MintThanksToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: limit,
   });
 
   const friendshipData = useMemo(() => {
-    if (!data?.transferThanksTokens) return [];
+    if (!data?.mintThanksTokens) return [];
 
     // ユーザーペア間のデータを集計
     const pairMap = new Map<string, FriendshipData>();
 
-    for (const token of data.transferThanksTokens) {
+    for (const token of data.mintThanksTokens) {
       const user1 = token.from.toLowerCase();
       const user2 = token.to.toLowerCase();
 
@@ -286,7 +293,7 @@ export const FriendshipRanking: FC<Props> = ({ treeId, limit = 500 }) => {
       .slice(0, 20); // 上位20ペアまで表示
   }, [data, sortBy]);
 
-  if (!data?.transferThanksTokens || data.transferThanksTokens.length === 0) {
+  if (!data?.mintThanksTokens || data.mintThanksTokens.length === 0) {
     return (
       <Box p={8} textAlign="center" color="gray.500">
         <Text>フレンドシップデータがありません</Text>

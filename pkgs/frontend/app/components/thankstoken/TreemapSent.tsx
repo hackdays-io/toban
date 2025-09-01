@@ -1,9 +1,9 @@
 import type { TooltipItem } from "chart.js";
 import { Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
-import { type OrderDirection, TransferThanksToken_OrderBy } from "gql/graphql";
+import { MintThanksToken_OrderBy, type OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useGetTransferThanksTokens } from "hooks/useThanksToken";
+import { useGetMintThanksTokens } from "hooks/useThanksToken";
 import { useMemo } from "react";
 import { Chart } from "react-chartjs-2";
 import { abbreviateAddress } from "utils/wallet";
@@ -30,9 +30,9 @@ interface TreemapTooltipItem extends TooltipItem<"treemap"> {
 }
 
 export const TreemapSent = ({ treeId }: { treeId: string }) => {
-  const { data } = useGetTransferThanksTokens({
+  const { data } = useGetMintThanksTokens({
     where: { workspaceId: treeId },
-    orderBy: TransferThanksToken_OrderBy.BlockTimestamp,
+    orderBy: MintThanksToken_OrderBy.BlockTimestamp,
     orderDirection: "desc" as OrderDirection,
     first: 1000,
   });
@@ -40,21 +40,19 @@ export const TreemapSent = ({ treeId }: { treeId: string }) => {
   const senders = useMemo(
     () =>
       Array.from(
-        new Set(
-          data?.transferThanksTokens?.map((t) => t.from.toLowerCase()) || [],
-        ),
+        new Set(data?.mintThanksTokens?.map((t) => t.from.toLowerCase()) || []),
       ),
-    [data?.transferThanksTokens],
+    [data?.mintThanksTokens],
   );
 
   const { names } = useNamesByAddresses(senders);
 
   const processedData = (() => {
-    if (!data?.transferThanksTokens)
+    if (!data?.mintThanksTokens)
       return [] as Array<{ sender: string; sent: number }>;
 
     const senderTotals: Record<string, number> = {};
-    for (const t of data.transferThanksTokens) {
+    for (const t of data.mintThanksTokens) {
       const label =
         names?.find(
           (n) => n?.[0]?.address?.toLowerCase() === t.from?.toLowerCase(),

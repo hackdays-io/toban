@@ -24,7 +24,12 @@ const WorkspaceHistoryPage: FC = () => {
         }
       />
       <Tabs.Root defaultValue="thanks-list" mt={5}>
-        <Tabs.List overflowX="auto" whiteSpace="nowrap" gap={2}>
+        <Tabs.List
+          overflowX="auto"
+          whiteSpace="nowrap"
+          gap={2}
+          scrollbar="hidden"
+        >
           <HStack as="span" gap={2}>
             <Tabs.Trigger value="thanks-list">リスト（Thanks）</Tabs.Trigger>
             <Tabs.Trigger value="thanks-graph">グラフ（Thanks）</Tabs.Trigger>

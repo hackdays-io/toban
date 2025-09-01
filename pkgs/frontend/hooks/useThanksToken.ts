@@ -172,25 +172,26 @@ export const useGetMintThanksTokens = (params: {
     },
   });
 
-  const convertAmountInResponse = (
-    data: GetThanksTokenMintsQuery | undefined,
-  ) => {
-    if (data === undefined || data.mintThanksTokens === undefined) {
-      return data;
+  const convertAmountInResponse = useMemo(() => {
+    if (
+      result.data === undefined ||
+      result.data.mintThanksTokens === undefined
+    ) {
+      return result.data;
     }
 
     return {
-      ...data,
-      mintThanksTokens: data.mintThanksTokens.map((token) => ({
+      ...result.data,
+      mintThanksTokens: result.data.mintThanksTokens.map((token) => ({
         ...token,
         amount: formatEther(token.amount),
       })),
     };
-  };
+  }, [result.data]);
 
   return {
     ...result,
-    data: convertAmountInResponse(result.data),
+    data: convertAmountInResponse,
   };
 };
 

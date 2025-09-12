@@ -3,7 +3,7 @@
   "startBlock": 34960441,
   "contracts": [
     {
-      "address": "0xf4A9308cD49A466629BdF8d19066FeB8385fF213",
+      "address": "0xfB4FA9Dbb82a36566154A038e5f3865fbAC92422",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],

@@ -173,15 +173,15 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
             totalMintable += roleBasedAmount;
         }
 
-        // Add 10% of received ThanksTokens
-        totalMintable += balanceOf(owner) / 10;
-
         // Apply address coefficient
         uint256 coefficient = _addressCoefficient[owner] > 0
             ? _addressCoefficient[owner]
             : DEFAULT_COEFFICIENT;
 
         totalMintable = ((totalMintable * coefficient) / 1e18) * 1 ether;
+
+        // Add 10% of received ThanksTokens
+        totalMintable += balanceOf(owner) / 10;
 
         // Subtract already minted amount
         if (totalMintable > _mintedAmount[owner]) {

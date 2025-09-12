@@ -3,7 +3,6 @@ import { PinataSDK } from "pinata";
 const getPinataConfig = () => {
   const pinataJwt = import.meta.env.VITE_PINATA_JWT;
   const pinataGateway = import.meta.env.VITE_PINATA_GATEWAY;
-  // const pinataGatewayToken = import.meta.env.VITE_PINATA_GATEWAY_TOKEN;
   const pinataGatewayToken = import.meta.env.VITE_PINATA_GATEWAY_TOKEN;
 
   if (!pinataJwt) {
@@ -63,21 +62,18 @@ export const ipfsUploadImageFile = async (imageFile: File) => {
   return await ipfsUploadFile(imageFile);
 };
 
-export const ipfs2https = (ipfsUri?: string | undefined) => {
-  if (!ipfsUri) return undefined;
-
+export const ipfs2https = (ipfsUri?: string) => {
   if (!ipfsUri) return;
   const { pinataGateway, pinataGatewayToken } = getPinataConfig();
   const cid = ipfsUri.replace("ipfs://", "");
   return `https://${pinataGateway}/ipfs/${cid}?pinataGatewayToken=${pinataGatewayToken}`;
 };
 
-export const ipfs2httpsJson = async (ipfsUri: string | undefined) => {
-  if (!ipfsUri) return undefined;
-
+export const ipfs2httpsJson = async (ipfsUri?: string) => {
+  if (!ipfsUri) return;
   const httpsUri = ipfs2https(ipfsUri);
-  if (!httpsUri) return undefined;
+  if (!httpsUri) return;
   const response = await fetch(httpsUri);
-  if (!response.ok) return undefined;
+  if (!response.ok) return;
   return response.json();
 };

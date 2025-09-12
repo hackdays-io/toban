@@ -60,7 +60,7 @@ const WorkspaceMember: FC = () => {
       );
   }, [tree]);
 
-  const recipients = useTokenRecipients(params);
+  const recipients = useTokenRecipients(treeId as string, params);
 
   const assistants = useMemo(() => {
     if (!tree || !tree.hats) return [];

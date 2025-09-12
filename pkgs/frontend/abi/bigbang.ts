@@ -108,6 +108,30 @@ export const BIGBANG_ABI = [
       },
       {
         indexed: false,
+        internalType: "uint256",
+        name: "memberHatId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "operatorHatId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "creatorHatId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "minterHatId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
         internalType: "address",
         name: "hatsTimeFrameModule",
         type: "address",
@@ -121,7 +145,19 @@ export const BIGBANG_ABI = [
       {
         indexed: false,
         internalType: "address",
+        name: "hatsFractionTokenModule",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address",
         name: "splitCreator",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "thanksToken",
         type: "address",
       },
     ],
@@ -175,10 +211,10 @@ export const BIGBANG_ABI = [
   },
   {
     inputs: [],
-    name: "FractionToken",
+    name: "Hats",
     outputs: [
       {
-        internalType: "address",
+        internalType: "contract IHats",
         name: "",
         type: "address",
       },
@@ -188,10 +224,10 @@ export const BIGBANG_ABI = [
   },
   {
     inputs: [],
-    name: "Hats",
+    name: "HatsFractionTokenModule_IMPL",
     outputs: [
       {
-        internalType: "contract IHats",
+        internalType: "address",
         name: "",
         type: "address",
       },
@@ -266,6 +302,19 @@ export const BIGBANG_ABI = [
   },
   {
     inputs: [],
+    name: "ThanksTokenFactory",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "UPGRADE_INTERFACE_VERSION",
     outputs: [
       {
@@ -302,6 +351,16 @@ export const BIGBANG_ABI = [
       {
         internalType: "string",
         name: "_hatterHatImageURI",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "_memberHatDetails",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "_memberHatImageURI",
         type: "string",
       },
     ],
@@ -345,6 +404,11 @@ export const BIGBANG_ABI = [
       },
       {
         internalType: "address",
+        name: "_hatsFractionTokenModule_IMPL",
+        type: "address",
+      },
+      {
+        internalType: "address",
         name: "_splitsCreatorFactory",
         type: "address",
       },
@@ -355,7 +419,7 @@ export const BIGBANG_ABI = [
       },
       {
         internalType: "address",
-        name: "_fractionToken",
+        name: "_thanksTokenFactory",
         type: "address",
       },
     ],
@@ -401,11 +465,11 @@ export const BIGBANG_ABI = [
     inputs: [
       {
         internalType: "address",
-        name: "_fractionToken",
+        name: "_hats",
         type: "address",
       },
     ],
-    name: "setFractionToken",
+    name: "setHats",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -414,11 +478,11 @@ export const BIGBANG_ABI = [
     inputs: [
       {
         internalType: "address",
-        name: "_hats",
+        name: "_hatsFractionTokenModuleImpl",
         type: "address",
       },
     ],
-    name: "setHats",
+    name: "setHatsFractionTokenModuleImpl",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -484,6 +548,19 @@ export const BIGBANG_ABI = [
       },
     ],
     name: "setSplitsFactoryV2",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_thanksTokenFactory",
+        type: "address",
+      },
+    ],
+    name: "setThanksTokenFactory",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

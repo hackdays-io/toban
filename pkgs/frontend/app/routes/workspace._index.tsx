@@ -1,136 +1,195 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import { Link, useNavigate } from "@remix-run/react";
-import { useGetTransferFractionTokens } from "hooks/useFractionToken";
+import axios from "axios";
+import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
+import { useGetHatsByWorkspaceIds, useGetWorkspaces } from "hooks/useHats";
+import { useGetHoldingThanksTokens } from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
+import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
-import { useHats } from "../../hooks/useHats";
 
 const WorkspaceCard: FC<{
-  treeId: string;
-  name: string;
-  imageUrl: string | undefined;
-}> = ({ treeId, name, imageUrl }) => {
+  workspaceId: string;
+  imageUrl: string;
+  name?: string;
+  description?: string;
+}> = ({ workspaceId, imageUrl, name, description }) => {
   return (
-    <Link to={`/${treeId}`}>
-      <Flex w="100%" borderRadius="xl" mb={3} p={2} alignItems="center">
+    <Link to={`/${workspaceId}`}>
+      <Flex
+        w="100%"
+        borderRadius="xl"
+        mb={3}
+        p={2}
+        bgColor={"white"}
+        shadow={"md"}
+        alignItems="center"
+      >
         <WorkspaceIcon workspaceImageUrl={imageUrl} size="60px" />
         <Box ml={4}>
-          <Text>{name}</Text>
-          <Text fontSize="xs">Workspace id: {treeId}</Text>
+          {name && <Text fontWeight={"bold"}>{name}</Text>}
+          {description && (
+            <Text fontSize={"sm"} color={"GrayText"}>
+              {description}
+            </Text>
+          )}
+          <Text fontSize={name ? "xs" : "md"}>Workspace ID: {workspaceId}</Text>
         </Box>
       </Flex>
     </Link>
   );
 };
 
+const WorkspaceSection: FC<{ title: string; workspaces: Workspace[] }> = ({
+  title,
+  workspaces,
+}) => {
+  const [detailsMap, setDetailsMap] = useState<
+    Record<string, { name?: string; description?: string }>
+  >({});
+
+  useEffect(() => {
+    for (const w of workspaces) {
+      if (!w.details.startsWith("ipfs://")) continue;
+      axios
+        .get(ipfs2https(w.details) || "")
+        .then((res) => {
+          const {
+            data: {
+              data: { name, description },
+            },
+          } = res;
+          setDetailsMap((prev) => ({ ...prev, [w.id]: { name, description } }));
+        })
+        .catch((error) => {
+          console.error("Error fetching workspace details:", error);
+        });
+    }
+  }, [workspaces]);
+
+  return (
+    <Box>
+      <Heading my={3}>{title}</Heading>
+      {workspaces.length > 0 ? (
+        workspaces.map((workspace) => (
+          <WorkspaceCard
+            key={workspace.id}
+            workspaceId={workspace.id}
+            name={detailsMap[workspace.id]?.name}
+            description={detailsMap[workspace.id]?.description}
+            imageUrl={ipfs2https(workspace.imageUri) || ""}
+          />
+        ))
+      ) : (
+        <Text mx={2} fontStyle="italic" color="gray.400">
+          該当なし
+        </Text>
+      )}
+    </Box>
+  );
+};
+
+type Workspace = {
+  id: string;
+  details: string;
+  imageUri: string;
+  name?: string;
+  description?: string;
+};
+
 const Workspace: FC = () => {
   const navigate = useNavigate();
 
-  const { wallet, isSmartWallet, isConnectingEmbeddedWallet } =
-    useActiveWallet();
+  const { wallet } = useActiveWallet();
+  const me = wallet?.account?.address?.toLocaleLowerCase();
 
-  const { getWorkspacesList, getWorkspacesListByIds } = useHats();
+  const { workspaces: joinedWorkspaces, loading: loadingJoined } =
+    useGetWorkspaces({
+      id: me,
+    });
+  const joinedWorkspaceIds = useMemo(
+    () => joinedWorkspaces.map((w) => w.id),
+    [joinedWorkspaces],
+  );
 
-  const address = useMemo(() => {
-    if (isConnectingEmbeddedWallet && !isSmartWallet) return;
-    return wallet?.account?.address as Address;
-  }, [wallet?.account?.address, isSmartWallet, isConnectingEmbeddedWallet]);
-
-  const [workspacesList, setWorkspacesList] = useState<
-    {
-      treeId: string;
-      name: string;
-      imageUrl: string | undefined;
-    }[]
-  >([]);
-
-  useEffect(() => {
-    const fetchWorkspacesList = async () => {
-      if (!address) return;
-      const _workspacesList = await getWorkspacesList({
-        walletAddress: address as `0x${string}`,
-      });
-
-      setWorkspacesList(_workspacesList);
-    };
-    fetchWorkspacesList();
-  }, [address, getWorkspacesList]);
-
-  const { data, loading } = useGetTransferFractionTokens({
-    where: { to: address?.toLowerCase() },
-    first: 100,
-  });
-
-  const treeIds = useMemo(() => {
-    if (!data) return;
-    const tokens = data.transferFractionTokens;
-    if (tokens.length === 0) return;
-    return Array.from(
-      new Set(
-        tokens
-          .map(({ workspaceId }) => Number(workspaceId))
-          .filter(
-            (id) =>
-              id > 0 &&
-              !workspacesList.some(
-                (workspace) => workspace.treeId === id.toString(),
-              ),
-          ),
+  const { data: fractionTokensData, loading: loadingAssisted } =
+    useGetBalanceOfFractionTokens({
+      where: {
+        owner: me,
+        workspaceId_not_in: loadingJoined ? [] : joinedWorkspaceIds,
+      },
+    });
+  const assistedWorkspaceIds = useMemo(() => {
+    if (!fractionTokensData) return [];
+    return fractionTokensData.balanceOfFractionTokens.map((t) => t.workspaceId);
+  }, [fractionTokensData]);
+  const { hats: assistedHats } = useGetHatsByWorkspaceIds(assistedWorkspaceIds);
+  const assistedWorkspaces = useMemo(
+    () =>
+      assistedHats.map(
+        (h: { tree: { id: string }; details: string; imageUri: string }) => ({
+          id: String(treeIdHexToDecimal(h.tree.id)),
+          details: h.details,
+          imageUri: h.imageUri,
+        }),
       ),
+    [assistedHats],
+  );
+
+  const excludeWorkspaceIds = useMemo(() => {
+    const ids = [...joinedWorkspaceIds, ...assistedWorkspaceIds];
+    return ids.length > 0 ? ids : undefined;
+  }, [joinedWorkspaceIds, assistedWorkspaceIds]);
+  const holdingThanksToken = useGetHoldingThanksTokens(me as Address, {
+    where: {
+      workspaceId_not_in: excludeWorkspaceIds,
+    },
+  });
+  const { hats: thankedHats } = useGetHatsByWorkspaceIds(
+    holdingThanksToken.map((t) => t.workspaceId),
+  );
+  const thankedWorkspaces = useMemo(() => {
+    if (!thankedHats) return [];
+    return thankedHats.map(
+      (h: { tree: { id: string }; details: string; imageUri: string }) => ({
+        id: String(treeIdHexToDecimal(h.tree.id)),
+        details: h.details,
+        imageUri: h.imageUri,
+      }),
     );
-  }, [workspacesList, data]);
-
-  const [assistedWorkspacesList, setAssistedWorkspacesList] = useState<
-    {
-      treeId: string;
-      name: string;
-      imageUrl: string | undefined;
-    }[]
-  >([]);
-
-  useEffect(() => {
-    const fetchAssistedWorkspacesList = async () => {
-      if (!address || !treeIds) return;
-      const _assistedWorkspacesList = await getWorkspacesListByIds({
-        treeIds,
-      });
-
-      setAssistedWorkspacesList(_assistedWorkspacesList);
-    };
-
-    fetchAssistedWorkspacesList();
-  }, [address, treeIds, getWorkspacesListByIds]);
+  }, [thankedHats]);
 
   return (
     <Box data-testid="workspace-page">
-      <Box>
-        <Heading my={3}>ロールメンバーのワークスペース</Heading>
-        {workspacesList.length > 0 ? (
-          workspacesList.map((workspace) => (
-            <WorkspaceCard key={workspace.treeId} {...workspace} />
-          ))
-        ) : (
-          <Text mx={2} fontStyle="italic" color="gray.400">
-            該当なし
-          </Text>
-        )}
-      </Box>
-      <Box mt={7}>
-        <Heading my={3}>お手伝いしているワークスペース</Heading>
-        {assistedWorkspacesList.length > 0 ? (
-          assistedWorkspacesList.map((workspace) => (
-            <WorkspaceCard key={workspace.treeId} {...workspace} />
-          ))
-        ) : (
-          <Text mx={2} fontStyle="italic" color="gray.400">
-            該当なし
-          </Text>
-        )}
-      </Box>
+      {[...joinedWorkspaces, ...assistedWorkspaces, ...thankedWorkspaces]
+        .length === 0 && (
+        <Text mx={2} fontStyle="italic" color="gray.400">
+          ワークスペースに参加していません。
+        </Text>
+      )}
+      {joinedWorkspaces.length > 0 && (
+        <WorkspaceSection
+          title="役割をもっているワークスペース"
+          workspaces={joinedWorkspaces}
+        />
+      )}
+      {assistedWorkspaces.length > 0 && (
+        <WorkspaceSection
+          title="お手伝いしているワークスペース"
+          workspaces={assistedWorkspaces}
+        />
+      )}
+      {thankedWorkspaces.length > 0 && (
+        <WorkspaceSection
+          title="ありがとうをもらったワークスペース"
+          workspaces={thankedWorkspaces}
+        />
+      )}
       <BasicButton mt={7} onClick={() => navigate("/workspace/new")}>
         新しいワークスペースを作成
       </BasicButton>

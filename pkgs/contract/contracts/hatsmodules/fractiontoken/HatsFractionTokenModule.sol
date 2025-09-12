@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {HatsModule} from "../../hats/module/HatsModule.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {ERC1155Supply} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 import {IHatsFractionTokenModule} from "./IHatsFractionTokenModule.sol";
 
 /**
@@ -23,6 +24,7 @@ contract HatsFractionTokenModule is
     HatsModule,
     ERC1155,
     ERC1155Supply,
+    Multicall,
     IHatsFractionTokenModule
 {
     // ============ State Variables ============
@@ -398,7 +400,7 @@ contract HatsFractionTokenModule is
     ) public view returns (uint256) {
         uint256 tokenId = getTokenId(_hatId, _wearer);
 
-        if (tokenRecipients[tokenId].length == 0) {
+        if (!_containsRecipient(tokenId, _wearer)) {
             return DEFAULT_TOKEN_SUPPLY;
         }
 

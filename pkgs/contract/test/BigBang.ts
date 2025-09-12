@@ -97,17 +97,6 @@ describe("BigBang", () => {
     PushSplitsFactory = _PushSplitsFactory;
 
     const { ThanksToken: _ThanksToken } = await deployThanksToken(
-      {
-        initialOwner: await address1
-          .getAddresses()
-          .then((addresses) => addresses[0]),
-        name: "Test Thanks Token",
-        symbol: "TTT",
-        hatsAddress: Hats.address,
-        fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
-        hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
-        defaultCoefficient: 1000000000000000000n, // 1.0 in wei
-      },
       Create2Deployer.address,
     );
     ThanksToken_IMPL = _ThanksToken;
@@ -115,13 +104,9 @@ describe("BigBang", () => {
     const { ThanksTokenFactory: _ThanksTokenFactory } =
       await deployThanksTokenFactory(
         {
-          initialOwner: await address1
-            .getAddresses()
-            .then((addresses) => addresses[0]),
+          initialOwner: address1.account?.address!,
           implementation: ThanksToken_IMPL.address,
           hatsAddress: Hats.address,
-          fractionTokenAddress: HatsFractionTokenModule_IMPL.address,
-          hatsTimeFrameModuleAddress: HatsTimeFrameModule_IMPL.address,
         },
         Create2Deployer.address,
       );
@@ -181,6 +166,8 @@ describe("BigBang", () => {
         "tophatURI",
         "hatterhatDetails",
         "hatterhatURI",
+        "memberhatDetails",
+        "memberhatURI",
       ],
       { account: address1.account },
     );
@@ -200,6 +187,11 @@ describe("BigBang", () => {
           expect(decodedLog.args.owner.toLowerCase()).to.be.equal(
             address1.account?.address!,
           );
+          expect(decodedLog.args.memberHatId).to.be.not.equal(null);
+          Hats.read.isWearerOfHat([
+            decodedLog.args.memberHatId,
+            BigInt(address1.account?.address!),
+          ]);
           console.log(decodedLog.args);
         }
       } catch (error) {}
@@ -410,6 +402,8 @@ describe("BigBang", () => {
   //         "tophatURI",
   //         "hatterhatDetails",
   //         "hatterhatURI",
+  //         "memberhatDetails",
+  //         "memberhatURI",
   //       ],
   //       { account: address1.account },
   //     );

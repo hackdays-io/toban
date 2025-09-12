@@ -1,13 +1,20 @@
-import { hatIdToTreeId, treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
+import { gql } from "@apollo/client/core";
+import { useQuery } from "@apollo/client/react/hooks";
+import {
+  hatIdDecimalToHex,
+  hatIdToTreeId,
+  treeIdHexToDecimal,
+  treeIdToTopHatId,
+} from "@hatsprotocol/sdk-v1-core";
 import {
   type Hat,
   HatsSubgraphClient,
   type Tree,
 } from "@hatsprotocol/sdk-v1-subgraph";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery as useTanstackQuery } from "@tanstack/react-query";
 import { HATS_ABI } from "abi/hats";
-import { useCallback, useEffect, useState } from "react";
-import { ipfs2https, ipfs2httpsJson } from "utils/ipfs";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { hatsApolloClient } from "utils/apollo";
 import { type Address, parseEventLogs } from "viem";
 import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
@@ -250,66 +257,6 @@ export const useHats = () => {
 
     return hat;
   }, []);
-
-  const getWorkspacesList = useCallback(
-    async (params: { walletAddress: string }) => {
-      const treesInfo = await getTreesInfoByWearer({
-        walletAddress: params.walletAddress,
-      });
-      const workspacesList = await Promise.all(
-        treesInfo.map(async (tree) => {
-          const detailsUri = tree?.hats?.[0]?.details;
-          const detailsJson = detailsUri
-            ? await ipfs2httpsJson(detailsUri)
-            : undefined;
-          const imageIpfsUri = tree?.hats?.[0].imageUri;
-          const imageHttps = ipfs2https(imageIpfsUri);
-          return {
-            treeId: String(treeIdHexToDecimal(tree?.id)),
-            name: detailsJson?.data.name,
-            imageUrl: imageHttps,
-          };
-        }),
-      );
-      return workspacesList;
-    },
-    [getTreesInfoByWearer],
-  );
-
-  const getWorkspacesListByIds = useCallback(
-    async (params: { treeIds: number[] }) => {
-      const treesInfo = await hatsSubgraphClient.getTreesByIds({
-        chainId: currentChain.id,
-        treeIds: params.treeIds,
-        props: {
-          hats: {
-            props: {
-              details: true,
-              imageUri: true,
-            },
-          },
-        },
-      });
-
-      const workspacesList = await Promise.all(
-        treesInfo.map(async (tree) => {
-          const detailsUri = tree?.hats?.[0]?.details;
-          const detailsJson = detailsUri
-            ? await ipfs2httpsJson(detailsUri)
-            : undefined;
-          const imageIpfsUri = tree?.hats?.[0].imageUri;
-          const imageHttps = ipfs2https(imageIpfsUri);
-          return {
-            treeId: String(treeIdHexToDecimal(tree?.id)),
-            name: detailsJson?.data.name,
-            imageUrl: imageHttps,
-          };
-        }),
-      );
-      return workspacesList;
-    },
-    [],
-  );
 
   /**
    * HatsTimeframeModuleコントラクトのアドレスを取得するコールバック関数
@@ -628,8 +575,6 @@ export const useHats = () => {
     getWearerInfo,
     getTreesInfoByWearer,
     getHat,
-    getWorkspacesList,
-    getWorkspacesListByIds,
     getHatsTimeframeModuleAddress,
     createHat,
     mintHat,
@@ -644,7 +589,7 @@ export const useHats = () => {
 export const useGetHat = (hatId: string) => {
   const { getHat } = useHats();
 
-  const { data: hat, isLoading } = useQuery({
+  const { data: hat, isLoading } = useTanstackQuery({
     queryKey: ["hat", hatId],
     queryFn: () => getHat(hatId),
   });
@@ -690,4 +635,111 @@ export const useAssignableHats = (treeId: number) => {
   }, [tree]);
 
   return assignableHats;
+};
+
+/////////////////////////////////////
+/////// Start subgraph section //////
+/////////////////////////////////////
+const queryGetHat = gql(`
+  query MyQuery($id: ID) {
+    hat(id: $id) {
+      details
+      imageUri
+      wearers {
+        id
+      }
+    }
+  }
+`);
+
+const queryGetHats = gql(`
+  query GetHats($where: Hat_filter) {
+    hats(where: $where) {
+      id
+      details
+      imageUri
+      tree {
+        id
+      }
+    }
+  }
+`);
+
+const queryGetTopHats = gql(`
+  query GetTopHats($id: ID) {
+    hats(where: {wearers_: {id: $id}}) {
+      tree {
+        id
+        hats(where: {levelAtLocalTree: 0}) {
+          details
+          imageUri
+        }
+      }
+    }
+  }
+`);
+
+export const useGetHatById = (id: string) => {
+  const { data, loading } = useQuery<{
+    hat: { details: string; imageUri: string; wearers: Array<{ id: string }> };
+  }>(queryGetHat, {
+    variables: { id },
+    client: hatsApolloClient,
+  });
+
+  return { hat: data ? data.hat : null, loading };
+};
+
+export const useGetHatsByWorkspaceIds = (ids: string[]) => {
+  const hatIds = useMemo(
+    () => ids.map((i) => hatIdDecimalToHex(treeIdToTopHatId(Number(i)))),
+    [ids],
+  );
+  const { data, loading } = useQuery<{
+    hats: Array<{
+      id: string;
+      details: string;
+      imageUri: string;
+      tree: { id: string };
+    }>;
+  }>(queryGetHats, {
+    variables: { where: { id_in: hatIds } },
+    client: hatsApolloClient,
+  });
+
+  return { hats: data ? data.hats : [], loading };
+};
+
+export const useGetWorkspaces = (variables: { id?: string }) => {
+  const { data, loading } = useQuery<{
+    hats: Array<{
+      tree: {
+        id: string;
+        hats: Array<{
+          id: string;
+          details: string;
+          imageUri: string;
+        }>;
+      };
+    }>;
+  }>(queryGetTopHats, {
+    variables,
+    client: hatsApolloClient,
+  });
+
+  const workspaces = useMemo(() => {
+    if (!data) return [];
+    const workspaceMap = new Map<
+      string,
+      { id: string; details: string; imageUri: string }
+    >();
+    for (const hat of data.hats) {
+      const id = String(treeIdHexToDecimal(hat.tree.id));
+      const topHat = hat.tree.hats.at(0);
+      if (topHat) workspaceMap.set(id, { ...topHat, id });
+    }
+    return Array.from(workspaceMap.values());
+  }, [data]);
+
+  return { workspaces, loading };
 };

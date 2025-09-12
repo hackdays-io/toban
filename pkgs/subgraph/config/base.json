@@ -1,68 +1,48 @@
 {
   "network": "base",
-  "startBlock": 26196920,
+  "startBlock": 34960441,
   "contracts": [
     {
-      "address": "0xc498cCBc53FB6A31D947fF1631bF69b2F1224445",
+      "address": "0xfB4FA9Dbb82a36566154A038e5f3865fbAC92422",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
           "handler": "handleExecuted"
-        }
-      ]
-    },
-    {
-      "address": "0xBe3eC807B3062bfbADDa16c05C060d223F727fa3",
-      "file": "FractionToken",
-      "mappingFile": "fractionTokenMapping",
-      "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
-      "handlers": [
-        {
-          "event": "InitialMint(indexed address,indexed uint256,indexed uint256)",
-          "handler": "handleInitialMint"
-        },
-        {
-          "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
-          "handler": "handleTransferSingle"
         }
       ]
     }
   ],
-  "hatsModuleContracts": [
+  "templatesContracts": [
     {
-      "file": "HatsHatCreatorModule",
-      "entities": [
-        { "name": "CreateHatAuthorityGranted" },
-        { "name": "CreateHatAuthorityRevoked" }
-      ],
+      "file": "HatsFractionTokenModule",
+      "mappingFile": "hatsModuleMapping",
+      "entities": [{ "name": "InitialMint" }, { "name": "TransferSignle" }],
       "handlers": [
         {
-          "event": "CreateHatAuthorityGranted(indexed address)",
-          "handler": "handleCreateHatAuthorityGranted"
+          "event": "InitialMint(indexed uint256,indexed address,indexed uint256,uint256)",
+          "handler": "handleRoleShareInitialMint"
         },
         {
-          "event": "CreateHatAuthorityRevoked(indexed address)",
-          "handler": "handleCreateHatAuthorityRevoked"
+          "event": "TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)",
+          "handler": "handleRoleShareTransferSingle"
         }
       ]
     },
     {
-      "file": "HatsTimeFrameModule",
-      "entities": [
-        { "name": "OperationAuthorityGranted" },
-        { "name": "OperationAuthorityRevoked" }
-      ],
+      "file": "ThanksToken",
+      "mappingFile": "thanksTokenMapping",
+      "entities": [{ "name": "TokenMinted" }, { "name": "Transfer" }],
       "handlers": [
         {
-          "event": "OperationAuthorityGranted(indexed address)",
-          "handler": "handleOperationAuthorityGranted"
+          "event": "TokenMinted(indexed address,indexed address,uint256)",
+          "handler": "handleTokenMinted"
         },
         {
-          "event": "OperationAuthorityRevoked(indexed address)",
-          "handler": "handleOperationAuthorityRevoked"
+          "event": "Transfer(indexed address,indexed address,uint256)",
+          "handler": "handleTransfer"
         }
       ]
     }

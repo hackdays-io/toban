@@ -2,15 +2,10 @@ import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react/hooks";
 import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import type {
-  BalanceOfFractionToken_Filter,
-  BalanceOfFractionToken_OrderBy,
   BalanceOfFractionTokensQuery,
   BalanceOfFractionTokensQueryVariables,
   GetTransferFractionTokensQuery,
   GetTransferFractionTokensQueryVariables,
-  OrderDirection,
-  TransferFractionToken_Filter,
-  TransferFractionToken_OrderBy,
 } from "gql/graphql";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -23,8 +18,20 @@ import {
 import { fractionTokenBaseConfig } from "./useContracts";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
+import { useGetWorkspace } from "./useWorkspace";
+
+const useFractionTokenAddress = (workspaceId: string) => {
+  const { data } = useGetWorkspace({ workspaceId });
+
+  const fractionTokenAddress = useMemo(() => {
+    return data?.workspace?.hatsFractionTokenModule?.id;
+  }, [data]);
+
+  return fractionTokenAddress as Address;
+};
 
 export const useTokenRecipients = (
+  workspaceId: string,
   params: {
     wearer: Address;
     hatId: Address;
@@ -39,6 +46,8 @@ export const useTokenRecipients = (
 
   const { getTokenId } = useGetTokenId();
 
+  const fractionTokenAddress = useFractionTokenAddress(workspaceId);
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -52,7 +61,7 @@ export const useTokenRecipients = (
 
             try {
               const assistants = await publicClient.readContract({
-                ...fractionTokenBaseConfig,
+                ...fractionTokenBaseConfig(fractionTokenAddress),
                 functionName: "getTokenRecipients",
                 args: [tokenId],
               });
@@ -97,24 +106,27 @@ export const useTokenRecipients = (
     };
 
     fetch();
-  }, [params, getTokenId]);
+  }, [params, getTokenId, fractionTokenAddress]);
 
   return recipients;
 };
 
 export const useBalanceOfFractionToken = (
+  workspaceId: string,
   holder: Address,
   address: Address,
   hatId: bigint,
 ) => {
   const [balance, setBalance] = useState<bigint>();
 
+  const fractionTokenAddress = useFractionTokenAddress(workspaceId);
+
   useEffect(() => {
     const fetch = async () => {
       if (!holder || !address || !hatId) return;
       try {
         const balance = await publicClient.readContract({
-          ...fractionTokenBaseConfig,
+          ...fractionTokenBaseConfig(fractionTokenAddress),
           functionName: "balanceOf",
           args: [holder, address, hatId],
         });
@@ -125,12 +137,14 @@ export const useBalanceOfFractionToken = (
     };
 
     fetch();
-  }, [holder, hatId, address]);
+  }, [holder, hatId, address, fractionTokenAddress]);
 
   return balance;
 };
 
-export const useBalancesWithHat = (treeId?: string, address?: Address) => {
+export const useBalancesWithHat = (treeId: string, address?: Address) => {
+  const fractionTokenAddress = useFractionTokenAddress(treeId);
+
   const { data: data1 } = useGetTransferFractionTokens({
     where: {
       workspaceId: treeId,
@@ -170,7 +184,9 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
         new Set(
           data.transferFractionTokens
             .filter(({ workspaceId }) => Number(workspaceId) > 0)
-            .map(({ wearer, hatId }) => JSON.stringify({ wearer, hatId })),
+            .map(({ to, tokenId }) =>
+              JSON.stringify({ wearer: to, hatId: tokenId }),
+            ),
         ),
       );
 
@@ -182,7 +198,7 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
               const isHolder = address.toLowerCase() === wearer.toLowerCase();
 
               const balance = await publicClient.readContract({
-                ...fractionTokenBaseConfig,
+                ...fractionTokenBaseConfig(fractionTokenAddress),
                 functionName: "balanceOf",
                 args: [address, wearer as Address, BigInt(hatId)],
               });
@@ -198,17 +214,14 @@ export const useBalancesWithHat = (treeId?: string, address?: Address) => {
     };
 
     fetch();
-  }, [address, data1, data2]);
+  }, [address, data1, data2, fractionTokenAddress]);
 
   return balances;
 };
 
 export const useGetTokenId = () => {
   const getTokenId = useCallback(
-    (params: {
-      hatId: bigint;
-      account: Address;
-    }) => {
+    (params: { hatId: bigint; account: Address }) => {
       return BigInt(
         keccak256(
           encodePacked(["uint256", "address"], [params.hatId, params.account]),
@@ -225,9 +238,11 @@ export const useGetTokenId = () => {
  * FractionToken 向けの React Hooks
  * @returns
  */
-export const useFractionToken = () => {
+export const useFractionToken = (workspaceId: string) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
+
+  const fractionTokenAddress = useFractionTokenAddress(workspaceId);
 
   const mintInitialSupplyFractionToken = useCallback(
     async (params: { hatId: bigint; account: Address; amount?: bigint }) => {
@@ -237,7 +252,7 @@ export const useFractionToken = () => {
 
       try {
         const txHash = await wallet.writeContract({
-          ...fractionTokenBaseConfig,
+          ...fractionTokenBaseConfig(fractionTokenAddress),
           functionName: "mintInitialSupply",
           args: [params.hatId, params.account, params.amount || BigInt(0)],
         });
@@ -272,7 +287,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet],
+    [wallet, fractionTokenAddress],
   );
 
   /**
@@ -288,7 +303,7 @@ export const useFractionToken = () => {
 
       try {
         const txHash = await wallet.writeContract({
-          ...fractionTokenBaseConfig,
+          ...fractionTokenBaseConfig(fractionTokenAddress),
           functionName: "mint",
           args: [params.hatId, params.account, params.amount],
         });
@@ -323,7 +338,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet],
+    [wallet, fractionTokenAddress],
   );
 
   /**
@@ -347,14 +362,14 @@ export const useFractionToken = () => {
       try {
         // tokenIdを取得
         const tokenId = await publicClient.readContract({
-          ...fractionTokenBaseConfig,
+          ...fractionTokenBaseConfig(fractionTokenAddress),
           functionName: "getTokenId",
           args: [params.hatId, params.account],
         });
 
         // FractionTokenをtransferする。
         const txHash = await wallet.writeContract({
-          ...fractionTokenBaseConfig,
+          ...fractionTokenBaseConfig(fractionTokenAddress),
           functionName: "safeTransferFrom",
           args: [params.account, params.to, tokenId, params.amount, "0x"],
         });
@@ -389,7 +404,7 @@ export const useFractionToken = () => {
         setIsLoading(false);
       }
     },
-    [wallet],
+    [wallet, fractionTokenAddress],
   );
 
   return {
@@ -400,8 +415,13 @@ export const useFractionToken = () => {
   };
 };
 
-export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
+export const useTransferFractionToken = (
+  workspaceId: string,
+  hatId: bigint,
+  wearer: Address,
+) => {
   const { wallet } = useActiveWallet();
+  const fractionTokenAddress = useFractionTokenAddress(workspaceId);
 
   const [isLoading, setIsLoading] = useState(false);
   const [tokenId, setTokenId] = useState<bigint>();
@@ -420,7 +440,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
       setTokenId(_tokenId);
 
       const recipients = await publicClient.readContract({
-        ...fractionTokenBaseConfig,
+        ...fractionTokenBaseConfig(fractionTokenAddress),
         functionName: "getTokenRecipients",
         args: [_tokenId],
       });
@@ -429,7 +449,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
       }
     };
     fetch();
-  }, [hatId, wearer, getTokenId]);
+  }, [hatId, wearer, getTokenId, fractionTokenAddress]);
 
   const transferFractionToken = useCallback(
     async (to: Address, amount: bigint) => {
@@ -442,7 +462,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
       if (initialized) {
         try {
           txHash = await wallet.writeContract({
-            ...fractionTokenBaseConfig,
+            ...fractionTokenBaseConfig(fractionTokenAddress),
             functionName: "safeTransferFrom",
             args: [wallet.account.address, to, tokenId, amount, "0x"],
           });
@@ -467,7 +487,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
         });
         try {
           txHash = await wallet.writeContract({
-            ...fractionTokenBaseConfig,
+            ...fractionTokenBaseConfig(fractionTokenAddress),
             functionName: "multicall",
             args: [[mintInitialSupplyData, transferData]],
           });
@@ -487,7 +507,7 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
       return { txHash, error };
     },
-    [wallet, initialized, tokenId, hatId, wearer],
+    [wallet, initialized, tokenId, hatId, wearer, fractionTokenAddress],
   );
 
   return { isLoading, transferFractionToken };
@@ -499,37 +519,35 @@ export const useTransferFractionToken = (hatId: bigint, wearer: Address) => {
 
 const queryGetTransferFractionTokens = gql(`
   query GetTransferFractionTokens($where: TransferFractionToken_filter = {}, $orderBy: TransferFractionToken_orderBy, $orderDirection: OrderDirection = asc, $first: Int = 10) {
-    transferFractionTokens(where: $where, orderBy: $orderBy, orderDirection: $orderDirection, first: $first) {
-      amount
+    transferFractionTokens(
+      where: $where
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      first: $first
+    ) {
+      id
       from
       to
       tokenId
-      blockNumber
-      blockTimestamp
-      hatId
-      id
-      wearer
       workspaceId
+      blockTimestamp
+      blockNumber
+      amount
+      hatsFractionTokenModule {
+        id
+      }
     }
   }
 `);
 
-export const useGetTransferFractionTokens = (params: {
-  where?: TransferFractionToken_Filter;
-  orderBy?: TransferFractionToken_OrderBy;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
+export const useGetTransferFractionTokens = (
+  variables: GetTransferFractionTokensQueryVariables,
+) => {
   const result = useQuery<
     GetTransferFractionTokensQuery,
     GetTransferFractionTokensQueryVariables
   >(queryGetTransferFractionTokens, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
+    variables,
   });
 
   return result;
@@ -550,22 +568,14 @@ const queryBalanceOfFractionTokens = gql(`
   }
 `);
 
-export const useBalanceOfFractionTokens = (params: {
-  where?: BalanceOfFractionToken_Filter;
-  orderBy?: BalanceOfFractionToken_OrderBy;
-  orderDirection?: OrderDirection;
-  first?: number;
-}) => {
+export const useGetBalanceOfFractionTokens = (
+  variables: BalanceOfFractionTokensQueryVariables,
+) => {
   const result = useQuery<
     BalanceOfFractionTokensQuery,
     BalanceOfFractionTokensQueryVariables
   >(queryBalanceOfFractionTokens, {
-    variables: {
-      where: params.where,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection,
-      first: params.first,
-    },
+    variables,
   });
 
   return result;

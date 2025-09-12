@@ -485,38 +485,34 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
   treeId,
   treeInfo,
 }) => {
-  const { data, refetch } = useGetWorkspace(
-    treeId,
-    { authorised: true },
-    { authorised: true },
-  );
+  const { data, refetch } = useGetWorkspace({ workspaceId: treeId || "" });
   const {
     grantCreateHatAuthority,
     isLoading: isGrantCreateHatAuthorityLoading,
     isSuccess: isGrantCreateHatAuthoritySuccess,
   } = useGrantCreateHatAuthority(
-    data?.workspace?.hatsHatCreatorModule?.id as Address,
+    data?.workspace?.hatsHatCreatorModule as Address,
   );
   const {
     revokeCreateHatAuthority,
     isLoading: isRevokeCreateHatAuthorityLoading,
     isSuccess: isRevokeCreateHatAuthoritySuccess,
   } = useRevokeCreateHatAuthority(
-    data?.workspace?.hatsHatCreatorModule?.id as Address,
+    data?.workspace?.hatsHatCreatorModule as Address,
   );
   const {
     grantOperationAuthority,
     isLoading: isGrantOperationAuthorityLoading,
     isSuccess: isGrantOperationAuthoritySuccess,
   } = useGrantOperationAuthority(
-    data?.workspace?.hatsTimeFrameModule?.id as Address,
+    data?.workspace?.hatsTimeFrameModule as Address,
   );
   const {
     revokeOperationAuthority,
     isLoading: isRevokeOperationAuthorityLoading,
     isSuccess: isRevokeOperationAuthoritySuccess,
   } = useRevokeOperationAuthority(
-    data?.workspace?.hatsTimeFrameModule?.id as Address,
+    data?.workspace?.hatsTimeFrameModule as Address,
   );
   const {
     transferHat,
@@ -546,9 +542,9 @@ const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
   >(undefined);
 
   useEffect(() => {
-    setCreateHatAuthorities(data?.workspace?.hatsHatCreatorModule?.authorities);
-    setOperationAuthorities(data?.workspace?.hatsTimeFrameModule?.authorities);
-  }, [data]);
+    setCreateHatAuthorities([]);
+    setOperationAuthorities([]);
+  }, []);
 
   useEffect(() => {
     const computedTopHat = treeInfo?.hats?.find(

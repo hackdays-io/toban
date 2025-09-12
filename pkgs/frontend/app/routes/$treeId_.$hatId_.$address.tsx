@@ -1,8 +1,8 @@
-import { Box, HStack, Heading, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useBalanceOfFractionTokens } from "hooks/useFractionToken";
-import { useHats, useTreeInfo } from "hooks/useHats";
+import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
+import { useTreeInfo } from "hooks/useHats";
 import {
   useActiveState,
   useDeactivate,
@@ -39,25 +39,19 @@ const RoleHolderDetails: FC = () => {
   }, [tree, hatId]);
 
   // HatsTimeFrameModuleのアドレスを取得
-  const { data } = useGetWorkspace(treeId);
+  const { data } = useGetWorkspace({ workspaceId: treeId || "" });
   const hatsTimeFrameModuleAuthorities = useMemo(() => {
-    return data?.workspace?.hatsTimeFrameModule?.authorities?.filter(
-      (a) => a.authorised === true,
-    );
-  }, [data]);
+    return [];
+  }, []);
   const hatsTimeFrameModuleAddress = useMemo(
-    () => data?.workspace?.hatsTimeFrameModule?.id,
+    () => data?.workspace?.hatsTimeFrameModule,
     [data],
   );
 
   // ログインユーザーがこのhatの権限を持っているかどうか
   const isAuthorised = useMemo(() => {
-    if (!me) return false;
-
-    return hatsTimeFrameModuleAuthorities?.some(
-      (a) => a.address.toLowerCase() === me.toLowerCase(),
-    );
-  }, [me, hatsTimeFrameModuleAuthorities]);
+    return false; // Simplified for now since authorities are not implemented
+  }, []);
 
   // wearerの名前とアイコンを取得
   const addresses = useMemo(() => (address ? [address] : undefined), [address]);
@@ -74,7 +68,7 @@ const RoleHolderDetails: FC = () => {
   );
 
   // holderをbalanceとともに取得
-  const { data: balanceOfFractionTokens } = useBalanceOfFractionTokens({
+  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
     where: {
       wearer: address?.toLowerCase(),
       hatId: BigInt(hatId || 0).toString(10),

@@ -1,16 +1,16 @@
 import type { TooltipItem } from "chart.js";
 import { Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
-import { BalanceOfFractionToken_OrderBy, OrderDirection } from "gql/graphql";
+import { BalanceOfThanksToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
+import { useGetBalanceOfThanksTokens } from "hooks/useThanksToken";
 import { useMemo } from "react";
 import { Chart } from "react-chartjs-2";
 import { abbreviateAddress } from "utils/wallet";
+import { formatEther, zeroAddress } from "viem";
 
 ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
 
-// Formatter context type
 type FormatterContext = {
   type: string;
   raw: {
@@ -21,7 +21,6 @@ type FormatterContext = {
   };
 };
 
-// Define the tooltip item interface for treemap
 interface TreemapTooltipItem extends TooltipItem<"treemap"> {
   raw: {
     _data?: {
@@ -31,89 +30,84 @@ interface TreemapTooltipItem extends TooltipItem<"treemap"> {
   };
 }
 
-export const TreemapReceived = ({ treeId }: { treeId: string }) => {
-  const { data: gqlData } = useGetBalanceOfFractionTokens({
+export const TreemapHoldings = ({ treeId }: { treeId: string }) => {
+  const { data: gqlData } = useGetBalanceOfThanksTokens({
     where: {
       workspaceId: treeId,
     },
-    orderBy: BalanceOfFractionToken_OrderBy.Owner,
+    orderBy: BalanceOfThanksToken_OrderBy.Owner,
     orderDirection: OrderDirection.Desc,
+    first: 500,
   });
 
-  // Extract unique owners from gqlData
   const addresses = useMemo(
     () =>
       Array.from(
         new Set(
-          gqlData?.balanceOfFractionTokens?.map((item) => item.owner) || [],
+          gqlData?.balanceOfThanksTokens?.map((item) =>
+            item.owner?.toLowerCase(),
+          ) || [],
         ),
-      ),
-    [gqlData?.balanceOfFractionTokens],
+      ).filter((addr) => {
+        return addr !== zeroAddress;
+      }),
+    [gqlData?.balanceOfThanksTokens],
   );
 
   const { names } = useNamesByAddresses(addresses);
 
-  // Process the gqlData to aggregate balances by owner
-  const processedData = (() => {
-    if (!gqlData?.balanceOfFractionTokens) return [];
-
+  const processedData = useMemo(() => {
     const ownerBalances: Record<string, number> = {};
 
-    for (const item of gqlData.balanceOfFractionTokens) {
-      // Skip tokens where owner and wearer are the same address
-      if (item.owner?.toLowerCase() === item.wearer?.toLowerCase()) {
-        continue;
-      }
+    for (const item of gqlData?.balanceOfThanksTokens || []) {
+      if (item.owner === zeroAddress) continue;
 
-      const owner =
+      const ownerLabel =
         names?.find(
           (nameData) =>
             nameData?.[0]?.address?.toLowerCase() === item.owner?.toLowerCase(),
         )?.[0]?.name || abbreviateAddress(item.owner);
-      const balance = Number.parseInt(item.balance, 10);
+      const balanceNumber = Number(formatEther(BigInt(item.balance || "0")));
 
-      if (ownerBalances[owner]) {
-        ownerBalances[owner] += balance;
-      } else {
-        ownerBalances[owner] = balance;
-      }
+      ownerBalances[ownerLabel] =
+        (ownerBalances[ownerLabel] || 0) + balanceNumber;
     }
 
     return Object.entries(ownerBalances).map(([owner, balance]) => ({
       owner,
       balance,
     }));
-  })();
+  }, [gqlData, names]);
 
-  const data = {
-    datasets: [
-      {
-        tree: processedData,
-        key: "balance",
-        backgroundColor: "lightgreen",
-        borderColor: "white",
-        borderWidth: 2,
-        spacing: 1,
-        labels: {
-          display: true,
-          formatter: (ctx: FormatterContext) => {
-            if (ctx.type !== "data") return "";
-            return ctx.raw._data?.owner || "";
+  const data = useMemo(() => {
+    return {
+      datasets: [
+        {
+          tree: processedData,
+          key: "balance",
+          backgroundColor: "#A0D8EF",
+          borderColor: "white",
+          borderWidth: 2,
+          spacing: 1,
+          labels: {
+            display: true,
+            formatter: (ctx: FormatterContext) => {
+              if (ctx.type !== "data") return "";
+              return ctx.raw._data?.owner || "";
+            },
           },
         },
-      },
-    ],
-  };
+      ],
+    };
+  }, [processedData]);
 
   const options = {
     responsive: true,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       title: {
         display: true,
-        text: `受け取った${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}の量`,
+        text: "保有しているサンクストークンの量",
       },
       tooltip: {
         enabled: true,
@@ -125,7 +119,7 @@ export const TreemapReceived = ({ treeId }: { treeId: string }) => {
           },
           label: (item: TreemapTooltipItem) => {
             if (!item?.raw?._data) return "";
-            return `合計: ${item.raw._data.balance || 0}`;
+            return `合計: ${item.raw._data.balance?.toLocaleString() || 0}`;
           },
         },
       },
@@ -135,3 +129,5 @@ export const TreemapReceived = ({ treeId }: { treeId: string }) => {
   // @ts-expect-error chartjs-chart-treemap has incomplete type definitions
   return <Chart type="treemap" data={data} options={options} />;
 };
+
+export default TreemapHoldings;

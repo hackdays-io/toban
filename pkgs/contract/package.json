@@ -30,7 +30,7 @@
     "@nomicfoundation/hardhat-ignition-viem": "^0.15.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
-    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.1",
     "@nomicfoundation/hardhat-viem": "^2.0.3",
     "@nomicfoundation/ignition-core": "^0.15.5",
     "@openzeppelin/contracts": "^5.0.2",
@@ -42,16 +42,14 @@
     "@types/mocha": ">=9.1.0",
     "chai": "^4.2.0",
     "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
     "hardhat": "^2.22.9",
     "hardhat-gas-reporter": "^1.0.8",
+    "jsonfile": "^6.1.0",
     "solady": "^0.0.201",
     "solhint": "^5.0.4",
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
     "viem": "^2.20.1"
-  },
-  "dependencies": {
-    "ethers": "^6.13.4",
-    "jsonfile": "^6.1.0"
   }
 }

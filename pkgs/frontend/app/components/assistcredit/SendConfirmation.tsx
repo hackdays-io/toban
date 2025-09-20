@@ -35,6 +35,7 @@ interface SendConfirmationProps {
   amount: number;
   me?: NameData;
   receiver?: NameData;
+  receivers?: NameData[];
   onSend: () => Promise<void>;
 }
 
@@ -45,6 +46,7 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
   amount,
   me,
   receiver,
+  receivers,
   onSend,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -223,21 +225,53 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
                     </Text>
                   </HStack>
 
-                  {/* Receiver */}
+                  {/* Receiver(s) */}
                   <Box
                     position="absolute"
                     right="0"
                     top="50%"
                     transform="translateY(-50%)"
                   >
-                    <UserIcon
-                      size={16}
-                      userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
-                    />
-                    <Text fontSize="sm" textAlign="center" mt={1}>
-                      {receiver?.name ||
-                        abbreviateAddress(receiver?.address || "")}
-                    </Text>
+                    {receivers && receivers.length > 0 ? (
+                      <VStack>
+                        <HStack>
+                          {receivers.slice(0, 3).map((user) => (
+                            <Box
+                              key={user.address}
+                              marginLeft={user === receivers[0] ? 0 : -4}
+                            >
+                              <UserIcon
+                                size={16}
+                                userImageUrl={ipfs2https(
+                                  user.text_records?.avatar,
+                                )}
+                              />
+                            </Box>
+                          ))}
+                          {receivers.length > 3 && (
+                            <Text fontSize="sm" fontWeight="bold">
+                              +{receivers.length - 3}
+                            </Text>
+                          )}
+                        </HStack>
+                        <Text fontSize="sm" textAlign="center">
+                          {receivers.length}人
+                        </Text>
+                      </VStack>
+                    ) : receiver ? (
+                      <>
+                        <UserIcon
+                          size={16}
+                          userImageUrl={ipfs2https(
+                            receiver?.text_records?.avatar,
+                          )}
+                        />
+                        <Text fontSize="sm" textAlign="center" mt={1}>
+                          {receiver?.name ||
+                            abbreviateAddress(receiver?.address || "")}
+                        </Text>
+                      </>
+                    ) : null}
                   </Box>
                 </Box>
               </VStack>
@@ -258,14 +292,38 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
           <Text>{amount}</Text>
           <FaArrowRight size="20px" />
         </VStack>
-        <Box>
-          <UserIcon
-            size={10}
-            userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
-          />
-          <Text fontSize="xs">
-            {receiver?.name || abbreviateAddress(receiver?.address || "")}
-          </Text>
+        <Box textAlign="center">
+          {receivers && receivers.length > 0 ? (
+            <>
+              <HStack>
+                {receivers.slice(0, 3).map((user) => (
+                  <Box
+                    key={user.address}
+                    marginLeft={user === receivers[0] ? 0 : -4}
+                  >
+                    <UserIcon
+                      size={10}
+                      userImageUrl={ipfs2https(user.text_records?.avatar)}
+                    />
+                  </Box>
+                ))}
+                {receivers.length > 3 && (
+                  <Text fontSize="xs">+{receivers.length - 3}</Text>
+                )}
+              </HStack>
+              <Text fontSize="xs">{receivers.length}人</Text>
+            </>
+          ) : receiver ? (
+            <>
+              <UserIcon
+                size={10}
+                userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
+              />
+              <Text fontSize="xs">
+                {receiver?.name || abbreviateAddress(receiver?.address || "")}
+              </Text>
+            </>
+          ) : null}
         </Box>
       </HStack>
     </VStack>

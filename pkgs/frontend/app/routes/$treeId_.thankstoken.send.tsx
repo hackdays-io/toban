@@ -10,8 +10,8 @@ import { useThanksToken } from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { abbreviateAddress } from "utils/wallet";
 import { type Address, formatEther, parseEther } from "viem";
+import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import AmountSelector from "~/components/assistcredit/AmountSelector";
 import SendConfirmation from "~/components/assistcredit/SendConfirmation";
@@ -19,16 +19,16 @@ import UserList from "~/components/assistcredit/UserList";
 
 const ThanksTokenSend: FC = () => {
   const { treeId } = useParams();
-  const { mintableAmount, mintThanksToken, isLoading } = useThanksToken(
-    treeId as string,
-  );
+  const { mintableAmount, mintThanksToken, batchMintThanksToken, isLoading } =
+    useThanksToken(treeId as string);
   const me = useActiveWalletIdentity();
   const navigate = useNavigate();
 
-  const [receiver, setReceiver] = useState<NameData>();
+  const [selectedUsers, setSelectedUsers] = useState<NameData[]>([]);
   const [amount, setAmount] = useState<number>(0);
 
   const [isSend, setIsSend] = useState(false);
+  const [showAmountSelector, setShowAmountSelector] = useState(false);
 
   const tree = useTreeInfo(Number(treeId));
   const [searchText, setSearchText] = useState<string>("");
@@ -69,50 +69,89 @@ const ThanksTokenSend: FC = () => {
     );
   }, [defaultNames, names, addresses, isSearchAddress, searchText, me]);
 
+  const toggleUser = useCallback((user: NameData) => {
+    setSelectedUsers((prev) => {
+      const isSelected = prev.some(
+        (u) => u.address.toLowerCase() === user.address.toLowerCase(),
+      );
+      if (isSelected) {
+        return prev.filter(
+          (u) => u.address.toLowerCase() !== user.address.toLowerCase(),
+        );
+      }
+      return [...prev, user];
+    });
+  }, []);
+
   const send = useCallback(async () => {
-    if (!receiver || isLoading || !amount) return;
+    if (selectedUsers.length === 0 || isLoading) return;
 
-    const res = await mintThanksToken(
-      receiver.address as Address,
-      parseEther(amount.toString()),
-    );
-
-    if (res?.error) {
-      toast.error(res.error);
-      throw new Error(res.error);
+    try {
+      if (selectedUsers.length === 1) {
+        const res = await mintThanksToken(
+          selectedUsers[0].address as Address,
+          parseEther(amount.toString()),
+        );
+        if (res?.error) throw new Error(res.error);
+      } else {
+        const res = await batchMintThanksToken(
+          selectedUsers.map((user) => user.address as Address),
+          Array(selectedUsers.length).fill(parseEther(amount.toString())),
+        );
+        if (res?.error) throw new Error(res.error);
+      }
+      toast.success("送信が完了しました");
+      navigate(`/${treeId}`);
+    } catch (error) {
+      console.error("Send error:", error);
+      toast.error("送信に失敗しました");
+      setIsSend(false);
     }
-
-    res?.txHash && navigate(`/${treeId}`);
-  }, [receiver, isLoading, amount, mintThanksToken, navigate, treeId]);
+  }, [
+    mintThanksToken,
+    batchMintThanksToken,
+    selectedUsers,
+    amount,
+    isLoading,
+    treeId,
+    navigate,
+  ]);
 
   return (
     <Grid
       gridTemplateRows={
-        !receiver
-          ? "auto auto auto 1fr"
-          : isSend
-            ? "auto 1fr"
-            : "auto auto 1fr auto"
+        isSend
+          ? "auto 1fr"
+          : showAmountSelector
+            ? "auto auto 1fr auto"
+            : "auto auto auto 1fr"
       }
       minH="calc(100vh - 100px)"
+      position="relative"
     >
       <PageHeader
         title={
-          receiver
-            ? `${receiver.name || `${abbreviateAddress(receiver.address)}に送信`}`
+          selectedUsers.length > 0
+            ? `${selectedUsers.length}人に送信`
             : `${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "サンクストークン"}を送信`
         }
         backLink={
-          receiver &&
-          (isSend
-            ? () => {
-                setIsSend(false);
-                setAmount(10);
-              }
-            : () => {
-                setReceiver(undefined);
-                setAmount(10);
-              })
+          selectedUsers.length > 0 || showAmountSelector
+            ? isSend
+              ? () => {
+                  setIsSend(false);
+                  setAmount(10);
+                }
+              : showAmountSelector
+                ? () => {
+                    setShowAmountSelector(false);
+                    setAmount(10);
+                  }
+                : () => {
+                    setSelectedUsers([]);
+                    setAmount(10);
+                  }
+            : undefined
         }
       />
 
@@ -120,7 +159,7 @@ const ThanksTokenSend: FC = () => {
         <SendConfirmation
           amount={amount}
           me={me.identity}
-          receiver={receiver}
+          receivers={selectedUsers}
           onSend={send}
         />
       ) : (
@@ -131,26 +170,51 @@ const ThanksTokenSend: FC = () => {
               Number(formatEther(mintableAmount || 0n)),
             ).toLocaleString()}
           </Text>
-          {!receiver ? (
-            <UserList
-              searchText={searchText}
-              setSearchText={setSearchText}
-              users={users}
-              onSelectUser={setReceiver}
-            />
-          ) : (
+          {showAmountSelector ? (
             <AmountSelector
               amount={amount}
               setAmount={setAmount}
               onNext={() => setIsSend(true)}
               isLoading={isLoading}
               me={me.identity}
-              receiver={receiver}
+              receivers={selectedUsers}
               max={500}
               step={20}
             />
+          ) : (
+            <UserList
+              searchText={searchText}
+              setSearchText={setSearchText}
+              users={users}
+              selectedUsers={selectedUsers}
+              onToggleUser={toggleUser}
+              multiSelect={true}
+            />
           )}
         </>
+      )}
+
+      {/* Floating Select Amount Button */}
+      {selectedUsers.length > 0 && !showAmountSelector && !isSend && (
+        <Box
+          position="fixed"
+          bottom="20px"
+          left="50%"
+          transform="translateX(-50%)"
+          zIndex={1000}
+        >
+          <BasicButton
+            colorScheme="yellow"
+            size="lg"
+            onClick={() => setShowAmountSelector(true)}
+            px={8}
+            py={4}
+            borderRadius="full"
+            boxShadow="lg"
+          >
+            送付量を選択 ({selectedUsers.length}人)
+          </BasicButton>
+        </Box>
       )}
     </Grid>
   );

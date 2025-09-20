@@ -83,7 +83,10 @@ export const QrAddressReader: FC<QrAddressReaderProps> = ({
         );
 
         if (result) {
-          const scannedText = result.getText();
+          let scannedText = result.getText();
+          if (scannedText.includes(":")) {
+            scannedText = scannedText.split(":")[1];
+          }
 
           // Validate if it's a valid Ethereum address
           if (isValidEthereumAddress(scannedText)) {

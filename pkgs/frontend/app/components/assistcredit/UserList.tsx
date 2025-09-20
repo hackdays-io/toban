@@ -1,7 +1,8 @@
-import { HStack, List, Text } from "@chakra-ui/react";
+import { Box, HStack, List, Text } from "@chakra-ui/react";
 import type { NameData } from "namestone-sdk";
 import { ipfs2https } from "utils/ipfs";
 import { CommonInput } from "~/components/common/CommonInput";
+import { QrAddressReader } from "~/components/common/QrAddressReader";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { Field } from "~/components/ui/field";
 
@@ -21,13 +22,20 @@ const UserList = ({
   return (
     <>
       <Field label="ユーザー名 or ウォレットアドレスで検索">
-        <CommonInput
-          value={searchText}
-          onChange={(e) => {
-            setSearchText(e.target.value);
-          }}
-          placeholder="ユーザー名 or ウォレットアドレス"
-        />
+        <Box display="flex" alignItems="center" gap={2} width="100%">
+          <CommonInput
+            value={searchText}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+            }}
+            placeholder="ユーザー名 or ウォレットアドレス"
+          />
+          <QrAddressReader
+            onReadValidAddress={(address: string) => {
+              setSearchText(address);
+            }}
+          />
+        </Box>
       </Field>
 
       <List.Root listStyle="none" my={10} gap={4}>

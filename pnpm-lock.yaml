@@ -68,7 +68,7 @@ importers:
         version: 1.0.12(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))
       '@nomicfoundation/hardhat-toolbox-viem':
         specifier: ^3.0.0
-        version: 3.0.0(6628620019a37fdfed165a6730bfd55a)
+        version: 3.0.0(wcohiwlccbikieispq5dfja7yq)
       '@nomicfoundation/hardhat-verify':
         specifier: ^2.1.1
         version: 2.1.1(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))
@@ -220,6 +220,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.68.0
         version: 5.77.2(react@18.3.1)
+      '@zxing/library':
+        specifier: ^0.21.3
+        version: 0.21.3
       axios:
         specifier: ^1.7.9
         version: 1.9.0
@@ -364,7 +367,7 @@ importers:
     dependencies:
       '@graphprotocol/graph-cli':
         specifier: 0.51.0
-        version: 0.51.0(@types/node@22.15.24)(bufferutil@4.0.9)(encoding@0.1.13)(node-fetch@3.3.2)(typescript@5.6.3)(utf-8-validate@5.0.10)
+        version: 0.51.0(@types/node@22.15.24)(bufferutil@4.0.9)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)(utf-8-validate@5.0.10)
       '@graphprotocol/graph-ts':
         specifier: 0.31.0
         version: 0.31.0
@@ -4848,6 +4851,10 @@ packages:
 
   '@zag-js/utils@1.12.2':
     resolution: {integrity: sha512-JLmzHzJVggOy+4z3jbJ8v86O6Gqm4h1/+ExtwfiTiba0O7j2+4Had7XQxSjVw+H7fNDAfwbZY8af7XzrnumcLQ==}
+
+  '@zxing/library@0.21.3':
+    resolution: {integrity: sha512-hZHqFe2JyH/ZxviJZosZjV+2s6EDSY0O24R+FQmlWZBZXP9IqMo7S3nb3+2LBWxodJQkSurdQGnqE7KXqrYgow==}
+    engines: {node: '>= 10.4.0'}
 
   '@zxing/text-encoding@0.9.0':
     resolution: {integrity: sha512-U/4aVJ2mxI0aDNI8Uq0wEhMgY+u4CNtEb0om3+y3+niDAsoTCOB33UF0sxpzqzdqXLqmvc+vZyAt4O8pPdfkwA==}
@@ -11764,6 +11771,10 @@ packages:
     peerDependencies:
       typescript: '>=4.2.0'
 
+  ts-custom-error@3.3.1:
+    resolution: {integrity: sha512-5OX1tzOjxWEgsr/YEUWSuPrQ00deKLh6D7OTWcvNHm12/7QPyRh8SYpyWvA4IZv8H/+GQWQEh/kwo95Q9OVW1A==}
+    engines: {node: '>=14.0.0'}
+
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
@@ -15891,7 +15902,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.9': {}
 
-  '@graphprotocol/graph-cli@0.51.0(@types/node@22.15.24)(bufferutil@4.0.9)(encoding@0.1.13)(node-fetch@3.3.2)(typescript@5.6.3)(utf-8-validate@5.0.10)':
+  '@graphprotocol/graph-cli@0.51.0(@types/node@22.15.24)(bufferutil@4.0.9)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@float-capital/float-subgraph-uncrashable': 0.0.0-internal-testing.5
       '@oclif/core': 2.8.4(@types/node@22.15.24)(typescript@5.6.3)
@@ -15908,7 +15919,7 @@ snapshots:
       gluegun: 5.1.2(debug@4.3.4)
       graphql: 15.5.0
       immutable: 4.2.1
-      ipfs-http-client: 55.0.0(encoding@0.1.13)(node-fetch@3.3.2)
+      ipfs-http-client: 55.0.0(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))
       jayson: 4.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       js-yaml: 3.14.1
       prettier: 1.19.1
@@ -16933,7 +16944,7 @@ snapshots:
       ethereumjs-util: 7.1.5
       hardhat: 2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)
 
-  '@nomicfoundation/hardhat-toolbox-viem@3.0.0(6628620019a37fdfed165a6730bfd55a)':
+  '@nomicfoundation/hardhat-toolbox-viem@3.0.0(wcohiwlccbikieispq5dfja7yq)':
     dependencies:
       '@nomicfoundation/hardhat-ignition-viem': 0.15.11(@nomicfoundation/hardhat-ignition@0.15.11(@nomicfoundation/hardhat-verify@2.1.1(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10))(@nomicfoundation/hardhat-viem@2.0.6(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))(typescript@5.6.3)(viem@2.30.5(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.34))(zod@3.25.34))(@nomicfoundation/ignition-core@0.15.11(bufferutil@4.0.9)(utf-8-validate@5.0.10))(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))(viem@2.30.5(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.34))
       '@nomicfoundation/hardhat-network-helpers': 1.0.12(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.24)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))
@@ -20337,6 +20348,12 @@ snapshots:
 
   '@zag-js/utils@1.12.2': {}
 
+  '@zxing/library@0.21.3':
+    dependencies:
+      ts-custom-error: 3.3.1
+    optionalDependencies:
+      '@zxing/text-encoding': 0.9.0
+
   '@zxing/text-encoding@0.9.0':
     optional: true
 
@@ -20719,7 +20736,7 @@ snapshots:
 
   axios@1.6.7:
     dependencies:
-      follow-redirects: 1.15.9
+      follow-redirects: 1.15.9(debug@4.3.4)
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -20727,7 +20744,7 @@ snapshots:
 
   axios@1.9.0:
     dependencies:
-      follow-redirects: 1.15.9
+      follow-redirects: 1.15.9(debug@4.3.4)
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -22034,10 +22051,10 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  dns-over-http-resolver@1.2.3(node-fetch@3.3.2):
+  dns-over-http-resolver@1.2.3(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
       debug: 4.4.1(supports-color@8.1.1)
-      native-fetch: 3.0.0(node-fetch@3.3.2)
+      native-fetch: 3.0.0(node-fetch@2.7.0(encoding@0.1.13))
       receptacle: 1.3.2
     transitivePeerDependencies:
       - node-fetch
@@ -23176,8 +23193,6 @@ snapshots:
 
   flatted@3.3.3: {}
 
-  follow-redirects@1.15.9: {}
-
   follow-redirects@1.15.9(debug@4.3.4):
     optionalDependencies:
       debug: 4.3.4
@@ -24117,7 +24132,7 @@ snapshots:
   http-proxy@1.18.1:
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.9
+      follow-redirects: 1.15.9(debug@4.3.4)
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -24285,23 +24300,23 @@ snapshots:
 
   ipaddr.js@2.2.0: {}
 
-  ipfs-core-types@0.9.0(node-fetch@3.3.2):
+  ipfs-core-types@0.9.0(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
       interface-datastore: 6.1.1
-      multiaddr: 10.0.1(node-fetch@3.3.2)
+      multiaddr: 10.0.1(node-fetch@2.7.0(encoding@0.1.13))
       multiformats: 9.9.0
     transitivePeerDependencies:
       - node-fetch
       - supports-color
 
-  ipfs-core-utils@0.13.0(encoding@0.1.13)(node-fetch@3.3.2):
+  ipfs-core-utils@0.13.0(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
       any-signal: 2.1.2
       blob-to-it: 1.0.4
       browser-readablestream-to-it: 1.0.3
       debug: 4.4.1(supports-color@8.1.1)
       err-code: 3.0.1
-      ipfs-core-types: 0.9.0(node-fetch@3.3.2)
+      ipfs-core-types: 0.9.0(node-fetch@2.7.0(encoding@0.1.13))
       ipfs-unixfs: 6.0.9
       ipfs-utils: 9.0.14(encoding@0.1.13)
       it-all: 1.0.6
@@ -24309,8 +24324,8 @@ snapshots:
       it-peekable: 1.0.3
       it-to-stream: 1.0.0
       merge-options: 3.0.4
-      multiaddr: 10.0.1(node-fetch@3.3.2)
-      multiaddr-to-uri: 8.0.0(node-fetch@3.3.2)
+      multiaddr: 10.0.1(node-fetch@2.7.0(encoding@0.1.13))
+      multiaddr-to-uri: 8.0.0(node-fetch@2.7.0(encoding@0.1.13))
       multiformats: 9.9.0
       nanoid: 3.3.11
       parse-duration: 1.1.2
@@ -24321,7 +24336,7 @@ snapshots:
       - node-fetch
       - supports-color
 
-  ipfs-http-client@55.0.0(encoding@0.1.13)(node-fetch@3.3.2):
+  ipfs-http-client@55.0.0(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
       '@ipld/dag-cbor': 7.0.3
       '@ipld/dag-json': 8.0.11
@@ -24330,13 +24345,13 @@ snapshots:
       any-signal: 2.1.2
       debug: 4.4.1(supports-color@8.1.1)
       err-code: 3.0.1
-      ipfs-core-types: 0.9.0(node-fetch@3.3.2)
-      ipfs-core-utils: 0.13.0(encoding@0.1.13)(node-fetch@3.3.2)
+      ipfs-core-types: 0.9.0(node-fetch@2.7.0(encoding@0.1.13))
+      ipfs-core-utils: 0.13.0(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))
       ipfs-utils: 9.0.14(encoding@0.1.13)
       it-first: 1.0.7
       it-last: 1.0.6
       merge-options: 3.0.4
-      multiaddr: 10.0.1(node-fetch@3.3.2)
+      multiaddr: 10.0.1(node-fetch@2.7.0(encoding@0.1.13))
       multiformats: 9.9.0
       native-abort-controller: 1.0.4(abort-controller@3.0.0)
       parse-duration: 1.1.2
@@ -26242,16 +26257,16 @@ snapshots:
 
   ms@2.1.3: {}
 
-  multiaddr-to-uri@8.0.0(node-fetch@3.3.2):
+  multiaddr-to-uri@8.0.0(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
-      multiaddr: 10.0.1(node-fetch@3.3.2)
+      multiaddr: 10.0.1(node-fetch@2.7.0(encoding@0.1.13))
     transitivePeerDependencies:
       - node-fetch
       - supports-color
 
-  multiaddr@10.0.1(node-fetch@3.3.2):
+  multiaddr@10.0.1(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
-      dns-over-http-resolver: 1.2.3(node-fetch@3.3.2)
+      dns-over-http-resolver: 1.2.3(node-fetch@2.7.0(encoding@0.1.13))
       err-code: 3.0.1
       is-ip: 3.1.0
       multiformats: 9.9.0
@@ -26298,10 +26313,6 @@ snapshots:
   native-fetch@3.0.0(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
       node-fetch: 2.7.0(encoding@0.1.13)
-
-  native-fetch@3.0.0(node-fetch@3.3.2):
-    dependencies:
-      node-fetch: 3.3.2
 
   natural-compare@1.4.0: {}
 
@@ -29016,6 +29027,8 @@ snapshots:
   ts-api-utils@1.4.3(typescript@5.6.3):
     dependencies:
       typescript: 5.6.3
+
+  ts-custom-error@3.3.1: {}
 
   ts-interface-checker@0.1.13: {}
 

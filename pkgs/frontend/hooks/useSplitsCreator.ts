@@ -23,13 +23,13 @@ export const useSplitsCreator = (treeId: string) => {
   }, [data?.workspace?.splitCreator]);
 
   const previewSplits = async (
-    args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "preview">[0],
+    args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "preview">,
   ) => {
     const res = await publicClient.readContract({
       address: splitsCreatorAddress,
       abi: SPLITS_CREATOR_ABI,
       functionName: "preview",
-      args: [args],
+      args,
     });
 
     return res;
@@ -40,7 +40,7 @@ export const useSplitsCreator = (treeId: string) => {
    */
   const createSplits = useCallback(
     async (params: {
-      args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "create">[0];
+      args: AbiItemArgs<typeof SPLITS_CREATOR_ABI, "create">;
     }) => {
       if (!wallet || !splitsCreatorAddress) return;
 
@@ -51,7 +51,7 @@ export const useSplitsCreator = (treeId: string) => {
           address: splitsCreatorAddress,
           abi: SPLITS_CREATOR_ABI,
           functionName: "create",
-          args: [params.args],
+          args: params.args,
         });
 
         console.log("txHash:", txHash);

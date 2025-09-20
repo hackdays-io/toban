@@ -10,6 +10,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { Slider, useSlider } from "@chakra-ui/react/slider";
 import type { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNavigate, useParams } from "@remix-run/react";
 import {
@@ -234,6 +235,22 @@ const SplitterNew: FC = () => {
     name: "roles",
   });
 
+  const tobanThanksSlider = useSlider({
+    defaultValue: [50],
+    min: 0,
+    max: 100,
+    thumbAlignment: "center",
+    step: 1,
+  });
+
+  const thanksReceiveSendSlider = useSlider({
+    defaultValue: [50],
+    min: 0,
+    max: 100,
+    thumbAlignment: "center",
+    step: 1,
+  });
+
   useEffect(() => {
     const fetch = async () => {
       if (fields.length === 0) {
@@ -257,7 +274,7 @@ const SplitterNew: FC = () => {
     totalOwnership: number;
   }>();
 
-  const calcParams = useCallback(() => {
+  const calcSplitsParams = useCallback(() => {
     const data = getValues();
 
     return data.roles
@@ -284,10 +301,25 @@ const SplitterNew: FC = () => {
       });
   }, [getValues]);
 
+  const weightParams = useMemo(() => {
+    const tobanThanksValue = tobanThanksSlider.value[0];
+    const thanksReceiveSendValue = thanksReceiveSendSlider.value[0];
+
+    if (typeof tobanThanksValue !== "number") return;
+    if (typeof thanksReceiveSendValue !== "number") return;
+
+    return {
+      roleWeight: BigInt(tobanThanksValue),
+      thanksTokenWeight: BigInt(100 - Number(tobanThanksValue)),
+      thanksTokenReceivedWeight: BigInt(thanksReceiveSendValue),
+      thanksTokenSentWeight: BigInt(100 - Number(thanksReceiveSendValue)),
+    };
+  }, [tobanThanksSlider.value, thanksReceiveSendSlider.value]);
+
   const handlePreview = useCallback(async () => {
-    if (!availableName) return;
-    const params = calcParams();
-    const res = await previewSplits(params);
+    if (!availableName || !weightParams) return;
+    const splitsParams = calcSplitsParams();
+    const res = await previewSplits([splitsParams, weightParams]);
 
     let totalOwnership = 0;
     const consolidatedRecipients = res[0].reduce((acc, address, index) => {
@@ -306,14 +338,15 @@ const SplitterNew: FC = () => {
       ),
       totalOwnership,
     });
-  }, [availableName, previewSplits, calcParams]);
+  }, [availableName, weightParams, previewSplits, calcSplitsParams]);
 
   const { setName } = useSetName();
-  const handleCreateSplitter = async () => {
+  const handleCreateSplitter = useCallback(async () => {
+    if (!weightParams) return;
     try {
-      const params = calcParams();
+      const splitsParams = calcSplitsParams();
       const res = await createSplits({
-        args: params,
+        args: [splitsParams, weightParams],
       });
 
       const address = res?.find((res) => res.eventName === "SplitsCreated")
@@ -328,7 +361,15 @@ const SplitterNew: FC = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [
+    createSplits,
+    calcSplitsParams,
+    navigate,
+    setName,
+    splitterName,
+    treeId,
+    weightParams,
+  ]);
 
   return (
     <Grid
@@ -342,7 +383,7 @@ const SplitterNew: FC = () => {
             ? () => {
                 setPreview(undefined);
               }
-            : undefined
+            : `/${treeId}/splits`
         }
       />
 
@@ -377,11 +418,70 @@ const SplitterNew: FC = () => {
             </Text>
           </Field>
 
-          <Box>
-            <Text fontSize="lg" mt={10}>
-              分配設定
+          <Grid gap={4}>
+            <Text fontSize="lg" mt={8} fontWeight="bold">
+              比重設定
             </Text>
-            <List.Root listStyle="none" mb={10}>
+
+            <Box>
+              <Text fontSize="md" mt={2}>
+                1. 当番ベースとThanksTokenベースの重み
+              </Text>
+
+              <Flex alignItems="center" justifyContent="space-between" mt={2}>
+                <Text fontSize="xs" color="gray.600" textAlign="center">
+                  当番ベース
+                  <br />
+                  {tobanThanksSlider.value[0]}
+                </Text>
+                <Text fontSize="xs" color="gray.600" textAlign="center">
+                  Thanksトークンベース
+                  <br />
+                  {100 - Number(tobanThanksSlider.value[0])}
+                </Text>
+              </Flex>
+              <Slider.RootProvider value={tobanThanksSlider} size="lg">
+                <Slider.Control>
+                  <Slider.Track backgroundColor="green.400">
+                    <Slider.Range backgroundColor="yellow.400" />
+                  </Slider.Track>
+                  <Slider.Thumbs borderColor="blue.400" />
+                </Slider.Control>
+              </Slider.RootProvider>
+            </Box>
+
+            <Box>
+              <Text fontSize="md" mt={2}>
+                2. ThanksTokenの受取量と送付量の重み
+              </Text>
+              <Flex alignItems="center" justifyContent="space-between" mt={2}>
+                <Text fontSize="xs" color="gray.600" textAlign="center">
+                  受取量
+                  <br />
+                  {thanksReceiveSendSlider.value[0]}
+                </Text>
+                <Text fontSize="xs" color="gray.600" textAlign="center">
+                  送付量
+                  <br />
+                  {100 - Number(thanksReceiveSendSlider.value[0])}
+                </Text>
+              </Flex>
+              <Slider.RootProvider value={thanksReceiveSendSlider} size="lg">
+                <Slider.Control>
+                  <Slider.Track backgroundColor="green.400">
+                    <Slider.Range backgroundColor="yellow.400" />
+                  </Slider.Track>
+                  <Slider.Thumbs borderColor="blue.400" />
+                </Slider.Control>
+              </Slider.RootProvider>
+            </Box>
+          </Grid>
+
+          <Grid gap={4} mt={10} mb={10}>
+            <Text fontSize="lg" fontWeight="bold">
+              当番ごとの設定
+            </Text>
+            <List.Root listStyle="none">
               {fields.map((field, index) => (
                 <HatsListItemParser
                   key={field.hatId}
@@ -399,7 +499,7 @@ const SplitterNew: FC = () => {
                 </HatsListItemParser>
               ))}
             </List.Root>
-          </Box>
+          </Grid>
           <BasicButton onClick={handlePreview} mb={5} disabled={!availableName}>
             プレビュー
           </BasicButton>

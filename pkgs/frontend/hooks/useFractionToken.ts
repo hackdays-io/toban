@@ -467,7 +467,7 @@ export const useTransferFractionToken = (
             args: [wallet.account.address, to, tokenId, amount, "0x"],
           });
         } catch {
-          error = "アシストクレジットの送信に失敗しました";
+          error = "ロールシェアの送信に失敗しました";
         } finally {
           setIsLoading(false);
         }
@@ -497,12 +497,12 @@ export const useTransferFractionToken = (
           setIsLoading(false);
         } catch (err) {
           console.error(err);
-          error = "アシストクレジットの送信に失敗しました";
+          error = "ロールシェアの送信に失敗しました";
           setIsLoading(false);
         }
       } else {
         setIsLoading(false);
-        error = "この当番についてあなたはアシストクレジットの送信ができません";
+        error = "この当番についてあなたはロールシェアの送信ができません";
       }
 
       return { txHash, error };

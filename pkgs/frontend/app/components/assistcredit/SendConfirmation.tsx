@@ -84,7 +84,7 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
         <br />
         {["144", "175", "780"].includes(treeId || "")
           ? "ケアポイント"
-          : "アシストクレジット"}
+          : "ロールシェア"}
         を送る
       </Text>
 

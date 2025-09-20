@@ -35,7 +35,7 @@ export const SPLITS_CREATOR_ABI = [
     name: "FRACTION_TOKEN",
     outputs: [
       {
-        internalType: "contract IFractionToken",
+        internalType: "contract IHatsFractionTokenModule",
         name: "",
         type: "address",
       },
@@ -83,6 +83,19 @@ export const SPLITS_CREATOR_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "THANKS_TOKEN",
+    outputs: [
+      {
+        internalType: "contract IThanksToken",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
     inputs: [
       {
         components: [
@@ -110,6 +123,33 @@ export const SPLITS_CREATOR_ABI = [
         internalType: "struct ISplitsCreator.SplitsInfo[]",
         name: "_splitsInfo",
         type: "tuple[]",
+      },
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "roleWeight",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "thanksTokenWeight",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "thanksTokenReceivedWeight",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "thanksTokenSentWeight",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct ISplitsCreator.WeightsInfo",
+        name: "_weightsInfo",
+        type: "tuple",
       },
     ],
     name: "create",
@@ -151,6 +191,33 @@ export const SPLITS_CREATOR_ABI = [
         internalType: "struct ISplitsCreator.SplitsInfo[]",
         name: "_splitsInfo",
         type: "tuple[]",
+      },
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "roleWeight",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "thanksTokenWeight",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "thanksTokenReceivedWeight",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "thanksTokenSentWeight",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct ISplitsCreator.WeightsInfo",
+        name: "_weightsInfo",
+        type: "tuple",
       },
     ],
     name: "preview",

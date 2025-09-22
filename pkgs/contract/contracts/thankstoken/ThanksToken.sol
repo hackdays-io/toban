@@ -136,6 +136,46 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         return true;
     }
 
+    function batchMint(
+        address[] memory to,
+        uint256[] memory amounts,
+        RelatedRole[] memory relatedRoles
+    ) public override returns (bool) {
+        require(to.length == amounts.length, "Arrays length mismatch");
+
+        uint256 totalAmount = 0;
+        for (uint256 i = 0; i < amounts.length; i++) {
+            require(to[i] != msg.sender, "Cannot mint to yourself");
+            require(amounts[i] > 0, "Amount must be greater than 0");
+            totalAmount += amounts[i];
+        }
+
+        uint256 maxAmount = mintableAmount(msg.sender, relatedRoles);
+        require(totalAmount <= maxAmount, "Total exceeds mintable amount");
+
+        // Update minted amount
+        _mintedAmount[msg.sender] += totalAmount;
+
+        // Mint tokens using ERC20's _mint
+        for (uint256 i = 0; i < to.length; i++) {
+            _mint(to[i], amounts[i]);
+
+            if (!_isParticipant[to[i]]) {
+                _participants.push(to[i]);
+                _isParticipant[to[i]] = true;
+            }
+
+            emit TokenMinted(msg.sender, to[i], amounts[i]);
+        }
+
+        if (!_isParticipant[msg.sender]) {
+            _participants.push(msg.sender);
+            _isParticipant[msg.sender] = true;
+        }
+
+        return true;
+    }
+
     function mintableAmount(
         address owner,
         RelatedRole[] memory relatedRoles

@@ -27,6 +27,19 @@ interface IThanksToken is IERC20 {
     ) external returns (bool);
 
     /**
+     * @notice Mints new tokens to multiple recipients
+     * @param to Array of addresses to mint tokens to
+     * @param amounts Array of amounts of tokens to mint
+     * @param relatedRoles Array of roles related to the sender
+     * @return success Whether the operation was successful
+     */
+    function batchMint(
+        address[] memory to,
+        uint256[] memory amounts,
+        RelatedRole[] memory relatedRoles
+    ) external returns (bool);
+
+    /**
      * @notice Calculates the total amount that can be minted by an address
      * @param owner The address to check mintable amount for
      * @param relatedRoles Array of roles related to the owner

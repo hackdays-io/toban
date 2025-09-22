@@ -162,19 +162,6 @@ export const THANKS_TOKEN_ABI = [
   },
   {
     inputs: [],
-    name: "DEFAULT_COEFFICIENT",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "pure",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "FRACTION_TOKEN",
     outputs: [
       {
@@ -335,6 +322,47 @@ export const THANKS_TOKEN_ABI = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address[]",
+        name: "to",
+        type: "address[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "amounts",
+        type: "uint256[]",
+      },
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "hatId",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "wearer",
+            type: "address",
+          },
+        ],
+        internalType: "struct IThanksToken.RelatedRole[]",
+        name: "relatedRoles",
+        type: "tuple[]",
+      },
+    ],
+    name: "batchMint",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {

@@ -286,7 +286,35 @@ export const useThanksToken = (treeId: string) => {
     [relatedRoles, wallet, data?.workspace?.thanksToken.id],
   );
 
-  return { mintableAmount, mintThanksToken, isLoading };
+  const batchMintThanksToken = useCallback(
+    async (tos: Address[], amount: bigint[]) => {
+      if (!wallet || !relatedRoles.length) return;
+      setIsLoading(true);
+
+      let txHash: `0x${string}` | undefined = undefined;
+      let error = "";
+
+      try {
+        txHash = await wallet.writeContract({
+          ...thanksTokenBaseConfig(
+            data?.workspace?.thanksToken.id as `0x${string}`,
+          ),
+          functionName: "batchMint",
+          args: [tos, amount, relatedRoles],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        setIsLoading(false);
+      } catch (_) {
+        error = "トークンの送信に失敗しました";
+        setIsLoading(false);
+      }
+
+      return { txHash, error };
+    },
+    [relatedRoles, wallet, data?.workspace?.thanksToken.id],
+  );
+
+  return { mintableAmount, mintThanksToken, batchMintThanksToken, isLoading };
 };
 
 export const useUserThanksTokenBalance = (workspaceId?: string) => {

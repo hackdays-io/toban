@@ -28,6 +28,7 @@ interface AmountSelectorProps {
   isLoading: boolean;
   me?: NameData;
   receiver?: NameData;
+  receivers?: NameData[];
   max?: number;
   step?: number;
 }
@@ -39,6 +40,7 @@ const AmountSelector = ({
   isLoading,
   me,
   receiver,
+  receivers,
   max,
   step,
 }: AmountSelectorProps) => {
@@ -134,13 +136,33 @@ const AmountSelector = ({
             <Text>{amount}</Text>
             <FaArrowRight size="20px" />
           </VStack>
-          <Box>
-            <UserIcon
-              size={10}
-              userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
-            />
+          <Box textAlign="center">
+            {receivers && receivers.length > 0 ? (
+              <HStack>
+                {receivers.slice(0, 3).map((user, index) => (
+                  <Box key={user.address} marginLeft={index === 0 ? 0 : -4}>
+                    <UserIcon
+                      size={10}
+                      userImageUrl={ipfs2https(user.text_records?.avatar)}
+                    />
+                  </Box>
+                ))}
+                {receivers.length > 3 && (
+                  <Text fontSize="sm" fontWeight="bold">
+                    +{receivers.length - 3}
+                  </Text>
+                )}
+              </HStack>
+            ) : receiver ? (
+              <UserIcon
+                size={10}
+                userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
+              />
+            ) : null}
             <Text fontSize="xs">
-              {receiver?.name || abbreviateAddress(receiver?.address || "")}
+              {receivers && receivers.length > 0
+                ? `${receivers.length}人`
+                : receiver?.name || abbreviateAddress(receiver?.address || "")}
             </Text>
           </Box>
         </HStack>
@@ -149,6 +171,7 @@ const AmountSelector = ({
           loading={isLoading}
           onClick={onNext}
           mb={5}
+          disabled={amount <= 0 || amount > (max || 2000) || isLoading}
         >
           次へ
         </BasicButton>

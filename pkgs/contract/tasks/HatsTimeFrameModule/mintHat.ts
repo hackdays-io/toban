@@ -8,11 +8,16 @@ import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJso
 task("mintHat", "mintHat")
   .addParam("hatid", "hatid")
   .addParam("wearer", "address of wearer")
+  .addOptionalParam(
+    "module",
+    "HatsTimeFrameModule instance address (clone). If omitted, uses the address from outputs",
+  )
   .setAction(
     async (
       taskArgs: {
         hatid: bigint;
         wearer: `0x${string}`;
+        module?: `0x${string}`;
       },
       hre: HardhatRuntimeEnvironment,
     ) => {
@@ -26,9 +31,11 @@ task("mintHat", "mintHat")
       } = loadDeployedContractAddresses(hre.network.name);
 
       // create HatsTimeFrameModule instance
+      const moduleAddress = (taskArgs.module ||
+        HatsTimeFrameModule) as `0x${string}`;
       const hatsTimeFrameModuleByBigBang = await hre.viem.getContractAt(
         "HatsTimeFrameModule",
-        HatsTimeFrameModule,
+        moduleAddress,
       );
 
       // call mintHat method
@@ -39,6 +46,7 @@ task("mintHat", "mintHat")
       ]);
 
       console.log(`tx: ${tx}`);
+      console.log(`module: ${moduleAddress}`);
 
       console.log(
         "################################### [END] ###################################",

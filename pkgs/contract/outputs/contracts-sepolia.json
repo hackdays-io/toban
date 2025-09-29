@@ -3,18 +3,18 @@
     "Hats": "0x3bc1A0Ad72417f2d411118085256fC53CBdDd137",
     "HatsModuleFactory": "0x0a3f85fa597B6a967271286aA0724811acDF5CD9",
     "PullSplitsFactory": "0x80f1B766817D04870f115fEBbcCADF8DBF75E017",
-    "BigBang": "\"0xA764F51dcaE050DBFf8404D0bf5C089E4Fb85AdD\"",
-    "FractionToken": "\"0xd6031f9543bEB0963e32CA2AC474de69D0515059\"",
-    "SplitsCreatorFactory": "\"0xBBe355703d205dd1e0086fa836D01825601C1DDf\"",
-    "SplitsCreator": "\"0xC0D7B4E0485d71aDA9ffF9365E4e1938F8195dDa\"",
-    "HatsTimeFrameModule": "\"0xadC508C3BA5eD8b3A6D06e2eC8D17162d2DD6F4f\"",
-    "ProxyAdmin": "\"0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8\"",
-    "ThanksTokenFactory_Implementation": "\"0xE0A3E42D126e545303A9C92423D4847D2ff68913\"",
-    "ThanksTokenFactory": "\"0x6b36bDEA3E0495e5f5bEBEE17c8170cBc93b7238\""
+    "BigBang": "0xA764F51dcaE050DBFf8404D0bf5C089E4Fb85AdD",
+    "FractionToken": "0xd6031f9543bEB0963e32CA2AC474de69D0515059",
+    "SplitsCreatorFactory": "0xBBe355703d205dd1e0086fa836D01825601C1DDf",
+    "SplitsCreator": "0xC0D7B4E0485d71aDA9ffF9365E4e1938F8195dDa",
+    "HatsTimeFrameModule": "0xadC508C3BA5eD8b3A6D06e2eC8D17162d2DD6F4f",
+    "ProxyAdmin": "0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8\"",
+    "ThanksTokenFactory_Implementation": "0xE0A3E42D126e545303A9C92423D4847D2ff68913",
+    "ThanksTokenFactory": "0x6b36bDEA3E0495e5f5bEBEE17c8170cBc93b7238"
   },
   "implementations": {
-    "FractionToken_Implementation": "\"0x6d701256205019e40cE02e13D799ed2cd3BBE8e8\"",
-    "SplitsCreatorFactory_Implementation": "\"0x95394Da0460DCF87fC76F5b868D9251bf9738553\"",
-    "BigBang_Implementation": "\"0x1B956C5af5B5CA963F3005Dd6DB349713b7e9bbE\""
+    "FractionToken_Implementation": "0x6d701256205019e40cE02e13D799ed2cd3BBE8e8",
+    "SplitsCreatorFactory_Implementation": "0x95394Da0460DCF87fC76F5b868D9251bf9738553",
+    "BigBang_Implementation": "0x1B956C5af5B5CA963F3005Dd6DB349713b7e9bbE"
   }
 }

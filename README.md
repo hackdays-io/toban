@@ -228,18 +228,6 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     pnpm contract getChainInfo --network sepolia
     ```
 
-  - #### **deploy Sample Contract**
-
-    ```bash
-    pnpm contract deploy:Lock --network sepolia
-    ```
-
-  - #### **verify deployed contract**
-
-    ```bash
-    pnpm contract deploy:Lock --verify --network sepolia
-    ```
-
   - #### **deploy all contract**
 
     ```bash
@@ -272,10 +260,19 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
   - #### **call bigbang task**
 
-    Please set params when you execute.
+    ワークスペースを作成する際に実行されるメソッド.
+    必要なコントラクトが一式デプロイされる
 
     ```bash
-    pnpm contract bigbang --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --tophatdetails "tophatDetails" --tophatimageuri "tophatURI" --hatterhatdetails "hatterhatURI" --hatterhatimageuri "tophatDetails" --forwarder 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 --network sepolia
+    pnpm contract bigbang \
+    --owner 0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072 \
+    --tophatdetails "Dev Top Hat" \
+    --tophatimageuri "dev-tophat" \
+    --hatterhatdetails "Dev Hatter Hat" \
+    --hatterhatimageuri "dev-hatterhat" \
+    --memberhatdetails "Dev Member Hat" \
+    --memberhatimageuri "dev-memberhat" \
+    --network sepolia
     ```
 
   - #### **call getWoreTime task**
@@ -287,5 +284,13 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
   - #### **call mintHat task**
 
     ```bash
-    pnpm contract mintHat --hatid 17011726346972053710434886519909386955065038130623101235576378067255296 --wearer 0x1295BDc0C102EB105dC0198fdC193588fe66A1e4 --network sepolia
+    # --module には bigBangコントラクトの時に出力される hatsTimeFrameModule のアドレスを当てはめること！
+    pnpm contract mintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --wearer 0xEef377Bdf67A227a744e386231fB3f264C158CDF --module 0xA193a4CE929168A594744A53Fb17Ba4caBb507a4 --network sepolia
+    ```
+
+  - #### **call batchMintHats task**
+
+    ```bash
+    # --module には bigBangコントラクトの時に出力される hatsTimeFrameModule のアドレスを当てはめること！
+    pnpm contract batchMintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --csv ./data/example-wearers.csv --module 0xA193a4CE929168A594744A53Fb17Ba4caBb507a4 --network sepolia
     ```

@@ -39,7 +39,7 @@ const Transaction: FC = () => {
 
   const [transactionType, setTransactionType] = useState("ERC20");
   const [contractAddress, setContractAddress] = useState(
-    "0x1856a7e86543F9f38c3bC68921dA0B65DbE018b6",
+    "0x404A0809ebE3CC6e0b3cBEc8c1F8b9Dd09ae21Cc",
   );
   const [balance, setBalance] = useState<string>("0");
   const [recipient, setRecipient] = useState("");

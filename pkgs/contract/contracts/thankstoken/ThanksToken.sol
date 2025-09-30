@@ -108,7 +108,8 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     function mint(
         address to,
         uint256 amount,
-        RelatedRole[] memory relatedRoles
+        RelatedRole[] memory relatedRoles,
+        bytes memory data
     ) public override returns (bool) {
         require(to != msg.sender, "Cannot mint to yourself");
         require(amount > 0, "Amount must be greater than 0");
@@ -131,7 +132,7 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
             _isParticipant[to] = true;
         }
 
-        emit TokenMinted(msg.sender, to, amount);
+        emit TokenMinted(msg.sender, to, amount, data);
 
         return true;
     }
@@ -139,7 +140,8 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
     function batchMint(
         address[] memory to,
         uint256[] memory amounts,
-        RelatedRole[] memory relatedRoles
+        RelatedRole[] memory relatedRoles,
+        bytes memory data
     ) public override returns (bool) {
         require(to.length == amounts.length, "Arrays length mismatch");
 
@@ -165,7 +167,7 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
                 _isParticipant[to[i]] = true;
             }
 
-            emit TokenMinted(msg.sender, to[i], amounts[i]);
+            emit TokenMinted(msg.sender, to[i], amounts[i], data);
         }
 
         if (!_isParticipant[msg.sender]) {

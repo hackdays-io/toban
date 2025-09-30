@@ -436,6 +436,7 @@ describe("IntegrationTest", () => {
             wearer: address1.account?.address!,
           },
         ],
+        "0x",
       ],
       { account: address1.account },
     );

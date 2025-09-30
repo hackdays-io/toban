@@ -131,6 +131,12 @@ export const THANKS_TOKEN_ABI = [
         name: "amount",
         type: "uint256",
       },
+      {
+        indexed: false,
+        internalType: "bytes",
+        name: "data",
+        type: "bytes",
+      },
     ],
     name: "TokenMinted",
     type: "event",
@@ -353,6 +359,11 @@ export const THANKS_TOKEN_ABI = [
         name: "relatedRoles",
         type: "tuple[]",
       },
+      {
+        internalType: "bytes",
+        name: "data",
+        type: "bytes",
+      },
     ],
     name: "batchMint",
     outputs: [
@@ -432,6 +443,11 @@ export const THANKS_TOKEN_ABI = [
         internalType: "struct IThanksToken.RelatedRole[]",
         name: "relatedRoles",
         type: "tuple[]",
+      },
+      {
+        internalType: "bytes",
+        name: "data",
+        type: "bytes",
       },
     ],
     name: "mint",

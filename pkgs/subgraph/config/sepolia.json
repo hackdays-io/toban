@@ -37,7 +37,7 @@
       "entities": [{ "name": "TokenMinted" }, { "name": "Transfer" }],
       "handlers": [
         {
-          "event": "TokenMinted(indexed address,indexed address,uint256)",
+          "event": "TokenMinted(indexed address,indexed address,uint256,bytes)",
           "handler": "handleTokenMinted"
         },
         {

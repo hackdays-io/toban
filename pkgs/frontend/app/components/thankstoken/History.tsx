@@ -7,7 +7,7 @@ import { useThanksTokenActivity } from "hooks/useThanksToken";
 import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
-import { formatEther } from "viem";
+import { formatEther, hexToString } from "viem";
 import { UserIcon } from "../icon/UserIcon";
 
 interface Props {
@@ -42,6 +42,10 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
   const toUser = useMemo(() => {
     return names?.[1]?.[0];
   }, [names]);
+
+  const message = useMemo(() => {
+    return hexToString(activity.data || "0x");
+  }, [activity.data]);
 
   return (
     <Box
@@ -117,6 +121,11 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
           </Flex>
         </Link>
       </Grid>
+      {message && (
+        <Text fontSize="sm" zIndex={1} position="relative">
+          {message}
+        </Text>
+      )}
     </Box>
   );
 };

@@ -18,12 +18,14 @@ interface IThanksToken is IERC20 {
      * @param to The address to mint tokens to
      * @param amount The amount of tokens to mint
      * @param relatedRoles Array of roles related to the sender
+     * @param data Additional data with no specified format
      * @return success Whether the operation was successful
      */
     function mint(
         address to,
         uint256 amount,
-        RelatedRole[] memory relatedRoles
+        RelatedRole[] memory relatedRoles,
+        bytes memory data
     ) external returns (bool);
 
     /**
@@ -31,12 +33,14 @@ interface IThanksToken is IERC20 {
      * @param to Array of addresses to mint tokens to
      * @param amounts Array of amounts of tokens to mint
      * @param relatedRoles Array of roles related to the sender
+     * @param data Additional data with no specified format
      * @return success Whether the operation was successful
      */
     function batchMint(
         address[] memory to,
         uint256[] memory amounts,
-        RelatedRole[] memory relatedRoles
+        RelatedRole[] memory relatedRoles,
+        bytes memory data
     ) external returns (bool);
 
     /**
@@ -81,5 +85,10 @@ interface IThanksToken is IERC20 {
      * @param to The recipient of the minted tokens
      * @param amount The amount of tokens minted
      */
-    event TokenMinted(address indexed from, address indexed to, uint256 amount);
+    event TokenMinted(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        bytes data
+    );
 }

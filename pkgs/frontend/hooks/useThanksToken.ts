@@ -60,6 +60,7 @@ const queryGetThanksTokenMints = gql(`
       }
       from
       to
+      data
       amount
       workspaceId
       blockTimestamp
@@ -259,7 +260,7 @@ export const useThanksToken = (treeId: string) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const mintThanksToken = useCallback(
-    async (to: Address, amount: bigint) => {
+    async (to: Address, amount: bigint, extraData: `0x${string}` = "0x") => {
       if (!wallet || !relatedRoles.length) return;
       setIsLoading(true);
 
@@ -272,7 +273,7 @@ export const useThanksToken = (treeId: string) => {
             data?.workspace?.thanksToken.id as `0x${string}`,
           ),
           functionName: "mint",
-          args: [to, amount, relatedRoles],
+          args: [to, amount, relatedRoles, extraData],
         });
         await publicClient.waitForTransactionReceipt({ hash: txHash });
         setIsLoading(false);
@@ -287,7 +288,11 @@ export const useThanksToken = (treeId: string) => {
   );
 
   const batchMintThanksToken = useCallback(
-    async (tos: Address[], amount: bigint[]) => {
+    async (
+      tos: Address[],
+      amount: bigint[],
+      extraData: `0x${string}` = "0x",
+    ) => {
       if (!wallet || !relatedRoles.length) return;
       setIsLoading(true);
 
@@ -300,7 +305,7 @@ export const useThanksToken = (treeId: string) => {
             data?.workspace?.thanksToken.id as `0x${string}`,
           ),
           functionName: "batchMint",
-          args: [tos, amount, relatedRoles],
+          args: [tos, amount, relatedRoles, extraData],
         });
         await publicClient.waitForTransactionReceipt({ hash: txHash });
         setIsLoading(false);

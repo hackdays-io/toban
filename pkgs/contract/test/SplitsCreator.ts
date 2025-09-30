@@ -1938,7 +1938,7 @@ describe("CreateSplit with thanks token weight", () => {
     expect(Number(mintableAmount1)).to.be.greaterThan(0);
 
     await ThanksToken.write.mint(
-      [address2.account?.address!, mintableAmount1 / 2n, relatedRoles1],
+      [address2.account?.address!, mintableAmount1 / 2n, relatedRoles1, "0x"],
       { account: address1.account },
     );
 
@@ -1951,7 +1951,7 @@ describe("CreateSplit with thanks token weight", () => {
     expect(Number(mintableAmount2)).to.be.greaterThan(0);
 
     await ThanksToken.write.mint(
-      [address3.account?.address!, mintableAmount2 / 2n, relatedRoles2],
+      [address3.account?.address!, mintableAmount2 / 2n, relatedRoles2, "0x"],
       { account: address2.account },
     );
 

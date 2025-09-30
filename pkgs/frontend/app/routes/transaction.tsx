@@ -13,7 +13,7 @@ import {
 import { ERC20_ABI } from "abi/erc20";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useState } from "react";
+import { type FC, useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { parseEther } from "viem";
 import { BasicButton } from "~/components/BasicButton";
@@ -38,16 +38,48 @@ const Transaction: FC = () => {
   const { wallet } = useActiveWallet();
 
   const [transactionType, setTransactionType] = useState("ERC20");
-  const [contractAddress, setContractAddress] = useState("");
+  const [contractAddress, setContractAddress] = useState(
+    "0x1856a7e86543F9f38c3bC68921dA0B65DbE018b6",
+  );
+  const [balance, setBalance] = useState<string>("0");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const fetchERC20Balance = useCallback(async () => {
+    if (!wallet || !contractAddress) return;
+    // Fetch balance and decimals in parallel
+    const [erc20Balance, decimals] = await Promise.all([
+      publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [wallet.account?.address as `0x${string}`],
+      }),
+      publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "decimals",
+      }),
+    ]);
+
+    const decimalsNumber = Number(decimals);
+    const formattedBalance =
+      decimalsNumber > 0
+        ? Number(erc20Balance) / 10 ** decimalsNumber
+        : Number(erc20Balance);
+    setBalance(Math.floor(formattedBalance).toLocaleString());
+  }, [wallet, contractAddress]);
+
+  useEffect(() => {
+    fetchERC20Balance();
+  }, [fetchERC20Balance]);
 
   /**
    * handleTransactionExecution function
    * トランザクションを実行する
    */
-  const handleTransactionExecution = async () => {
+  const handleTransactionExecution = useCallback(async () => {
     if (!wallet) {
       alert("ウォレットを接続してください。");
       return;
@@ -87,8 +119,6 @@ const Transaction: FC = () => {
         await publicClient.waitForTransactionReceipt({
           hash: transferTxHash,
         });
-
-        toast.success("トランザクションが正常に実行されました。");
       } else {
         if (!recipient || !amount) {
           alert("全ての項目を入力してください。");
@@ -107,19 +137,29 @@ const Transaction: FC = () => {
         });
       }
       toast.success("トランザクションが正常に実行されました。");
+      setRecipient("");
+      setAmount("0");
+      await fetchERC20Balance();
     } catch (error) {
       console.error("Transaction execution error:", error);
       toast.error("エラーが発生しました。");
     }
     setIsLoading(false);
-  };
+  }, [
+    fetchERC20Balance,
+    wallet,
+    transactionType,
+    contractAddress,
+    recipient,
+    amount,
+  ]);
 
   return (
     <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Box w="100%">
         <PageHeader title="トランザクション実行" />
 
-        <SettingsSubSection headingText="トランザクションタイプ">
+        {/* <SettingsSubSection headingText="トランザクションタイプ">
           <SelectRoot
             collection={transactionTypes}
             onValueChange={(e) => setTransactionType(e.value[0])}
@@ -152,9 +192,18 @@ const Transaction: FC = () => {
               mt={2}
             />
           </SettingsSubSection>
-        )}
+        )} */}
 
-        <SettingsSubSection headingText="パラメータ">
+        <SettingsSubSection headingText="残高">
+          <Text fontSize="2xl">
+            {balance}{" "}
+            <Text as="span" fontSize="md">
+              kuu
+            </Text>
+          </Text>
+        </SettingsSubSection>
+
+        <SettingsSubSection headingText="">
           <Grid templateColumns="repeat(4, 1fr)" gap="6" alignItems="center">
             <GridItem colSpan={1}>
               <Text>recipient</Text>
@@ -184,6 +233,7 @@ const Transaction: FC = () => {
             </GridItem>
             <GridItem colSpan={3}>
               <CommonInput
+                type="number"
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

@@ -3,7 +3,7 @@ import { Link, useParams } from "@remix-run/react";
 import type { FC } from "react";
 import { FaCoins } from "react-icons/fa6";
 import { GoHomeFill } from "react-icons/go";
-import { MdCallSplit } from "react-icons/md";
+import { MdCallSplit, MdWallet } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";
 
 export const StickyNav: FC = () => {
@@ -21,7 +21,7 @@ export const StickyNav: FC = () => {
         zIndex={100}
       >
         <Grid
-          gridTemplateColumns="1fr 1fr 1fr 1fr"
+          gridTemplateColumns="1fr 1fr 1fr 1fr 1fr"
           maxW="430px"
           width="100%"
           m="0 auto"
@@ -78,6 +78,19 @@ export const StickyNav: FC = () => {
               </IconButton>
               <Box fontWeight="bold" fontSize="sm">
                 Splits
+              </Box>
+            </Link>
+          </GridItem>
+
+          <GridItem textAlign="center">
+            <Link to={"/transaction"}>
+              <IconButton backgroundColor="transparent" color="blue.500">
+                <Icon fontSize={30}>
+                  <MdWallet size="30px" />
+                </Icon>
+              </IconButton>
+              <Box fontWeight="bold" fontSize="sm">
+                Wallet
               </Box>
             </Link>
           </GridItem>

@@ -239,7 +239,7 @@ type SortType = "totalAmount" | "transactionCount";
 
 /**
  * フレンドシップランキングを表示するコンポーネント
- * 二人の間でのアシストクレジット総量と取引回数を表示
+ * 二人の間でのロールシェア総量と取引回数を表示
  */
 export const FriendshipRanking: FC<Props> = ({ treeId, limit = 500 }) => {
   const [sortBy, setSortBy] = useState<SortType>("totalAmount");

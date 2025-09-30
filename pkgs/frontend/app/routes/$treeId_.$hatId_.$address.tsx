@@ -135,7 +135,7 @@ const RoleHolderDetails: FC = () => {
         <Heading size="lg">
           {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
-            : "アシストクレジット"}
+            : "ロールシェア"}
         </Heading>
         <Link to={`/${treeId}/${hatId}/${address}/assistcredit/send`}>
           <BasicButton minH={5} size="xs" bgColor="yellow.400">

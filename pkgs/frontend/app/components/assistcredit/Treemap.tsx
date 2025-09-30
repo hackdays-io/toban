@@ -108,7 +108,7 @@ export const Treemap = ({ treeId }: { treeId: string }) => {
       },
       title: {
         display: true,
-        text: `保有している${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "アシストクレジット"}の量`,
+        text: `保有している${["144", "175", "780"].includes(treeId || "") ? "ケアポイント" : "ロールシェア"}の量`,
       },
       tooltip: {
         enabled: true,

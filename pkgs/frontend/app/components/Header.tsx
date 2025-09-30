@@ -231,7 +231,7 @@ export const Header = () => {
               }}
               cursor="pointer"
             >
-              Execute Tx
+              送金
             </MenuItem>
             <MenuItem
               value="logout"

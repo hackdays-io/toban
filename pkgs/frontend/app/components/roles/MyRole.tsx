@@ -35,7 +35,7 @@ export const MyRole: FC<MyRoleProps> = (params) => {
         >
           {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
-            : "アシストクレジット"}
+            : "ロールシェア"}
           を送る
         </CommonButton>
       </VStack>

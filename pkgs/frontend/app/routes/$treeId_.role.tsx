@@ -116,7 +116,7 @@ const WorkspaceWithBalance: FC = () => {
         <Heading pb={4}>
           {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
-            : "アシストクレジット"}
+            : "ロールシェア"}
           の残高
         </Heading>
         <VStack width="full" gapY={5}>

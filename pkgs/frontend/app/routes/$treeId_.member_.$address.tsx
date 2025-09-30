@@ -415,7 +415,7 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
         <Text fontSize="md" fontWeight="medium" color="gray.600">
           {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
-            : "アシストクレジット"}
+            : "ロールシェア"}
           履歴
         </Text>
         <Flex>

@@ -56,7 +56,7 @@ const deploy = async () => {
   // Deploy SplitsCreator (non-upgradeable)
   const { SplitsCreator } = await deploySplitsCreator();
   const splitsCreatorAddress = SplitsCreator.address;
-  
+
   // Deploy SplitsCreatorFactory implementation and proxy
   console.log("Deploying SplitsCreatorFactory...");
 
@@ -66,25 +66,6 @@ const deploy = async () => {
     SplitsCreatorFactoryInitData,
   } = await deploySplitsCreatorFactory(splitsCreatorAddress);
   const splitsCreatorFactoryAddress = SplitsCreatorFactory.address;
-
-  console.log("Deploying ThanksToken...");
-  const { ThanksToken } = await deployThanksToken();
-  const thanksTokenAddress = ThanksToken.address;
-
-  console.log("Deploying ThanksTokenFactory...");
-
-  const {
-    ThanksTokenFactory,
-    ThanksTokenFactoryImplAddress,
-    ThanksTokenFactoryInitData,
-  } = await deployThanksTokenFactory({
-    initialOwner: deployerAddress as Address,
-    implementation: thanksTokenAddress,
-    hatsAddress: process.env.HATS_ADDRESS as Address,
-    fractionTokenAddress: hatsFractionTokenModuleAddress,
-    hatsTimeFrameModuleAddress: hatsTimeFrameModuleAddress,
-  });
-  const thanksTokenFactoryAddress = ThanksTokenFactory.address;
 
   // Deploy BigBang implementation and proxy
   console.log("Deploying BigBang...");

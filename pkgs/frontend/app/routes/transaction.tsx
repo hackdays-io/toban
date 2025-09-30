@@ -20,6 +20,7 @@ import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import { SettingsSubSection } from "~/components/SettingSections";
 import { CommonInput } from "~/components/common/CommonInput";
+import { QrAddressReader } from "~/components/common/QrAddressReader";
 
 // Select tx types
 const transactionTypes = createListCollection({
@@ -154,30 +155,38 @@ const Transaction: FC = () => {
         )}
 
         <SettingsSubSection headingText="パラメータ">
-          <Grid templateColumns="repeat(4, 1fr)" gap="6">
+          <Grid templateColumns="repeat(4, 1fr)" gap="6" alignItems="center">
             <GridItem colSpan={1}>
-              <Text mt={4}>recipient</Text>
+              <Text>recipient</Text>
             </GridItem>
-            <GridItem colSpan={3}>
+            <GridItem colSpan={3} display="flex" alignItems="center" gap={2}>
               <CommonInput
                 placeholder="Recipient Address"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                mt={2}
+              />
+              <QrAddressReader
+                onReadValidAddress={(address: string) => {
+                  setRecipient(address);
+                }}
               />
             </GridItem>
           </Grid>
 
-          <Grid templateColumns="repeat(4, 1fr)" gap="6">
+          <Grid
+            mt={4}
+            templateColumns="repeat(4, 1fr)"
+            gap="6"
+            alignItems="center"
+          >
             <GridItem colSpan={1}>
-              <Text mt={4}>amount</Text>
+              <Text>amount</Text>
             </GridItem>
             <GridItem colSpan={3}>
               <CommonInput
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                mt={2}
               />
             </GridItem>
           </Grid>

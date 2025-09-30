@@ -34,6 +34,7 @@ export function handleTokenMinted(ev: TokenMinted): void {
   tokenMinted.thanksToken = thanksToken.id;
   tokenMinted.from = ev.params.from.toHex();
   tokenMinted.to = ev.params.to.toHex();
+  tokenMinted.data = ev.params.data;
   tokenMinted.amount = ev.params.amount;
   tokenMinted.workspaceId = thanksToken.workspaceId;
   tokenMinted.blockTimestamp = ev.block.timestamp;

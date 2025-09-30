@@ -33,6 +33,7 @@ const getNearestEmoji = (amount: number): number => {
 
 interface SendConfirmationProps {
   amount: number;
+  data?: string;
   me?: NameData;
   receiver?: NameData;
   receivers?: NameData[];
@@ -44,6 +45,7 @@ const SWIPE_THRESHOLD = 200;
 
 const SendConfirmation: FC<SendConfirmationProps> = ({
   amount,
+  data,
   me,
   receiver,
   receivers,
@@ -82,12 +84,7 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
       overflow="hidden"
     >
       <Text fontSize="md" color="gray.500" fontWeight="bold" textAlign="center">
-        スワイプして
-        <br />
-        {["144", "175", "780"].includes(treeId || "")
-          ? "ケアポイント"
-          : "ロールシェア"}
-        を送る
+        スワイプして送る
       </Text>
 
       <VStack pt={4}>
@@ -280,52 +277,56 @@ const SendConfirmation: FC<SendConfirmationProps> = ({
         )}
       </Box>
 
-      <HStack columnGap={3} mb={4}>
-        <Box textAlign="center">
-          <UserIcon
-            size={10}
-            userImageUrl={ipfs2https(me?.text_records?.avatar)}
-          />
-          <Text fontSize="xs">{me?.name}</Text>
-        </Box>
-        <VStack textAlign="center">
-          <Text>{amount}</Text>
-          <FaArrowRight size="20px" />
-        </VStack>
-        <Box textAlign="center">
-          {receivers && receivers.length > 0 ? (
-            <>
-              <HStack>
-                {receivers.slice(0, 3).map((user) => (
-                  <Box
-                    key={user.address}
-                    marginLeft={user === receivers[0] ? 0 : -4}
-                  >
-                    <UserIcon
-                      size={10}
-                      userImageUrl={ipfs2https(user.text_records?.avatar)}
-                    />
-                  </Box>
-                ))}
-                {receivers.length > 3 && (
-                  <Text fontSize="xs">+{receivers.length - 3}</Text>
-                )}
-              </HStack>
-              <Text fontSize="xs">{receivers.length}人</Text>
-            </>
-          ) : receiver ? (
-            <>
-              <UserIcon
-                size={10}
-                userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
-              />
-              <Text fontSize="xs">
-                {receiver?.name || abbreviateAddress(receiver?.address || "")}
-              </Text>
-            </>
-          ) : null}
-        </Box>
-      </HStack>
+      <VStack>
+        <HStack columnGap={3} mb={4}>
+          <Box textAlign="center">
+            <UserIcon
+              size={10}
+              userImageUrl={ipfs2https(me?.text_records?.avatar)}
+            />
+            <Text fontSize="xs">{me?.name}</Text>
+          </Box>
+          <VStack textAlign="center">
+            <Text>{amount}</Text>
+            <FaArrowRight size="20px" />
+          </VStack>
+          <Box textAlign="center">
+            {receivers && receivers.length > 0 ? (
+              <>
+                <HStack>
+                  {receivers.slice(0, 3).map((user) => (
+                    <Box
+                      key={user.address}
+                      marginLeft={user === receivers[0] ? 0 : -4}
+                    >
+                      <UserIcon
+                        size={10}
+                        userImageUrl={ipfs2https(user.text_records?.avatar)}
+                      />
+                    </Box>
+                  ))}
+                  {receivers.length > 3 && (
+                    <Text fontSize="xs">+{receivers.length - 3}</Text>
+                  )}
+                </HStack>
+                <Text fontSize="xs">{receivers.length}人</Text>
+              </>
+            ) : receiver ? (
+              <>
+                <UserIcon
+                  size={10}
+                  userImageUrl={ipfs2https(receiver?.text_records?.avatar)}
+                />
+                <Text fontSize="xs">
+                  {receiver?.name || abbreviateAddress(receiver?.address || "")}
+                </Text>
+              </>
+            ) : null}
+          </Box>
+        </HStack>
+
+        <Text textAlign="center">{data}</Text>
+      </VStack>
     </VStack>
   );
 };

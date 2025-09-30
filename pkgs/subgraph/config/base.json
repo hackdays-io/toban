@@ -1,6 +1,6 @@
 {
   "network": "base",
-  "startBlock": 34960441,
+  "startBlock": 36218446,
   "contracts": [
     {
       "address": "0xfB4FA9Dbb82a36566154A038e5f3865fbAC92422",
@@ -37,7 +37,7 @@
       "entities": [{ "name": "TokenMinted" }, { "name": "Transfer" }],
       "handlers": [
         {
-          "event": "TokenMinted(indexed address,indexed address,uint256)",
+          "event": "TokenMinted(indexed address,indexed address,uint256,bytes)",
           "handler": "handleTokenMinted"
         },
         {

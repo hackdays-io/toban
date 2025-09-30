@@ -1,4 +1,12 @@
-import { Box, Flex, HStack, Stack, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  HStack,
+  Stack,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
 import { Slider, useSlider } from "@chakra-ui/react/slider";
 import type { NameData } from "namestone-sdk";
 import { useEffect, useState } from "react";
@@ -24,6 +32,8 @@ const getNearestEmoji = (amount: number): number => {
 interface AmountSelectorProps {
   amount: number;
   setAmount: (amount: number) => void;
+  data?: string;
+  setData?: (data: string) => void;
   onNext: () => void;
   isLoading: boolean;
   me?: NameData;
@@ -36,6 +46,8 @@ interface AmountSelectorProps {
 const AmountSelector = ({
   amount,
   setAmount,
+  data,
+  setData,
   onNext,
   isLoading,
   me,
@@ -166,6 +178,19 @@ const AmountSelector = ({
             </Text>
           </Box>
         </HStack>
+
+        {setData && (
+          <Field mb={4} width="100%">
+            <Textarea
+              backgroundColor="white"
+              rows={2}
+              maxLength={150}
+              placeholder="メッセージを追加 (任意)"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+            />
+          </Field>
+        )}
         <BasicButton
           colorScheme="yellow"
           loading={isLoading}

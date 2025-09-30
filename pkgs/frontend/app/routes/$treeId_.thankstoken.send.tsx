@@ -10,7 +10,7 @@ import { useThanksToken } from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { type Address, formatEther, parseEther } from "viem";
+import { type Address, formatEther, parseEther, stringToHex } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
 import AmountSelector from "~/components/assistcredit/AmountSelector";
@@ -26,6 +26,8 @@ const ThanksTokenSend: FC = () => {
 
   const [selectedUsers, setSelectedUsers] = useState<NameData[]>([]);
   const [amount, setAmount] = useState<number>(0);
+
+  const [data, setData] = useState<string>("");
 
   const [isSend, setIsSend] = useState(false);
   const [showAmountSelector, setShowAmountSelector] = useState(false);
@@ -86,11 +88,14 @@ const ThanksTokenSend: FC = () => {
   const send = useCallback(async () => {
     if (selectedUsers.length === 0 || isLoading) return;
 
+    const bytesData = data ? stringToHex(data) : undefined;
+
     try {
       if (selectedUsers.length === 1) {
         const res = await mintThanksToken(
           selectedUsers[0].address as Address,
           parseEther(amount.toString()),
+          bytesData,
         );
         if (res?.error) throw new Error(res.error);
       } else {
@@ -115,6 +120,7 @@ const ThanksTokenSend: FC = () => {
     isLoading,
     treeId,
     navigate,
+    data,
   ]);
 
   return (
@@ -158,6 +164,7 @@ const ThanksTokenSend: FC = () => {
       {isSend ? (
         <SendConfirmation
           amount={amount}
+          data={data}
           me={me.identity}
           receivers={selectedUsers}
           onSend={send}
@@ -174,6 +181,8 @@ const ThanksTokenSend: FC = () => {
             <AmountSelector
               amount={amount}
               setAmount={setAmount}
+              data={data}
+              setData={setData}
               onNext={() => setIsSend(true)}
               isLoading={isLoading}
               me={me.identity}

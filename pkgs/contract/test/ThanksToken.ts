@@ -397,7 +397,7 @@ describe("ThanksToken", () => {
       expect(Number(mintableAmount)).to.be.equal(600000000000000000000);
 
       await DeployedThanksToken.write.mint(
-        [address2Validated, mintableAmount / 2n, relatedRoles],
+        [address2Validated, mintableAmount / 2n, relatedRoles, "0x"],
         {
           account: address1.account,
         },
@@ -542,7 +542,7 @@ describe("ThanksToken", () => {
 
       try {
         await DeployedThanksToken.write.mint(
-          [address2Validated, amountToMint, relatedRoles],
+          [address2Validated, amountToMint, relatedRoles, "0x"],
           { account: address1.account },
         );
       } catch (error: any) {
@@ -678,7 +678,7 @@ describe("ThanksToken", () => {
 
       try {
         await DeployedThanksToken.write.mint(
-          [address1Validated, 1n, relatedRoles],
+          [address1Validated, 1n, relatedRoles, "0x"],
           { account: address1.account },
         );
         // If we get here, the mint succeeded when it should have failed
@@ -697,7 +697,7 @@ describe("ThanksToken", () => {
       ];
       try {
         await DeployedThanksToken.write.mint(
-          [address2Validated, 1000000n, relatedRoles],
+          [address2Validated, 1000000n, relatedRoles, "0x"],
           { account: address1.account },
         );
         // If we get here, the mint succeeded when it should have failed
@@ -735,7 +735,7 @@ describe("ThanksToken", () => {
 
       // Mint from address1 to address3, who is a new participant
       await DeployedThanksToken.write.mint(
-        [address3Validated, mintableAmount, relatedRoles],
+        [address3Validated, mintableAmount, relatedRoles, "0x"],
         { account: address1.account },
       );
 
@@ -757,7 +757,7 @@ describe("ThanksToken", () => {
       expect(mintableAmount2 > 0n).to.be.true;
 
       await DeployedThanksToken.write.mint(
-        [address2Validated, mintableAmount2, relatedRoles],
+        [address2Validated, mintableAmount2, relatedRoles, "0x"],
         { account: address1.account },
       );
 

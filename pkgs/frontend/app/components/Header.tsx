@@ -76,14 +76,57 @@ export const Header = () => {
     return avatar ? ipfs2https(avatar) : undefined;
   }, [identity]);
 
-  const handleLogout = () => {
-    if (isSmartWallet) {
-      logout();
-    } else {
-      if (wallets.find((w) => w.connectorType === "injected")) {
-        alert("ウォレット拡張機能から切断してください。");
+  const handleLogout = async () => {
+    try {
+      if (isSmartWallet) {
+        // スマートウォレットの場合、Privyのlogoutを使用
+        await logout();
       } else {
-        Promise.all(wallets.map((wallet) => wallet.disconnect()));
+        // 外部ウォレット（MetaMaskなど）の場合
+        const hasInjectedWallet = wallets.some(
+          (w) => w.connectorType === "injected",
+        );
+
+        if (hasInjectedWallet) {
+          // MetaMaskの権限を無効化
+          try {
+            if (window.ethereum) {
+              await window.ethereum.request({
+                method: "wallet_revokePermissions",
+                params: [{ eth_accounts: {} }],
+              });
+            }
+          } catch (revokeError) {
+            console.warn("Failed to revoke MetaMask permissions:", revokeError);
+          }
+        } else {
+          // その他の外部ウォレットの場合
+          // Privyのlogoutを実行してからウォレット切断を試行
+          await logout();
+
+          // 切断可能なウォレットのみ切断
+          for (const wallet of wallets) {
+            if (wallet.connectorType !== "injected") {
+              try {
+                wallet.disconnect();
+              } catch (error) {
+                console.warn(
+                  "Failed to disconnect wallet:",
+                  wallet.address,
+                  error,
+                );
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // エラーが発生した場合のフォールバック処理
+      try {
+        await logout();
+      } catch (logoutError) {
+        console.error("Fallback logout also failed:", logoutError);
       }
     }
   };

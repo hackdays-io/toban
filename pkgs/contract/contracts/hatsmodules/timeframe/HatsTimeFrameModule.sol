@@ -71,6 +71,46 @@ contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
     }
 
     /**
+     * @dev Batch mint hats for multiple addresses with the same hat ID.
+     * @param hatId The ID of the hat to be minted for all wearers.
+     * @param wearers Array of addresses to receive the hat.
+     * @param times Array of specific timestamps when each hat was minted (0 for current time).
+     */
+    function batchMintHat(
+        uint256 hatId,
+        address[] calldata wearers,
+        uint256[] calldata times
+    ) external {
+        // 権限チェック
+        require(hasAuthority(msg.sender), "Not authorized");
+
+        // 入力検証
+        require(wearers.length > 0, "Empty wearers array");
+        require(wearers.length == times.length, "Array length mismatch");
+        require(wearers.length <= 100, "Batch size too large");
+
+        // 事前検証（全てのwearerが有効かチェック）
+        for (uint256 i = 0; i < wearers.length; i++) {
+            require(wearers[i] != address(0), "Invalid wearer address");
+            require(woreTime[hatId][wearers[i]] == 0, "Hat already minted");
+        }
+
+        // 一括ミント実行
+        for (uint256 i = 0; i < wearers.length; i++) {
+            address wearer = wearers[i];
+            uint256 time = times[i];
+
+            _setWoreTime(wearer, hatId, time);
+            isActive[hatId][wearer] = true;
+            HATS().mintHat(hatId, wearer);
+
+            emit HatMinted(hatId, wearer, time == 0 ? block.timestamp : time);
+        }
+
+        emit BatchMintCompleted(hatId, wearers.length);
+    }
+
+    /**
      * @dev Deactivate the hat, pausing the contribution time.
      * Calculate the contribution time up to deactivation.
      * @param wearer The address of the person who received the hat.

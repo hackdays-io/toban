@@ -1,15 +1,18 @@
 import { network, viem } from "hardhat";
 import { deployHatsTimeFrameModule } from "../../helpers/deploy/Hats";
+import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJsonHelper";
 
 const upgrade = async () => {
   const module = await deployHatsTimeFrameModule(
     "0x0000000000000000000000000000000000000001",
   );
 
-  const bigBang = await viem.getContractAt(
-    "BigBang",
-    "0x3E70d10aCdcC14B6C31DA26DcC195a6EDf1C2c16",
-  );
+  // Load BigBang address from outputs JSON file
+  const {
+    contracts: { BigBang },
+  } = loadDeployedContractAddresses(network.name);
+
+  const bigBang = await viem.getContractAt("BigBang", BigBang);
 
   await bigBang.write.setHatsTimeFrameModuleImpl([
     module.HatsTimeFrameModule.address,

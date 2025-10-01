@@ -10,7 +10,7 @@ import {
   Text,
   createListCollection,
 } from "@chakra-ui/react";
-import { useSearchParams } from "@remix-run/react";
+import { useNavigate, useSearchParams } from "@remix-run/react";
 import { ERC20_ABI } from "abi/erc20";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
@@ -164,10 +164,15 @@ const Transaction: FC = () => {
     amount,
   ]);
 
+  const navigate = useNavigate();
+
   return (
     <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
       <Box w="100%">
-        <PageHeader title="トランザクション実行" />
+        <PageHeader
+          title="トランザクション実行"
+          backLink={() => navigate("/1814")}
+        />
 
         {/* <SettingsSubSection headingText="トランザクションタイプ">
           <SelectRoot

@@ -157,7 +157,9 @@ const ThanksTokenSend: FC = () => {
                     setSelectedUsers([]);
                     setAmount(10);
                   }
-            : undefined
+            : () => {
+                navigate(`/${treeId}`);
+              }
         }
       />
 

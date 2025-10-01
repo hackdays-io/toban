@@ -10,6 +10,7 @@ import {
   Text,
   createListCollection,
 } from "@chakra-ui/react";
+import { useSearchParams } from "@remix-run/react";
 import { ERC20_ABI } from "abi/erc20";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
@@ -45,6 +46,15 @@ const Transaction: FC = () => {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // get url query param recipient and if exists setRecipient
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const recipientParam = searchParams.get("recipient");
+    if (recipientParam) {
+      setRecipient(recipientParam);
+    }
+  }, [searchParams]);
 
   const fetchERC20Balance = useCallback(async () => {
     if (!wallet || !contractAddress) return;

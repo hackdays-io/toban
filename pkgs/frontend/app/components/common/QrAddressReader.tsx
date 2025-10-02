@@ -86,6 +86,13 @@ export const QrAddressReader: FC<QrAddressReaderProps> = ({
           let scannedText = result.getText();
           if (scannedText.includes(":")) {
             scannedText = scannedText.split(":")[1];
+          } else if (scannedText.includes("http")) {
+            // get recipient query param from url
+            const url = new URL(scannedText);
+            const recipientParam = url.searchParams.get("recipient");
+            if (recipientParam) {
+              scannedText = recipientParam;
+            }
           }
 
           // Validate if it's a valid Ethereum address

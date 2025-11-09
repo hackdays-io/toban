@@ -8,31 +8,36 @@ export function createEmotion() {
   const cache = createEmotionCache();
   const server = createEmotionServer(cache);
 
-  function injectStyles(html: string) {
-    const { styles } = server.extractCriticalToChunks(html);
+  function injectStyles(element: React.ReactNode): React.ReactNode {
+    const htmlString = renderToString(element);
+    const { styles } = server.extractCriticalToChunks(htmlString);
 
-    let stylesHTML = "";
-
-    for (const { key, ids, css } of styles) {
-      const emotionKey = `${key} ${ids.join(" ")}`;
-      const newStyleTag = `<style data-emotion="${emotionKey}">${css}</style>`;
-      stylesHTML = `${stylesHTML}${newStyleTag}`;
-    }
-
-    // add the emotion style tags after the insertion point meta tag
-    const markup = html.replace(
-      /<meta(\s)*name="emotion-insertion-point"(\s)*content="emotion-insertion-point"(\s)*\/>/,
-      `<meta name="emotion-insertion-point" content="emotion-insertion-point"/>${stylesHTML}`,
+    const styleElements = styles.map(({ key, ids, css }) => (
+      <style
+        key={key}
+        data-emotion={`${key} ${ids.join(" ")}`}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+        dangerouslySetInnerHTML={{ __html: css }}
+      />
+    ));
+    return (
+      <>
+        {/* emotion insertion point meta tag */}
+        <meta
+          name="emotion-insertion-point"
+          content="emotion-insertion-point"
+        />
+        {styleElements}
+        {element}
+      </>
     );
-
-    return markup;
   }
 
-  function _renderToString(element: React.ReactNode) {
-    return renderToString(
+  function renderElement(element: React.ReactNode): React.ReactNode {
+    return (
       <CacheProvider value={cache}>
         <ChakraProvider>{element}</ChakraProvider>
-      </CacheProvider>,
+      </CacheProvider>
     );
   }
 
@@ -40,6 +45,6 @@ export function createEmotion() {
     server,
     cache,
     injectStyles,
-    renderToString: _renderToString,
+    renderElement,
   };
 }

@@ -1,29 +1,44 @@
-import type { HandleDocumentRequestFunction } from "@remix-run/node";
-import { RemixServer } from "@remix-run/react";
+import ReactDOMServer from "react-dom/server";
+import { type EntryContext, ServerRouter } from "react-router";
 import { createEmotion } from "./emotion/emotion-server";
 
-const handleRequest: HandleDocumentRequestFunction = (
+export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  remixContext: any,
-) =>
-  new Promise((resolve) => {
-    const { renderToString, injectStyles } = createEmotion();
+  routerContext: EntryContext,
+) {
+  let isFailure = false;
+  const { renderToReadableStream } = ReactDOMServer;
 
-    const html = renderToString(
-      <RemixServer context={remixContext} url={request.url} />,
-    );
-
-    responseHeaders.set("Content-Type", "text/html");
-
-    const response = new Response(`<!DOCTYPE html>${injectStyles(html)}`, {
-      status: responseStatusCode,
-      headers: responseHeaders,
+  // Block .well-known requests immediately
+  const url = new URL(request.url);
+  if (url.pathname.startsWith("/.well-known")) {
+    return new Response("Not Found", {
+      status: 404,
+      headers: { "Content-Type": "text/plain" },
     });
+  }
+  // responseHeaders.delete("Content-Security-Policy");
 
-    resolve(response);
+  const { renderElement } = createEmotion();
+
+  const element = renderElement(
+    <ServerRouter context={routerContext} url={request.url} />,
+  );
+  responseHeaders.set("Content-Type", "text/html");
+
+  const controller = new AbortController();
+  const stream = await renderToReadableStream(element, {
+    signal: controller.signal,
+    onError(error) {
+      isFailure = true;
+      console.error(error);
+    },
   });
 
-export default handleRequest;
+  return new Response(stream, {
+    status: isFailure ? 500 : responseStatusCode,
+    headers: responseHeaders,
+  });
+}

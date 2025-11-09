@@ -1,9 +1,10 @@
+"use client";
 import { Box, Flex, Grid, Text } from "@chakra-ui/react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { useNavigate } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { BasicButton } from "~/components/BasicButton";
 import { CommonIcon } from "~/components/common/CommonIcon";
 

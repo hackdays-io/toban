@@ -6,12 +6,12 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHats, useTreeInfo } from "hooks/useHats";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo } from "react";
 import { FaPlus } from "react-icons/fa6";
+import { Link, useNavigate, useParams } from "react-router";
 import type { Address } from "viem";
 import { StickyNav } from "~/components/StickyNav";
 import CommonButton from "~/components/common/CommonButton";

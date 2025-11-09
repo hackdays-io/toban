@@ -5,13 +5,29 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+    "**/.client/**/*.tsx",
+    ".react-router/types/**/*",
+    "app/entry.client.tsx",
+    "app/entry.server.tsx"
   ],
-  "exclude": ["node_modules", "gql"],
+  "exclude": [
+    "**/@internationalized+date/**",
+    "**/@internationalized+number/**",
+    "**/@internationalized/**",
+    "node_modules/",
+    "**/node_modules/**",
+    "gql",
+    "**/.react-router",
+    "**/.react-router/**",
+    "**/types/+routes.ts"
+  ],
   "compilerOptions": {
+    "skipLibCheck": true,
+    "strict": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": [
-      "@remix-run/node",
+      "@react-router/node",
+      "@react-router/fs-routes",
       "vite/client",
       "cypress",
       "cypress-file-upload"
@@ -23,16 +39,13 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "target": "ES2022",
-    "strict": true,
     "allowJs": true,
-    "skipLibCheck": true,
-    "customConditions": ["source"],
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"]
     },
-
+    "rootDirs": [".", "./.react-router/types"],
     // Vite takes care of building everything, not tsc.
     "noEmit": true
   }

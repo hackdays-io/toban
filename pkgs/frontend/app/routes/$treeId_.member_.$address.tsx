@@ -1,6 +1,5 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
-import { useParams } from "@remix-run/react";
 import {
   MintThanksToken_OrderBy,
   OrderDirection,
@@ -14,6 +13,7 @@ import {
 } from "hooks/useThanksToken";
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router";
 import { toast } from "react-toastify";
 import { UserThanksHistory } from "~/components/thankstoken/History";
 import {

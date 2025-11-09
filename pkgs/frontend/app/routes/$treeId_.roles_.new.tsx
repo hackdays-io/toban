@@ -1,5 +1,4 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { useHats } from "hooks/useHats";
 import { useCreateHatFromHatCreatorModule } from "hooks/useHatsHatCreatorModule";
 import {
@@ -10,6 +9,7 @@ import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useCallback } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router";
 import type {
   HatsDetailsAttributes,
   HatsDetailsAuthorities,

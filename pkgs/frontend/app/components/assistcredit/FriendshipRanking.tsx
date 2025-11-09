@@ -7,7 +7,6 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
 import {
   MintThanksToken_OrderBy,
   OrderDirection,
@@ -19,6 +18,7 @@ import {
   useGetTransferThanksTokens,
 } from "hooks/useThanksToken";
 import { type FC, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { UserIcon } from "../icon/UserIcon";

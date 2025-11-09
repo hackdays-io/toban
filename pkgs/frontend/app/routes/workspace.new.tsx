@@ -1,6 +1,5 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
 import { hatIdDecimalToHex, hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
-import { useNavigate } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBigBang } from "hooks/useBigBang";
 import {
@@ -9,6 +8,7 @@ import {
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useState } from "react";
+import { useNavigate } from "react-router";
 import type {
   HatsDetailsAttributes,
   HatsDetailsAuthorities,
@@ -27,7 +27,7 @@ import { InputNumber } from "~/components/input/InputNumber";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
 import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 const WorkspaceNew: FC = () => {
   const [name, setName] = useState("");

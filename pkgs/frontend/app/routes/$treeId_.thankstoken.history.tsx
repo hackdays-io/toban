@@ -1,6 +1,6 @@
 import { Box, Grid } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
 import type { FC } from "react";
+import { useParams } from "react-router";
 import { PageHeader } from "~/components/PageHeader";
 import { ThanksTokenHistory } from "~/components/thankstoken/History";
 

@@ -17,6 +17,7 @@ import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { StickyNav } from "~/components/StickyNav";
+import MintAdditional from "~/components/assistcredit/MintAdditional";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import {
@@ -223,6 +224,7 @@ const RoleHolderDetails: FC = () => {
           >
             当番を剥奪
           </BasicButton>
+          <MintAdditional />
         </>
       )}
 

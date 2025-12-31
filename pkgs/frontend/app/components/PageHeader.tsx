@@ -1,7 +1,7 @@
 import { Box, HStack, IconButton } from "@chakra-ui/react";
-import { useNavigate } from "@remix-run/react";
 import { type ReactNode, useCallback } from "react";
 import { FaChevronLeft } from "react-icons/fa6";
+import { useNavigate } from "react-router";
 
 interface Props {
   title: string | ReactNode;

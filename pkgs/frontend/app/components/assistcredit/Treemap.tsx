@@ -1,5 +1,11 @@
 import type { TooltipItem } from "chart.js";
-import { Chart as ChartJS, Legend, Tooltip } from "chart.js";
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  Title,
+  Tooltip,
+} from "chart.js";
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
 import { BalanceOfFractionToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
@@ -8,7 +14,14 @@ import { useMemo } from "react";
 import { Chart } from "react-chartjs-2";
 import { abbreviateAddress } from "utils/wallet";
 
-ChartJS.register(TreemapController, TreemapElement, Tooltip, Legend);
+ChartJS.register(
+  TreemapController,
+  TreemapElement,
+  Tooltip,
+  Legend,
+  Title,
+  CategoryScale,
+);
 
 // Formatter context type
 type FormatterContext = {

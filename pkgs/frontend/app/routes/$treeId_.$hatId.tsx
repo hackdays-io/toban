@@ -1,6 +1,5 @@
 import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { hatIdHexToDecimal, treeIdToTopHatId } from "@hatsprotocol/sdk-v1-core";
-import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHatById } from "hooks/useHats";
@@ -8,6 +7,7 @@ import { useWearingElapsedTime } from "hooks/useHatsTimeFrameModule";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";

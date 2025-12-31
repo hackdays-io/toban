@@ -1,8 +1,8 @@
 import { Box, Container, Heading, Image } from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import CommonButton from "~/components/common/CommonButton";
 
-export default function Index() {
+export default function Home() {
   return (
     <Box py={10} overflowX="hidden" mx="-4">
       <Container>

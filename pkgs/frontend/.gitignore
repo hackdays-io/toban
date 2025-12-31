@@ -9,3 +9,5 @@ node_modules
 !.env.example
 
 /downloads
+
+.react-router/

@@ -6,11 +6,11 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
 import type { NameData } from "namestone-sdk";
 import { type FC, useRef, useState } from "react";
 import { FaAngleDoubleUp } from "react-icons/fa";
 import { FaArrowRight } from "react-icons/fa6";
+import { useParams } from "react-router";
 import { FreeMode, Mousewheel, Virtual } from "swiper/modules";
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";

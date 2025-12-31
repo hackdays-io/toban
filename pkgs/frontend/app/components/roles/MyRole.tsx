@@ -1,6 +1,6 @@
 import { HStack, Image, Text, VStack } from "@chakra-ui/react";
-import { useNavigate } from "@remix-run/react";
 import type { FC } from "react";
+import { useNavigate } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import CommonButton from "../common/CommonButton";
 import { RoleIcon } from "../icon/RoleIcon";

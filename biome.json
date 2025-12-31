@@ -26,7 +26,8 @@
       "**/subgraph/generated",
       "**/subgraph/build",
       "**/frontend/gql",
-      "**/frontend/**/downloads"
+      "**/frontend/**/downloads",
+      "**/frontend/.react-router/**"
     ]
   },
   "formatter": {

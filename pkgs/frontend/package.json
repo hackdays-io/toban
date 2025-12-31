@@ -28,6 +28,7 @@
     "@privy-io/react-auth": ">=2.4.2 <=2.5.0",
     "@react-router/node": "^7.9.4",
     "@react-router/serve": "^7.9.5",
+    "@remix-run/react": "^2.17.2",
     "@solana/web3.js": "^1.95.5",
     "@tanstack/react-query": "^5.68.0",
     "@zxing/library": "^0.21.3",

@@ -13,6 +13,9 @@ export const hatsApolloClient = new ApolloClient({
   ssrMode: typeof window === "undefined",
   link: new HttpLink({
     uri: import.meta.env.VITE_HATS_GRAPHQL_ENDPOINT,
+    headers: {
+      Authorization: `Bearer ${import.meta.env.VITE_THEGRAPH_API_KEY}`,
+    },
   }),
   cache: new InMemoryCache(),
 });

@@ -45,9 +45,18 @@ const ThanksTokenSend: FC = () => {
     return Array.from(new Set(wearerAddresses));
   }, [tree]);
 
-  const { names: defaultNames } = useNamesByAddresses(members);
-  const { names, fetchNames } = useNamesByAddresses();
-  const { addresses, fetchAddresses } = useAddressesByNames();
+  const { names: defaultNames, isLoading: isDefaultNamesLoading } =
+    useNamesByAddresses(members);
+  const {
+    names,
+    fetchNames,
+    isLoading: isSearchNamesLoading,
+  } = useNamesByAddresses();
+  const {
+    addresses,
+    fetchAddresses,
+    isLoading: isSearchAddressesLoading,
+  } = useAddressesByNames();
 
   const isSearchAddress = useMemo(() => {
     return searchText.startsWith("0x") && searchText.length === 42;
@@ -200,6 +209,13 @@ const ThanksTokenSend: FC = () => {
               selectedUsers={selectedUsers}
               onToggleUser={toggleUser}
               multiSelect={true}
+              isLoading={
+                searchText
+                  ? isSearchAddress
+                    ? isSearchNamesLoading
+                    : isSearchAddressesLoading
+                  : isDefaultNamesLoading
+              }
             />
           )}
         </>

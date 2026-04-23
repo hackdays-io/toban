@@ -1,4 +1,4 @@
-import { Box, HStack, List, Text } from "@chakra-ui/react";
+import { Box, HStack, List, Skeleton, Text } from "@chakra-ui/react";
 import type { NameData } from "namestone-sdk";
 import { ipfs2https } from "utils/ipfs";
 import { CommonInput } from "~/components/common/CommonInput";
@@ -6,6 +6,8 @@ import { QrAddressReader } from "~/components/common/QrAddressReader";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Field } from "~/components/ui/field";
+
+const USER_SKELETON_KEYS = ["u-a", "u-b", "u-c", "u-d", "u-e"];
 
 interface UserListProps {
   searchText: string;
@@ -15,6 +17,7 @@ interface UserListProps {
   selectedUsers?: NameData[];
   onToggleUser?: (user: NameData) => void;
   multiSelect?: boolean;
+  isLoading?: boolean;
 }
 
 const UserList = ({
@@ -25,6 +28,7 @@ const UserList = ({
   selectedUsers = [],
   onToggleUser,
   multiSelect = false,
+  isLoading = false,
 }: UserListProps) => {
   const isUserSelected = (user: NameData) => {
     return selectedUsers.some(
@@ -84,35 +88,46 @@ const UserList = ({
         </Box>
       </Field>
 
-      <List.Root listStyle="none" mt={5} mb={10} gap={4}>
-        {sortedUsers.map((user) => (
-          <List.Item
-            key={`${user.address}`}
-            onClick={() => handleUserClick(user)}
-            cursor="pointer"
-            borderRadius="md"
-          >
-            <HStack>
-              {multiSelect && (
-                <Checkbox
-                  checked={isUserSelected(user)}
-                  onChange={() => handleUserClick(user)}
-                  colorPalette="yellow"
-                />
-              )}
-              <UserIcon
-                userImageUrl={ipfs2https(user.text_records?.avatar)}
-                size={10}
-              />
-              <Text lineBreak="anywhere">
-                {user.name
-                  ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
-                  : user.address}
-              </Text>
+      {isLoading && sortedUsers.length === 0 ? (
+        <Box mt={5} mb={10}>
+          {USER_SKELETON_KEYS.map((k) => (
+            <HStack key={k} gap={3} py={2}>
+              <Skeleton boxSize={10} borderRadius="full" />
+              <Skeleton height="16px" flex="1" />
             </HStack>
-          </List.Item>
-        ))}
-      </List.Root>
+          ))}
+        </Box>
+      ) : (
+        <List.Root listStyle="none" mt={5} mb={10} gap={4}>
+          {sortedUsers.map((user) => (
+            <List.Item
+              key={`${user.address}`}
+              onClick={() => handleUserClick(user)}
+              cursor="pointer"
+              borderRadius="md"
+            >
+              <HStack>
+                {multiSelect && (
+                  <Checkbox
+                    checked={isUserSelected(user)}
+                    onChange={() => handleUserClick(user)}
+                    colorPalette="yellow"
+                  />
+                )}
+                <UserIcon
+                  userImageUrl={ipfs2https(user.text_records?.avatar)}
+                  size={10}
+                />
+                <Text lineBreak="anywhere">
+                  {user.name
+                    ? `${user.name} (${user.address.slice(0, 6)}...${user.address.slice(-4)})`
+                    : user.address}
+                </Text>
+              </HStack>
+            </List.Item>
+          ))}
+        </List.Root>
+      )}
     </>
   );
 };

@@ -1,9 +1,10 @@
-import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
+import { Box, Flex, Grid, Skeleton, Text, VStack } from "@chakra-ui/react";
 import { Link } from "@remix-run/react";
 import type { GetThanksTokenMintsQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useThanksTokenActivity } from "hooks/useThanksToken";
+import type { NameData } from "namestone-sdk";
 import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -24,25 +25,60 @@ interface UserProps extends Props {
 interface ActivityItemProps {
   treeId: string;
   activity: GetThanksTokenMintsQuery["mintThanksTokens"][0];
+  fromUser?: NameData;
+  toUser?: NameData;
 }
+
+const collectAddresses = (pairs: { from: string; to: string }[]): string[] => {
+  const set = new Set<string>();
+  for (const p of pairs) {
+    if (p.from) set.add(p.from);
+    if (p.to) set.add(p.to);
+  }
+  return Array.from(set);
+};
+
+const buildNamesByAddress = (groups: NameData[][]): Map<string, NameData> => {
+  const map = new Map<string, NameData>();
+  for (const group of groups) {
+    const entry = group[0];
+    if (entry?.address) {
+      map.set(entry.address.toLowerCase(), entry);
+    }
+  }
+  return map;
+};
+
+const SKELETON_ROW_KEYS = [
+  "row-a",
+  "row-b",
+  "row-c",
+  "row-d",
+  "row-e",
+  "row-f",
+  "row-g",
+  "row-h",
+  "row-i",
+  "row-j",
+];
+
+const HistorySkeletonList: FC<{ rows?: number; height?: string }> = ({
+  rows = 3,
+  height = "56px",
+}) => (
+  <VStack gap={2} w="full">
+    {SKELETON_ROW_KEYS.slice(0, rows).map((k) => (
+      <Skeleton key={k} height={height} w="full" borderRadius={5} />
+    ))}
+  </VStack>
+);
 
 const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
   treeId,
   activity,
+  fromUser,
+  toUser,
 }) => {
-  const addresses = useMemo(() => {
-    return [activity.from, activity.to].filter(Boolean);
-  }, [activity]);
-
-  const { names } = useNamesByAddresses(addresses);
-  const fromUser = useMemo(() => {
-    return names?.[0]?.[0];
-  }, [names]);
-
-  const toUser = useMemo(() => {
-    return names?.[1]?.[0];
-  }, [names]);
-
   const message = useMemo(() => {
     return hexToString(activity.data || "0x");
   }, [activity.data]);
@@ -134,9 +170,25 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
  * ワークスペース全体のサンクストークン履歴を表示するコンポーネント
  */
 export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
-  const { mints } = useThanksTokenActivity(treeId, limit);
+  const { mints, isLoading: isActivityLoading } = useThanksTokenActivity(
+    treeId,
+    limit,
+  );
 
-  if (!mints || mints.mintThanksTokens.length === 0) {
+  const allAddresses = useMemo(
+    () => collectAddresses(mints?.mintThanksTokens ?? []),
+    [mints],
+  );
+
+  const { names, isLoading: isNamesLoading } =
+    useNamesByAddresses(allAddresses);
+  const namesByAddress = useMemo(() => buildNamesByAddress(names), [names]);
+
+  if (isActivityLoading || !mints) {
+    return <HistorySkeletonList rows={Math.min(limit, 3)} />;
+  }
+
+  if (mints.mintThanksTokens.length === 0) {
     return (
       <Box p={4} textAlign="center" color="gray.500">
         アクティビティはまだありません
@@ -144,13 +196,19 @@ export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
     );
   }
 
+  if (isNamesLoading && namesByAddress.size === 0) {
+    return <HistorySkeletonList rows={Math.min(limit, 3)} />;
+  }
+
   return (
     <VStack gap={2}>
-      {mints.mintThanksTokens.map((mint, index) => (
+      {mints.mintThanksTokens.map((mint) => (
         <ThanksTokenActivityItem
           key={`activity_${mint.id}`}
           treeId={treeId}
           activity={mint}
+          fromUser={namesByAddress.get(mint.from.toLowerCase())}
+          toUser={namesByAddress.get(mint.to.toLowerCase())}
         />
       ))}
     </VStack>
@@ -164,6 +222,8 @@ interface ItemProps {
   hatId: string;
   amount: number;
   timestamp: number;
+  fromUser?: NameData;
+  toUser?: NameData;
 }
 
 const ThanksTokenItem: FC<ItemProps> = ({
@@ -172,21 +232,9 @@ const ThanksTokenItem: FC<ItemProps> = ({
   to,
   amount,
   hatId,
+  fromUser,
+  toUser,
 }) => {
-  const addresses = useMemo(() => {
-    return [from, to];
-  }, [from, to]);
-
-  const { names } = useNamesByAddresses(addresses);
-
-  const fromUser = useMemo(() => {
-    return names?.[0]?.[0];
-  }, [names]);
-
-  const toUser = useMemo(() => {
-    return names?.[1]?.[0];
-  }, [names]);
-
   const { hat } = useGetHat(hatId);
 
   return (
@@ -270,12 +318,29 @@ const ThanksTokenItem: FC<ItemProps> = ({
 };
 
 export const UserThanksHistory: FC<UserProps> = ({ data, txType }) => {
-  if (!data?.mintThanksTokens || data.mintThanksTokens.length === 0) {
+  const allAddresses = useMemo(
+    () => collectAddresses(data?.mintThanksTokens ?? []),
+    [data],
+  );
+
+  const { names, isLoading: isNamesLoading } =
+    useNamesByAddresses(allAddresses);
+  const namesByAddress = useMemo(() => buildNamesByAddress(names), [names]);
+
+  if (!data) {
+    return <HistorySkeletonList rows={3} height="60px" />;
+  }
+
+  if (!data.mintThanksTokens || data.mintThanksTokens.length === 0) {
     return (
       <Box p={4} textAlign="center" color="gray.500">
         {txType === "sent" ? "送信履歴はありません" : "受信履歴はありません"}
       </Box>
     );
+  }
+
+  if (isNamesLoading && namesByAddress.size === 0) {
+    return <HistorySkeletonList rows={3} height="60px" />;
   }
 
   return (
@@ -289,6 +354,8 @@ export const UserThanksHistory: FC<UserProps> = ({ data, txType }) => {
           hatId={token.id}
           amount={token.amount}
           timestamp={token.blockTimestamp}
+          fromUser={namesByAddress.get(token.from.toLowerCase())}
+          toUser={namesByAddress.get(token.to.toLowerCase())}
         />
       ))}
     </VStack>

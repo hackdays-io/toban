@@ -14,6 +14,7 @@ import {
 } from "@remix-run/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
+import { useActiveWallet } from "hooks/useWallet";
 import { useEffect } from "react";
 import { ToastContainer, toast as notify } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
@@ -21,6 +22,7 @@ import { getToast } from "remix-toast";
 import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
+import { SmartWalletLoading } from "./components/SmartWalletLoading";
 import { SwitchNetwork } from "./components/SwitchNetwork";
 import { ChakraProvider } from "./components/chakra-provider";
 import { useInjectStyles } from "./emotion/emotion-client";
@@ -69,6 +71,18 @@ export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
 
 const queryClient = new QueryClient();
 
+const AppContent = () => {
+  const { isConnectingEmbeddedWallet, isSmartWallet } = useActiveWallet();
+  const isPreparingSmartWallet = isConnectingEmbeddedWallet && !isSmartWallet;
+
+  return (
+    <>
+      <Header />
+      {isPreparingSmartWallet ? <SmartWalletLoading /> : <Outlet />}
+    </>
+  );
+};
+
 export default function App() {
   const {
     data: { toast },
@@ -107,8 +121,7 @@ export default function App() {
               width="100%"
               minH="100vh"
             >
-              <Header />
-              <Outlet />
+              <AppContent />
             </Container>
             <ToastContainer />
           </ChakraProvider>

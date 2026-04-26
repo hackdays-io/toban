@@ -83,7 +83,11 @@ export const StickyNav: FC = () => {
           </GridItem>
 
           <GridItem textAlign="center">
-            <Link to={"/transaction"}>
+            <a
+              href="https://for-wallet.vercel.app/"
+              target="_blank"
+              rel="noreferrer"
+            >
               <IconButton backgroundColor="transparent" color="blue.500">
                 <Icon fontSize={30}>
                   <MdWallet size="30px" />
@@ -92,7 +96,7 @@ export const StickyNav: FC = () => {
               <Box fontWeight="bold" fontSize="sm">
                 Wallet
               </Box>
-            </Link>
+            </a>
           </GridItem>
         </Grid>
       </Box>

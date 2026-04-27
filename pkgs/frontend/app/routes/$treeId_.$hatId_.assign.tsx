@@ -1,12 +1,14 @@
-import { Box, Grid, HStack, Text } from "@chakra-ui/react";
+import { Box, Grid, HStack, List, Text, VStack } from "@chakra-ui/react";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useAddressesByNames } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { type FC, useCallback, useEffect, useState } from "react";
+import type { NameData } from "namestone-sdk";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaCircleCheck } from "react-icons/fa6";
 import type { HatsDetailSchama } from "types/hats";
+import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { PageHeader } from "~/components/PageHeader";
@@ -14,6 +16,7 @@ import CommonButton from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { RoleIcon } from "~/components/icon/RoleIcon";
+import { UserIcon } from "~/components/icon/UserIcon";
 
 interface RoleDetailProps {
   imageUri?: string;
@@ -36,79 +39,88 @@ const RoleDetail: FC<RoleDetailProps> = ({ imageUri, detail }) => {
   );
 };
 
+const SUGGESTION_LIMIT = 3;
+
 const AssignRole: FC = () => {
   const { hatId, treeId } = useParams();
 
   const [inputValue, setInputValue] = useState("");
-  const [resolvedAddress, setResolvedAddress] = useState<Address>();
+  const [pickedAddress, setPickedAddress] = useState<Address>();
   const [startDatetime, setStartDatetime] = useState<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const { data } = useGetWorkspace({ workspaceId: treeId || "" });
   const { mintHat, isLoading: isMinting } = useMintHatFromTimeFrameModule(
     data?.workspace?.hatsTimeFrameModule as Address,
   );
 
-  const { hat, isLoading } = useGetHat(hatId ?? "");
+  const { hat } = useGetHat(hatId ?? "");
 
   const navigate = useNavigate();
 
-  // Name resolution
-  const { addresses, fetchAddresses } = useAddressesByNames(undefined, true);
+  const trimmedInput = inputValue.trim();
+  const isInputAddress = isValidEthAddress(trimmedInput);
 
   useEffect(() => {
-    setResolvedAddress(undefined);
-    if (!inputValue) return;
+    const handle = setTimeout(() => {
+      setDebouncedQuery(trimmedInput);
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [trimmedInput]);
 
-    if (isValidEthAddress(inputValue)) {
-      // Valid Ethereum address directly
-      setResolvedAddress(inputValue as Address);
-    } else if (!inputValue.startsWith("0x")) {
-      // Attempt name resolution
-      fetchAddresses([inputValue]);
-    }
-  }, [inputValue, fetchAddresses]);
+  const searchTerms = useMemo(() => {
+    if (!debouncedQuery) return undefined;
+    if (isValidEthAddress(debouncedQuery)) return undefined;
+    if (debouncedQuery.startsWith("0x")) return undefined;
+    return [debouncedQuery];
+  }, [debouncedQuery]);
 
-  useEffect(() => {
-    // If we got a resolved result
-    if (addresses && addresses.length > 0 && addresses[0].length > 0) {
-      const resolved = addresses[0][0];
-      if (resolved?.address) {
-        setResolvedAddress(resolved.address as Address);
-      }
-    }
-  }, [addresses]);
+  const { addresses, isLoading: isSearching } = useAddressesByNames(
+    searchTerms,
+    false,
+  );
+
+  const suggestions = useMemo<NameData[]>(() => {
+    if (!searchTerms || !addresses?.length) return [];
+    return (addresses[0] ?? [])
+      .filter((entry) => entry.name && entry.address)
+      .slice(0, SUGGESTION_LIMIT);
+  }, [addresses, searchTerms]);
+
+  const resolvedAddress = useMemo<Address | undefined>(() => {
+    if (isInputAddress) return trimmedInput as Address;
+    if (pickedAddress) return pickedAddress;
+    const exact = suggestions.find(
+      (s) => s.name.toLowerCase() === trimmedInput.toLowerCase(),
+    );
+    return exact ? (exact.address as Address) : undefined;
+  }, [isInputAddress, trimmedInput, pickedAddress, suggestions]);
+
+  const showSuggestions =
+    !isInputAddress && trimmedInput.length > 0 && suggestions.length > 0;
+
+  const handleSelectSuggestion = useCallback((user: NameData) => {
+    setInputValue(user.name);
+    setPickedAddress(user.address as Address);
+  }, []);
 
   const handleAssign = useCallback(async () => {
     if (!hatId) return;
-    let finalAddress: Address | null = null;
-
-    if (isValidEthAddress(inputValue)) {
-      finalAddress = inputValue as Address;
-    } else if (resolvedAddress) {
-      finalAddress = resolvedAddress;
-    } else {
+    if (!resolvedAddress) {
       alert("Please enter a valid Ethereum address or username.");
       return;
     }
 
     await mintHat(
       BigInt(hatId),
-      finalAddress,
+      resolvedAddress,
       startDatetime
         ? BigInt(new Date(startDatetime).getTime() / 1000)
         : BigInt(0),
     );
 
     navigate(`/${treeId}/${hatId}`);
-  }, [
-    treeId,
-    hatId,
-    resolvedAddress,
-    inputValue,
-    startDatetime,
-    navigate,
-    mintHat,
-  ]);
+  }, [treeId, hatId, resolvedAddress, startDatetime, navigate, mintHat]);
 
   return (
     <Grid gridTemplateRows="1fr auto" minH="calc(100vh - 100px)" pb={5}>
@@ -128,9 +140,59 @@ const AssignRole: FC = () => {
           <CommonInput
             placeholder="ユーザー名 or ウォレットアドレス"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setPickedAddress(undefined);
+            }}
           />
-          {resolvedAddress && !isValidEthAddress(inputValue) && (
+
+          {showSuggestions && (
+            <List.Root listStyle="none" mt={2} gap={1}>
+              {suggestions.map((user) => {
+                const isPicked =
+                  pickedAddress?.toLowerCase() === user.address.toLowerCase();
+                return (
+                  <List.Item
+                    key={user.address}
+                    onClick={() => handleSelectSuggestion(user)}
+                    cursor="pointer"
+                    p={2}
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor={isPicked ? "blue.300" : "gray.200"}
+                    bg={isPicked ? "blue.50" : "white"}
+                    _hover={{ bg: "gray.50" }}
+                  >
+                    <HStack>
+                      <UserIcon
+                        userImageUrl={ipfs2https(user.text_records?.avatar)}
+                        size={8}
+                      />
+                      <VStack align="start" gap={0} flex={1} minW={0}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {user.name}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {abbreviateAddress(user.address)}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                  </List.Item>
+                );
+              })}
+            </List.Root>
+          )}
+
+          {!isInputAddress &&
+            trimmedInput.length > 0 &&
+            !isSearching &&
+            suggestions.length === 0 && (
+              <Text mt={1} fontSize="sm" color="gray.500">
+                該当するユーザーが見つかりませんでした
+              </Text>
+            )}
+
+          {resolvedAddress && !isInputAddress && (
             <HStack mt={1} fontSize="sm" justifyContent="end" color="blue.300">
               <FaCircleCheck />
               <Text color="gray.500">{abbreviateAddress(resolvedAddress)}</Text>

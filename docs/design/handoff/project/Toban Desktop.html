@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>Toban — Desktop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; }
+  body {
+    font-family: "Inter", "Noto Sans JP", -apple-system, system-ui, sans-serif;
+    color: #1F1F1F;
+    background: #FAF7F0;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+  input { font-family: inherit; }
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #E7E1D7; border-radius: 999px; border: 2px solid #FAF7F0; }
+  ::-webkit-scrollbar-thumb:hover { background: #d4cdbf; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Data -->
+  <script src="data.js"></script>
+  <script>
+  window.TOBAN_QUESTS_DATA = {
+    shares: {
+      dishes:    [{name:'ryu',pct:40},{name:'sg',pct:30},{name:'eri',pct:20},{name:'homma',pct:10}],
+      breakfast: [{name:'atsu',pct:50},{name:'eri',pct:30},{name:'koichi',pct:20}],
+      onoono:    [{name:'koichi',pct:60},{name:'sg',pct:25},{name:'shinya',pct:15}],
+      food:      [{name:'eri',pct:45},{name:'shingoohki',pct:35},{name:'homma',pct:20}],
+    },
+    quests: [
+      { id:'q1', dutyId:'dishes', title:'夕食後の食器洗いを手伝う', desc:'食器を洗って、棚に戻してください。', creator:'ryu', share:10, state:'open', count:3, applicant:null },
+      { id:'q2', dutyId:'dishes', title:'洗剤を補充する', desc:'台所の洗剤を新しく買って補充。レシートはあとで共有OK。', creator:'ryu', share:5, state:'inprogress', applicant:'sg' },
+      { id:'q3', dutyId:'dishes', title:'食器棚を整理する', desc:'食器棚の中を片付けて、きれいに並べる。', creator:'sg', share:5, state:'review', applicant:'eri', approvals:1 },
+      { id:'q4', dutyId:'breakfast', title:'朝のコーヒーを淹れる', desc:'朝7時頃にコーヒーを淹れる。', creator:'atsu', share:8, state:'open', count:1, applicant:null },
+      { id:'q5', dutyId:'dishes', title:'ふきんを洗う', desc:'ふきんを洗濯。', creator:'ryu', share:3, state:'done', applicant:'homma' },
+    ],
+  };
+  </script>
+
+  <!-- Desktop app -->
+  <script type="text/babel" src="desktop.jsx"></script>
+</body>
+</html>

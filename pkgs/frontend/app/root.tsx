@@ -13,6 +13,16 @@ import { Header } from "./components/Header";
 import { PWAUpdater } from "./components/PWAUpdater";
 import { SmartWalletLoading } from "./components/SmartWalletLoading";
 import { SwitchNetwork } from "./components/SwitchNetwork";
+// Self-host the brand fonts (Issue #426). Inter carries Latin numerals/labels
+// and Noto Sans JP covers Japanese copy — both are referenced by --font-sans.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/noto-sans-jp/400.css";
+import "@fontsource/noto-sans-jp/500.css";
+import "@fontsource/noto-sans-jp/700.css";
+
 // Tailwind v4 + design tokens. Imported here so every route inherits them.
 import "./styles/globals.css";
 

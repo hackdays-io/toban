@@ -1,4 +1,3 @@
-import { Box, Grid, Text } from "@chakra-ui/react";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
@@ -16,6 +15,7 @@ import { PageHeader } from "~/components/PageHeader";
 import AmountSelector from "~/components/assistcredit/AmountSelector";
 import SendConfirmation from "~/components/assistcredit/SendConfirmation";
 import UserList from "~/components/assistcredit/UserList";
+import { Box, Grid, Text } from "~/components/chakra-shim";
 
 const ThanksTokenSend: FC = () => {
   const { treeId } = useParams();

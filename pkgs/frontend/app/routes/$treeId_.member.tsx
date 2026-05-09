@@ -1,4 +1,3 @@
-import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useTokenRecipients } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
@@ -7,6 +6,7 @@ import { Link, useParams } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { StickyNav } from "~/components/StickyNav";
+import { Box, HStack, Heading, Text, VStack } from "~/components/chakra-shim";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import { RoleTag } from "~/components/roles/RoleTag";

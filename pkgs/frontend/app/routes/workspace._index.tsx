@@ -1,4 +1,3 @@
-import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import axios from "axios";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
@@ -10,6 +9,7 @@ import { Link, useNavigate } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
+import { Box, Flex, Heading, Text } from "~/components/chakra-shim";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
 

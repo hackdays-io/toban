@@ -1,6 +1,6 @@
-import { Box, Button, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import type { HatsDetailsAttributes } from "types/hats";
+import { Box, Button, VStack } from "~/components/chakra-shim";
 import { InputDescription } from "../input/InputDescription";
 import { InputLink } from "../input/InputLink";
 import { InputName } from "../input/InputName";

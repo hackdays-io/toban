@@ -1,3 +1,13 @@
+import { ERC20_ABI } from "abi/erc20";
+import { publicClient } from "hooks/useViem";
+import { useActiveWallet } from "hooks/useWallet";
+import { type FC, useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import { toast } from "react-toastify";
+import { parseEther } from "viem";
+import { BasicButton } from "~/components/BasicButton";
+import { PageHeader } from "~/components/PageHeader";
+import { SettingsSubSection } from "~/components/SettingSections";
 import {
   Box,
   Grid,
@@ -9,17 +19,7 @@ import {
   SelectValueText,
   Text,
   createListCollection,
-} from "@chakra-ui/react";
-import { ERC20_ABI } from "abi/erc20";
-import { publicClient } from "hooks/useViem";
-import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
-import { toast } from "react-toastify";
-import { parseEther } from "viem";
-import { BasicButton } from "~/components/BasicButton";
-import { PageHeader } from "~/components/PageHeader";
-import { SettingsSubSection } from "~/components/SettingSections";
+} from "~/components/chakra-shim";
 import { CommonInput } from "~/components/common/CommonInput";
 import { QrAddressReader } from "~/components/common/QrAddressReader";
 

@@ -1,4 +1,5 @@
 import { reactRouter } from "@react-router/dev/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { type Plugin, defineConfig } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -38,6 +39,7 @@ export default defineConfig({
   plugins: [
     ...clientNodePolyfills(),
     ignoreWellKnown(),
+    tailwindcss(),
     reactRouter(),
     tsconfigPaths(),
   ],

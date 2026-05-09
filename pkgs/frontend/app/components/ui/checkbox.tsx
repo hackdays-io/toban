@@ -1,25 +1,59 @@
-import { Checkbox as ChakraCheckbox } from "@chakra-ui/react";
-import * as React from "react";
+/**
+ * Phase 1-2 Checkbox — issue #420.
+ *
+ * Plain HTML checkbox wrapped in a label so existing call sites keep
+ * compiling. Phase 2-1 (#426) replaces this with the Shadcn Checkbox.
+ */
+import {
+  type InputHTMLAttributes,
+  type ReactNode,
+  type Ref,
+  forwardRef,
+} from "react";
+import { cn } from "~/lib/utils";
 
-export interface CheckboxProps extends ChakraCheckbox.RootProps {
-  icon?: React.ReactNode;
-  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
-  rootRef?: React.Ref<HTMLLabelElement>;
+export interface CheckboxProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+  icon?: ReactNode;
+  inputProps?: InputHTMLAttributes<HTMLInputElement>;
+  rootRef?: Ref<HTMLLabelElement>;
+  size?: string;
+  variant?: string;
+  colorScheme?: string;
+  colorPalette?: string;
 }
 
-export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   function Checkbox(props, ref) {
-    const { icon, children, inputProps, rootRef, ...rest } = props;
+    const {
+      icon: _icon,
+      children,
+      inputProps,
+      rootRef,
+      className,
+      size: _size,
+      variant: _variant,
+      colorScheme: _cs,
+      colorPalette: _cp,
+      ...rest
+    } = props;
     return (
-      <ChakraCheckbox.Root ref={rootRef} {...rest}>
-        <ChakraCheckbox.HiddenInput ref={ref} {...inputProps} />
-        <ChakraCheckbox.Control>
-          {icon || <ChakraCheckbox.Indicator />}
-        </ChakraCheckbox.Control>
-        {children != null && (
-          <ChakraCheckbox.Label>{children}</ChakraCheckbox.Label>
+      <label
+        ref={rootRef}
+        className={cn(
+          "inline-flex items-center gap-2 cursor-pointer select-none",
+          className,
         )}
-      </ChakraCheckbox.Root>
+      >
+        <input
+          ref={ref}
+          type="checkbox"
+          className="size-4 rounded-xs border border-border accent-primary"
+          {...rest}
+          {...inputProps}
+        />
+        {children != null && <span>{children}</span>}
+      </label>
     );
   },
 );

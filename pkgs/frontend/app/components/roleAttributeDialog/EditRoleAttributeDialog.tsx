@@ -1,6 +1,6 @@
-import { Button } from "@chakra-ui/react";
 import { GrEdit } from "react-icons/gr";
 import type { HatsDetailsAttributes } from "types/hats";
+import { Button } from "~/components/chakra-shim";
 import { DialogTrigger } from "../ui/dialog";
 import { BaseRoleAttributeDialog } from "./BaseRoleAttributeDialog";
 

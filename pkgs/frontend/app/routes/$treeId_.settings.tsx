@@ -1,5 +1,4 @@
 import type { ApolloQueryResult } from "@apollo/client/core";
-import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import axios from "axios";
 import type { Exact, GetWorkspaceQuery, Scalars } from "gql/graphql";
@@ -34,6 +33,7 @@ import {
   SettingsSection,
   SettingsSubSection,
 } from "~/components/SettingSections";
+import { Box, Flex, HStack, Input, Text } from "~/components/chakra-shim";
 import { CommonButton } from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";

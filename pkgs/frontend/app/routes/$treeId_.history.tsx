@@ -1,4 +1,3 @@
-import { Box, HStack, Heading, Tabs, VStack } from "@chakra-ui/react";
 import type { FC } from "react";
 import { useParams } from "react-router";
 import { PageHeader } from "~/components/PageHeader";
@@ -7,6 +6,7 @@ import { AssistCreditHistory } from "~/components/assistcredit/History";
 import { Treemap as RoleShareTreemap } from "~/components/assistcredit/Treemap";
 import { TreemapReceived as RoleShareTreemapReceived } from "~/components/assistcredit/TreemapReceived";
 import { VerticalBar as RoleShareVerticalBar } from "~/components/assistcredit/VerticalBar";
+import { Box, HStack, Heading, Tabs, VStack } from "~/components/chakra-shim";
 import { ThanksTokenHistory } from "~/components/thankstoken/History";
 import { TreemapHoldings } from "~/components/thankstoken/TreemapHoldings";
 import { TreemapSent } from "~/components/thankstoken/TreemapSent";

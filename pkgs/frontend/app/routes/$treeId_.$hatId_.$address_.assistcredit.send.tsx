@@ -1,4 +1,3 @@
-import { Box, Grid } from "@chakra-ui/react";
 import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import {
   useActiveWalletIdentity,
@@ -20,6 +19,7 @@ import { PageHeader } from "~/components/PageHeader";
 import AmountSelector from "~/components/assistcredit/AmountSelector";
 import SendConfirmation from "~/components/assistcredit/SendConfirmation";
 import UserList from "~/components/assistcredit/UserList";
+import { Box, Grid } from "~/components/chakra-shim";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 

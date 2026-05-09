@@ -1,5 +1,5 @@
-import { Input, type InputProps } from "@chakra-ui/react";
 import type { FC } from "react";
+import { Input, type InputProps } from "~/components/chakra-shim";
 
 interface CommonInputProps extends Omit<InputProps, "value"> {
   minHeight?: InputProps["minHeight"];

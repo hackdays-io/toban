@@ -1,6 +1,6 @@
-import { Box, HStack, List, Skeleton, Text } from "@chakra-ui/react";
 import type { NameData } from "namestone-sdk";
 import { ipfs2https } from "utils/ipfs";
+import { Box, HStack, List, Skeleton, Text } from "~/components/chakra-shim";
 import { CommonInput } from "~/components/common/CommonInput";
 import { QrAddressReader } from "~/components/common/QrAddressReader";
 import { UserIcon } from "~/components/icon/UserIcon";

@@ -1,4 +1,4 @@
-import { Textarea, type TextareaProps } from "@chakra-ui/react";
+import { Textarea, type TextareaProps } from "~/components/chakra-shim";
 
 interface CommonTextAreaProps extends Omit<TextareaProps, "value"> {
   minHeight?: TextareaProps["minHeight"];

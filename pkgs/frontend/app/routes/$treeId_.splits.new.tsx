@@ -1,16 +1,3 @@
-import {
-  Box,
-  Flex,
-  Float,
-  Grid,
-  HStack,
-  List,
-  Separator,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { Slider, useSlider } from "@chakra-ui/react/slider";
 import type { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
 import {
   useAddressesByNames,
@@ -39,6 +26,19 @@ import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
+import {
+  Box,
+  Flex,
+  Float,
+  Grid,
+  HStack,
+  List,
+  Separator,
+  Stack,
+  Text,
+  VStack,
+} from "~/components/chakra-shim";
+import { Slider, useSlider } from "~/components/chakra-shim";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";

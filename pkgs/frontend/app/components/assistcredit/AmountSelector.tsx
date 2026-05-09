@@ -1,3 +1,9 @@
+import type { NameData } from "namestone-sdk";
+import { useEffect, useState } from "react";
+import { FaArrowRight } from "react-icons/fa6";
+import { ipfs2https } from "utils/ipfs";
+import { abbreviateAddress } from "utils/wallet";
+import { BasicButton } from "~/components/BasicButton";
 import {
   Box,
   Flex,
@@ -6,14 +12,8 @@ import {
   Text,
   Textarea,
   VStack,
-} from "@chakra-ui/react";
-import { Slider, useSlider } from "@chakra-ui/react/slider";
-import type { NameData } from "namestone-sdk";
-import { useEffect, useState } from "react";
-import { FaArrowRight } from "react-icons/fa6";
-import { ipfs2https } from "utils/ipfs";
-import { abbreviateAddress } from "utils/wallet";
-import { BasicButton } from "~/components/BasicButton";
+} from "~/components/chakra-shim";
+import { Slider, useSlider } from "~/components/chakra-shim";
 import { CommonInput } from "~/components/common/CommonInput";
 import { Field } from "~/components/ui/field";
 import { UserIcon } from "../icon/UserIcon";

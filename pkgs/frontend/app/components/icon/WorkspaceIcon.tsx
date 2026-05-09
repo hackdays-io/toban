@@ -1,5 +1,5 @@
-import { Icon } from "@chakra-ui/react";
 import { FaPeopleGroup } from "react-icons/fa6";
+import { Icon } from "~/components/chakra-shim";
 import { CommonIcon } from "../common/CommonIcon";
 
 interface WorkspaceIconProps {

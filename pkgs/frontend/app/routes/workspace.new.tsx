@@ -1,4 +1,3 @@
-import { Box, Stack, Text } from "@chakra-ui/react";
 import { hatIdDecimalToHex, hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBigBang } from "hooks/useBigBang";
@@ -19,6 +18,7 @@ import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
 import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { Box, Stack, Text } from "~/components/chakra-shim";
 import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";

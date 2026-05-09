@@ -1,10 +1,8 @@
 import { PassThrough } from "node:stream";
-import { CacheProvider } from "@emotion/react";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 import { type EntryContext, ServerRouter } from "react-router";
-import { createEmotionCache } from "./emotion/emotion-cache";
 
 const ABORT_DELAY = 5_000;
 
@@ -19,12 +17,9 @@ export default function handleRequest(
     const callbackName = isbot(userAgent ?? "") ? "onAllReady" : "onShellReady";
 
     let didError = false;
-    const cache = createEmotionCache();
 
     const { pipe, abort } = renderToPipeableStream(
-      <CacheProvider value={cache}>
-        <ServerRouter context={routerContext} url={request.url} />
-      </CacheProvider>,
+      <ServerRouter context={routerContext} url={request.url} />,
       {
         [callbackName]() {
           const body = new PassThrough();

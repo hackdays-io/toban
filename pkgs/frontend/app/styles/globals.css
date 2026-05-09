@@ -1,0 +1,153 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+ * Design tokens — single source of truth.
+ *
+ * Edit the values in this :root block to retune the brand. Everything else
+ * (the @theme inline mapping, Shadcn semantic aliases, components) reads
+ * through these CSS variables, so you change a colour in one place.
+ *
+ * Naming follows the spec in issue #426 so the Phase 2 design system can
+ * consume `bg-primary`, `text-text-secondary`, `rounded-md`, `shadow-1`
+ * directly without further wiring.
+ * ========================================================================== */
+:root {
+  /* Brand palette */
+  --color-primary: #f5b82e;
+  --color-primary-soft: #fff2cf;
+  --color-bg: #faf7f0;
+  --color-surface: #ffffff;
+  --color-text-primary: #1f1f1f;
+  --color-text-secondary: #68645d;
+  --color-border: #e7e1d7;
+  --color-contrib: #65c98a;
+  --color-split: #5dadec;
+  --color-role: #d6b995;
+  --color-danger: #e45c4f;
+  --color-overlay: rgba(31, 31, 31, 0.45);
+
+  /* Radii (issue #426) */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+
+  /* Shadows (issue #426) */
+  --shadow-1: 0 1px 2px rgba(31, 31, 31, 0.04);
+  --shadow-2: 0 2px 8px rgba(31, 31, 31, 0.06);
+  --shadow-3: 0 8px 24px rgba(31, 31, 31, 0.08);
+
+  /* ----- Shadcn-compatible semantic aliases -----
+   * Shadcn primitives expect tokens like --background, --foreground,
+   * --primary, --primary-foreground. We point them at the brand palette so
+   * future `pnpm dlx shadcn@latest add ...` components inherit our look. */
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-text-primary);
+  --secondary: var(--color-primary-soft);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-primary-soft);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-danger);
+  --destructive-foreground: var(--color-surface);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-primary);
+  --radius: var(--radius-sm);
+}
+
+/* ============================================================================
+ * @theme inline — exposes the variables above as Tailwind utility classes.
+ * `inline` lets us reference other CSS variables on the right-hand side; with
+ * a plain @theme block, Tailwind would inline the variable's resolved value
+ * at build time, which breaks runtime theming.
+ * ========================================================================== */
+@theme inline {
+  /* Brand colours → bg-primary, text-text-secondary, border-border, ... */
+  --color-primary: var(--color-primary);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-border: var(--color-border);
+  --color-contrib: var(--color-contrib);
+  --color-split: var(--color-split);
+  --color-role: var(--color-role);
+  --color-danger: var(--color-danger);
+  --color-overlay: var(--color-overlay);
+
+  /* Shadcn aliases → bg-background, text-foreground, ring-ring, ... */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Radii → rounded-xs, rounded-sm, rounded-md, rounded-lg */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  /* Shadows → shadow-1, shadow-2, shadow-3 */
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+
+  /* Typography */
+  --font-sans: "Inter", "Noto Sans JP", -apple-system, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+  }
+  body {
+    min-height: 100vh;
+  }
+}
+
+/* Used by the Chakra-shim Spinner / Skeleton primitives. */
+@keyframes chakra-shim-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes chakra-shim-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

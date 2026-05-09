@@ -14,6 +14,7 @@
     "types": [
       "@react-router/node",
       "vite/client",
+      "vite-plugin-pwa/client",
       "cypress",
       "cypress-file-upload"
     ],

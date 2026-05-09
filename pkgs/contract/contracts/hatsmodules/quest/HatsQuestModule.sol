@@ -29,6 +29,10 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
     mapping(uint256 => mapping(address => bool)) private _hasApproved;
     mapping(uint256 => uint8) private _approvalCount;
 
+    // Tracks the addresses that have approved each quest so the approval
+    // state can be cleanly reset when a submission is withdrawn or rejected.
+    mapping(uint256 => address[]) private _approvers;
+
     // creator => fractionTokenId => total amount currently escrowed
     mapping(address => mapping(uint256 => uint256)) private _escrowedByCreator;
 
@@ -107,6 +111,32 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
     }
 
     /// @inheritdoc IHatsQuestModule
+    function withdrawSubmission(uint256 questId) external override {
+        Quest storage quest = _quests[questId];
+        if (quest.creator == address(0)) revert QuestNotFound();
+        if (quest.status != QuestStatus.PendingReview) revert InvalidStatus();
+        if (msg.sender != quest.submitter) revert NotSubmitter();
+
+        address oldSubmitter = quest.submitter;
+        _resetSubmission(questId);
+
+        emit SubmissionWithdrawn(questId, oldSubmitter);
+    }
+
+    /// @inheritdoc IHatsQuestModule
+    function rejectSubmission(uint256 questId) external override {
+        Quest storage quest = _quests[questId];
+        if (quest.creator == address(0)) revert QuestNotFound();
+        if (quest.status != QuestStatus.PendingReview) revert InvalidStatus();
+        if (msg.sender != quest.creator) revert NotCreator();
+
+        address oldSubmitter = quest.submitter;
+        _resetSubmission(questId);
+
+        emit SubmissionRejected(questId, msg.sender, oldSubmitter);
+    }
+
+    /// @inheritdoc IHatsQuestModule
     function approve(
         uint256 questId,
         uint256 membershipHatId
@@ -119,6 +149,7 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
         _requireWorkspaceMember(msg.sender, membershipHatId);
 
         _hasApproved[questId][msg.sender] = true;
+        _approvers[questId].push(msg.sender);
         uint8 newCount = _approvalCount[questId] + 1;
         _approvalCount[questId] = newCount;
 
@@ -248,5 +279,21 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
     ) internal view {
         if (!HATS().isWearerOfHat(account, membershipHatId)) revert NotWorkspaceMember();
         if (HATS().getTopHatDomain(membershipHatId) != _domain) revert InvalidHatDomain();
+    }
+
+    /// @dev Returns the quest to Open, clearing submitter and approval state.
+    function _resetSubmission(uint256 questId) internal {
+        Quest storage quest = _quests[questId];
+
+        address[] storage approvers = _approvers[questId];
+        for (uint256 i = 0; i < approvers.length; i++) {
+            _hasApproved[questId][approvers[i]] = false;
+        }
+        delete _approvers[questId];
+        _approvalCount[questId] = 0;
+
+        quest.submitter = address(0);
+        quest.submittedAt = 0;
+        quest.status = QuestStatus.Open;
     }
 }

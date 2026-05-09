@@ -119,7 +119,9 @@ describe("HatsQuestModule", () => {
       true,
       "",
     ]);
-    let receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+    let receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
     for (const log of receipt.logs) {
       const decoded = decodeEventLog({
         abi: Hats.abi,
@@ -210,10 +212,9 @@ describe("HatsQuestModule", () => {
     );
 
     // Mint hatter hat to FT module so it can mint child hats indirectly
-    await Hats.write.mintHat(
-      [hatterHatId, HatsFractionTokenModule.address],
-      { account: admin.account },
-    );
+    await Hats.write.mintHat([hatterHatId, HatsFractionTokenModule.address], {
+      account: admin.account,
+    });
 
     // Mint the work hat to creator, submitter, and approver so they are workspace members
     await Hats.write.mintHat([workHatId, creatorAddr], {
@@ -276,7 +277,12 @@ describe("HatsQuestModule", () => {
     it("reverts on amount = 0", async () => {
       await expect(
         HatsQuestModule.write.createQuest(
-          [workHatId, creatorAddr, 0n, "0x" + "00".repeat(32) as `0x${string}`],
+          [
+            workHatId,
+            creatorAddr,
+            0n,
+            ("0x" + "00".repeat(32)) as `0x${string}`,
+          ],
           { account: creator.account },
         ),
       ).to.be.rejectedWith(/InvalidAmount/);
@@ -289,7 +295,7 @@ describe("HatsQuestModule", () => {
             foreignHatId,
             creatorAddr,
             100n,
-            "0x" + "00".repeat(32) as `0x${string}`,
+            ("0x" + "00".repeat(32)) as `0x${string}`,
           ],
           { account: creator.account },
         ),
@@ -303,7 +309,7 @@ describe("HatsQuestModule", () => {
             workHatId,
             creatorAddr,
             10_001n,
-            "0x" + "00".repeat(32) as `0x${string}`,
+            ("0x" + "00".repeat(32)) as `0x${string}`,
           ],
           { account: creator.account },
         ),
@@ -325,7 +331,7 @@ describe("HatsQuestModule", () => {
           workHatId,
           creatorAddr,
           1_000n,
-          "0x" + "11".repeat(32) as `0x${string}`,
+          ("0x" + "11".repeat(32)) as `0x${string}`,
         ],
         { account: creator.account },
       );
@@ -459,7 +465,7 @@ describe("HatsQuestModule", () => {
           workHatId,
           creatorAddr,
           500n,
-          "0x" + "22".repeat(32) as `0x${string}`,
+          ("0x" + "22".repeat(32)) as `0x${string}`,
         ],
         { account: creator.account },
       );
@@ -518,7 +524,7 @@ describe("HatsQuestModule", () => {
           workHatId,
           creatorAddr,
           200n,
-          "0x" + "33".repeat(32) as `0x${string}`,
+          ("0x" + "33".repeat(32)) as `0x${string}`,
         ],
         { account: creator.account },
       );
@@ -569,7 +575,7 @@ describe("HatsQuestModule", () => {
           workHatId,
           creatorAddr,
           100n,
-          "0x" + "44".repeat(32) as `0x${string}`,
+          ("0x" + "44".repeat(32)) as `0x${string}`,
         ],
         { account: creator.account },
       );
@@ -584,6 +590,142 @@ describe("HatsQuestModule", () => {
       await expect(
         HatsQuestModule.write.cancel([pendingId], { account: creator.account }),
       ).to.be.rejectedWith(/InvalidStatus/);
+    });
+  });
+
+  describe("withdrawSubmission / rejectSubmission", () => {
+    let questId: bigint;
+
+    beforeEach(async () => {
+      // Top up creator balance and create a fresh quest in PendingReview.
+      try {
+        await HatsFractionTokenModule.write.mint(
+          [workHatId, creatorAddr, 1_000n],
+          { account: admin.account },
+        );
+      } catch {}
+      const txHash = await HatsQuestModule.write.createQuest(
+        [
+          workHatId,
+          creatorAddr,
+          300n,
+          ("0x" + "77".repeat(32)) as `0x${string}`,
+        ],
+        { account: creator.account },
+      );
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+      questId = decodeQuestId(receipt.logs);
+      await HatsQuestModule.write.submitCompletion([questId, workHatId], {
+        account: submitter.account,
+      });
+    });
+
+    it("submitter can withdraw their own submission and quest returns to Open", async () => {
+      await HatsQuestModule.write.withdrawSubmission([questId], {
+        account: submitter.account,
+      });
+      const quest = await HatsQuestModule.read.getQuest([questId]);
+      expect(quest.status).to.equal(0); // Open
+      expect(quest.submitter.toLowerCase()).to.equal(
+        "0x0000000000000000000000000000000000000000",
+      );
+    });
+
+    it("non-submitter cannot withdraw", async () => {
+      await expect(
+        HatsQuestModule.write.withdrawSubmission([questId], {
+          account: approver.account,
+        }),
+      ).to.be.rejectedWith(/NotSubmitter/);
+    });
+
+    it("creator can reject the current submission", async () => {
+      await HatsQuestModule.write.rejectSubmission([questId], {
+        account: creator.account,
+      });
+      const quest = await HatsQuestModule.read.getQuest([questId]);
+      expect(quest.status).to.equal(0); // Open
+      expect(quest.submitter.toLowerCase()).to.equal(
+        "0x0000000000000000000000000000000000000000",
+      );
+    });
+
+    it("non-creator cannot reject", async () => {
+      await expect(
+        HatsQuestModule.write.rejectSubmission([questId], {
+          account: approver.account,
+        }),
+      ).to.be.rejectedWith(/NotCreator/);
+    });
+
+    it("clears prior approvals so the next submitter starts fresh", async () => {
+      // approver gives a hat-holder approval (1/2)
+      await HatsQuestModule.write.approve([questId, workHatId], {
+        account: approver.account,
+      });
+      expect(await HatsQuestModule.read.getApprovalCount([questId])).to.equal(
+        1,
+      );
+      expect(
+        await HatsQuestModule.read.hasApprovedBy([questId, approverAddr]),
+      ).to.equal(true);
+
+      // creator rejects → state reset
+      await HatsQuestModule.write.rejectSubmission([questId], {
+        account: creator.account,
+      });
+      expect(await HatsQuestModule.read.getApprovalCount([questId])).to.equal(
+        0,
+      );
+      expect(
+        await HatsQuestModule.read.hasApprovedBy([questId, approverAddr]),
+      ).to.equal(false);
+
+      // a different person (admin / outsider would fail domain) submits anew
+      await HatsQuestModule.write.submitCompletion([questId, workHatId], {
+        account: approver.account,
+      });
+      const quest = await HatsQuestModule.read.getQuest([questId]);
+      expect(quest.submitter.toLowerCase()).to.equal(
+        approverAddr.toLowerCase(),
+      );
+      expect(quest.status).to.equal(1); // PendingReview again
+    });
+
+    it("reverts when called outside PendingReview", async () => {
+      // withdraw, returning the quest to Open, then call withdraw again
+      await HatsQuestModule.write.withdrawSubmission([questId], {
+        account: submitter.account,
+      });
+      await expect(
+        HatsQuestModule.write.withdrawSubmission([questId], {
+          account: submitter.account,
+        }),
+      ).to.be.rejectedWith(/InvalidStatus/);
+      await expect(
+        HatsQuestModule.write.rejectSubmission([questId], {
+          account: creator.account,
+        }),
+      ).to.be.rejectedWith(/InvalidStatus/);
+    });
+
+    it("escrow remains intact through reset (creator gets it back only on cancel)", async () => {
+      const escrowedBefore = await HatsQuestModule.read.getEscrowedBalance([
+        creatorAddr,
+        workHatId,
+        creatorAddr,
+      ]);
+      await HatsQuestModule.write.rejectSubmission([questId], {
+        account: creator.account,
+      });
+      const escrowedAfter = await HatsQuestModule.read.getEscrowedBalance([
+        creatorAddr,
+        workHatId,
+        creatorAddr,
+      ]);
+      expect(escrowedAfter).to.equal(escrowedBefore);
     });
   });
 
@@ -606,7 +748,7 @@ describe("HatsQuestModule", () => {
           workHatId,
           creatorAddr,
           150n,
-          "0x" + "55".repeat(32) as `0x${string}`,
+          ("0x" + "55".repeat(32)) as `0x${string}`,
         ],
         { account: creator.account },
       );
@@ -615,7 +757,7 @@ describe("HatsQuestModule", () => {
           workHatId,
           creatorAddr,
           250n,
-          "0x" + "66".repeat(32) as `0x${string}`,
+          ("0x" + "66".repeat(32)) as `0x${string}`,
         ],
         { account: creator.account },
       );

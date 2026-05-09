@@ -55,6 +55,7 @@ interface IHatsQuestModule {
     error QuestNotFound();
     error InvalidStatus();
     error NotCreator();
+    error NotSubmitter();
     error CannotSubmitOwnQuest();
     error CannotApproveOwnSubmission();
     error AlreadyApproved();
@@ -71,6 +72,12 @@ interface IHatsQuestModule {
         bytes32 metadataHash
     );
     event CompletionSubmitted(uint256 indexed questId, address indexed submitter);
+    event SubmissionWithdrawn(uint256 indexed questId, address indexed submitter);
+    event SubmissionRejected(
+        uint256 indexed questId,
+        address indexed creator,
+        address indexed submitter
+    );
     event QuestApproved(uint256 indexed questId, address indexed approver, uint8 newApprovalCount);
     event QuestCompleted(uint256 indexed questId, address indexed submitter, uint256 amount);
     event QuestCancelled(uint256 indexed questId, address indexed creator, uint256 amount);
@@ -100,6 +107,20 @@ interface IHatsQuestModule {
      *        prove workspace membership.
      */
     function submitCompletion(uint256 questId, uint256 membershipHatId) external;
+
+    /**
+     * @notice Lets the current submitter retract their own submission while the
+     *         quest is in PendingReview, returning the quest to Open. Any
+     *         approvals already collected for this submission are cleared.
+     */
+    function withdrawSubmission(uint256 questId) external;
+
+    /**
+     * @notice Lets the creator reject the current submission, returning the
+     *         quest to Open so a different submitter can apply. Approvals
+     *         collected for the rejected submission are cleared.
+     */
+    function rejectSubmission(uint256 questId) external;
 
     /**
      * @notice Approves a quest in PendingReview.

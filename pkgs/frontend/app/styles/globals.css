@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Tailwind v4 auto-detects sources by walking the project from this file
+ * outward. That works for the React Router dev/build pipelines but Ladle
+ * runs through a separate Vite config and only finds the bare entry, so
+ * utility classes used inside components/stories get pruned away. Listing
+ * them explicitly keeps both pipelines in sync. Paths are relative to this
+ * CSS file (`app/styles/globals.css`). */
+@source "../**/*.{ts,tsx,js,jsx}";
+@source "../../.ladle/**/*.{ts,tsx,js,jsx}";
+
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================================

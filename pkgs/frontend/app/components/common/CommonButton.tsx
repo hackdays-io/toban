@@ -11,8 +11,11 @@ import { cn } from "~/lib/utils";
 
 type ShadcnSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>;
 
+// Map legacy chakra-style sizes onto the Toban button sizes defined in
+// `components/ui/button.tsx`. Once all callers migrate to the new design
+// system, this shim and its consumers can be retired together (#427/#428).
 const sizeMap: Record<string, ShadcnSize> = {
-  md: "default",
+  xs: "sm",
   xl: "lg",
 };
 
@@ -28,7 +31,7 @@ interface CommonButtonProps
   fontWeight?: string | number;
   borderRadius?: string | number;
   rounded?: string | number;
-  size?: ShadcnSize | "md" | "xl";
+  size?: ShadcnSize | "xs" | "xl";
   /** Render the button as a <label> via asChild — used for file-input wrappers. */
   as?: "button" | "label";
 }

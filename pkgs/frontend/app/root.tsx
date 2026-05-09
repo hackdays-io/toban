@@ -85,8 +85,8 @@ export default function App() {
         }}
       >
         <QueryClientProvider client={queryClient}>
-          <SwitchNetwork />
           <ChakraProvider>
+            <SwitchNetwork />
             <Container
               bg="#fffdf8"
               maxW="430px"

@@ -1,7 +1,6 @@
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
-import { ChakraProvider } from "./components/chakra-provider";
 import { ClientCacheProvider } from "./emotion/emotion-client";
 
 const hydrate = () => {
@@ -10,9 +9,7 @@ const hydrate = () => {
       document,
       <StrictMode>
         <ClientCacheProvider>
-          <ChakraProvider>
-            <HydratedRouter />
-          </ChakraProvider>
+          <HydratedRouter />
         </ClientCacheProvider>
       </StrictMode>,
     );

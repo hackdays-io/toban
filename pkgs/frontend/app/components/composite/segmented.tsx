@@ -48,7 +48,7 @@ function Segmented<T extends string>({
             onClick={() => onChange(opt.value)}
             data-active={isActive ? "" : undefined}
             className={cn(
-              "inline-flex h-9 flex-1 items-center justify-center rounded-full px-3 transition-colors",
+              "inline-flex h-9 flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 transition-colors",
               isActive
                 ? "bg-surface text-text-primary shadow-1"
                 : "bg-transparent text-text-secondary hover:text-text-primary",

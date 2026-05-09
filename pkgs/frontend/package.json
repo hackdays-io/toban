@@ -14,7 +14,9 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\"",
     "codegen": "graphql-codegen --config codegen.ts",
-    "test:e2e:dev": "cypress open"
+    "test:e2e:dev": "cypress open",
+    "ladle": "ladle serve",
+    "ladle:build": "ladle build"
   },
   "dependencies": {
     "@0xsplits/splits-sdk": "^4.1.0",
@@ -57,19 +59,22 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/noto-sans-jp": "^5.2.9",
     "@graphql-codegen/cli": "5.0.3",
     "@graphql-codegen/client-preset": "4.5.1",
     "@graphql-codegen/introspection": "4.0.3",
     "@graphql-codegen/typescript-react-apollo": "^4.3.2",
     "@graphql-typed-document-node/core": "^3.2.0",
+    "@ladle/react": "^5.1.1",
     "@react-router/dev": "^7.15.0",
     "@react-router/fs-routes": "^7.15.0",
     "@synthetixio/synpress": "^4.0.10",
+    "@tailwindcss/vite": "^4.1.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
-    "@tailwindcss/vite": "^4.1.0",
     "cypress": "^14.2.0",
     "cypress-file-upload": "^5.0.8",
     "dotenv-cli": "^8.0.0",

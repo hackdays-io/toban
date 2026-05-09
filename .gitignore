@@ -4,3 +4,4 @@ node_modules
 .serena
 .claude/worktrees/
 .claude/settings.local.json
+.worktree-setup.log

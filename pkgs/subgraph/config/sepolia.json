@@ -9,7 +9,7 @@
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address,address)",
           "handler": "handleExecuted"
         }
       ]
@@ -43,6 +43,46 @@
         {
           "event": "Transfer(indexed address,indexed address,uint256)",
           "handler": "handleTransfer"
+        }
+      ]
+    },
+    {
+      "file": "HatsQuestModule",
+      "mappingFile": "questMapping",
+      "entities": [
+        { "name": "Quest" },
+        { "name": "SubmissionAttempt" },
+        { "name": "QuestApproval" },
+        { "name": "EscrowedRoleShare" }
+      ],
+      "handlers": [
+        {
+          "event": "QuestCreated(indexed uint256,indexed address,indexed uint256,address,uint256,bytes32)",
+          "handler": "handleQuestCreated"
+        },
+        {
+          "event": "CompletionSubmitted(indexed uint256,indexed address)",
+          "handler": "handleCompletionSubmitted"
+        },
+        {
+          "event": "SubmissionWithdrawn(indexed uint256,indexed address)",
+          "handler": "handleSubmissionWithdrawn"
+        },
+        {
+          "event": "SubmissionRejected(indexed uint256,indexed address,indexed address)",
+          "handler": "handleSubmissionRejected"
+        },
+        {
+          "event": "QuestApproved(indexed uint256,indexed address,uint8)",
+          "handler": "handleQuestApproved"
+        },
+        {
+          "event": "QuestCompleted(indexed uint256,indexed address,uint256)",
+          "handler": "handleQuestCompleted"
+        },
+        {
+          "event": "QuestCancelled(indexed uint256,indexed address,uint256)",
+          "handler": "handleQuestCancelled"
         }
       ]
     }

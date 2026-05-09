@@ -294,3 +294,80 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
     # --module には bigBangコントラクトの時に出力される hatsTimeFrameModule のアドレスを当てはめること！
     pnpm contract batchMintHat --hatid 39145842972085145413893403125858635166881967613628980006401871953526784 --csv ./data/example-wearers.csv --module 0xA193a4CE929168A594744A53Fb17Ba4caBb507a4 --network sepolia
     ```
+
+## Development with Claude Code (worktree)
+
+`.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` フックを登録済みです。`claude --worktree <name>` 一発で issue ごとに独立した作業環境を立ち上げ、PR 作成まで進められます。
+
+### Quick reference
+
+| 操作 | コマンド |
+| --- | --- |
+| worktree を作成して Claude セッション起動 | `claude --worktree issue/xxx` |
+| worktree 一覧 | `git worktree list` |
+| PR 作成 (リモート main 向け) | `gh pr create --base main` |
+| セッション終了 (フックで worktree も削除) | Claude セッション内で `/exit` |
+
+### 1. worktree を作成して Claude を起動
+
+別ペイン（tmux/VS Code split など）で実行:
+
+```bash
+claude --worktree issue/xxx
+```
+
+`WorktreeCreate` フックが `scripts/claude-worktree-create.sh` を起動し、以下を実行します:
+
+1. `.claude/worktrees/issue/xxx/` に worktree を作成 (ブランチ名: `worktree-issue/xxx`)
+2. `pkgs/{cli,contract,frontend}/.env` を main repo からコピー
+3. `pnpm install --frozen-lockfile`
+4. `pnpm frontend codegen` (graphql-codegen)
+5. `pnpm contract compile` (hardhat compile)
+
+bootstrap ログは `.claude/worktrees/issue/xxx/.worktree-setup.log` に出力されます。
+
+デフォルトでは現在の `HEAD` から分岐します。リモート `main` のクリーンな状態から始めたい場合:
+
+```bash
+TOBAN_WORKTREE_BASE_REF=origin/main claude --worktree issue/xxx
+```
+
+### 2. 編集 → コミット
+
+worktree 内で通常どおり開発します。Claude セッションは worktree の中で起動しているので、Claude に依頼してそのまま編集 / コミットさせて構いません。手動の場合:
+
+```bash
+cd .claude/worktrees/issue/xxx
+git add -A
+git commit -m "feat: ..."
+```
+
+メインリポジトリと同じ lefthook の pre-commit (biome + frontend typecheck) が走ります。
+
+### 3. リモート main 向け PR を作成
+
+```bash
+# Claude セッション内、または worktree ディレクトリで
+git push -u origin worktree-issue/xxx
+gh pr create --base main --title "<PR title>" --body "Closes #xxx"
+```
+
+Claude に「PR を作って」と頼めば push と `gh pr create` まで自動化されます。
+
+### 4. worktree を終了・削除
+
+Claude セッション内で `/exit` すると `WorktreeRemove` フック (`scripts/claude-worktree-remove.sh`) が発火し、worktree とローカルブランチが自動で削除されます。
+
+セッション外から手動で片付ける場合:
+
+```bash
+git worktree remove .claude/worktrees/issue/xxx
+git branch -D worktree-issue/xxx
+git push origin --delete worktree-issue/xxx  # リモート追跡ブランチも消す場合
+```
+
+### Tips
+
+- **並行作業**: `claude --worktree issue/aaa` と `claude --worktree issue/bbb` を別ペインで同時起動。各 worktree は独立した `node_modules` と `.env` を持つので衝突しません。
+- **bootstrap 失敗は非ブロッキング**: codegen が goldsky API ネットワーク問題で落ちても worktree 自体は作成完了。`.worktree-setup.log` を確認してください。
+- **gitignore 済み**: `.claude/worktrees/` と `.claude/settings.local.json` はリポジトリ管理外。`.claude/settings.json` (チーム共有のフック設定) と `scripts/claude-worktree-*.sh` のみコミット対象です。

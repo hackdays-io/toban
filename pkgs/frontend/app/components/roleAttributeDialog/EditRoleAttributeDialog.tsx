@@ -6,7 +6,7 @@ import { BaseRoleAttributeDialog } from "./BaseRoleAttributeDialog";
 
 const PencilButton = () => {
   return (
-    <DialogTrigger asChild height="100%">
+    <DialogTrigger asChild>
       <Button
         aria-label="edit"
         variant="ghost"

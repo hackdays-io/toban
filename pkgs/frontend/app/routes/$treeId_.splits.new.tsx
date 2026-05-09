@@ -93,9 +93,8 @@ const RoleItem: FC<RoleItemProps> = ({
     <List.Item mb={5}>
       <HStack gap={2}>
         <Checkbox
-          colorPalette="blue"
           checked={field.active}
-          onChange={() => {
+          onCheckedChange={() => {
             update(fieldIndex, {
               ...field,
               active: !field.active,
@@ -134,11 +133,10 @@ const RoleItem: FC<RoleItemProps> = ({
                   .map((name) => (
                     <HStack columnGap={3} key={name[0]?.address}>
                       <Checkbox
-                        colorPalette="blue"
                         checked={field.wearers.includes(
                           name[0]?.address.toLowerCase() as Address,
                         )}
-                        onChange={() =>
+                        onCheckedChange={() =>
                           handleOnCheck(
                             name[0]?.address.toLowerCase() as Address,
                           )

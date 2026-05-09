@@ -110,8 +110,7 @@ const UserList = ({
                 {multiSelect && (
                   <Checkbox
                     checked={isUserSelected(user)}
-                    onChange={() => handleUserClick(user)}
-                    colorPalette="yellow"
+                    onCheckedChange={() => handleUserClick(user)}
                   />
                 )}
                 <UserIcon

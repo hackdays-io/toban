@@ -1,11 +1,11 @@
 import { Box, Flex, Grid, Text, VStack } from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
 import { OrderDirection, TransferFractionToken_OrderBy } from "gql/graphql";
 import type { GetTransferFractionTokensQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetTransferFractionTokens } from "hooks/useFractionToken";
 import { useGetHat } from "hooks/useHats";
 import { type FC, useMemo } from "react";
+import { Link } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";

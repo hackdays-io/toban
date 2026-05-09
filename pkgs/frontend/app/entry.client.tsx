@@ -1,6 +1,6 @@
-import { RemixBrowser } from "@remix-run/react";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
+import { HydratedRouter } from "react-router/dom";
 import { ChakraProvider } from "./components/chakra-provider";
 import { ClientCacheProvider } from "./emotion/emotion-client";
 
@@ -11,7 +11,7 @@ const hydrate = () => {
       <StrictMode>
         <ClientCacheProvider>
           <ChakraProvider>
-            <RemixBrowser />
+            <HydratedRouter />
           </ChakraProvider>
         </ClientCacheProvider>
       </StrictMode>,

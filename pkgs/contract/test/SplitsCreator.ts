@@ -2273,15 +2273,20 @@ describe("CreateSplit with thanks token weight", () => {
     const allocations = previewResult[1];
     const totalAllocation = previewResult[2];
 
-    const endWoreTime = await publicClient
-      .getBlock({
-        blockTag: "latest",
-      })
-      .then((block) => block.timestamp);
-
-    const address1Time = BigInt(endWoreTime - address1WoreTime);
-    const address2Time = BigInt(endWoreTime - address2WoreTime);
-    const address3Time = BigInt(endWoreTime - address3WoreTime);
+    // Read elapsed times from the same source the contract uses so the
+    // expected sqrt(time) matches block.timestamp at the preview eth_call.
+    const address1Time = await HatsTimeFrameModule.read.getWearingElapsedTime([
+      address1.account?.address!,
+      hat1_id,
+    ]);
+    const address2Time = await HatsTimeFrameModule.read.getWearingElapsedTime([
+      address2.account?.address!,
+      hat1_id,
+    ]);
+    const address3Time = await HatsTimeFrameModule.read.getWearingElapsedTime([
+      address3.account?.address!,
+      hat2_id,
+    ]);
 
     const sqrtAddress1Time = sqrt(address1Time);
     const sqrtAddress2Time = sqrt(address2Time);

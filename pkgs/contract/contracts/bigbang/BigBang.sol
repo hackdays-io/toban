@@ -23,6 +23,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
 
     address public HatsFractionTokenModule_IMPL;
 
+    address public HatsQuestModule_IMPL;
+
     address public SplitsFactoryV2;
 
     address public ThanksTokenFactory;
@@ -39,6 +41,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address hatsTimeFrameModule,
         address hatsHatCreatorModule,
         address hatsFractionTokenModule,
+        address hatsQuestModule,
         address splitCreator,
         address thanksToken
     );
@@ -61,6 +64,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsTimeFrameModule_IMPL,
         address _hatsHatCreatorModule_IMPL,
         address _hatsFractionTokenModule_IMPL,
+        address _hatsQuestModule_IMPL,
         address _splitsCreatorFactory,
         address _splitFactoryV2,
         address _thanksTokenFactory
@@ -71,6 +75,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         HatsTimeFrameModule_IMPL = _hatsTimeFrameModule_IMPL;
         HatsHatCreatorModule_IMPL = _hatsHatCreatorModule_IMPL;
         HatsFractionTokenModule_IMPL = _hatsFractionTokenModule_IMPL;
+        HatsQuestModule_IMPL = _hatsQuestModule_IMPL;
         SplitsCreatorFactory = ISplitsCreatorFactory(_splitsCreatorFactory);
         SplitsFactoryV2 = _splitFactoryV2;
         ThanksTokenFactory = _thanksTokenFactory;
@@ -183,6 +188,15 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             0
         );
 
+        // 7.5 HatsQuestModuleのデプロイ（FractionToken のアドレスを紐付け）
+        address hatsQuestModule = HatsModuleFactory.createHatsModule(
+            HatsQuestModule_IMPL,
+            topHatId,
+            "",
+            abi.encode(hatsFractionTokenModule),
+            0
+        );
+
         // 8. HatterHatにHatModuleをMint
         uint256[] memory hatIds = new uint256[](2);
         hatIds[0] = hatterHatId;
@@ -217,6 +231,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
                 hatsTimeFrameModule,
                 hatsFractionTokenModule,
                 thanksToken,
+                hatsQuestModule,
                 keccak256(abi.encodePacked(topHatId))
             );
 
@@ -232,6 +247,7 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
             hatsTimeFrameModule,
             hatsHatCreatorModule,
             hatsFractionTokenModule,
+            hatsQuestModule,
             splitCreator,
             thanksToken
         );
@@ -271,6 +287,12 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsFractionTokenModuleImpl
     ) external onlyOwner {
         HatsFractionTokenModule_IMPL = _hatsFractionTokenModuleImpl;
+    }
+
+    function setHatsQuestModuleImpl(
+        address _hatsQuestModuleImpl
+    ) external onlyOwner {
+        HatsQuestModule_IMPL = _hatsQuestModuleImpl;
     }
 
     function setSplitsFactoryV2(address _splitsFactoryV2) external onlyOwner {

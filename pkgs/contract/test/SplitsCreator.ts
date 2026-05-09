@@ -305,6 +305,7 @@ describe("SplitsCreator Factory", () => {
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ]),
     ).to.be.a("string");
@@ -325,6 +326,7 @@ describe("SplitsCreator Factory", () => {
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ]);
 
@@ -336,6 +338,7 @@ describe("SplitsCreator Factory", () => {
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -648,6 +651,7 @@ describe("CreateSplit without thanks token weight", () => {
         HatsTimeFrameModule.address,
         hatsFractionTokenModuleAddress,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -1521,6 +1525,7 @@ describe("CreateSplit with thanks token weight", () => {
         HatsTimeFrameModule.address,
         hatsFractionTokenModuleAddress,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -1814,6 +1819,7 @@ describe("CreateSplit with thanks token weight", () => {
             HatsTimeFrameModule.address,
             HatsFractionTokenModule.address,
             ThanksToken.address, // Now using actual ThanksToken address
+            zeroAddress,
             keccak256(
               encodeAbiParameters(
                 [{ type: "string" }],

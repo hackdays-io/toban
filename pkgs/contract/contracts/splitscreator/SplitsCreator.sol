@@ -10,6 +10,7 @@ import {SplitV2Lib} from "../splits/libraries/SplitV2.sol";
 import {IThanksToken} from "../thankstoken/IThanksToken.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
+import {IHatsQuestModule} from "../hatsmodules/quest/IHatsQuestModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
@@ -37,6 +38,10 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
     function THANKS_TOKEN() public pure returns (IThanksToken) {
         return IThanksToken(_getArgAddress(140));
+    }
+
+    function HATS_QUEST_MODULE() public pure returns (IHatsQuestModule) {
+        return IHatsQuestModule(_getArgAddress(172));
     }
 
     /**
@@ -242,6 +247,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
             uint256 totalAllocation
         )
     {
+        address questModule = address(HATS_QUEST_MODULE());
+
         uint256 numOfShareHolders = 0;
         for (uint256 i = 0; i < _splitsInfo.length; i++) {
             SplitsInfo memory _splitInfo = _splitsInfo[i];
@@ -256,7 +263,13 @@ contract SplitsCreator is ISplitsCreator, Clone {
                 if (recipients.length == 0) {
                     numOfShareHolders++;
                 } else {
-                    numOfShareHolders += recipients.length;
+                    uint256 effectiveCount = recipients.length;
+                    for (uint256 r = 0; r < recipients.length; r++) {
+                        if (recipients[r] == questModule) {
+                            effectiveCount -= 1;
+                        }
+                    }
+                    numOfShareHolders += effectiveCount;
                 }
             }
         }
@@ -290,6 +303,15 @@ contract SplitsCreator is ISplitsCreator, Clone {
                     _splitInfo.hatId
                 );
 
+                // Credit any escrow currently posted by the wearer back to them.
+                if (questModule != address(0)) {
+                    wearerBalance += HATS_QUEST_MODULE().getEscrowedBalance(
+                        _splitInfo.wearers[j],
+                        _splitInfo.hatId,
+                        _splitInfo.wearers[j]
+                    );
+                }
+
                 uint256 wearerScore = wearerBalance *
                     roleMultiplier *
                     hatsTimeFrameMultiplier;
@@ -309,12 +331,24 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
                 for (uint256 k = 0; k < recipients.length; k++) {
                     if (recipients[k] == _splitInfo.wearers[j]) continue;
+                    // The quest module escrows shares on behalf of others,
+                    // so its raw balance is excluded from the recipients list.
+                    if (recipients[k] == questModule) continue;
 
                     uint256 recipientBalance = FRACTION_TOKEN().balanceOf(
                         recipients[k],
                         _splitInfo.wearers[j],
                         _splitInfo.hatId
                     );
+
+                    if (questModule != address(0)) {
+                        recipientBalance += HATS_QUEST_MODULE()
+                            .getEscrowedBalance(
+                                recipients[k],
+                                _splitInfo.hatId,
+                                _splitInfo.wearers[j]
+                            );
+                    }
 
                     uint256 recipientScore = recipientBalance *
                         roleMultiplier *

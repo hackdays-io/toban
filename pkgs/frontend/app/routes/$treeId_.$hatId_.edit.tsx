@@ -15,7 +15,6 @@ import type {
   HatsDetailsResponsabilities,
 } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
-import { isLegacyRoleImageUri } from "utils/legacyRoleImages";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
@@ -191,11 +190,7 @@ const EditRole: FC = () => {
                 <InputImage
                   imageFile={value}
                   setImageFile={onChange}
-                  previousImageUrl={
-                    isLegacyRoleImageUri(hat?.imageUri)
-                      ? undefined
-                      : ipfs2https(hat?.imageUri)
-                  }
+                  previousImageUrl={ipfs2https(hat?.imageUri)}
                 />
               )}
             />

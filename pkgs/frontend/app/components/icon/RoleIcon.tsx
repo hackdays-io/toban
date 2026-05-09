@@ -1,7 +1,6 @@
 import { type FC, useEffect, useState } from "react";
 import { MdOutlineBadge } from "react-icons/md";
 import { ipfs2https } from "utils/ipfs";
-import { isLegacyRoleImageUri } from "utils/legacyRoleImages";
 import { CommonIcon } from "../common/CommonIcon";
 
 interface RoleIconProps {
@@ -18,9 +17,7 @@ export const RoleIcon: FC<RoleIconProps> = ({
   const [imageUrl, setImageUrl] = useState<string>();
 
   useEffect(() => {
-    if (isLegacyRoleImageUri(roleImageUrl)) {
-      setImageUrl(undefined);
-    } else if (roleImageUrl?.includes("ipfs://")) {
+    if (roleImageUrl?.includes("ipfs://")) {
       setImageUrl(ipfs2https(roleImageUrl));
     } else {
       setImageUrl(roleImageUrl);

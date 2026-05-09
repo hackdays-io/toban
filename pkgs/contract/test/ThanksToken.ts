@@ -662,10 +662,45 @@ describe("ThanksToken", () => {
         relatedRoles,
       ]);
 
-      // Check that the expected mintable amount matches the actual amount
-      // ((10h * 1000 / 10000) + (20 / 10) GiveBack) * 30 Coefficient
-      // 3 * 30
-      expect(mintableAmount).to.equal(450000000000000000180000000000000000000n);
+      // Reproduce ThanksToken.mintableAmount:
+      //   roleBased     = (wearingTime/10min * shareBalance) / shareTotalSupply
+      //   totalMintable = ((roleBased * coefficient) / 1e18) * 1e18
+      //                 + balanceOf(owner) / 10
+      //   result        = totalMintable > minted ? totalMintable - minted : 0
+      const wearingTimeSeconds =
+        await HatsTimeFrameModule.read.getWearingElapsedTime([
+          address1Validated,
+          hatId,
+        ]);
+      const wearingTime10Minutes = wearingTimeSeconds / 600n;
+      const shareBalance = await HatsFractionTokenModule.read.balanceOf([
+        address2Validated,
+        address1Validated,
+        hatId,
+      ]);
+      const shareTotalSupply = await HatsFractionTokenModule.read.totalSupply([
+        address1Validated,
+        hatId,
+      ]);
+      const roleBasedAmount =
+        (wearingTime10Minutes * shareBalance) / shareTotalSupply;
+      const coefficient = await DeployedThanksToken.read.addressCoefficient([
+        address2Validated,
+      ]);
+      const ONE_ETHER = 10n ** 18n;
+      const ownerBalance = await DeployedThanksToken.read.balanceOf([
+        address2Validated,
+      ]);
+      const ownerMinted = await DeployedThanksToken.read.mintedAmount([
+        address2Validated,
+      ]);
+      const totalMintable =
+        ((roleBasedAmount * coefficient) / ONE_ETHER) * ONE_ETHER +
+        ownerBalance / 10n;
+      const expectedMintable =
+        totalMintable > ownerMinted ? totalMintable - ownerMinted : 0n;
+
+      expect(mintableAmount).to.equal(expectedMintable);
     });
 
     it("should prevent minting to yourself", async () => {

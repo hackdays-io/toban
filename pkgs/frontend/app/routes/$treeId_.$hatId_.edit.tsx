@@ -24,7 +24,6 @@ import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
 import { InputNumber } from "~/components/input/InputNumber";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
 const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text mt={7}>{children}</Text>
@@ -34,7 +33,6 @@ interface FormData {
   name: string;
   description: string;
   image: File;
-  selectedImageCid: string;
   responsibilities: HatsDetailsResponsabilities;
   authorities: HatsDetailsAuthorities;
   maxSupply: number | undefined;
@@ -51,7 +49,7 @@ const EditRole: FC = () => {
 
   const { data: hatDetailJson } = useQueryIpfsJsonData(hat?.details);
 
-  const { control, watch, handleSubmit, setValue, resetField, formState } =
+  const { control, watch, handleSubmit, setValue, formState } =
     useForm<FormData>({
       defaultValues: {
         name: "",
@@ -110,7 +108,6 @@ const EditRole: FC = () => {
           hatDetailJson.data.authorities || [],
         ) ||
         currentDetails.image ||
-        currentDetails.selectedImageCid ||
         currentDetails.maxSupply !== Number(hat?.maxSupply)
       );
     },
@@ -151,25 +148,15 @@ const EditRole: FC = () => {
       }
 
       // Handle image change
-      if (data.image || data.selectedImageCid) {
-        let imageUri = "";
-        if (data.image) {
-          const resUploadImage = await uploadImageFileToIpfs(data.image);
-          if (!resUploadImage)
-            throw new Error("Failed to upload image to ipfs");
-          imageUri = resUploadImage.ipfsUri;
-        } else if (data.selectedImageCid) {
-          imageUri = `ipfs://${data.selectedImageCid}`;
-        }
-
-        if (imageUri) {
-          promises.push(
-            changeHatImageURI({
-              hatId: BigInt(hatId),
-              newImageURI: imageUri,
-            }),
-          );
-        }
+      if (data.image) {
+        const resUploadImage = await uploadImageFileToIpfs(data.image);
+        if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
+        promises.push(
+          changeHatImageURI({
+            hatId: BigInt(hatId),
+            newImageURI: resUploadImage.ipfsUri,
+          }),
+        );
       }
 
       // Handle max supply change
@@ -203,25 +190,7 @@ const EditRole: FC = () => {
                 <InputImage
                   imageFile={value}
                   setImageFile={onChange}
-                  previousImageUrl={
-                    watch("selectedImageCid")
-                      ? ipfs2https(`ipfs://${watch("selectedImageCid")}`)
-                      : ipfs2https(hat?.imageUri)
-                  }
-                />
-              )}
-            />
-
-            <Controller
-              control={control}
-              name="selectedImageCid"
-              render={({ field: { onChange, value } }) => (
-                <RoleImageLibrarySelector
-                  setImageCid={(cid) => {
-                    resetField("image");
-                    onChange(cid);
-                  }}
-                  selectedCid={value}
+                  previousImageUrl={ipfs2https(hat?.imageUri)}
                 />
               )}
             />

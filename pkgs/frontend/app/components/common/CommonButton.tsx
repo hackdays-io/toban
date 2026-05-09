@@ -5,6 +5,8 @@ interface CommonButtonProps extends Omit<ButtonProps, "width"> {
   width?: "full" | number;
   backgroundColor?: string;
   color?: string;
+  // ButtonProps already carries an index signature for Chakra-style props
+  // during the Phase 1-2 transition; no extra fields needed here.
 }
 
 export const CommonButton = ({

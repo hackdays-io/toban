@@ -1,7 +1,7 @@
-import { Box, Button, Stack, Text } from "@chakra-ui/react";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useState } from "react";
+import { Box, Button, Stack, Text } from "~/components/chakra-shim";
 import {
   DialogBody,
   DialogContent,

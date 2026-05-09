@@ -1,4 +1,3 @@
-import { Box, Flex, Grid, Skeleton, Text, VStack } from "@chakra-ui/react";
 import type { GetThanksTokenMintsQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
@@ -9,6 +8,14 @@ import { Link } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { formatEther, hexToString } from "viem";
+import {
+  Box,
+  Flex,
+  Grid,
+  Skeleton,
+  Text,
+  VStack,
+} from "~/components/chakra-shim";
 import { UserIcon } from "../icon/UserIcon";
 
 interface Props {

@@ -1,4 +1,3 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import axios from "axios";
 import { useActiveWalletIdentity } from "hooks/useENS";
@@ -9,6 +8,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import { Box, Flex, Text } from "~/components/chakra-shim";
 import CommonButton from "./common/CommonButton";
 import { UserIcon } from "./icon/UserIcon";
 import { WorkspaceIcon } from "./icon/WorkspaceIcon";

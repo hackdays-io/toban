@@ -1,10 +1,16 @@
-import { Box, Grid, GridItem, Icon, IconButton } from "@chakra-ui/react";
 import type { FC } from "react";
 import { FaCoins } from "react-icons/fa6";
 import { GoHomeFill } from "react-icons/go";
 import { MdCallSplit, MdWallet } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";
 import { Link, useParams } from "react-router";
+import {
+  Box,
+  Grid,
+  GridItem,
+  Icon,
+  IconButton,
+} from "~/components/chakra-shim";
 
 export const StickyNav: FC = () => {
   const { treeId } = useParams();

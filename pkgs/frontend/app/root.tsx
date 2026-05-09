@@ -1,6 +1,4 @@
 import { ApolloProvider } from "@apollo/client/react";
-import { Container } from "@chakra-ui/react";
-import { withEmotionCache } from "@emotion/react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
@@ -13,39 +11,30 @@ import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
 import { SmartWalletLoading } from "./components/SmartWalletLoading";
 import { SwitchNetwork } from "./components/SwitchNetwork";
-import { ChakraProvider } from "./components/chakra-provider";
-import { useInjectStyles } from "./emotion/emotion-client";
+// Tailwind v4 + design tokens. Imported here so every route inherits them.
+import "./styles/globals.css";
 
 interface LayoutProps extends React.PropsWithChildren {}
 
-export const Layout = withEmotionCache((props: LayoutProps, cache) => {
-  const { children } = props;
-
-  useInjectStyles(cache);
-
+export const Layout = ({ children }: LayoutProps) => {
   return (
     <html lang="en">
-      <head suppressHydrationWarning>
+      <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        <meta
-          name="emotion-insertion-point"
-          content="emotion-insertion-point"
-        />
         <title>Toban -当番-</title>
         <link rel="icon" href="/images/favicon.ico" />
       </head>
-      <body>
+      <body className="bg-bg text-text-primary font-sans">
         {children}
-
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
   );
-});
+};
 
 // Add stylesheets
 export const links = () => [
@@ -85,19 +74,13 @@ export default function App() {
         }}
       >
         <QueryClientProvider client={queryClient}>
-          <ChakraProvider>
-            <SwitchNetwork />
-            <Container
-              bg="#fffdf8"
-              maxW="430px"
-              height="100%"
-              width="100%"
-              minH="100vh"
-            >
-              <AppContent />
-            </Container>
-            <ToastContainer />
-          </ChakraProvider>
+          <SwitchNetwork />
+          {/* Phase 1-2 transitional shell: matches the current 430-px mobile
+              frame. Phase 2-3 (#428) installs the real responsive AppShell. */}
+          <div className="mx-auto min-h-screen w-full max-w-[430px] bg-surface">
+            <AppContent />
+          </div>
+          <ToastContainer />
         </QueryClientProvider>
       </PrivyProvider>
     </ApolloProvider>

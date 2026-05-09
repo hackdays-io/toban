@@ -1,5 +1,5 @@
-import { Box, Image } from "@chakra-ui/react";
 import { type ReactNode, useEffect, useState } from "react";
+import { Box, Image } from "~/components/chakra-shim";
 
 interface CommonIconProps {
   imageUrl: string | undefined;

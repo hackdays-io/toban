@@ -1,8 +1,8 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { type FC, useMemo } from "react";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import { Box, Flex, Text } from "~/components/chakra-shim";
 import { UserIcon } from "../icon/UserIcon";
 
 interface SplitRecipientsListProps {

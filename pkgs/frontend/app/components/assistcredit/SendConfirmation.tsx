@@ -1,11 +1,3 @@
-import {
-  Box,
-  Container,
-  HStack,
-  Spinner,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
 import type { NameData } from "namestone-sdk";
 import { type FC, useRef, useState } from "react";
 import { FaAngleDoubleUp } from "react-icons/fa";
@@ -17,6 +9,14 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperInstance } from "swiper/types";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import {
+  Box,
+  Container,
+  HStack,
+  Spinner,
+  Text,
+  VStack,
+} from "~/components/chakra-shim";
 import { Field } from "~/components/ui/field";
 import { UserIcon } from "../icon/UserIcon";
 import { treatEmojis } from "./emojiConstants";

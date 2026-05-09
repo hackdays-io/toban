@@ -1,5 +1,5 @@
-import { Box, Input, Text } from "@chakra-ui/react";
 import { HiOutlinePlus } from "react-icons/hi2";
+import { Box, Input, Text } from "~/components/chakra-shim";
 import { CommonIcon } from "../common/CommonIcon";
 
 const EmptyImage = () => {

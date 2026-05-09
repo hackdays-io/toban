@@ -1,8 +1,8 @@
-import { Box, IconButton } from "@chakra-ui/react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import { type FC, useCallback, useRef, useState } from "react";
 import { MdQrCodeScanner } from "react-icons/md";
 import { toast } from "react-toastify";
+import { Box, IconButton } from "~/components/chakra-shim";
 import CommonButton from "./CommonButton";
 
 interface QrAddressReaderProps {

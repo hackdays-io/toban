@@ -1,4 +1,3 @@
-import { Box, HStack, Heading, Text, VStack } from "@chakra-ui/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
@@ -17,6 +16,7 @@ import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { StickyNav } from "~/components/StickyNav";
+import { Box, HStack, Heading, Text, VStack } from "~/components/chakra-shim";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
 import {

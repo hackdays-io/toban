@@ -1,4 +1,4 @@
-import { Box, type BoxProps } from "@chakra-ui/react";
+import { Box, type BoxProps } from "~/components/chakra-shim";
 import { CommonTextArea } from "../common/CommonTextarea";
 
 export const InputDescription = ({

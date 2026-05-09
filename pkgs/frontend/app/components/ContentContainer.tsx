@@ -1,4 +1,4 @@
-import { Box } from "@chakra-ui/react";
+import { Box } from "~/components/chakra-shim";
 
 export const ContentContainer = ({
   children,

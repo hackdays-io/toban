@@ -1,4 +1,3 @@
-import { Box, Flex, Grid, Input, Text } from "@chakra-ui/react";
 import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
@@ -6,6 +5,7 @@ import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { BasicButton } from "~/components/BasicButton";
+import { Box, Flex, Grid, Input, Text } from "~/components/chakra-shim";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";
 import { UserIcon } from "~/components/icon/UserIcon";

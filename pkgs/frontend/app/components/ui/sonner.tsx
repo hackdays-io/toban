@@ -22,12 +22,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
         error: <LuOctagonX className="size-4" />,
         loading: <LuLoaderCircle className="size-4 animate-spin" />,
       }}
+      // Toban Toast — dark pill matching `primitives.jsx:303-315`. Type-
+      // specific toasts (success / error / warning) keep Sonner's coloured
+      // accent so users can still tell them apart at a glance.
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--normal-bg": "var(--color-text-primary)",
+          "--normal-text": "#ffffff",
+          "--normal-border": "transparent",
+          "--border-radius": "9999px",
         } as React.CSSProperties
       }
       {...props}

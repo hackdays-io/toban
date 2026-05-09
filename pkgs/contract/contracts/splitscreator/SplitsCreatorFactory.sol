@@ -16,7 +16,8 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
         address splitFactoryV2,
         address hatsTimeFrameModule,
         address fractionToken,
-        address thanksToken
+        address thanksToken,
+        address hatsQuestModule
     );
 
     address public SPLITS_CREATOR_IMPLEMENTATION;
@@ -38,6 +39,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsTimeFrameModule,
         address _fractionToken,
         address _thanksToken,
+        address _hatsQuestModule,
         bytes32 _salt
     ) external returns (address splitCreator) {
         if (_msgSender() != BIG_BANG) {
@@ -51,7 +53,8 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
                 _splitFactoryV2,
                 _hatsTimeFrameModule,
                 _fractionToken,
-                _thanksToken
+                _thanksToken,
+                _hatsQuestModule
             ),
             _getSalt(
                 _topHatId,
@@ -60,6 +63,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
                 _hatsTimeFrameModule,
                 _fractionToken,
                 _thanksToken,
+                _hatsQuestModule,
                 _salt
             )
         );
@@ -71,7 +75,8 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
             _splitFactoryV2,
             _hatsTimeFrameModule,
             _fractionToken,
-            _thanksToken
+            _thanksToken,
+            _hatsQuestModule
         );
     }
 
@@ -82,6 +87,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsTimeFrameModule,
         address _fractionToken,
         address _thanksToken,
+        address _hatsQuestModule,
         bytes32 _salt
     ) external view returns (address) {
         return
@@ -92,7 +98,8 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
                     _splitFactoryV2,
                     _hatsTimeFrameModule,
                     _fractionToken,
-                    _thanksToken
+                    _thanksToken,
+                    _hatsQuestModule
                 ),
                 _getSalt(
                     _topHatId,
@@ -101,6 +108,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
                     _hatsTimeFrameModule,
                     _fractionToken,
                     _thanksToken,
+                    _hatsQuestModule,
                     _salt
                 ),
                 address(this)
@@ -122,6 +130,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
         address _hatsTimeFrameModule,
         address _fractionToken,
         address _thanksToken,
+        address _hatsQuestModule,
         bytes32 _salt
     ) internal pure returns (bytes32) {
         return
@@ -133,6 +142,7 @@ contract SplitsCreatorFactory is OwnableUpgradeable, UUPSUpgradeable {
                     _hatsTimeFrameModule,
                     _fractionToken,
                     _thanksToken,
+                    _hatsQuestModule,
                     _salt
                 )
             );

@@ -15,7 +15,6 @@ import type {
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
@@ -26,13 +25,11 @@ import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
 import { InputNumber } from "~/components/input/InputNumber";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
 interface FormData {
   name: string;
   description: string;
   image: File;
-  selectedImageCid: string;
   responsibilities: HatsDetailsResponsabilities;
   authorities: HatsDetailsAuthorities;
   maxSupply: number | undefined;
@@ -47,16 +44,15 @@ const NewRole: FC = () => {
 
   const defaultMaxSupply = 10;
 
-  const { control, watch, handleSubmit, formState, resetField } =
-    useForm<FormData>({
-      defaultValues: {
-        name: "",
-        description: "",
-        responsibilities: [],
-        authorities: [],
-        maxSupply: defaultMaxSupply,
-      },
-    });
+  const { control, watch, handleSubmit, formState } = useForm<FormData>({
+    defaultValues: {
+      name: "",
+      description: "",
+      responsibilities: [],
+      authorities: [],
+      maxSupply: defaultMaxSupply,
+    },
+  });
 
   const responsibilities = useFieldArray({
     name: "responsibilities",
@@ -112,10 +108,7 @@ const NewRole: FC = () => {
           parentHatId: BigInt(hatterHatId),
           details: resUploadHatsDetails?.ipfsUri,
           maxSupply: Number(data.maxSupply),
-          imageURI:
-            resUploadImage?.ipfsUri ||
-            (data.selectedImageCid && `ipfs://${data.selectedImageCid}`) ||
-            "",
+          imageURI: resUploadImage?.ipfsUri || "",
         });
 
         const log = parsedLog?.find((log) => log.eventName === "HatCreated");
@@ -156,26 +149,7 @@ const NewRole: FC = () => {
               control={control}
               name="image"
               render={({ field: { onChange, value } }) => (
-                <InputImage
-                  imageFile={
-                    value || ipfs2https(`ipfs://${watch("selectedImageCid")}`)
-                  }
-                  setImageFile={onChange}
-                />
-              )}
-            />
-
-            <Controller
-              control={control}
-              name="selectedImageCid"
-              render={({ field: { onChange, value } }) => (
-                <RoleImageLibrarySelector
-                  setImageCid={(cid) => {
-                    resetField("image");
-                    onChange(cid);
-                  }}
-                  selectedCid={value}
-                />
+                <InputImage imageFile={value} setImageFile={onChange} />
               )}
             />
           </Stack>

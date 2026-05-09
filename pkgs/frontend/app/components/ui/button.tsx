@@ -1,94 +1,64 @@
-/**
- * Phase 1-2 transitional Button — issue #420.
- *
- * Just enough surface area to keep CommonButton and other call sites
- * compiling. Issue #426 (Phase 2-1) replaces this with the Shadcn variants
- * (primary / soft / secondary / ghost / danger / dark) defined in the design
- * spec. Until then we expose a permissive prop bag so existing pass-throughs
- * (size, backgroundColor, w, etc.) don't trip TypeScript.
- */
-import { Slot } from "@radix-ui/react-slot";
-import {
-  type ButtonHTMLAttributes,
-  type CSSProperties,
-  type ReactNode,
-  forwardRef,
-} from "react";
-import type { ChakraStyleProps } from "~/components/chakra-shim";
+import { type VariantProps, cva } from "class-variance-authority";
+import { Slot } from "radix-ui";
+import type * as React from "react";
+
 import { cn } from "~/lib/utils";
 
-/**
- * `ButtonProps` is intentionally permissive during the Phase 1-2 transition:
- * call sites still pass Chakra-shaped props like `mt={2}` / `_hover={{ bg }}` /
- * `as="a"` etc. We compose with `ChakraStyleProps` (an explicit list of
- * Chakra style props) instead of using `any` so biome's `noExplicitAny` rule
- * stays happy while still accepting the legacy prop bag.
- */
-export interface ButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "size">,
-    ChakraStyleProps {
-  asChild?: boolean;
-  loading?: boolean;
-  loadingText?: ReactNode;
-  size?: "xs" | "sm" | "md" | "lg" | string;
-}
-
-const toCssLength = (v: string | number | undefined) =>
-  v == null ? undefined : typeof v === "number" ? `${v}px` : v;
-
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  function Button(
-    {
-      asChild,
-      className,
-      loading,
-      loadingText,
-      children,
-      style,
-      w,
-      width,
-      backgroundColor,
-      bgColor,
-      bg,
-      color,
-      borderRadius,
-      rounded,
-      colorScheme: _cs,
-      colorPalette: _cp,
-      size: _size,
-      variant: _variant,
-      ...rest
+const buttonVariants = cva(
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        outline:
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+        "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-8",
+        "icon-lg": "size-10",
+      },
     },
-    ref,
-  ) {
-    const Component = asChild ? Slot : "button";
-    const resolvedRadius = borderRadius ?? rounded;
-    const inlineStyle: CSSProperties = {
-      ...(toCssLength(w) && { width: toCssLength(w) }),
-      ...(toCssLength(width) && { width: toCssLength(width) }),
-      ...((backgroundColor || bgColor || bg) && {
-        backgroundColor: backgroundColor ?? bgColor ?? bg,
-      }),
-      ...(color && { color }),
-      ...(toCssLength(resolvedRadius) && {
-        borderRadius: toCssLength(resolvedRadius),
-      }),
-      ...style,
-    };
-    return (
-      <Component
-        ref={ref}
-        type={asChild ? undefined : (rest.type ?? "button")}
-        className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2 font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none",
-          className,
-        )}
-        style={inlineStyle}
-        disabled={rest.disabled || loading}
-        {...rest}
-      >
-        {loading ? (loadingText ?? children) : children}
-      </Component>
-    );
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
   },
 );
+
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot.Root : "button";
+
+  return (
+    <Comp
+      data-slot="button"
+      data-variant={variant}
+      data-size={size}
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+}
+
+export { Button, buttonVariants };

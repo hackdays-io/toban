@@ -3,11 +3,10 @@ import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useState } from "react";
 import { Box, Button, Stack, Text } from "~/components/chakra-shim";
 import {
-  DialogBody,
+  Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogRoot,
   DialogTitle,
 } from "./ui/dialog";
 
@@ -45,20 +44,15 @@ export const SwitchNetwork: FC = () => {
   };
 
   return (
-    <DialogRoot open={isOpen}>
-      <DialogContent
-        backdrop={true}
-        portalled={true}
-        maxW="400px"
-        borderRadius="16px"
-      >
+    <Dialog open={isOpen}>
+      <DialogContent className="max-w-[400px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle fontSize="lg" fontWeight="bold">
+          <DialogTitle className="text-lg font-bold">
             ネットワークの切り替えが必要です
           </DialogTitle>
         </DialogHeader>
 
-        <DialogBody>
+        <div>
           <Stack gap={4} align="stretch">
             <Text fontSize="sm" color="gray.600">
               現在のネットワークは対応していません。以下のネットワークに切り替えてください。
@@ -96,7 +90,7 @@ export const SwitchNetwork: FC = () => {
               </Text>
             </Box>
           </Stack>
-        </DialogBody>
+        </div>
 
         <DialogFooter>
           <Button
@@ -110,6 +104,6 @@ export const SwitchNetwork: FC = () => {
           </Button>
         </DialogFooter>
       </DialogContent>
-    </DialogRoot>
+    </Dialog>
   );
 };

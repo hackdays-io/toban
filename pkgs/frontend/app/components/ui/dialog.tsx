@@ -1,211 +1,158 @@
-/**
- * Phase 1-2 Dialog — issue #420.
- *
- * Replaces the Chakra v3 Dialog wrapper with @radix-ui/react-dialog so that
- * roleAttributeDialog/, SwitchNetwork, and CommonDialog keep working without
- * Chakra. Phase 2-2 (#427) replaces this with the full Shadcn Dialog.
- *
- * The exported names match Chakra's so call sites compile unchanged:
- *   DialogRoot / DialogTrigger / DialogContent / DialogHeader / DialogBody /
- *   DialogFooter / DialogTitle / DialogDescription / DialogCloseTrigger /
- *   DialogActionTrigger / DialogBackdrop.
- */
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import {
-  type ComponentPropsWithoutRef,
-  type ElementRef,
-  type HTMLAttributes,
-  type ReactNode,
-  forwardRef,
-} from "react";
-import type { ChakraStyleProps } from "~/components/chakra-shim";
+"use client";
+
+import { Dialog as DialogPrimitive } from "radix-ui";
+import type * as React from "react";
+import { LuX } from "react-icons/lu";
+
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
-/**
- * Chakra v3 Dialog.Root signals open-state changes with
- * `onOpenChange={(details) => details.open}`; Radix uses
- * `onOpenChange={(open: boolean) => ...}`. We adapt the callback at the
- * boundary so existing handlers like `setOpen(d.open)` keep working.
- */
-type DialogRootProps = Omit<
-  ComponentPropsWithoutRef<typeof DialogPrimitive.Root>,
-  "onOpenChange"
-> & {
-  onOpenChange?: (details: { open: boolean }) => void;
-};
+function Dialog({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+}
 
-export const DialogRoot = ({ onOpenChange, ...rest }: DialogRootProps) => (
-  <DialogPrimitive.Root
-    onOpenChange={
-      onOpenChange ? (open: boolean) => onOpenChange({ open }) : undefined
-    }
-    {...rest}
-  />
-);
+function DialogTrigger({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+}
 
-// Permissive Trigger / Close so Chakra-style style props (height, etc.) don't
-// trip TypeScript during the transition. Phase 2-2 (#427) tightens these.
-type DialogTriggerProps = ComponentPropsWithoutRef<
-  typeof DialogPrimitive.Trigger
-> &
-  ChakraStyleProps;
-export const DialogTrigger = forwardRef<
-  ElementRef<typeof DialogPrimitive.Trigger>,
-  DialogTriggerProps
->(function DialogTrigger(props, ref) {
-  return <DialogPrimitive.Trigger ref={ref} {...props} />;
-});
+function DialogPortal({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+}
 
-// ActionTrigger in Chakra closes the dialog when the wrapped element is
-// activated. Radix's `Close` does the same.
-export const DialogActionTrigger = DialogPrimitive.Close;
+function DialogClose({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Close>) {
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
+}
 
-type DialogContentProps = ComponentPropsWithoutRef<
-  typeof DialogPrimitive.Content
-> &
-  ChakraStyleProps & {
-    portalled?: boolean;
-    backdrop?: boolean;
-  };
-
-export const DialogContent = forwardRef<
-  ElementRef<typeof DialogPrimitive.Content>,
-  DialogContentProps
->(function DialogContent(
-  { children, className, backdrop = true, mx, my, style, ...rest },
-  ref,
-) {
-  // ChakraStyleProps allows `mx` to be `number | string`. The Chakra spacing
-  // scale multiplies numbers by 4; strings (e.g. "1rem") pass through.
-  const toLen = (v: number | string | undefined) =>
-    typeof v === "number" ? `${v * 4}px` : v;
-  const inlineStyle = {
-    ...(mx != null && {
-      marginLeft: toLen(mx),
-      marginRight: toLen(mx),
-    }),
-    ...(my != null && {
-      marginTop: toLen(my),
-      marginBottom: toLen(my),
-    }),
-    ...style,
-  };
+function DialogOverlay({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
-    <DialogPrimitive.Portal>
-      {backdrop && (
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-overlay data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-      )}
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-md bg-surface p-6 shadow-3 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-          className,
-        )}
-        style={inlineStyle}
-        {...rest}
-      >
-        {children}
-      </DialogPrimitive.Content>
-    </DialogPrimitive.Portal>
-  );
-});
-
-type DialogCloseTriggerProps = ComponentPropsWithoutRef<
-  typeof DialogPrimitive.Close
->;
-
-export const DialogCloseTrigger = forwardRef<
-  ElementRef<typeof DialogPrimitive.Close>,
-  DialogCloseTriggerProps
->(function DialogCloseTrigger({ children, className, ...rest }, ref) {
-  return (
-    <DialogPrimitive.Close
-      ref={ref}
+    <DialogPrimitive.Overlay
+      data-slot="dialog-overlay"
       className={cn(
-        "absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-xs text-text-secondary hover:bg-primary-soft",
+        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className,
       )}
-      {...rest}
-    >
-      {children ?? "×"}
-    </DialogPrimitive.Close>
+      {...props}
+    />
   );
-});
+}
 
-export const DialogHeader = ({
+function DialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  showCloseButton?: boolean;
+}) {
+  return (
+    <DialogPortal data-slot="dialog-portal">
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        data-slot="dialog-content"
+        className={cn(
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <LuX />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+}
+
+function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-header"
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogFooter({
+  className,
+  showCloseButton = false,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  showCloseButton?: boolean;
+}) {
+  return (
+    <div
+      data-slot="dialog-footer"
+      className={cn(
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      {showCloseButton && (
+        <DialogPrimitive.Close asChild>
+          <Button variant="outline">Close</Button>
+        </DialogPrimitive.Close>
+      )}
+    </div>
+  );
+}
+
+function DialogTitle({
   className,
   ...props
-}: HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn("flex flex-col gap-1.5 text-left", className)}
-    {...props}
-  />
-);
-
-export const DialogFooter = ({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-      className,
-    )}
-    {...props}
-  />
-);
-
-export const DialogBody = ({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("py-2", className)} {...props} />
-);
-
-type DialogTitleProps = ComponentPropsWithoutRef<
-  typeof DialogPrimitive.Title
-> & {
-  fontSize?: string;
-  fontWeight?: string | number;
-};
-
-export const DialogTitle = forwardRef<
-  ElementRef<typeof DialogPrimitive.Title>,
-  DialogTitleProps
->(function DialogTitle(
-  { className, fontSize, fontWeight, style, ...rest },
-  ref,
-) {
-  const inlineStyle = {
-    ...(fontSize && { fontSize }),
-    ...(fontWeight != null && { fontWeight }),
-    ...style,
-  };
+}: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      ref={ref}
-      className={cn("text-lg font-semibold leading-none", className)}
-      style={inlineStyle}
-      {...rest}
+      data-slot="dialog-title"
+      className={cn("text-lg leading-none font-semibold", className)}
+      {...props}
     />
   );
-});
+}
 
-export const DialogDescription = forwardRef<
-  ElementRef<typeof DialogPrimitive.Description>,
-  ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(function DialogDescription({ className, ...rest }, ref) {
+function DialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      ref={ref}
-      className={cn("text-sm text-text-secondary", className)}
-      {...rest}
+      data-slot="dialog-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
     />
   );
-});
+}
 
-export const DialogBackdrop = ({
-  children,
-}: {
-  children?: ReactNode;
-}) => <>{children}</>;
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+};

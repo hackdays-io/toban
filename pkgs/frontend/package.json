@@ -81,6 +81,7 @@
     "prettier": "^3.3.3",
     "typescript": "^5.6.2",
     "vite": "^7.3.3",
+    "vite-plugin-node-polyfills": "^0.26.0",
     "vite-tsconfig-paths": "^6.1.1"
   },
   "engines": {

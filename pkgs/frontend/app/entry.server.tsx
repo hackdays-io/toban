@@ -1,5 +1,12 @@
+import { PassThrough } from "node:stream";
+import { CacheProvider } from "@emotion/react";
+import { createReadableStreamFromReadable } from "@react-router/node";
+import { isbot } from "isbot";
+import { renderToPipeableStream } from "react-dom/server";
 import { type EntryContext, ServerRouter } from "react-router";
-import { createEmotion } from "./emotion/emotion-server";
+import { createEmotionCache } from "./emotion/emotion-cache";
+
+const ABORT_DELAY = 5_000;
 
 export default function handleRequest(
   request: Request,
@@ -7,16 +14,40 @@ export default function handleRequest(
   responseHeaders: Headers,
   routerContext: EntryContext,
 ) {
-  const { renderToString, injectStyles } = createEmotion();
+  return new Promise<Response>((resolve, reject) => {
+    const userAgent = request.headers.get("user-agent");
+    const callbackName = isbot(userAgent ?? "") ? "onAllReady" : "onShellReady";
 
-  const html = renderToString(
-    <ServerRouter context={routerContext} url={request.url} />,
-  );
+    let didError = false;
+    const cache = createEmotionCache();
 
-  responseHeaders.set("Content-Type", "text/html");
+    const { pipe, abort } = renderToPipeableStream(
+      <CacheProvider value={cache}>
+        <ServerRouter context={routerContext} url={request.url} />
+      </CacheProvider>,
+      {
+        [callbackName]() {
+          const body = new PassThrough();
+          const stream = createReadableStreamFromReadable(body);
+          responseHeaders.set("Content-Type", "text/html");
+          resolve(
+            new Response(stream, {
+              headers: responseHeaders,
+              status: didError ? 500 : responseStatusCode,
+            }),
+          );
+          pipe(body);
+        },
+        onShellError(error: unknown) {
+          reject(error);
+        },
+        onError(error: unknown) {
+          didError = true;
+          console.error(error);
+        },
+      },
+    );
 
-  return new Response(`<!DOCTYPE html>${injectStyles(html)}`, {
-    status: responseStatusCode,
-    headers: responseHeaders,
+    setTimeout(abort, ABORT_DELAY);
   });
 }

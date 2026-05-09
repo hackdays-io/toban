@@ -1,11 +1,11 @@
 import { Box, Flex, Grid, Skeleton, Text, VStack } from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
 import type { GetThanksTokenMintsQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useThanksTokenActivity } from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
 import { type FC, useMemo } from "react";
+import { Link } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { formatEther, hexToString } from "viem";

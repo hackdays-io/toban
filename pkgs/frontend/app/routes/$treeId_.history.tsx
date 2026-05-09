@@ -1,6 +1,6 @@
 import { Box, HStack, Heading, Tabs, VStack } from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
 import type { FC } from "react";
+import { useParams } from "react-router";
 import { PageHeader } from "~/components/PageHeader";
 import { FriendshipRanking } from "~/components/assistcredit/FriendshipRanking";
 import { AssistCreditHistory } from "~/components/assistcredit/History";

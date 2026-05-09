@@ -5,17 +5,19 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+    "**/.client/**/*.tsx",
+    ".react-router/types/**/*"
   ],
   "exclude": ["node_modules", "gql"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": [
-      "@remix-run/node",
+      "@react-router/node",
       "vite/client",
       "cypress",
       "cypress-file-upload"
     ],
+    "rootDirs": [".", "./.react-router/types"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",

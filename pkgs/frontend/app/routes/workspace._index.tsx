@@ -1,12 +1,12 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
-import { Link, useNavigate } from "@remix-run/react";
 import axios from "axios";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetHatsByWorkspaceIds, useGetWorkspaces } from "hooks/useHats";
 import { useGetHoldingThanksTokens } from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";

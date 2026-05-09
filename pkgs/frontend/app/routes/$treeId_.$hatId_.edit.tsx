@@ -1,5 +1,4 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { useGetHat, useHats } from "hooks/useHats";
 import {
   useQueryIpfsJsonData,
@@ -9,6 +8,7 @@ import {
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router";
 import type {
   HatsDetailsAttributes,
   HatsDetailsAuthorities,

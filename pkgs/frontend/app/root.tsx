@@ -2,23 +2,12 @@ import { ApolloProvider } from "@apollo/client/react";
 import { Container } from "@chakra-ui/react";
 import { withEmotionCache } from "@emotion/react";
 import { PrivyProvider } from "@privy-io/react-auth";
-import {
-  type ClientLoaderFunctionArgs,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-  data,
-  useLoaderData,
-} from "@remix-run/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
-import { useEffect } from "react";
-import { ToastContainer, toast as notify } from "react-toastify";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { ToastContainer } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
-import { getToast } from "remix-toast";
 import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
 import { Header } from "./components/Header";
@@ -63,11 +52,6 @@ export const links = () => [
   { rel: "stylesheet", href: toastStyles },
   { rel: "stylesheet", href: swiperStyles },
 ];
-// Implemented from above
-export const loader = async ({ request }: ClientLoaderFunctionArgs) => {
-  const { toast, headers } = await getToast(request);
-  return data({ toast }, { headers });
-};
 
 const queryClient = new QueryClient();
 
@@ -84,17 +68,6 @@ const AppContent = () => {
 };
 
 export default function App() {
-  const {
-    data: { toast },
-  } = useLoaderData<typeof loader>();
-  // Hook to show the toasts
-  useEffect(() => {
-    if (toast) {
-      // notify on a toast message
-      notify(toast.message, { type: toast.type });
-    }
-  }, [toast]);
-
   return (
     <ApolloProvider client={goldskyClient}>
       <PrivyProvider

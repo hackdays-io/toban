@@ -10,11 +10,11 @@ import {
   Text,
   createListCollection,
 } from "@chakra-ui/react";
-import { useNavigate, useSearchParams } from "@remix-run/react";
 import { ERC20_ABI } from "abi/erc20";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "react-toastify";
 import { parseEther } from "viem";
 import { BasicButton } from "~/components/BasicButton";

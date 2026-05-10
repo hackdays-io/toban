@@ -198,7 +198,7 @@ function HeroCentered() {
       data-lp-root
       className="relative mx-auto max-w-[1200px] px-5 pt-14 pb-20 text-center md:px-7 md:pt-20 md:pb-28"
     >
-      <h1 className="mx-auto max-w-4xl text-balance font-black leading-[1.08] tracking-tight text-text-primary text-[clamp(34px,7vw,72px)]">
+      <h1 className="mx-auto text-balance font-black leading-[1.08] tracking-tight text-text-primary text-[clamp(34px,7vw,72px)] md:max-w-4xl">
         ひとりの<span style={{ color: ACCENT.teal }}>小さな貢献</span>を、
         <br className="hidden sm:inline" />
         みんなの<span style={{ color: ACCENT.orange }}>大きな力</span>に。

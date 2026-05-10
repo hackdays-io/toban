@@ -8,7 +8,6 @@ export default {
 export const Centered: Story = () => (
   <div className="mx-auto max-w-md p-8">
     <AuthHero
-      eyebrow="あたたかい当番帳"
       title={
         <>
           みんなの貢献を、
@@ -25,7 +24,6 @@ export const Start: Story = () => (
   <div className="max-w-2xl p-8">
     <AuthHero
       align="start"
-      eyebrow="あたたかい当番帳"
       title={
         <>
           みんなの貢献を、

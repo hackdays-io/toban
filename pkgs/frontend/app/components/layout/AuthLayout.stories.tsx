@@ -12,7 +12,6 @@ export default {
 const Hero = (
   <AuthHero
     align="centered"
-    eyebrow="あたたかい当番帳"
     title={
       <>
         みんなの貢献を、

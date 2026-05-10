@@ -10,7 +10,6 @@ export default function Index() {
     <AuthLayout
       hero={
         <AuthHero
-          eyebrow="あたたかい当番帳"
           title={
             <>
               みんなの貢献を、

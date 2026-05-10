@@ -50,7 +50,6 @@ const Login: FC = () => {
     <AuthLayout
       hero={
         <AuthHero
-          eyebrow="あたたかい当番帳"
           title={
             <>
               みんなの貢献を、
@@ -59,9 +58,6 @@ const Login: FC = () => {
             </>
           }
           description="Toban はコミュニティで起きた小さな貢献を、感謝として記録し、納得できる分配につなげるサービスです。"
-          // Mobile centred / desktop start — controlled by Tailwind responsive
-          // alignment of the hero panel itself; we keep `centered` as the
-          // default because AuthHero supplies its own typography sizing.
         />
       }
       footer={

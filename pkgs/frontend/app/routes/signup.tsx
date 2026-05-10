@@ -90,7 +90,6 @@ const Signup: FC = () => {
     <AuthLayout
       hero={
         <AuthHero
-          eyebrow="プロフィールを作成"
           title={
             <>
               はじめまして、

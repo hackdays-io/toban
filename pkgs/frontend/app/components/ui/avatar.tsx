@@ -149,4 +149,5 @@ export {
   AvatarGroupCount,
   seedColor,
   seedInitials,
+  SEED_PALETTE,
 };

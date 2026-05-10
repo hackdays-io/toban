@@ -1,50 +1,36 @@
 import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 import { useBigBang } from "hooks/useBigBang";
-import { useUploadHatsDetailsToIpfs } from "hooks/useIpfs";
+import {
+  useUploadHatsDetailsToIpfs,
+  useUploadImageFileToIpfs,
+} from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useMemo, useState } from "react";
+import { type FC, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import type {
+  HatsDetailsAuthorities,
+  HatsDetailsResponsabilities,
+} from "types/hats";
 import type { Address } from "viem";
+import { Chip } from "~/components/composite/chip";
 import { Divider } from "~/components/composite/divider";
 import { FieldLabel } from "~/components/composite/field-label";
-import { IconColorPicker } from "~/components/composite/icon-color-picker";
 import { NextStepCard } from "~/components/composite/next-step-card";
-import { Segmented } from "~/components/composite/segmented";
 import { StepBar } from "~/components/composite/step-bar";
 import { SummaryRow } from "~/components/composite/summary-row";
-import { ToggleRow } from "~/components/composite/toggle-row";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
-import { Badge } from "~/components/ui/badge";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  SEED_PALETTE,
+} from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 
-const ICON_CHOICES = [
-  "🌿",
-  "🇯🇵",
-  "✦",
-  "🏠",
-  "🌊",
-  "🔥",
-  "🌸",
-  "⚡",
-  "🛠",
-] as const;
-
-const COLOR_CHOICES = [
-  "#65C98A",
-  "#5DADEC",
-  "#F5B82E",
-  "#D6B995",
-  "#E48F4F",
-  "#B696E0",
-  "#E48ABF",
-  "#7AC2D9",
-] as const;
-
 type Step = "basic" | "initial" | "confirm" | "done";
-type Openness = "invite" | "link";
-type DefaultRole = "Member" | "Guest";
 
 const TOTAL_STEPS = 3;
 const STEP_INDEX: Record<Step, number> = {
@@ -54,33 +40,111 @@ const STEP_INDEX: Record<Step, number> = {
   done: 2,
 };
 
+type FallbackIconKind = "house" | "user";
+
+// Lucide source paths (24x24 viewBox) — kept inline so we don't pull
+// react-dom/server into the client bundle just to serialise an icon.
+const FALLBACK_ICON_PATHS: Record<FallbackIconKind, string> = {
+  house:
+    '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  user: '<circle cx="12" cy="7" r="4"/><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>',
+};
+
+const buildFallbackSvgFile = (
+  color: string,
+  icon: FallbackIconKind,
+  fileName: string,
+): File => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="128" fill="${color}"/><g transform="translate(80 80) scale(4.6667)" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${FALLBACK_ICON_PATHS[icon]}</g></svg>`;
+  return new File([svg], fileName, { type: "image/svg+xml" });
+};
+
+const pickRandomColor = (): string =>
+  SEED_PALETTE[Math.floor(Math.random() * SEED_PALETTE.length)];
+
 const WorkspaceNew: FC = () => {
   const navigate = useNavigate();
   const { wallet } = useActiveWallet();
   const { bigbang, isLoading: isCreating } = useBigBang();
   const { uploadHatsDetailsToIpfs, isLoading: isUploadingDetails } =
     useUploadHatsDetailsToIpfs();
+  const {
+    uploadImageFileToIpfs: uploadWorkspaceImage,
+    imageFile: workspaceImage,
+    setImageFile: setWorkspaceImage,
+    isLoading: isUploadingWorkspaceImage,
+  } = useUploadImageFileToIpfs();
+  const {
+    uploadImageFileToIpfs: uploadRoleImage,
+    imageFile: roleImage,
+    setImageFile: setRoleImage,
+    isLoading: isUploadingRoleImage,
+  } = useUploadImageFileToIpfs();
 
   // Flow state
   const [step, setStep] = useState<Step>("basic");
   const [createdTreeId, setCreatedTreeId] = useState<string | null>(null);
 
-  // Step 1 — basic
-  const [icon, setIcon] = useState<string>(ICON_CHOICES[0]);
-  const [color, setColor] = useState<string>(COLOR_CHOICES[0]);
+  // Step 1 — workspace basics
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [openness, setOpenness] = useState<Openness>("invite");
 
-  // Step 2 — initial
-  const [unitName, setUnitName] = useState("サンクス");
-  const [unitSymbol, setUnitSymbol] = useState("THX");
-  const [defaultRole, setDefaultRole] = useState<DefaultRole>("Member");
-  const [enableDuty, setEnableDuty] = useState(true);
-  const [enableSplit, setEnableSplit] = useState(true);
+  // Step 2 — initial role
+  const [roleName, setRoleName] = useState("");
+  const [roleDefinition, setRoleDefinition] = useState("");
+  const [responsibilities, setResponsibilities] = useState<
+    NonNullable<HatsDetailsResponsabilities>
+  >([]);
+  const [authorities, setAuthorities] = useState<
+    NonNullable<HatsDetailsAuthorities>
+  >([]);
+  const [draftResponsibility, setDraftResponsibility] = useState("");
+  const [draftAuthority, setDraftAuthority] = useState("");
+
+  const addResponsibility = () => {
+    const label = draftResponsibility.trim();
+    if (!label) return;
+    setResponsibilities((current) => [...current, { label }]);
+    setDraftResponsibility("");
+  };
+  const removeResponsibility = (index: number) => {
+    setResponsibilities((current) => current.filter((_, i) => i !== index));
+  };
+  const addAuthority = () => {
+    const label = draftAuthority.trim();
+    if (!label) return;
+    setAuthorities((current) => [...current, { label }]);
+    setDraftAuthority("");
+  };
+  const removeAuthority = (index: number) => {
+    setAuthorities((current) => current.filter((_, i) => i !== index));
+  };
+
+  // Random fallback colours — chosen on mount (post-hydration to avoid
+  // an SSR/CSR mismatch from Math.random in the initialiser).
+  const [workspaceColor, setWorkspaceColor] = useState<string>(SEED_PALETTE[0]);
+  const [roleColor, setRoleColor] = useState<string>(SEED_PALETTE[0]);
+  useEffect(() => {
+    setWorkspaceColor(pickRandomColor());
+    setRoleColor(pickRandomColor());
+  }, []);
 
   const isBasicValid = name.trim().length > 0;
-  const isWorking = isUploadingDetails || isCreating;
+  const isRoleValid = roleName.trim().length > 0;
+  const isWorking =
+    isUploadingDetails ||
+    isUploadingWorkspaceImage ||
+    isUploadingRoleImage ||
+    isCreating;
+
+  const workspaceImagePreview = useMemo(
+    () => (workspaceImage ? URL.createObjectURL(workspaceImage) : undefined),
+    [workspaceImage],
+  );
+  const roleImagePreview = useMemo(
+    () => (roleImage ? URL.createObjectURL(roleImage) : undefined),
+    [roleImage],
+  );
 
   const handleCreate = async () => {
     if (!wallet) {
@@ -89,6 +153,10 @@ const WorkspaceNew: FC = () => {
     }
     if (!isBasicValid) {
       setStep("basic");
+      return;
+    }
+    if (!isRoleValid) {
+      setStep("initial");
       return;
     }
 
@@ -103,28 +171,37 @@ const WorkspaceNew: FC = () => {
         throw new Error("ワークスペースメタデータの保存に失敗しました。");
       }
 
-      // First-class member-role metadata is generated from the basic info so
-      // BigBang's required `memberHat*` slots are always populated even though
-      // the new flow doesn't ask the user to define a role explicitly. The
-      // existing `useBigBang` interface is preserved (issue #431).
-      const memberRoleMetadata = await uploadHatsDetailsToIpfs({
-        name: defaultRole,
-        description: `${name} の初期ロール`,
-        responsabilities: [],
-        authorities: [],
+      const roleMetadata = await uploadHatsDetailsToIpfs({
+        name: roleName,
+        description: roleDefinition,
+        responsabilities: responsibilities,
+        authorities: authorities,
       });
-      if (!memberRoleMetadata) {
+      if (!roleMetadata) {
         throw new Error("初期ロールメタデータの保存に失敗しました。");
       }
+
+      const workspaceImageFile =
+        workspaceImage ??
+        buildFallbackSvgFile(workspaceColor, "house", "workspace-icon.svg");
+      const roleImageFile =
+        roleImage ?? buildFallbackSvgFile(roleColor, "user", "role-icon.svg");
+
+      const workspaceImageUpload =
+        await uploadWorkspaceImage(workspaceImageFile);
+      const roleImageUpload = await uploadRoleImage(roleImageFile);
+
+      const workspaceImageUri = workspaceImageUpload?.ipfsUri ?? "";
+      const roleImageUri = roleImageUpload?.ipfsUri ?? "";
 
       const parsedLog = await bigbang({
         owner: wallet.account.address as Address,
         topHatDetails: workspaceMetadata.ipfsUri,
-        topHatImageURI: "",
+        topHatImageURI: workspaceImageUri,
         hatterHatDetails: workspaceMetadata.ipfsUri,
-        hatterHatImageURI: "",
-        memberHatDetails: memberRoleMetadata.ipfsUri,
-        memberHatImageURI: "",
+        hatterHatImageURI: workspaceImageUri,
+        memberHatDetails: roleMetadata.ipfsUri,
+        memberHatImageURI: roleImageUri,
       });
       if (!parsedLog) {
         throw new Error("BigBang の実行に失敗しました。");
@@ -141,11 +218,6 @@ const WorkspaceNew: FC = () => {
       alert(`エラーが発生しました。${error}`);
     }
   };
-
-  const opennessLabel = useMemo(
-    () => (openness === "invite" ? "招待制" : "リンク参加可"),
-    [openness],
-  );
 
   const goToTreeHome = () => {
     if (createdTreeId) {
@@ -166,7 +238,7 @@ const WorkspaceNew: FC = () => {
               step === "basic"
                 ? "ワークスペースを作成"
                 : step === "initial"
-                  ? "初期設定"
+                  ? "メンバーの初期ロール"
                   : "作成内容を確認"
             }
             subtitle={`${stepIndex + 1} / ${TOTAL_STEPS}`}
@@ -191,16 +263,48 @@ const WorkspaceNew: FC = () => {
       {step === "basic" && (
         <div className="flex flex-col gap-5">
           <div className="px-5">
-            <FieldLabel>アイコン & カラー</FieldLabel>
-            <IconColorPicker
-              icon={icon}
-              color={color}
-              iconChoices={ICON_CHOICES}
-              colorChoices={COLOR_CHOICES}
-              onIconChange={setIcon}
-              onColorChange={setColor}
-              helper="プレビューはここに表示されます。アイコンとカラーは下から選択できます。"
-            />
+            <FieldLabel>アイコン</FieldLabel>
+            <div className="flex flex-col items-center gap-2">
+              <label className="group relative cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  data-testid="workspace-image-input"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file?.type.startsWith("image/")) {
+                      setWorkspaceImage(file);
+                    } else {
+                      alert("画像ファイルを選択してください。");
+                    }
+                  }}
+                />
+                <Avatar
+                  size="xl"
+                  className="size-36 ring-2 ring-border transition group-hover:ring-primary"
+                >
+                  {workspaceImagePreview && (
+                    <AvatarImage
+                      src={workspaceImagePreview}
+                      alt="ワークスペースアイコン"
+                    />
+                  )}
+                  <AvatarFallback
+                    className="text-white"
+                    style={{ backgroundColor: workspaceColor }}
+                  >
+                    <Icon name="home" size={44} className="text-white" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
+                  <Icon name="edit" size={14} />
+                </span>
+              </label>
+              <span className="text-xs text-text-secondary">
+                アイコンをタップして画像を選択
+              </span>
+            </div>
           </div>
 
           <div className="px-5">
@@ -229,23 +333,6 @@ const WorkspaceNew: FC = () => {
             />
           </div>
 
-          <div className="px-5">
-            <FieldLabel>公開設定</FieldLabel>
-            <Segmented<Openness>
-              value={openness}
-              onChange={setOpenness}
-              options={[
-                { value: "invite", label: "招待制" },
-                { value: "link", label: "リンク参加可" },
-              ]}
-            />
-            <div className="mt-1.5 text-[11px] leading-snug text-text-secondary">
-              {openness === "invite"
-                ? "招待されたメンバーのみ参加できます。"
-                : "招待リンクを知っている人なら誰でも参加できます。"}
-            </div>
-          </div>
-
           <div className="px-4 pt-4">
             <Button
               variant="primary"
@@ -262,67 +349,162 @@ const WorkspaceNew: FC = () => {
       {step === "initial" && (
         <div className="flex flex-col gap-5">
           <div className="px-5 text-[13px] leading-relaxed text-text-secondary">
-            あとから変更できます。
+            最初のメンバーロールを作成します。あとから変更できます。
           </div>
 
           <div className="px-5">
-            <FieldLabel>サンクスの表示名と単位</FieldLabel>
-            <div className="flex gap-2.5">
-              <div className="flex-[2]">
-                <Input
-                  value={unitName}
-                  onChange={(e) => setUnitName(e.target.value)}
-                  placeholder="サンクス"
-                  aria-label="サンクスの表示名"
+            <FieldLabel>アイコン</FieldLabel>
+            <div className="flex flex-col items-center gap-2">
+              <label className="group relative cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  data-testid="role-image-input"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file?.type.startsWith("image/")) {
+                      setRoleImage(file);
+                    } else {
+                      alert("画像ファイルを選択してください。");
+                    }
+                  }}
                 />
-              </div>
-              <div className="flex-1">
-                <Input
-                  value={unitSymbol}
-                  onChange={(e) => setUnitSymbol(e.target.value)}
-                  placeholder="THX"
-                  aria-label="サンクスの単位"
-                />
-              </div>
+                <Avatar
+                  size="xl"
+                  className="size-36 ring-2 ring-border transition group-hover:ring-primary"
+                >
+                  {roleImagePreview && (
+                    <AvatarImage src={roleImagePreview} alt="ロールアイコン" />
+                  )}
+                  <AvatarFallback
+                    className="text-white"
+                    style={{ backgroundColor: roleColor }}
+                  >
+                    <Icon name="user" size={44} className="text-white" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
+                  <Icon name="edit" size={14} />
+                </span>
+              </label>
+              <span className="text-xs text-text-secondary">
+                アイコンをタップして画像を選択
+              </span>
             </div>
           </div>
 
           <div className="px-5">
-            <FieldLabel>メンバーの初期ロール</FieldLabel>
-            <Segmented<DefaultRole>
-              value={defaultRole}
-              onChange={setDefaultRole}
-              options={[
-                { value: "Member", label: "Member" },
-                { value: "Guest", label: "Guest" },
-              ]}
+            <FieldLabel htmlFor="role-name">
+              ロール名 <span className="text-danger">*</span>
+            </FieldLabel>
+            <Input
+              id="role-name"
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
+              placeholder="例：Member"
+              data-testid="role-name-input"
+              aria-invalid={!isRoleValid && roleName.length > 0}
             />
           </div>
 
           <div className="px-5">
-            <FieldLabel>機能</FieldLabel>
-            <div className="overflow-hidden rounded-md border border-border bg-surface shadow-1">
-              <ToggleRow
-                label="当番"
-                sub="役割と担当を見える化"
-                checked={enableDuty}
-                onCheckedChange={setEnableDuty}
+            <FieldLabel htmlFor="role-definition">役割定義</FieldLabel>
+            <Textarea
+              id="role-definition"
+              rows={4}
+              value={roleDefinition}
+              onChange={(e) => setRoleDefinition(e.target.value)}
+              placeholder="このロールが担う役割を入力"
+              data-testid="role-definition-input"
+            />
+          </div>
+
+          <div className="px-5">
+            <FieldLabel>役割（担当）</FieldLabel>
+            {responsibilities.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {responsibilities.map((item, index) => (
+                  <Chip
+                    key={`${item.label}-${index}`}
+                    onClick={() => removeResponsibility(index)}
+                    aria-label={`${item.label} を削除`}
+                  >
+                    {item.label}
+                    <Icon name="close" size={12} />
+                  </Chip>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={draftResponsibility}
+                onChange={(e) => setDraftResponsibility(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    addResponsibility();
+                  }
+                }}
+                placeholder="例：当番管理"
+                data-testid="responsibility-input"
               />
-              <Divider inset={16} />
-              <ToggleRow
-                label="分配"
-                sub="貢献記録から報酬を分ける"
-                checked={enableSplit}
-                onCheckedChange={setEnableSplit}
-              />
+              <Button
+                variant="secondary"
+                onClick={addResponsibility}
+                disabled={!draftResponsibility.trim()}
+              >
+                追加
+              </Button>
             </div>
           </div>
 
-          <div className="flex gap-2.5 px-4 pt-4">
-            <Button variant="ghost" onClick={() => setStep("confirm")}>
-              スキップ
-            </Button>
-            <Button variant="primary" full onClick={() => setStep("confirm")}>
+          <div className="px-5">
+            <FieldLabel>権限</FieldLabel>
+            {authorities.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {authorities.map((item, index) => (
+                  <Chip
+                    key={`${item.label}-${index}`}
+                    onClick={() => removeAuthority(index)}
+                    aria-label={`${item.label} を削除`}
+                  >
+                    {item.label}
+                    <Icon name="close" size={12} />
+                  </Chip>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={draftAuthority}
+                onChange={(e) => setDraftAuthority(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    addAuthority();
+                  }
+                }}
+                placeholder="例：メンバーを追加"
+                data-testid="authority-input"
+              />
+              <Button
+                variant="secondary"
+                onClick={addAuthority}
+                disabled={!draftAuthority.trim()}
+              >
+                追加
+              </Button>
+            </div>
+          </div>
+
+          <div className="px-4 pt-4">
+            <Button
+              variant="primary"
+              full
+              disabled={!isRoleValid}
+              onClick={() => setStep("confirm")}
+            >
               確認へ
             </Button>
           </div>
@@ -333,13 +515,20 @@ const WorkspaceNew: FC = () => {
         <div className="flex flex-col gap-3">
           <div className="px-4">
             <div className="flex flex-col items-center gap-3 rounded-md border border-border bg-surface p-5 text-center shadow-1">
-              <div
-                aria-hidden
-                className="flex size-[72px] items-center justify-center rounded-md text-3xl text-white"
-                style={{ backgroundColor: color }}
-              >
-                {icon}
-              </div>
+              <Avatar size="xl" className="size-[72px]">
+                {workspaceImagePreview && (
+                  <AvatarImage
+                    src={workspaceImagePreview}
+                    alt="ワークスペースアイコン"
+                  />
+                )}
+                <AvatarFallback
+                  className="text-white"
+                  style={{ backgroundColor: workspaceColor }}
+                >
+                  <Icon name="home" size={28} className="text-white" />
+                </AvatarFallback>
+              </Avatar>
               <div className="text-lg font-bold text-text-primary">{name}</div>
               {description && (
                 <div className="text-xs leading-relaxed text-text-secondary">
@@ -351,25 +540,74 @@ const WorkspaceNew: FC = () => {
 
           <div className="px-4">
             <div className="overflow-hidden rounded-md border border-border bg-surface shadow-1">
-              <SummaryRow label="公開設定" value={opennessLabel} />
-              <Divider inset={16} />
               <SummaryRow
-                label="サンクス単位"
-                value={`${unitName}（${unitSymbol}）`}
-              />
-              <Divider inset={16} />
-              <SummaryRow label="初期ロール" value={defaultRole} />
-              <Divider inset={16} />
-              <SummaryRow
-                label="有効な機能"
+                label="初期ロール"
                 value={
-                  <span className="inline-flex flex-wrap justify-end gap-1.5">
-                    <Badge kind="member">サンクス</Badge>
-                    {enableDuty && <Badge kind="role">当番</Badge>}
-                    {enableSplit && <Badge kind="info">分配</Badge>}
+                  <span className="inline-flex items-center gap-2">
+                    <Avatar size="sm">
+                      {roleImagePreview && (
+                        <AvatarImage
+                          src={roleImagePreview}
+                          alt="ロールアイコン"
+                        />
+                      )}
+                      <AvatarFallback
+                        className="text-white"
+                        style={{ backgroundColor: roleColor }}
+                      >
+                        <Icon name="user" size={14} className="text-white" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>{roleName}</span>
                   </span>
                 }
               />
+              {roleDefinition && (
+                <>
+                  <Divider inset={16} />
+                  <SummaryRow label="役割定義" value={roleDefinition} />
+                </>
+              )}
+              {responsibilities.length > 0 && (
+                <>
+                  <Divider inset={16} />
+                  <SummaryRow
+                    label="役割（担当）"
+                    value={
+                      <span className="inline-flex flex-wrap justify-end gap-1.5">
+                        {responsibilities.map((item, index) => (
+                          <span
+                            key={`${item.label}-${index}`}
+                            className="rounded-full border border-border bg-bg px-2 py-0.5 text-xs"
+                          >
+                            {item.label}
+                          </span>
+                        ))}
+                      </span>
+                    }
+                  />
+                </>
+              )}
+              {authorities.length > 0 && (
+                <>
+                  <Divider inset={16} />
+                  <SummaryRow
+                    label="権限"
+                    value={
+                      <span className="inline-flex flex-wrap justify-end gap-1.5">
+                        {authorities.map((item, index) => (
+                          <span
+                            key={`${item.label}-${index}`}
+                            className="rounded-full border border-border bg-bg px-2 py-0.5 text-xs"
+                          >
+                            {item.label}
+                          </span>
+                        ))}
+                      </span>
+                    }
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -378,15 +616,16 @@ const WorkspaceNew: FC = () => {
               variant="secondary"
               onClick={() => setStep("initial")}
               disabled={isWorking}
+              className="shrink-0"
             >
               戻って修正
             </Button>
             <Button
               variant="primary"
-              full
               onClick={handleCreate}
               disabled={isWorking || !wallet}
               data-testid="workspace-create-submit"
+              className="flex-1"
             >
               {isWorking ? "作成中..." : "作成する"}
             </Button>
@@ -397,16 +636,20 @@ const WorkspaceNew: FC = () => {
       {step === "done" && (
         <div className="flex flex-col gap-5 px-6 pt-10 text-center">
           <div className="flex flex-col items-center">
-            <div
-              aria-hidden
-              className="flex size-24 items-center justify-center rounded-full text-[44px] font-bold text-white"
-              style={{
-                backgroundColor: color,
-                boxShadow: `0 0 0 12px ${color}22`,
-              }}
-            >
-              {icon}
-            </div>
+            <Avatar size="xl" className="size-24">
+              {workspaceImagePreview && (
+                <AvatarImage
+                  src={workspaceImagePreview}
+                  alt="ワークスペースアイコン"
+                />
+              )}
+              <AvatarFallback
+                className="text-white"
+                style={{ backgroundColor: workspaceColor }}
+              >
+                <Icon name="home" size={40} className="text-white" />
+              </AvatarFallback>
+            </Avatar>
           </div>
           <div className="space-y-2">
             <div className="text-xl font-bold text-text-primary">

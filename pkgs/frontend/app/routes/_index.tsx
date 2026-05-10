@@ -1,46 +1,56 @@
 import { Link } from "react-router";
-import { Box, Container, Heading, Image } from "~/components/chakra-shim";
-import CommonButton from "~/components/common/CommonButton";
+import { AuthHero } from "~/components/composite/auth-hero";
+import { AuthLayout } from "~/components/layout/AuthLayout";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import { Icon } from "~/components/ui/icon";
 
 export default function Index() {
   return (
-    <Box py={10} overflowX="hidden" mx="-4">
-      <Container>
-        <Image w="200px" src="/images/toban-logo-text.svg" alt="logo" />
-        <Heading as="h1" fontSize="3xl" lineHeight={1.5} mt={10}>
-          いちばん簡単な
-          <br />
-          貢献の記録と報酬の分配
-        </Heading>
-        <Heading as="h2" fontSize="xl" mt={5} color="gray.500">
-          Simplest way of contribution recording and rewards distribution.
-        </Heading>
-      </Container>
-
-      <Box mt={5} position={"relative"}>
-        <Image
-          position="absolute"
-          mt={20}
-          ml={-20}
-          w="150%"
-          maxW="fit-content"
-          src="/images/lp/people-deco.svg"
+    <AuthLayout
+      hero={
+        <AuthHero
+          eyebrow="あたたかい当番帳"
+          title={
+            <>
+              みんなの貢献を、
+              <br />
+              未来の力に。
+            </>
+          }
+          description="コミュニティで起きた小さな貢献を感謝として記録し、納得できる分配につなげる、シンプルな貢献記録アプリです。"
         />
-        <Image
-          ml={-20}
-          w="150%"
-          maxW="fit-content"
-          src="/images/lp/wave-deco.svg"
-        />
-      </Box>
-
-      <Container mt={3}>
-        <Link to="/login">
-          <CommonButton size="xl" fontWeight="bold" data-testid="start-button">
-            はじめる
-          </CommonButton>
-        </Link>
-      </Container>
-    </Box>
+      }
+      footer={
+        <span>
+          © {new Date().getFullYear()} Toban — Simplest way of contribution
+          recording and rewards distribution.
+        </span>
+      }
+    >
+      <Card className="w-full max-w-sm">
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2 text-center">
+            <p className="text-sm font-bold text-text-primary">
+              ようこそ Toban へ
+            </p>
+            <p className="text-xs leading-relaxed text-text-secondary">
+              ウォレットでサインインして、コミュニティの貢献を見える化しましょう。
+            </p>
+          </div>
+          <Link to="/login" className="w-full">
+            <Button
+              size="lg"
+              full
+              data-testid="start-button"
+              className="font-bold"
+            >
+              はじめる
+              <Icon name="arrow-right" size={18} />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }

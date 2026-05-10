@@ -105,4 +105,29 @@ export default defineConfig({
     tsconfigPaths(),
     ...pwa(),
   ],
+  server: {
+    allowedHosts: ["ubuntu", ".ts.net"],
+    warmup: {
+      clientFiles: [
+        "./app/entry.client.tsx",
+        "./app/root.tsx",
+        "./app/routes/**/*.tsx",
+      ],
+    },
+  },
+  optimizeDeps: {
+    include: [
+      "@privy-io/react-auth",
+      "react-toastify",
+      "react-i18next",
+      "@apollo/client",
+      "@tanstack/react-query",
+      "axios",
+      "viem",
+      "viem/account-abstraction",
+      "permissionless",
+      "permissionless/accounts",
+      "permissionless/clients/pimlico",
+    ],
+  },
 });

@@ -1,101 +1,18 @@
 import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import {
-  type SmartAccountClient,
-  createSmartAccountClient,
-} from "permissionless";
-import { toThirdwebSmartAccount } from "permissionless/accounts";
-import { createPimlicoClient } from "permissionless/clients/pimlico";
+  type SmartWalletClientType,
+  useSmartWallets,
+} from "@privy-io/react-auth/smart-wallets";
 import { useEffect, useMemo, useState } from "react";
 import {
-  http,
   type Account,
   type Address,
   type CustomTransport,
-  type Transport,
   type WalletClient,
   createWalletClient,
   custom,
 } from "viem";
-import {
-  type SmartAccount,
-  type SmartAccountImplementation,
-  entryPoint07Address,
-} from "viem/account-abstraction";
-import { currentChain, publicClient } from "./useViem";
-
-// Pimlico API endpoint URL
-export const pimlicoUrl = `https://api.pimlico.io/v2/${
-  currentChain.id
-}/rpc?apikey=${import.meta.env.VITE_PIMLICO_API_KEY}`;
-
-/**
- * Pimlico client
- */
-export const pimlicoClient = createPimlicoClient({
-  transport: http(pimlicoUrl),
-  entryPoint: {
-    address: entryPoint07Address,
-    version: "0.7",
-  },
-});
-
-/**
- * Pimlico 向けの React Hooks
- */
-export const useSmartAccountClient = (wallets: ConnectedWallet[]) => {
-  const [client, setClient] =
-    useState<
-      SmartAccountClient<
-        Transport,
-        typeof currentChain,
-        SmartAccount<SmartAccountImplementation>
-      >
-    >();
-
-  useEffect(() => {
-    /**
-     * スマートウォレットクライアントインスタンスを作成する。
-     * @returns
-     */
-    const create = async () => {
-      setClient(undefined);
-      const embeddedWallet = wallets.find(
-        (wallet) => wallet.connectorType === "embedded",
-      );
-
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      const owner = (await embeddedWallet?.getEthereumProvider()) as any;
-      if (!owner) return;
-
-      // We are using thirdweb smart account
-      const smartAccount = await toThirdwebSmartAccount({
-        owner,
-        client: publicClient,
-        entryPoint: {
-          address: entryPoint07Address,
-          version: "0.7",
-        },
-      });
-
-      const smartAccountClient = createSmartAccountClient({
-        account: smartAccount,
-        chain: currentChain,
-        bundlerTransport: http(pimlicoUrl),
-        paymaster: pimlicoClient,
-        userOperation: {
-          estimateFeesPerGas: async () => {
-            return (await pimlicoClient.getUserOperationGasPrice()).standard;
-          },
-        },
-      });
-
-      setClient(smartAccountClient);
-    };
-    create();
-  }, [wallets]);
-
-  return client;
-};
+import { currentChain } from "./useViem";
 
 export const useAccountClient = (wallets: ConnectedWallet[]) => {
   const [client, setClient] =
@@ -131,7 +48,7 @@ export const useActiveWallet = () => {
   const { wallets } = useWallets();
   const { client: walletClient, wallet: connectedWallet } =
     useAccountClient(wallets);
-  const smartWalletClient = useSmartAccountClient(wallets);
+  const { client: smartWalletClient } = useSmartWallets();
 
   const isConnectingEmbeddedWallet = useMemo(() => {
     return wallets.some((wallet) => wallet.connectorType === "embedded");
@@ -150,10 +67,6 @@ export const useActiveWallet = () => {
 };
 
 export type WalletType =
-  | SmartAccountClient<
-      Transport,
-      typeof currentChain,
-      SmartAccount<SmartAccountImplementation>
-    >
+  | SmartWalletClientType
   | WalletClient<CustomTransport, typeof currentChain, Account>
   | undefined;

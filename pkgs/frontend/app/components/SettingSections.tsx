@@ -1,5 +1,5 @@
-import { Box, Text } from "@chakra-ui/react";
 import type { FC } from "react";
+import { Box, Text } from "~/components/chakra-shim";
 
 export const SettingsSection: FC<{
   children: React.ReactNode;

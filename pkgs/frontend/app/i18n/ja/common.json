@@ -1,0 +1,14 @@
+{
+  "hello": "こんにちは",
+  "appName": "Toban",
+  "language": {
+    "ja": "日本語",
+    "en": "English"
+  },
+  "actions": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "save": "保存",
+    "cancel": "キャンセル"
+  }
+}

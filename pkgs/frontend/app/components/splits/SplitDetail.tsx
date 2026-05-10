@@ -1,4 +1,8 @@
 import type { FormattedContractEarnings } from "@0xsplits/splits-sdk";
+import { currentChain } from "hooks/useViem";
+import { type FC, useMemo } from "react";
+import { Link } from "react-router";
+import type { Address } from "viem";
 import {
   Box,
   HStack,
@@ -7,11 +11,7 @@ import {
   Stack,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
-import { currentChain } from "hooks/useViem";
-import { type FC, useMemo } from "react";
-import type { Address } from "viem";
+} from "~/components/chakra-shim";
 import CommonButton from "../common/CommonButton";
 import { CommonDialog } from "../common/CommonDialog";
 

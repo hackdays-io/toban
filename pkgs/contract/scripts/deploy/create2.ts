@@ -5,6 +5,7 @@ import { deployBigBang } from "../../helpers/deploy/BigBang";
 import {
   deployHatsFractionTokenModule,
   deployHatsHatCreatorModule,
+  deployHatsQuestModule,
   deployHatsTimeFrameModule,
 } from "../../helpers/deploy/Hats";
 import {
@@ -35,6 +36,9 @@ const deploy = async () => {
   const { HatsFractionTokenModule } =
     await deployHatsFractionTokenModule("0.0.0");
   const hatsFractionTokenModuleAddress = HatsFractionTokenModule.address;
+
+  const { HatsQuestModule } = await deployHatsQuestModule("0.0.0");
+  const hatsQuestModuleAddress = HatsQuestModule.address;
 
   console.log("Deploying ThanksToken...");
   const { ThanksToken } = await deployThanksToken();
@@ -77,6 +81,7 @@ const deploy = async () => {
     hatsTimeFrameModule_impl: hatsTimeFrameModuleAddress,
     hatsHatCreatorModule_impl: hatsHatCreatorModuleAddress,
     hatsFractionTokenModule_impl: hatsFractionTokenModuleAddress,
+    hatsQuestModule_impl: hatsQuestModuleAddress,
     splitsCreatorFactoryAddress: splitsCreatorFactoryAddress,
     splitsFactoryV2Address: process.env.PULL_SPLITS_FACTORY_ADDRESS as Address,
     thanksTokenFactoryAddress: thanksTokenFactoryAddress,
@@ -111,6 +116,10 @@ const deploy = async () => {
   console.log(
     "HatsFractionTokenModule:\n",
     `pnpm contract hardhat verify ${hatsFractionTokenModuleAddress} 0.0.0 --network ${network.name}\n`,
+  );
+  console.log(
+    "HatsQuestModule:\n",
+    `pnpm contract hardhat verify ${hatsQuestModuleAddress} 0.0.0 --network ${network.name}\n`,
   );
   console.log(
     "ThanksToken:\n",

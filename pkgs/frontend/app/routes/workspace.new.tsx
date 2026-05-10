@@ -1,6 +1,4 @@
-import { Box, Stack, Text } from "@chakra-ui/react";
 import { hatIdDecimalToHex, hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
-import { useNavigate } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBigBang } from "hooks/useBigBang";
 import {
@@ -9,23 +7,23 @@ import {
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useState } from "react";
+import { useNavigate } from "react-router";
 import type {
   HatsDetailsAttributes,
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { ContentContainer } from "~/components/ContentContainer";
 import { PageHeader } from "~/components/PageHeader";
 import { RoleAttributesList } from "~/components/RoleAttributesList";
+import { Box, Stack, Text } from "~/components/chakra-shim";
 import { InputDescription } from "~/components/input/InputDescription";
 import { InputImage } from "~/components/input/InputImage";
 import { InputName } from "~/components/input/InputName";
 import { InputNumber } from "~/components/input/InputNumber";
 import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
 
 const MotionBox = motion(Box);
 
@@ -46,7 +44,6 @@ const WorkspaceNew: FC = () => {
   const [responsibilities, setResponsibilities] =
     useState<HatsDetailsResponsabilities>([]);
   const [authorities, setAuthorities] = useState<HatsDetailsAuthorities>([]);
-  const [selectedImageCid, setSelectedImageCid] = useState("");
 
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
@@ -134,10 +131,7 @@ const WorkspaceNew: FC = () => {
         hatterHatDetails: workspaceData.details,
         hatterHatImageURI: workspaceData.imageUri || "",
         memberHatDetails: roleMetadata.ipfsUri,
-        memberHatImageURI:
-          roleImage?.ipfsUri ||
-          (selectedImageCid && `ipfs://${selectedImageCid}`) ||
-          "",
+        memberHatImageURI: roleImage?.ipfsUri || "",
       });
       if (!parsedLog) {
         throw new Error("Failed to execute bigbang");
@@ -217,19 +211,9 @@ const WorkspaceNew: FC = () => {
               <ContentContainer>
                 <Stack my="30px" gap={3}>
                   <InputImage
-                    imageFile={
-                      roleImageFile || ipfs2https(`ipfs://${selectedImageCid}`)
-                    }
+                    imageFile={roleImageFile}
                     setImageFile={setRoleImageFile}
                     data-testid="role-file-input"
-                  />
-
-                  <RoleImageLibrarySelector
-                    setImageCid={(cid) => {
-                      setRoleImageFile(null);
-                      setSelectedImageCid(cid);
-                    }}
-                    selectedCid={selectedImageCid}
                   />
                 </Stack>
 

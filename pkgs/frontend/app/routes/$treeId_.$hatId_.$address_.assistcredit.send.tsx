@@ -1,6 +1,4 @@
-import { Box, Grid } from "@chakra-ui/react";
 import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
-import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
@@ -13,6 +11,7 @@ import {
 import { useGetHat, useTreeInfo } from "hooks/useHats";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
@@ -20,6 +19,7 @@ import { PageHeader } from "~/components/PageHeader";
 import AmountSelector from "~/components/assistcredit/AmountSelector";
 import SendConfirmation from "~/components/assistcredit/SendConfirmation";
 import UserList from "~/components/assistcredit/UserList";
+import { Box, Grid } from "~/components/chakra-shim";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import RoleWithBalance from "~/components/roles/RoleWithBalance";
 

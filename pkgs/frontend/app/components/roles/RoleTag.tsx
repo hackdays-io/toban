@@ -1,6 +1,6 @@
-import { HStack, Text, VStack } from "@chakra-ui/react";
 import type { FC } from "react";
 import type { HatsDetailSchama } from "types/hats";
+import { HStack, Text, VStack } from "~/components/chakra-shim";
 import { RoleIcon } from "../icon/RoleIcon";
 
 interface BasicRoleProps {

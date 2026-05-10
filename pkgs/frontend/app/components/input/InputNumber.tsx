@@ -1,4 +1,4 @@
-import { type BoxProps, NumberInput } from "@chakra-ui/react";
+import { type BoxProps, NumberInput } from "~/components/chakra-shim";
 
 export const InputNumber = ({
   number,

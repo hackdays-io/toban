@@ -1,7 +1,5 @@
 import type { ApolloQueryResult } from "@apollo/client/core";
-import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
-import { useParams } from "@remix-run/react";
 import axios from "axios";
 import type { Exact, GetWorkspaceQuery, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
@@ -24,6 +22,7 @@ import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaCircleCheck } from "react-icons/fa6";
+import { useParams } from "react-router";
 import { toast } from "react-toastify";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
@@ -34,6 +33,7 @@ import {
   SettingsSection,
   SettingsSubSection,
 } from "~/components/SettingSections";
+import { Box, Flex, HStack, Input, Text } from "~/components/chakra-shim";
 import { CommonButton } from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { CommonTextArea } from "~/components/common/CommonTextarea";

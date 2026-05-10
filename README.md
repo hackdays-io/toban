@@ -321,8 +321,9 @@ claude --worktree issue/xxx
 1. `.claude/worktrees/issue/xxx/` に worktree を作成 (ブランチ名: `worktree-issue/xxx`)
 2. `pkgs/{cli,contract,frontend}/.env` を main repo からコピー
 3. `pnpm install --frozen-lockfile`
-4. `pnpm frontend codegen` (graphql-codegen)
-5. `pnpm contract compile` (hardhat compile)
+4. `pnpm contract compile` (hardhat compile)
+
+frontend で生成された GraphQL 型 (`pkgs/frontend/gql/`) はリポジトリにコミット済みなので、codegen は worktree 作成時に走らせません。スキーマ更新が必要なときだけ手動で `pnpm frontend codegen` を実行してください。
 
 bootstrap ログは `.claude/worktrees/issue/xxx/.worktree-setup.log` に出力されます。
 
@@ -369,5 +370,5 @@ git push origin --delete worktree-issue/xxx  # リモート追跡ブランチも
 ### Tips
 
 - **並行作業**: `claude --worktree issue/aaa` と `claude --worktree issue/bbb` を別ペインで同時起動。各 worktree は独立した `node_modules` と `.env` を持つので衝突しません。
-- **bootstrap 失敗は非ブロッキング**: codegen が goldsky API ネットワーク問題で落ちても worktree 自体は作成完了。`.worktree-setup.log` を確認してください。
+- **bootstrap 失敗は非ブロッキング**: `pnpm install` や `pnpm contract compile` が落ちても worktree 自体は作成完了。`.worktree-setup.log` を確認してください。
 - **gitignore 済み**: `.claude/worktrees/` と `.claude/settings.local.json` はリポジトリ管理外。`.claude/settings.json` (チーム共有のフック設定) と `scripts/claude-worktree-*.sh` のみコミット対象です。

@@ -11,10 +11,13 @@ type Workspace @entity {
   hatsTimeFrameModule: String!
   hatsHatCreatorModule: String!
   hatsFractionTokenModule: HatsFractionTokenModule!
+  hatsQuestModule: String!
   thanksToken: ThanksToken!
   splitCreator: String!
   blockTimestamp: BigInt!
   blockNumber: BigInt!
+  quests: [Quest!]! @derivedFrom(field: "workspace")
+  escrowedRoleShares: [EscrowedRoleShare!]! @derivedFrom(field: "workspace")
 }
 
 type HatsFractionTokenModule @entity {
@@ -110,5 +113,83 @@ type BalanceOfThanksToken @entity {
   owner: String!
   balance: BigInt!
   workspaceId: ID!
+  updatedAt: BigInt!
+}
+
+type HatsQuestModule @entity {
+  id: ID!
+  workspaceId: ID!
+  quests: [Quest!]! @derivedFrom(field: "questModuleEntity")
+}
+
+enum QuestStatus {
+  Open
+  PendingReview
+  Completed
+  Cancelled
+}
+
+enum SubmissionOutcome {
+  Pending
+  Withdrawn
+  Rejected
+  Approved
+}
+
+type Quest @entity {
+  id: ID!
+  workspace: Workspace!
+  questModuleEntity: HatsQuestModule!
+  questModule: String!
+  questId: BigInt!
+  hatId: BigInt!
+  wearer: String!
+  creator: String!
+  submitter: String
+  amount: BigInt!
+  status: QuestStatus!
+  metadataHash: Bytes!
+  approvalCount: Int!
+  attemptCount: Int!
+  attempts: [SubmissionAttempt!]! @derivedFrom(field: "quest")
+  createdAt: BigInt!
+  submittedAt: BigInt
+  completedAt: BigInt
+  cancelledAt: BigInt
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  txHash: Bytes!
+}
+
+type SubmissionAttempt @entity {
+  id: ID!
+  quest: Quest!
+  attemptIndex: Int!
+  submitter: String!
+  submittedAt: BigInt!
+  outcome: SubmissionOutcome!
+  withdrawnAt: BigInt
+  rejectedAt: BigInt
+  approvedAt: BigInt
+  approvals: [QuestApproval!]! @derivedFrom(field: "attempt")
+}
+
+type QuestApproval @entity {
+  id: ID!
+  quest: Quest!
+  attempt: SubmissionAttempt!
+  approver: String!
+  approvedAt: BigInt!
+  blockNumber: BigInt!
+  txHash: Bytes!
+}
+
+type EscrowedRoleShare @entity {
+  id: ID!
+  workspace: Workspace!
+  creator: String!
+  hatId: BigInt!
+  wearer: String!
+  amount: BigInt!
   updatedAt: BigInt!
 }

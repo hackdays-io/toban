@@ -1,3 +1,14 @@
+import type { NameData } from "namestone-sdk";
+import { type FC, useRef, useState } from "react";
+import { FaAngleDoubleUp } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa6";
+import { useParams } from "react-router";
+import { FreeMode, Mousewheel, Virtual } from "swiper/modules";
+// Swiper imports
+import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperInstance } from "swiper/types";
+import { ipfs2https } from "utils/ipfs";
+import { abbreviateAddress } from "utils/wallet";
 import {
   Box,
   Container,
@@ -5,18 +16,7 @@ import {
   Spinner,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { useParams } from "@remix-run/react";
-import type { NameData } from "namestone-sdk";
-import { type FC, useRef, useState } from "react";
-import { FaAngleDoubleUp } from "react-icons/fa";
-import { FaArrowRight } from "react-icons/fa6";
-import { FreeMode, Mousewheel, Virtual } from "swiper/modules";
-// Swiper imports
-import { Swiper, SwiperSlide } from "swiper/react";
-import type { Swiper as SwiperInstance } from "swiper/types";
-import { ipfs2https } from "utils/ipfs";
-import { abbreviateAddress } from "utils/wallet";
+} from "~/components/chakra-shim";
 import { Field } from "~/components/ui/field";
 import { UserIcon } from "../icon/UserIcon";
 import { treatEmojis } from "./emojiConstants";

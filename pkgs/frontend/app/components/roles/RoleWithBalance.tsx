@@ -1,8 +1,8 @@
-import { Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
-import { useNavigate } from "@remix-run/react";
 import { useNamesByAddresses } from "hooks/useENS";
 import { type FC, useMemo } from "react";
+import { useNavigate } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
+import { Box, Flex, HStack, Text, VStack } from "~/components/chakra-shim";
 import CommonButton from "../common/CommonButton";
 import { RoleIcon } from "../icon/RoleIcon";
 import { UserIcon } from "../icon/UserIcon";

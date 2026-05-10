@@ -1,14 +1,4 @@
 import {
-  Box,
-  Button,
-  Flex,
-  Grid,
-  HStack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
-import {
   MintThanksToken_OrderBy,
   OrderDirection,
   TransferThanksToken_OrderBy,
@@ -19,8 +9,18 @@ import {
   useGetTransferThanksTokens,
 } from "hooks/useThanksToken";
 import { type FC, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+import {
+  Box,
+  Button,
+  Flex,
+  Grid,
+  HStack,
+  Text,
+  VStack,
+} from "~/components/chakra-shim";
 import { UserIcon } from "../icon/UserIcon";
 
 interface Props {

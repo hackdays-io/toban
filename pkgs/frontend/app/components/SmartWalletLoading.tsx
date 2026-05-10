@@ -1,5 +1,5 @@
-import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
 import type { FC } from "react";
+import { Box, Flex, Spinner, Text } from "~/components/chakra-shim";
 import { CommonIcon } from "./common/CommonIcon";
 
 export const SmartWalletLoading: FC = () => {

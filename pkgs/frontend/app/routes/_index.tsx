@@ -1,5 +1,5 @@
-import { Box, Container, Heading, Image } from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
+import { Box, Container, Heading, Image } from "~/components/chakra-shim";
 import CommonButton from "~/components/common/CommonButton";
 
 export default function Index() {

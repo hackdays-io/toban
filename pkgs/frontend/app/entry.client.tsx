@@ -1,19 +1,19 @@
-import { RemixBrowser } from "@remix-run/react";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { ChakraProvider } from "./components/chakra-provider";
-import { ClientCacheProvider } from "./emotion/emotion-client";
+import { I18nextProvider } from "react-i18next";
+import { HydratedRouter } from "react-router/dom";
+import { i18n, initI18n } from "./i18n";
+
+initI18n();
 
 const hydrate = () => {
   startTransition(() => {
     hydrateRoot(
       document,
       <StrictMode>
-        <ClientCacheProvider>
-          <ChakraProvider>
-            <RemixBrowser />
-          </ChakraProvider>
-        </ClientCacheProvider>
+        <I18nextProvider i18n={i18n}>
+          <HydratedRouter />
+        </I18nextProvider>
       </StrictMode>,
     );
   });

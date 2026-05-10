@@ -1,8 +1,4 @@
-import {
-  DialogContent,
-  DialogRoot,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 
 interface CommonDialogProps {
   dialogTriggerReactNode?: React.ReactNode;
@@ -14,9 +10,9 @@ export const CommonDialog = ({
   children,
 }: CommonDialogProps) => {
   return (
-    <DialogRoot>
+    <Dialog>
       <DialogTrigger asChild>{dialogTriggerReactNode}</DialogTrigger>
-      <DialogContent mx={3}>{children}</DialogContent>
-    </DialogRoot>
+      <DialogContent className="mx-3">{children}</DialogContent>
+    </Dialog>
   );
 };

@@ -1,16 +1,15 @@
-import { Box, Button, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import type { HatsDetailsAttributes } from "types/hats";
+import { Box, Button, VStack } from "~/components/chakra-shim";
 import { InputDescription } from "../input/InputDescription";
 import { InputLink } from "../input/InputLink";
 import { InputName } from "../input/InputName";
 import {
-  DialogActionTrigger,
-  DialogBody,
+  Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogRoot,
   DialogTitle,
 } from "../ui/dialog";
 
@@ -74,12 +73,12 @@ export const BaseRoleAttributeDialog = ({
 
   return (
     <>
-      <DialogRoot
+      <Dialog
         key={isOpen ? "open" : "closed"}
         open={isOpen}
-        onOpenChange={(details) => {
-          setIsOpen(details.open);
-          if (!details.open) {
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
             resetFormValues();
           } else {
             if (mode === "edit" && attribute) {
@@ -89,13 +88,13 @@ export const BaseRoleAttributeDialog = ({
         }}
       >
         {TriggerButton}
-        <DialogContent backgroundColor="#fffdf8" borderRadius="xl">
+        <DialogContent className="bg-[#fffdf8] rounded-xl">
           <DialogHeader>
-            <DialogTitle fontWeight="medium">
+            <DialogTitle className="font-medium">
               {DIALOG_TITLE_MAP[type][mode]}
             </DialogTitle>
           </DialogHeader>
-          <DialogBody>
+          <div>
             <Box>
               <InputName name={name} setName={setName} mt={0} />
               <InputDescription
@@ -105,10 +104,10 @@ export const BaseRoleAttributeDialog = ({
               />
               <InputLink link={link} setLink={setLink} mt={6} />
             </Box>
-          </DialogBody>
+          </div>
           <DialogFooter>
             <VStack gap={4} align="stretch" w="full">
-              <DialogActionTrigger asChild>
+              <DialogClose asChild>
                 <Button
                   size="lg"
                   h="40px"
@@ -126,9 +125,9 @@ export const BaseRoleAttributeDialog = ({
                   {BUTTON_TEXT_MAP[mode as keyof typeof BUTTON_TEXT_MAP] ??
                     mode}
                 </Button>
-              </DialogActionTrigger>
+              </DialogClose>
               {mode === "edit" && onClickDelete && (
-                <DialogActionTrigger asChild>
+                <DialogClose asChild>
                   <Button
                     size="lg"
                     h="40px"
@@ -145,12 +144,12 @@ export const BaseRoleAttributeDialog = ({
                   >
                     Delete
                   </Button>
-                </DialogActionTrigger>
+                </DialogClose>
               )}
             </VStack>
           </DialogFooter>
         </DialogContent>
-      </DialogRoot>
+      </Dialog>
     </>
   );
 };

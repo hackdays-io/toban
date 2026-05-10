@@ -1,18 +1,4 @@
-import {
-  Box,
-  Flex,
-  Float,
-  Grid,
-  HStack,
-  List,
-  Separator,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { Slider, useSlider } from "@chakra-ui/react/slider";
 import type { Hat, Wearer } from "@hatsprotocol/sdk-v1-subgraph";
-import { useNavigate, useParams } from "@remix-run/react";
 import {
   useAddressesByNames,
   useNamesByAddresses,
@@ -34,11 +20,25 @@ import {
   useFieldArray,
   useForm,
 } from "react-hook-form";
+import { useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";
+import {
+  Box,
+  Flex,
+  Float,
+  Grid,
+  HStack,
+  List,
+  Separator,
+  Stack,
+  Text,
+  VStack,
+} from "~/components/chakra-shim";
+import { Slider, useSlider } from "~/components/chakra-shim";
 import { CommonDialog } from "~/components/common/CommonDialog";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
@@ -93,9 +93,8 @@ const RoleItem: FC<RoleItemProps> = ({
     <List.Item mb={5}>
       <HStack gap={2}>
         <Checkbox
-          colorPalette="blue"
           checked={field.active}
-          onChange={() => {
+          onCheckedChange={() => {
             update(fieldIndex, {
               ...field,
               active: !field.active,
@@ -134,11 +133,10 @@ const RoleItem: FC<RoleItemProps> = ({
                   .map((name) => (
                     <HStack columnGap={3} key={name[0]?.address}>
                       <Checkbox
-                        colorPalette="blue"
                         checked={field.wearers.includes(
                           name[0]?.address.toLowerCase() as Address,
                         )}
-                        onChange={() =>
+                        onCheckedChange={() =>
                           handleOnCheck(
                             name[0]?.address.toLowerCase() as Address,
                           )

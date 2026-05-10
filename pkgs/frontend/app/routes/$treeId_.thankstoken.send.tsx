@@ -1,5 +1,3 @@
-import { Box, Grid, Text } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
 import {
   useActiveWalletIdentity,
   useAddressesByNames,
@@ -9,6 +7,7 @@ import { useTreeInfo } from "hooks/useHats";
 import { useThanksToken } from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 import { type Address, formatEther, parseEther, stringToHex } from "viem";
 import { BasicButton } from "~/components/BasicButton";
@@ -16,6 +15,7 @@ import { PageHeader } from "~/components/PageHeader";
 import AmountSelector from "~/components/assistcredit/AmountSelector";
 import SendConfirmation from "~/components/assistcredit/SendConfirmation";
 import UserList from "~/components/assistcredit/UserList";
+import { Box, Grid, Text } from "~/components/chakra-shim";
 
 const ThanksTokenSend: FC = () => {
   const { treeId } = useParams();

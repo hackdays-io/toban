@@ -1,3 +1,10 @@
+import dayjs from "dayjs";
+import { type FC, useMemo } from "react";
+import { FaChevronLeft, FaLink } from "react-icons/fa6";
+import { Link } from "react-router";
+import type { HatsDetailSchama } from "types/hats";
+import { ipfs2https } from "utils/ipfs";
+import { abbreviateAddress } from "utils/wallet";
 import {
   Box,
   HStack,
@@ -6,14 +13,7 @@ import {
   List,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
-import dayjs from "dayjs";
-import { type FC, useMemo } from "react";
-import { FaChevronLeft, FaLink } from "react-icons/fa6";
-import type { HatsDetailSchama } from "types/hats";
-import { ipfs2https } from "utils/ipfs";
-import { abbreviateAddress } from "utils/wallet";
+} from "~/components/chakra-shim";
 import { PageHeader } from "../PageHeader";
 import { RoleIcon } from "../icon/RoleIcon";
 import { UserIcon } from "../icon/UserIcon";

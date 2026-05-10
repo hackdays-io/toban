@@ -26,7 +26,10 @@
       "**/subgraph/generated",
       "**/subgraph/build",
       "**/frontend/gql",
-      "**/frontend/**/downloads"
+      "**/frontend/.react-router",
+      "**/frontend/**/downloads",
+      "**/frontend/**/.react-router",
+      ".claude/worktrees"
     ]
   },
   "formatter": {

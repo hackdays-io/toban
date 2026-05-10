@@ -1,5 +1,3 @@
-import { Box, Grid, HStack, List, Text, VStack } from "@chakra-ui/react";
-import { useNavigate, useParams } from "@remix-run/react";
 import { useAddressesByNames } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
@@ -7,11 +5,20 @@ import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaCircleCheck } from "react-icons/fa6";
+import { useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { PageHeader } from "~/components/PageHeader";
+import {
+  Box,
+  Grid,
+  HStack,
+  List,
+  Text,
+  VStack,
+} from "~/components/chakra-shim";
 import CommonButton from "~/components/common/CommonButton";
 import { CommonInput } from "~/components/common/CommonInput";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";

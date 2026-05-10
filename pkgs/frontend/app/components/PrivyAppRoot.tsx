@@ -1,4 +1,5 @@
 import { PrivyProvider } from "@privy-io/react-auth";
+import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
@@ -32,16 +33,19 @@ export default function PrivyAppRoot() {
             connectionOptions: "smartWalletOnly",
           },
         },
+        defaultChain: currentChain,
         supportedChains: [currentChain],
       }}
     >
-      <QueryClientProvider client={queryClient}>
-        <SwitchNetwork />
-        <PWAUpdater />
-        <AppContent />
-        <ToastContainer />
-        <Toaster />
-      </QueryClientProvider>
+      <SmartWalletsProvider>
+        <QueryClientProvider client={queryClient}>
+          <SwitchNetwork />
+          <PWAUpdater />
+          <AppContent />
+          <ToastContainer />
+          <Toaster />
+        </QueryClientProvider>
+      </SmartWalletsProvider>
     </PrivyProvider>
   );
 }

@@ -136,7 +136,6 @@ const Transaction: FC = () => {
         }
 
         // Native Tokenを送金する
-        //@ts-expect-error: Type 'string' is not assignable to type 'number | bigint'
         const txHash = await wallet.sendTransaction({
           to: recipient as `0x${string}`,
           value: parseEther(amount),

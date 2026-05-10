@@ -2,15 +2,21 @@ import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import type { TextRecords } from "namestone-sdk";
-import { type FC, useCallback, useMemo, useState } from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { FieldLabel } from "~/components/composite/field-label";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  SEED_PALETTE,
+} from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { buildFallbackSvgFile, pickRandomColor } from "~/lib/avatar-fallback";
 
 const SignupForm: FC = () => {
   const [userName, setUserName] = useState("");
@@ -27,6 +33,13 @@ const SignupForm: FC = () => {
   const { setName, isLoading: isSetNameLoading } = useSetName();
 
   const [description, setDescription] = useState("");
+
+  // Random fallback colour — chosen on mount (post-hydration to avoid an
+  // SSR/CSR mismatch from Math.random in the initialiser).
+  const [avatarColor, setAvatarColor] = useState<string>(SEED_PALETTE[0]);
+  useEffect(() => {
+    setAvatarColor(pickRandomColor());
+  }, []);
 
   const names = useMemo(() => {
     return userName ? [userName] : [];
@@ -58,10 +71,10 @@ const SignupForm: FC = () => {
         text_records: {},
       };
 
-      if (imageFile) {
-        const res = await uploadImageFileToIpfs();
-        if (res) params.text_records.avatar = res.ipfsUri;
-      }
+      const fileToUpload =
+        imageFile ?? buildFallbackSvgFile(avatarColor, "user", "avatar.svg");
+      const res = await uploadImageFileToIpfs(fileToUpload);
+      if (res) params.text_records.avatar = res.ipfsUri;
 
       if (description) {
         params.text_records.description = description;
@@ -77,6 +90,7 @@ const SignupForm: FC = () => {
   }, [
     availableName,
     imageFile,
+    avatarColor,
     description,
     setName,
     uploadImageFileToIpfs,
@@ -106,17 +120,20 @@ const SignupForm: FC = () => {
             />
             <Avatar
               size="xl"
-              className="size-28 ring-2 ring-border transition group-hover:ring-primary"
+              className="size-36 ring-2 ring-border transition group-hover:ring-primary"
             >
               {previewUrl && (
                 <AvatarImage src={previewUrl} alt="プロフィール画像" />
               )}
-              <AvatarFallback seed={userName || "Toban"}>
-                <Icon name="user" size={28} className="text-text-secondary" />
+              <AvatarFallback
+                className="text-white"
+                style={{ backgroundColor: avatarColor }}
+              >
+                <Icon name="user" size={44} className="text-white" />
               </AvatarFallback>
             </Avatar>
-            <span className="absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
-              <Icon name="edit" size={16} />
+            <span className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
+              <Icon name="edit" size={14} />
             </span>
           </label>
           <span className="text-xs text-text-secondary">

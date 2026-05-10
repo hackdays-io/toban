@@ -35,6 +35,7 @@ ENV_FILES=(
   "pkgs/cli/.env"
   "pkgs/contract/.env"
   "pkgs/frontend/.env"
+  "pkgs/frontend/.env.base"
 )
 for f in "${ENV_FILES[@]}"; do
   if [ -f "${REPO_PATH}/$f" ]; then

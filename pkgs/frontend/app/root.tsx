@@ -4,15 +4,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { useTranslation } from "react-i18next";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 import { ToastContainer } from "react-toastify";
 import toastStyles from "react-toastify/ReactToastify.css?url";
 import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
-import { Header } from "./components/Header";
 import { PWAUpdater } from "./components/PWAUpdater";
 import { SmartWalletLoading } from "./components/SmartWalletLoading";
 import { SwitchNetwork } from "./components/SwitchNetwork";
+import { AppShellLayout } from "./components/layout/AppShellLayout";
+import { Toaster } from "./components/ui/sonner";
 // Self-host the brand fonts (Issue #426). Inter carries Latin numerals/labels
 // and Noto Sans JP covers Japanese copy — both are referenced by --font-sans.
 import "@fontsource/inter/400.css";
@@ -70,12 +71,12 @@ const AppContent = () => {
   const { isConnectingEmbeddedWallet, isSmartWallet } = useActiveWallet();
   const isPreparingSmartWallet = isConnectingEmbeddedWallet && !isSmartWallet;
 
-  return (
-    <>
-      <Header />
-      {isPreparingSmartWallet ? <SmartWalletLoading /> : <Outlet />}
-    </>
-  );
+  if (isPreparingSmartWallet) return <SmartWalletLoading />;
+  // AppShellLayout decides per-route whether to wrap the `<Outlet />` with the
+  // responsive AppShell (mobile AppHeader+BottomNav / desktop Sidebar+TopBar)
+  // or render shell-less (login / signup / `/` / transaction / workspace).
+  // The legacy chakra-shim Header was retired in #484.
+  return <AppShellLayout />;
 };
 
 export default function App() {
@@ -98,12 +99,13 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <SwitchNetwork />
           <PWAUpdater />
-          {/* Phase 1-2 transitional shell: matches the current 430-px mobile
-              frame. Phase 2-3 (#428) installs the real responsive AppShell. */}
-          <div className="mx-auto min-h-screen w-full max-w-[430px] bg-surface">
-            <AppContent />
-          </div>
+          {/* Phase 2-4 (#484): the legacy 430-px frame is gone — AppShell now
+              handles its own responsive container. Routes that opt out of
+              the shell (login / signup / `/` / transaction / workspace) get
+              their own full-bleed `<Outlet />`. */}
+          <AppContent />
           <ToastContainer />
+          <Toaster />
         </QueryClientProvider>
       </PrivyProvider>
     </ApolloProvider>

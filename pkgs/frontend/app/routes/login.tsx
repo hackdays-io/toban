@@ -3,9 +3,11 @@ import { useNamesByAddresses } from "hooks/useENS";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { BasicButton } from "~/components/BasicButton";
-import { Box, Flex, Grid, Text } from "~/components/chakra-shim";
-import { CommonIcon } from "~/components/common/CommonIcon";
+import { AuthHero } from "~/components/composite/auth-hero";
+import { AuthLayout } from "~/components/layout/AuthLayout";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import { Icon } from "~/components/ui/icon";
 
 const Login: FC = () => {
   const navigate = useNavigate();
@@ -42,30 +44,81 @@ const Login: FC = () => {
     afterLogin();
   }, [wallet, navigate, fetchNames]);
 
+  const isAuthenticated = wallets.length > 0;
+
   return (
-    <Grid gridTemplateRows="1fr auto" h="calc(100vh - 72px)">
-      <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
-        <Box>
-          <Box width="160px">
-            <CommonIcon size="full" imageUrl="/images/toban-logo.svg" />
-          </Box>
-          <Text textAlign="center" color="gray.800" mt={5} w="100%">
-            Toban -当番-
-          </Text>
-        </Box>
-      </Flex>
-      <Box mb={5}>
-        {wallets.length === 0 ? (
-          <BasicButton data-testid="login" onClick={connectOrCreateWallet}>
-            Login
-          </BasicButton>
-        ) : !isSmartWallet ? (
-          <BasicButton onClick={disconnectWallets}>Logout</BasicButton>
-        ) : (
-          <BasicButton onClick={logout}>Logout</BasicButton>
-        )}
-      </Box>
-    </Grid>
+    <AuthLayout
+      hero={
+        <AuthHero
+          eyebrow="あたたかい当番帳"
+          title={
+            <>
+              みんなの貢献を、
+              <br />
+              未来の力に。
+            </>
+          }
+          description="Toban はコミュニティで起きた小さな貢献を、感謝として記録し、納得できる分配につなげるサービスです。"
+          // Mobile centred / desktop start — controlled by Tailwind responsive
+          // alignment of the hero panel itself; we keep `centered` as the
+          // default because AuthHero supplies its own typography sizing.
+        />
+      }
+      footer={
+        <span>
+          続行することで Toban
+          の利用規約とプライバシーポリシーに同意したものとみなされます。
+        </span>
+      }
+    >
+      <Card className="w-full max-w-sm">
+        <CardContent className="flex flex-col gap-3">
+          {!isAuthenticated ? (
+            <>
+              <Button
+                size="lg"
+                full
+                data-testid="login"
+                onClick={connectOrCreateWallet}
+              >
+                <Icon name="wallet" size={18} />
+                ウォレットで続ける
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                full
+                onClick={connectOrCreateWallet}
+              >
+                <Icon name="mail" size={18} />
+                メール / SNS で続ける
+              </Button>
+              <p className="mt-1 text-center text-xs text-text-secondary">
+                Privy が安全なウォレットを自動で作成します
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-center text-sm font-bold text-text-primary">
+                ウォレットに接続しています
+              </p>
+              <p className="text-center text-xs text-text-secondary">
+                自動でワークスペースに移動します。問題が起きた場合はサインアウトしてやり直してください。
+              </p>
+              <Button
+                variant="secondary"
+                size="lg"
+                full
+                onClick={isSmartWallet ? logout : disconnectWallets}
+              >
+                <Icon name="logout" size={18} />
+                サインアウト
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 };
 

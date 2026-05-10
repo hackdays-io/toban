@@ -4,13 +4,17 @@ import { useActiveWallet } from "hooks/useWallet";
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { BasicButton } from "~/components/BasicButton";
-import { Box, Flex, Grid, Input, Text } from "~/components/chakra-shim";
-import { CommonInput } from "~/components/common/CommonInput";
-import { CommonTextArea } from "~/components/common/CommonTextarea";
-import { UserIcon } from "~/components/icon/UserIcon";
+import { AuthHero } from "~/components/composite/auth-hero";
+import { FieldLabel } from "~/components/composite/field-label";
+import { AuthLayout } from "~/components/layout/AuthLayout";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import { Icon } from "~/components/ui/icon";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 
-const Login: FC = () => {
+const Signup: FC = () => {
   const [userName, setUserName] = useState("");
 
   const {
@@ -36,6 +40,11 @@ const Login: FC = () => {
 
     return addresses?.[0]?.length === 0;
   }, [userName, addresses]);
+
+  const previewUrl = useMemo(
+    () => (imageFile ? URL.createObjectURL(imageFile) : undefined),
+    [imageFile],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!wallet || !availableName) return;
@@ -78,83 +87,116 @@ const Login: FC = () => {
   ]);
 
   return (
-    <Grid
-      data-testid="signup-form"
-      gridTemplateRows="1fr auto"
-      h="calc(100vh - 72px)"
+    <AuthLayout
+      hero={
+        <AuthHero
+          eyebrow="プロフィールを作成"
+          title={
+            <>
+              はじめまして、
+              <br />
+              あなたのことを教えてください。
+            </>
+          }
+          description="表示名とアイコンはワークスペースの仲間に見える名札になります。あとから変更できます。"
+        />
+      }
     >
-      <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
-        <Box w="100%">
-          <Flex
-            flexDirection="column"
-            cursor="pointer"
-            justifyContent="center"
-            alignItems="center"
-            mb={8}
-            as="label"
-          >
+      <Card className="w-full max-w-md" data-testid="signup-form">
+        <CardContent className="flex flex-col gap-6">
+          {/* Avatar picker */}
+          <div className="flex flex-col items-center gap-2">
+            <label className="group relative cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                data-testid="file-input"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file?.type.startsWith("image/")) {
+                    setImageFile(file);
+                  } else {
+                    toast.error("画像ファイルを選択してください");
+                  }
+                }}
+              />
+              <Avatar
+                size="xl"
+                className="size-28 ring-2 ring-border transition group-hover:ring-primary"
+              >
+                {previewUrl && (
+                  <AvatarImage src={previewUrl} alt="プロフィール画像" />
+                )}
+                <AvatarFallback seed={userName || "Toban"}>
+                  <Icon name="user" size={28} className="text-text-secondary" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
+                <Icon name="edit" size={16} />
+              </span>
+            </label>
+            <span className="text-xs text-text-secondary">
+              アイコンをタップして画像を選択
+            </span>
+          </div>
+
+          {/* Username */}
+          <div>
+            <FieldLabel htmlFor="signup-username">ユーザー名</FieldLabel>
             <Input
-              type="file"
-              accept="image/*"
-              display="none"
-              data-testid="file-input"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file?.type.startsWith("image/")) {
-                  setImageFile(file);
-                } else {
-                  alert("画像ファイルを選択してください");
-                }
-              }}
-            />
-            <UserIcon
-              userImageUrl={
-                imageFile ? URL.createObjectURL(imageFile) : undefined
-              }
-              size="180px"
-            />
-            {!imageFile && (
-              <Text fontSize="sm" mt={2}>
-                画像を選択
-              </Text>
-            )}
-          </Flex>
-          <Box width="100%">
-            <CommonInput
+              id="signup-username"
               value={userName}
-              placeholder="ユーザー名"
+              placeholder="例: toban_user"
               data-testid="user-name-input"
               onChange={(e) => setUserName(e.target.value)}
+              aria-invalid={Boolean(userName) && !availableName}
             />
-            <Text textAlign="right" fontSize="xs" mt={1}>
-              {availableName
-                ? "この名前は利用可能です"
-                : "この名前は利用できません"}
-            </Text>
-          </Box>
-          <Box width="100%" mt={8}>
-            <CommonTextArea
-              minHeight="125px"
+            <p
+              className={
+                availableName
+                  ? "mt-1.5 text-right text-xs font-semibold text-[color:var(--color-contrib)]"
+                  : "mt-1.5 text-right text-xs text-text-secondary"
+              }
+            >
+              {userName
+                ? availableName
+                  ? "この名前は利用可能です"
+                  : "この名前は利用できません"
+                : "半角英数字のみ。アンダースコアは使えません。"}
+            </p>
+          </div>
+
+          {/* Description */}
+          <div>
+            <FieldLabel htmlFor="signup-description">
+              自己紹介（任意）
+            </FieldLabel>
+            <Textarea
+              id="signup-description"
               value={description}
-              placeholder="自己紹介"
+              placeholder="どんな貢献が得意か、ひとことで紹介しましょう。"
               data-testid="description-input"
               onChange={(e) => setDescription(e.target.value)}
+              className="min-h-32"
             />
-          </Box>
-        </Box>
-      </Flex>
-      <Box mb={5}>
-        <BasicButton
-          onClick={handleSubmit}
-          loading={isIpfsLoading || isSetNameLoading}
-          disabled={!availableName}
-          data-testid="save-button"
-        >
-          保存
-        </BasicButton>
-      </Box>
-    </Grid>
+          </div>
+
+          <Button
+            size="lg"
+            full
+            onClick={handleSubmit}
+            disabled={!availableName || isIpfsLoading || isSetNameLoading}
+            data-testid="save-button"
+          >
+            {isIpfsLoading || isSetNameLoading
+              ? "保存中..."
+              : "プロフィールを保存"}
+          </Button>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 };
 
-export default Login;
+export default Signup;

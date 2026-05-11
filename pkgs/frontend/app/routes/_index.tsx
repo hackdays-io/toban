@@ -6,7 +6,6 @@ import {
   LuGithub,
   LuHandshake,
   LuHeart,
-  LuMessageSquare,
   LuPalette,
   LuPlay,
   LuRefreshCw,
@@ -198,19 +197,14 @@ function HeroCentered() {
       data-lp-root
       className="relative mx-auto max-w-[1200px] px-5 pt-14 pb-20 text-center md:px-7 md:pt-20 md:pb-28"
     >
-      <h1 className="mx-auto text-balance font-black leading-[1.08] tracking-tight text-text-primary text-[clamp(34px,7vw,72px)] md:max-w-4xl">
-        ひとりの<span style={{ color: ACCENT.teal }}>小さな貢献</span>を、
+      <h1 className="mx-auto text-balance font-black leading-[1.3] tracking-tight text-text-primary text-[clamp(34px,7vw,62px)] md:max-w-4xl">
+        <span style={{ color: ACCENT.orange }}>貢献してくれる人</span>に報いて、
         <br className="hidden sm:inline" />
-        みんなの<span style={{ color: ACCENT.orange }}>大きな力</span>に。
+        <span style={{ color: ACCENT.teal }}>長く続く活動</span>をつくる。
       </h1>
-      <p className="mx-auto mt-6 max-w-xl text-balance text-base font-medium leading-relaxed text-text-secondary md:text-[17px]">
-        コミュニティの活動を記録し、レビューし、納得のかたちで分配へ。
-        <br className="hidden sm:inline" />
-        Toban は、人の手と手をつなぐ
-        <span className="font-bold" style={{ color: "var(--color-primary)" }}>
-          あたたかい当番帳
-        </span>
-        です。
+      <p className="mx-auto mt-6 max-w-2xl text-balance text-base font-medium leading-relaxed text-text-secondary md:text-[17px]">
+        みんなの貢献を記録し、報酬として届ける。Toban
+        は、動いた人が正しく報われるコミュニティをブロックチェーンで支えるアプリです。
       </p>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -544,44 +538,45 @@ function PhilosophySection() {
         <SectionEyebrow color="var(--color-text-primary)">
           OUR PHILOSOPHY
         </SectionEyebrow>
-        <p className="max-w-3xl text-balance font-extrabold leading-[1.45] tracking-tight text-text-primary text-[clamp(22px,3.4vw,40px)]">
-          コミュニティの活力は、
-          <Highlight bg={ACCENT.orangeSoft}>
-            <span style={{ color: ACCENT.orange }}>名もなき貢献</span>
-          </Highlight>
-          でできている。
+        <p className="text-balance font-extrabold leading-[1.45] tracking-tight text-text-primary text-[clamp(22px,3.4vw,40px)]">
+          コミュニティには、
+          {/* hide sp */}
           <br className="hidden sm:inline" />
-          だからこそ Toban は、
+          <span style={{ color: ACCENT.orange }}>
+            誰かがやらなければいけない仕事
+          </span>
+          がある。
+          <br className="hidden sm:inline" />
+          Toban は、必要なことをみんなで手分けしてやって、
           <Highlight bg={ACCENT.blueSoft}>
-            <span style={{ color: ACCENT.blue }}>小さなありがとう</span>
+            <span style={{ color: ACCENT.blue }}>日々の助け合い</span>
           </Highlight>
-          を見える化し、
+          を記録し、
           <br className="hidden sm:inline" />
-          誰もが納得できる
           <Highlight bg={ACCENT.tealSoft}>
-            <span style={{ color: ACCENT.teal }}>分配のかたち</span>
+            <span style={{ color: ACCENT.teal }}>やってくれた人を報いる</span>
           </Highlight>
-          を、ともに育てます。
+          仕組みをつくります。
         </p>
 
         <div className="mt-12 grid gap-8 border-t border-border pt-12 md:mt-14 md:grid-cols-3 md:pt-14">
           <Principle
             color={ACCENT.orange}
             number="01"
-            title="貢献はすべて、見えてよい。"
-            body="誰がいつ何をしたかは、開かれた台帳に。隠さないから、納得が生まれる。データは特定の誰かのものではなく、コミュニティのもの。"
+            title="隠れた貢献を記録する"
+            body="日々の助け合いや、誰も見ていない場面での貢献。サンクストークンを送り合うことで、表に出にくいものがちゃんと記録になる。"
           />
           <Principle
             color={ACCENT.blue}
             number="02"
-            title="分配は、対話で決める。"
-            body="機械が一方的に決める正解はない。重みづけはコミュニティが話し合い、合意したものだけが残る。Toban はその場をつくる道具に徹する。"
+            title="必要なことをみんなで"
+            body="当番を持つ人が一人で抱え込まなくていいように、当番クエストで他のメンバーに委ねやすくする。必要なことはみんなで分担して、無理なく続ける。"
           />
           <Principle
             color={ACCENT.teal}
             number="03"
-            title="続けやすさを、何より大切に。"
-            body="難しいツールは続かない。一行で記録、一画面でレビュー、一回のクリックで分配。あたりまえの行為のとなりに、そっと寄り添う。"
+            title="ブロックチェーンで透明に滑らかに"
+            body="貢献の記録と報酬分配をブロックチェーンで処理することで、不透明さと手間をなくします。OSSコミュニティでも、地域団体でも、仕組みは同じ。"
           />
         </div>
       </div>
@@ -619,44 +614,61 @@ function Principle({
 
 /* ===================== FEATURES ===================== */
 
-const FEATURES = [
+// "2つの記録" — peer-recorded contribution via tokens and quests.
+const RECORDS = [
   {
     color: ACCENT.orange,
     soft: ACCENT.orangeSoft,
     icon: LuHeart,
-    title: "サンクス送信",
-    desc: "誰でも一行で「ありがとう」を残せる。スタンプでも、文章でも、感謝のかたちは自由に。",
-    items: ["1タップ送信", "カテゴリ自動推定", "履歴の検索とタグ付け"],
+    label: "サンクストークン",
+    title: "隠れた貢献をあぶり出す",
+    desc: "メンバー同士でサンクストークンを送り合うことで、日々の助け合いや表に出にくい貢献を記録します。隠れたちいさな貢献も残します。",
+    items: [
+      "P2Pのトークン送付",
+      "日々の活動から自然に記録される",
+      "貢献の見える化",
+    ],
   },
   {
     color: ACCENT.blue,
     soft: ACCENT.blueSoft,
     icon: LuRefreshCw,
-    title: "当番割り当て",
-    desc: "くりかえしの役割を、メンバーに公平に振り分け。担当の重なりも、空きも自動で気づける。",
+    label: "当番クエスト",
+    title: "抱え込まず誰かにお願いできる",
+    desc: "当番の人が必要なことをクエストとして出すことで、他のメンバーの協力を得やすくします。一人に集中しないコミュニティの動かし方へ。",
     items: [
-      "ローテーション自動化",
-      "負荷バランスの可視化",
-      "当番の入れ替え通知",
+      "当番への役割の集約",
+      "クエストにして誰かにお願い",
+      "必要なことをみんなで分担",
     ],
   },
-  {
-    color: ACCENT.teal,
-    soft: ACCENT.tealSoft,
-    icon: LuChartPie,
-    title: "分配の作成",
-    desc: "記録された貢献から、ひとり一人への分配案を自動生成。重みづけや調整も、画面ひとつで完結。",
-    items: ["重みづけのプレビュー", "履歴とのつき合わせ", "承認フロー内蔵"],
-  },
-  {
-    color: ACCENT.gold,
-    soft: ACCENT.goldSoft,
-    icon: LuEye,
-    title: "透明な台帳",
-    desc: "すべての貢献と分配は、メンバー全員にひらかれた台帳に記録。後からたどれる、納得の運営へ。",
-    items: ["変更履歴の保存", "外部エクスポート", "権限ロールの細分化"],
-  },
 ] as const;
+
+// 可視化 / 分配 — paired into one row matching the "可視化と分配" half of
+// the section H2. Order is left=可視化, right=分配 to read with the headline.
+const LEDGER = {
+  color: ACCENT.gold,
+  soft: ACCENT.goldSoft,
+  icon: LuEye,
+  label: "可視化",
+  title: "貢献の循環を見える化する",
+  desc: "誰がどんな貢献をして、どう分配されたか、すべてブロックチェーンに刻まれ、後からたどれる。",
+  items: ["グラフでの可視化", "外部エクスポート", "オンチェーン記録"],
+} as const;
+
+const DISTRIBUTION = {
+  color: ACCENT.teal,
+  soft: ACCENT.tealSoft,
+  icon: LuChartPie,
+  label: "分配",
+  title: "動いた分が自動で分配される",
+  desc: "2つの記録をもとに活躍度合いを自動計算。ブロックチェーンで、透明に、滑らかに、一括で分配。",
+  items: [
+    "貢献度合いの自動計算",
+    "ステーブルコイン含むERC-20トークンに対応",
+    "何人でも一括分配",
+  ],
+} as const;
 
 function FeaturesSection() {
   return (
@@ -668,20 +680,56 @@ function FeaturesSection() {
     >
       <SectionEyebrow color={ACCENT.orange}>FEATURES</SectionEyebrow>
       <h2 className="mb-4 text-balance font-black leading-[1.18] tracking-tight text-text-primary text-[clamp(28px,4vw,44px)]">
-        記録から分配まで、
+        <span style={{ color: ACCENT.orange }}>ふたつの記録方法</span>
+        を組み合わせて、
         <br className="hidden sm:inline" />
-        ひとつのアプリで
-        <span style={{ color: ACCENT.blue }}>なめらかに</span>。
+        <span style={{ color: ACCENT.teal }}>可視化と分配</span>をします
       </h2>
-      <p className="mb-12 max-w-xl text-balance text-base text-text-secondary md:text-[17px]">
-        日々のありがとうを、専門知識なしで記録し、レビューし、納得のかたちで分配へ。4つの機能が、コミュニティの当番帳をやさしく支えます。
+      <p className="mb-12 text-balance text-base text-text-secondary md:text-[17px]">
+        サンクストークンと当番クエスト、2つの方法で貢献を記録し、そのままブロックチェーンで可視化と分配につなげる。
       </p>
-      <div className="grid gap-5 sm:grid-cols-2">
-        {FEATURES.map((f) => (
-          <FeatureCard key={f.title} {...f} />
-        ))}
-      </div>
+
+      <FeatureGroup label="ふたつの記録方法">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {RECORDS.map((f) => (
+            <FeatureCard key={f.label} {...f} />
+          ))}
+        </div>
+      </FeatureGroup>
+
+      <FeatureGroup label="可視化と分配" className="mt-10 md:mt-14">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FeatureCard {...LEDGER} />
+          <FeatureCard {...DISTRIBUTION} />
+        </div>
+      </FeatureGroup>
     </section>
+  );
+}
+
+function FeatureGroup({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <div className="mb-4 flex items-center gap-3">
+        <span
+          className="h-[3px] w-8 rounded-full"
+          style={{ backgroundColor: "var(--color-text-primary)" }}
+          aria-hidden
+        />
+        <span className="text-[18px] font-extrabold tracking-[0.12em] text-text-primary uppercase">
+          {label}
+        </span>
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -689,6 +737,7 @@ function FeatureCard({
   color,
   soft,
   icon: IconCmp,
+  label,
   title,
   desc,
   items,
@@ -696,6 +745,7 @@ function FeatureCard({
   color: string;
   soft: string;
   icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
+  label: string;
   title: string;
   desc: string;
   items: ReadonlyArray<string>;
@@ -709,9 +759,17 @@ function FeatureCard({
         >
           <IconCmp size={26} aria-hidden />
         </div>
-        <h3 className="text-[22px] font-extrabold tracking-tight text-text-primary">
-          {title}
-        </h3>
+        <div>
+          <div
+            className="mb-1 text-[12px] font-extrabold tracking-[0.1em] uppercase"
+            style={{ color }}
+          >
+            {label}
+          </div>
+          <h3 className="text-[20px] font-extrabold leading-tight tracking-tight text-text-primary md:text-[22px]">
+            {title}
+          </h3>
+        </div>
       </div>
       <p className="mb-4 text-[15px] leading-relaxed text-text-secondary">
         {desc}
@@ -748,35 +806,28 @@ function StepsSection() {
         <h2 className="mb-4 text-balance font-black leading-[1.18] tracking-tight text-text-primary text-[clamp(28px,4vw,44px)]">
           3ステップで、
           <br className="hidden sm:inline" />
-          当番帳がはじまる。
+          <span style={{ color: ACCENT.orange }}>循環</span>がはじまる。
         </h2>
-        <p className="mb-12 max-w-xl text-balance text-base text-text-secondary md:text-[17px]">
-          難しい設定は不要。記録 → レビュー →
-          分配の3つの流れで、コミュニティに自然に馴染みます。
-        </p>
         <div className="grid gap-5 md:grid-cols-3">
           <Step
             number="01"
             color={ACCENT.orange}
-            title="記録"
-            titleSuffix="する"
-            body="誰かの行動に「ありがとう」を残す。一行のメッセージから、当番のチェックインまで。"
+            title="貢献を記録する"
+            body="サンクストークンで日々の助け合いを記録し、当番クエストで必要なことをみんなで分担する。2つの方法で、コミュニティの活動記録が積み上がっていく。"
             visual={<StepVisualRecord />}
           />
           <Step
             number="02"
             color={ACCENT.blue}
-            title="レビュー"
-            titleSuffix="する"
-            body="集まった貢献をみんなで確認。重みづけの調整も、コメントも、開かれた場で。"
+            title="活躍度合いを確かめる"
+            body="積み上がった記録をチームでレビュー。役割と期間をもとに、分配案を自動生成。ブロックチェーンだからこそ透明性高く、みんなが納得できる。"
             visual={<StepVisualReview />}
           />
           <Step
             number="03"
             color={ACCENT.teal}
-            title="分配"
-            titleSuffix="する"
-            body="納得のかたちでひとり一人へ。お金、ポイント、感謝、その形は自由に。"
+            title="報酬を届ける"
+            body="確認が取れたらブロックチェーンでみんなに一括で分配。ステーブルコインと組み合わせれば口座開設やアカウント作成など面倒な操作なしで受け取れる。"
             visual={<StepVisualSplit />}
           />
         </div>
@@ -789,14 +840,12 @@ function Step({
   number,
   color,
   title,
-  titleSuffix,
   body,
   visual,
 }: {
   number: string;
   color: string;
   title: string;
-  titleSuffix: string;
   body: string;
   visual: React.ReactNode;
 }) {
@@ -810,7 +859,6 @@ function Step({
       </div>
       <h3 className="mb-3 text-2xl font-black tracking-tight text-text-primary">
         <span style={{ color }}>{title}</span>
-        {titleSuffix}
       </h3>
       <p className="m-0 text-sm text-text-secondary">{body}</p>
       <div className="mt-5 flex h-32 items-center justify-center overflow-hidden rounded-md bg-bg md:h-36">
@@ -967,38 +1015,40 @@ function StepVisualSplit() {
 
 /* ===================== USE CASES ===================== */
 
+// Placeholder copy — real case studies will replace title/body once
+// available. Tags/icons/colours are locked per spec.
 const CASES = [
   {
-    tag: "DAO",
+    tag: "OSS",
     color: ACCENT.orange,
     soft: ACCENT.orangeSoft,
-    icon: LuHandshake,
-    title: "DAO 運営の貢献記録",
-    body: "貢献ログを台帳に集約し、四半期ごとの分配と意思決定にリンク。透明な運営をスマートコントラクトで支える。",
+    icon: LuGithub,
+    title: "事例タイトル 01",
+    body: "実際の利用事例の説明をここに入れてください。",
   },
   {
-    tag: "OSS",
+    tag: "CivicTech",
     color: ACCENT.blue,
     soft: ACCENT.blueSoft,
-    icon: LuMessageSquare,
-    title: "OSS コミュニティの貢献",
-    body: "Issue レビュー、ドキュメント、登壇まで含めた多様な貢献をまるごと可視化。報酬の重みづけは合意で決める。",
+    icon: LuHandshake,
+    title: "事例タイトル 02",
+    body: "実際の利用事例の説明をここに入れてください。",
   },
   {
     tag: "町内会・地域",
     color: ACCENT.teal,
     soft: ACCENT.tealSoft,
     icon: LuRefreshCw,
-    title: "町内の当番ローテーション",
-    body: "清掃・見守り・お祭り運営の当番を公平に割り振り、感謝とともに記録。地域のあたたかい台帳に。",
+    title: "事例タイトル 03",
+    body: "実際の利用事例の説明をここに入れてください。",
   },
   {
-    tag: "部活・サークル",
+    tag: "イベント運営",
     color: ACCENT.gold,
     soft: ACCENT.goldSoft,
     icon: LuPalette,
-    title: "部活・サークル運営",
-    body: "準備・片付け・運営役割をログに残して負担を見える化。学生コミュニティに無理のない運営を。",
+    title: "事例タイトル 04",
+    body: "実際の利用事例の説明をここに入れてください。",
   },
 ] as const;
 
@@ -1012,14 +1062,12 @@ function UseCasesSection() {
     >
       <SectionEyebrow color={ACCENT.teal}>USE CASES</SectionEyebrow>
       <h2 className="mb-4 text-balance font-black leading-[1.18] tracking-tight text-text-primary text-[clamp(28px,4vw,44px)]">
-        小さな貢献が、
+        あらゆるコミュニティの
         <br className="hidden sm:inline" />
-        あらゆるチームで
-        <span style={{ color: ACCENT.blue }}>かたちになる</span>。
+        <span style={{ color: ACCENT.orange }}>貢献が報われる</span>。
       </h2>
-      <p className="mb-12 max-w-xl text-balance text-base text-text-secondary md:text-[17px]">
-        DAOから町内会まで。Toban
-        はコミュニティの形に合わせて、しなやかに使えます。
+      <p className="mb-12 text-balance text-base text-text-secondary md:text-[17px]">
+        OSSコミュニティから地域の団体まで。Tobanはコミュニティの形に合わせて使えます。
       </p>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {CASES.map((c) => (
@@ -1086,7 +1134,7 @@ function SiteFooter() {
             Toban
           </Link>
           <p className="mt-3 mb-5 max-w-xs text-[13px] text-text-secondary">
-            あたたかい当番帳。コミュニティの貢献を見える化し、納得の分配につなげるツール。
+            貢献してくれる人に報いて、長く続く活動をつくる。
           </p>
           <div className="flex gap-2.5">
             <SocialLink href={FOOTER_LINKS.github} label="GitHub">
@@ -1133,7 +1181,7 @@ function SiteFooter() {
         />
       </div>
       <div className="mx-auto flex max-w-[1200px] flex-col items-start justify-between gap-2 border-t border-border px-5 py-5 text-[12px] text-text-secondary sm:flex-row sm:items-center md:px-7">
-        <span>© {new Date().getFullYear()} Toban — あたたかい当番帳</span>
+        <span>© {new Date().getFullYear()} Toban</span>
         <span>
           Simplest way of contribution recording and rewards distribution.
         </span>

@@ -26,27 +26,34 @@ const THEME_COLOR = "#F5B82E";
 // nothing from this subtree; Privy mounts after hydration completes.
 const PrivyAppRoot = lazy(() => import("./components/PrivyAppRoot"));
 
-interface LayoutProps extends React.PropsWithChildren {}
-
-export const Layout = ({ children }: LayoutProps) => {
+export function Layout({ children }: { children: React.ReactNode }) {
+  // suppressHydrationWarning on <html>/<body>: browser extensions (wallet
+  // injectors, dark-mode tools, password managers, translators) commonly
+  // mutate these elements before React hydrates, causing dev-time warnings.
+  // React falls back to client rendering silently in production either way;
+  // this just keeps the dev console quiet for the inevitable extension
+  // interference on a Privy/wallet-heavy app.
   return (
-    <html lang="ja">
+    <html lang="ja" suppressHydrationWarning>
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body className="bg-bg text-text-primary font-sans">
+      <body
+        className="bg-bg text-text-primary font-sans"
+        suppressHydrationWarning
+      >
         {children}
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
   );
-};
+}
 
 export const meta = () => [
-  { charSet: "utf-8" },
-  { name: "viewport", content: "width=device-width, initial-scale=1" },
   { title: "Toban -当番-" },
   { name: "theme-color", content: THEME_COLOR },
   { name: "apple-mobile-web-app-capable", content: "yes" },

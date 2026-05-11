@@ -10,12 +10,13 @@ import {
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { StickyNav } from "~/components/StickyNav";
+import { AssistCreditSendSheet } from "~/components/assistcredit/AssistCreditSendSheet";
 import { Box, HStack, Heading, Text, VStack } from "~/components/chakra-shim";
 import { HatsListItemParser } from "~/components/common/HatsListItemParser";
 import { UserIcon } from "~/components/icon/UserIcon";
@@ -92,6 +93,7 @@ const RoleHolderDetails: FC = () => {
 
   // HatsTimeFrameModule関連の情報をボタンクリックの後再取得できるようにカウンターを設置
   const [count, setCount] = useState(0);
+  const [sendSheetOpen, setSendSheetOpen] = useState(false);
   const { isActive, woreTime, wearingElapsedTime } = useActiveState(
     hatsTimeFrameModuleAddress,
     hatId,
@@ -137,11 +139,14 @@ const RoleHolderDetails: FC = () => {
             ? "ケアポイント"
             : "ロールシェア"}
         </Heading>
-        <Link to={`/${treeId}/${hatId}/${address}/assistcredit/send`}>
-          <BasicButton minH={5} size="xs" bgColor="yellow.400">
-            誰かに送る
-          </BasicButton>
-        </Link>
+        <BasicButton
+          minH={5}
+          size="xs"
+          bgColor="yellow.400"
+          onClick={() => setSendSheetOpen(true)}
+        >
+          誰かに送る
+        </BasicButton>
       </HStack>
 
       <VStack width="full" alignItems="start" gap={3} paddingY={4}>
@@ -221,6 +226,16 @@ const RoleHolderDetails: FC = () => {
       )}
 
       <StickyNav />
+
+      {treeId && hatId && address && (
+        <AssistCreditSendSheet
+          open={sendSheetOpen}
+          onOpenChange={setSendSheetOpen}
+          treeId={treeId}
+          hatId={BigInt(hatId)}
+          wearer={address as Address}
+        />
+      )}
     </Box>
   );
 };

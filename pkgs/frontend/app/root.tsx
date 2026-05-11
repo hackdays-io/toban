@@ -33,11 +33,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // React falls back to client rendering silently in production either way;
   // this just keeps the dev console quiet for the inevitable extension
   // interference on a Privy/wallet-heavy app.
+  //
+  // <head> contains ONLY `<Meta />` + `<Links />`. Hardcoding `<meta>` /
+  // `<link>` here interleaves them with Vite's dev critical-CSS injection
+  // and React's hydration comparison fails ("Expected server HTML to
+  // contain a matching <meta> in <head>") on direct loads of heavier routes.
+  // All static head content lives in the `meta` / `links` exports below so
+  // React Router controls the order deterministically — see commit dfd24c0.
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
@@ -54,6 +59,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const meta = () => [
+  { charSet: "utf-8" },
+  { name: "viewport", content: "width=device-width, initial-scale=1" },
   { title: "Toban -当番-" },
   { name: "theme-color", content: THEME_COLOR },
   { name: "apple-mobile-web-app-capable", content: "yes" },

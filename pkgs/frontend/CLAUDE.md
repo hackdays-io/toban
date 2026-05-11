@@ -48,6 +48,10 @@ All headings and running text on renewed surfaces go through `app/components/ui/
 
 Use `react-icons` (already a dependency). **Do not install `lucide-react`.** When pasting shadcn/ui generator output that imports from `lucide-react`, replace those imports with `react-icons/lu` (e.g. `import { LuChevronRight } from "react-icons/lu"`) — `react-icons/lu` exposes the same Lucide set.
 
+## Toasts — sonner only
+
+Use `sonner` for toasts: `import { toast } from "sonner"` (matches the `toast.success` / `toast.error` API). The global `<Toaster />` is already mounted inside `PrivyAppRoot`. **Do not import from `react-toastify`** in any route module or any module that a route imports at the top level — `react-toastify@11`'s ESM entry runs `document.head.insertBefore(<style>, head.firstChild)` at module evaluation, which shifts every expected `<meta>` position in `<head>` and breaks SSR hydration on direct loads ("Expected server HTML to contain a matching `<meta>` in `<head>`"). Sonner is safe because its equivalent uses `appendChild` (END of `<head>`), so the order of React-rendered children is preserved. `react-toastify`'s `<ToastContainer />` is still mounted via the lazy `PrivyAppRoot` for the legacy chakra-era surfaces that haven't migrated yet (issue #422); leave those alone but don't add new imports.
+
 ## Commands
 
 ```

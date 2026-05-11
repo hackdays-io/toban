@@ -28,16 +28,6 @@ export const MyRole: FC<MyRoleProps> = (params) => {
         >
           詳細をみる
         </CommonButton>
-        <CommonButton
-          onClick={() =>
-            navigate(`/${treeId}/${hatId}/${address}/assistcredit/send`)
-          }
-        >
-          {["144", "175", "780"].includes(treeId || "")
-            ? "ケアポイント"
-            : "ロールシェア"}
-          を送る
-        </CommonButton>
       </VStack>
     </HStack>
   );

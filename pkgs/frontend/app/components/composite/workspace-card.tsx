@@ -2,6 +2,7 @@ import type * as React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface WorkspaceCardProps
@@ -58,20 +59,38 @@ function WorkspaceCard({
         <AvatarFallback seed={seed} className="rounded-md" />
       </Avatar>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-base font-bold text-text-primary">
+        <Typography
+          as="div"
+          variant="body"
+          weight="bold"
+          truncate
+          className="leading-tight"
+        >
           {name}
-        </div>
+        </Typography>
         {description && (
-          <div className="mt-0.5 truncate text-xs text-text-secondary">
+          <Typography
+            as="div"
+            variant="caption"
+            tone="secondary"
+            truncate
+            className="mt-0.5"
+          >
             {description}
-          </div>
+          </Typography>
         )}
         {hasMeta && (
-          <div className="mt-1.5 truncate text-[11px] text-text-secondary">
+          <Typography
+            as="div"
+            variant="micro"
+            tone="secondary"
+            truncate
+            className="mt-1.5"
+          >
             {typeof members === "number" && <span>{members}人</span>}
             {typeof members === "number" && lastActive && <span> ・ </span>}
             {lastActive && <span>最近の活動: {lastActive}</span>}
-          </div>
+          </Typography>
         )}
       </div>
       {current && <Badge kind="member">現在</Badge>}

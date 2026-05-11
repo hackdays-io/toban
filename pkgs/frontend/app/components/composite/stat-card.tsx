@@ -1,6 +1,7 @@
 import type * as React from "react";
 
 import { Card } from "~/components/ui/card";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface StatCardProps extends React.ComponentProps<typeof Card> {
@@ -39,31 +40,47 @@ function StatCard({
       )}
       {...rest}
     >
-      <div className="px-4 text-[11px] font-semibold text-text-secondary">
+      <Typography
+        as="div"
+        variant="micro"
+        tone="secondary"
+        weight="semibold"
+        className="px-4"
+      >
         {label}
-      </div>
+      </Typography>
       <div
         className={cn(
           "mt-1 flex items-baseline gap-1.5 px-4",
           isWide ? "justify-start" : "justify-center",
         )}
       >
-        <span
-          className={cn(
-            "font-extrabold tracking-tight text-text-primary",
-            isWide ? "text-[32px] leading-none" : "text-[26px] leading-none",
-          )}
+        <Typography
+          as="span"
+          variant={isWide ? "statLg" : "statMd"}
           style={accent ? { color: accent } : undefined}
         >
           {value}
-        </span>
+        </Typography>
         {unit && (
-          <span className="text-xs font-bold text-text-secondary">{unit}</span>
+          <Typography
+            as="span"
+            variant="caption"
+            tone="secondary"
+            weight="bold"
+          >
+            {unit}
+          </Typography>
         )}
         {delta && (
-          <span className="ml-auto rounded-full bg-[#E5F5EC] px-2 py-0.5 text-[11px] font-bold text-[#2F8B58]">
+          <Typography
+            as="span"
+            variant="micro"
+            weight="bold"
+            className="ml-auto rounded-full bg-[#E5F5EC] px-2 py-0.5 text-[#2F8B58]"
+          >
             {delta}
-          </span>
+          </Typography>
         )}
       </div>
     </Card>

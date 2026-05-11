@@ -1,6 +1,7 @@
 import type * as React from "react";
 
 import { Label } from "~/components/ui/label";
+import { typographyVariants } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 // Toban FieldLabel — small uppercase-ish caption above a form control.
@@ -15,7 +16,8 @@ function FieldLabel({
     <Label
       data-slot="field-label"
       className={cn(
-        "mb-2 block text-xs font-bold tracking-[0.03em] text-text-secondary",
+        typographyVariants({ variant: "label" }),
+        "mb-2 block",
         className,
       )}
       {...props}

@@ -1,7 +1,9 @@
 import type * as React from "react";
 
 import { Button } from "~/components/ui/button";
+import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface ScreenHeaderProps
@@ -43,11 +45,13 @@ function ScreenHeader({
         </Button>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[17px] font-bold text-text-primary">
+        <Heading variant="h4" className="truncate">
           {title}
-        </div>
+        </Heading>
         {subtitle && (
-          <div className="truncate text-xs text-text-secondary">{subtitle}</div>
+          <Typography variant="caption" tone="secondary" truncate>
+            {subtitle}
+          </Typography>
         )}
       </div>
       {right}

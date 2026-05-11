@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface RowProps extends Omit<React.ComponentProps<"div">, "title"> {
@@ -51,13 +52,24 @@ function Row({
     >
       {left}
       <div className="min-w-0 flex-1">
-        <div className="text-[15px] font-semibold leading-tight text-text-primary">
+        <Typography
+          as="div"
+          variant="body"
+          weight="semibold"
+          className="leading-tight"
+        >
           {title}
-        </div>
+        </Typography>
         {subtitle && (
-          <div className="mt-0.5 truncate text-xs leading-tight text-text-secondary">
+          <Typography
+            as="div"
+            variant="caption"
+            tone="secondary"
+            truncate
+            className="mt-0.5"
+          >
             {subtitle}
-          </div>
+          </Typography>
         )}
       </div>
       {right}

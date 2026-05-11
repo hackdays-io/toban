@@ -1,6 +1,7 @@
 import type * as React from "react";
 
 import { Icon, type IconName } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface NextStepCardProps
@@ -37,9 +38,14 @@ function NextStepCard({
       >
         <Icon name={icon} size={16} />
       </span>
-      <span className="flex-1 text-sm font-semibold text-text-primary">
+      <Typography
+        as="span"
+        variant="bodySm"
+        weight="semibold"
+        className="flex-1"
+      >
         {label}
-      </span>
+      </Typography>
       <Icon
         name="chevron-right"
         size={16}

@@ -1,5 +1,7 @@
 import type * as React from "react";
 
+import { Heading } from "~/components/ui/heading";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface EmptyStateProps extends Omit<React.ComponentProps<"div">, "title"> {
@@ -33,11 +35,18 @@ function EmptyState({
           {icon}
         </div>
       )}
-      <div className="text-[15px] font-bold text-text-primary">{title}</div>
+      <Heading variant="h5" level={2}>
+        {title}
+      </Heading>
       {body && (
-        <div className="mt-1.5 text-[13px] leading-relaxed text-text-secondary">
+        <Typography
+          as="div"
+          variant="bodySm"
+          tone="secondary"
+          className="mt-1.5"
+        >
           {body}
-        </div>
+        </Typography>
       )}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>

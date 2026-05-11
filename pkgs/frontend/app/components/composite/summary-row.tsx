@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface SummaryRowProps extends React.ComponentProps<"div"> {
@@ -19,10 +20,22 @@ function SummaryRow({ label, value, className, ...rest }: SummaryRowProps) {
       )}
       {...rest}
     >
-      <span className="text-xs font-semibold text-text-secondary">{label}</span>
-      <span className="inline-flex items-center text-right text-sm font-semibold text-text-primary">
+      <Typography
+        as="span"
+        variant="caption"
+        tone="secondary"
+        weight="semibold"
+      >
+        {label}
+      </Typography>
+      <Typography
+        as="span"
+        variant="bodySm"
+        weight="semibold"
+        className="inline-flex items-center text-right"
+      >
         {value}
-      </span>
+      </Typography>
     </div>
   );
 }

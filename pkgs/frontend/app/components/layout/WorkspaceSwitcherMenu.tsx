@@ -13,6 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
+import { Typography } from "~/components/ui/typography";
 
 interface WorkspaceSwitcherMenuProps {
   /** Controlled open state — same value drives both Sheet (mobile) and
@@ -113,9 +114,15 @@ function WorkspaceSwitcherMenu({
             sideOffset={8}
             className="w-[280px] p-0"
           >
-            <div className="border-b px-4 py-3 text-[13px] font-bold text-text-primary">
+            <Typography
+              as="div"
+              variant="bodySm"
+              weight="bold"
+              truncate
+              className="border-b px-4 py-3"
+            >
               {workspaceName}
-            </div>
+            </Typography>
             {items}
           </PopoverContent>
         </Popover>

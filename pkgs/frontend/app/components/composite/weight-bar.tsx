@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface WeightBarProps extends React.ComponentProps<"div"> {
@@ -22,11 +23,19 @@ function WeightBar({
   const clamped = Math.max(0, Math.min(100, pct));
   return (
     <div data-slot="weight-bar" className={cn("w-full", className)} {...rest}>
-      <div className="mb-1.5 flex items-baseline justify-between text-[13px]">
-        <span className="font-semibold text-text-primary">{label}</span>
-        <span className="font-bold tabular-nums" style={{ color }}>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <Typography as="span" variant="bodySm" weight="semibold">
+          {label}
+        </Typography>
+        <Typography
+          as="span"
+          variant="bodySm"
+          weight="bold"
+          className="tabular-nums"
+          style={{ color }}
+        >
           {clamped}%
-        </span>
+        </Typography>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-xs bg-[#F0EBE0]">
         <div

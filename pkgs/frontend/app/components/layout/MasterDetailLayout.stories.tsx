@@ -2,6 +2,8 @@ import type { Story } from "@ladle/react";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Card, CardContent } from "~/components/ui/card";
+import { Heading } from "~/components/ui/heading";
+import { Typography } from "~/components/ui/typography";
 import { MasterDetailLayout } from "./MasterDetailLayout";
 
 const duties = [
@@ -39,10 +41,17 @@ export const Default: Story = () => {
                     <AvatarFallback seed={d.name} />
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-bold">{d.name}</div>
-                    <div className="text-[11px] text-text-secondary">
+                    <Typography
+                      as="div"
+                      variant="bodySm"
+                      weight="bold"
+                      truncate
+                    >
+                      {d.name}
+                    </Typography>
+                    <Typography as="div" variant="micro" tone="secondary">
                       {d.assignee ?? "担当者を募集中"}
-                    </div>
+                    </Typography>
                   </div>
                 </button>
               );
@@ -51,12 +60,14 @@ export const Default: Story = () => {
         }
         detail={
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">{duty?.name}</h2>
+            <Heading variant="h2" level={2}>
+              {duty?.name}
+            </Heading>
             <Card>
               <CardContent>
-                <p className="text-sm text-text-secondary">
+                <Typography variant="bodySm" tone="secondary">
                   詳細パネルにはここで担当者・分配・メンバー一覧などを並べます。
-                </p>
+                </Typography>
               </CardContent>
             </Card>
           </div>

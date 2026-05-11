@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface AccountMenuProps {
@@ -142,13 +143,13 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
           <AvatarFallback seed={displayName} />
         </Avatar>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-bold text-text-primary">
+          <Typography as="div" variant="bodySm" weight="bold" truncate>
             {displayName}
-          </div>
+          </Typography>
           {subtitle && (
-            <div className="truncate font-mono text-[11px] text-text-secondary">
+            <Typography as="div" variant="mono" tone="secondary" truncate>
               {subtitle}
-            </div>
+            </Typography>
           )}
         </div>
         <Icon name="chevron-down" size={14} className="text-text-secondary" />
@@ -178,18 +179,18 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
         className="min-w-56 rounded-md"
       >
         <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
-          <span className="text-[13px] font-bold text-text-primary">
+          <Typography as="span" variant="bodySm" weight="bold">
             {displayName}
-          </span>
+          </Typography>
           {identity.name && identity.domain && (
-            <span className="text-[11px] text-text-secondary">
+            <Typography as="span" variant="micro" tone="secondary">
               {identity.name}.{identity.domain}
-            </span>
+            </Typography>
           )}
           {identity.address && (
-            <span className="font-mono text-[11px] text-text-secondary">
+            <Typography as="span" variant="mono" tone="secondary">
               {abbreviateAddress(identity.address)}
-            </span>
+            </Typography>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

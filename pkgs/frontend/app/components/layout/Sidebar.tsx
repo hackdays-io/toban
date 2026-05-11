@@ -3,6 +3,7 @@ import type * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 import { type BottomNavItem, DEFAULT_BOTTOM_NAV_ITEMS } from "./BottomNav";
 
@@ -53,10 +54,17 @@ function Sidebar({
           と
         </span>
         <div>
-          <div className="text-[15px] font-bold text-text-primary">Toban</div>
-          <div className="text-[11px] text-text-secondary">
+          <Typography
+            as="div"
+            variant="body"
+            weight="bold"
+            className="leading-tight"
+          >
+            Toban
+          </Typography>
+          <Typography as="div" variant="micro" tone="secondary">
             あたたかい当番帳
-          </div>
+          </Typography>
         </div>
       </div>
 
@@ -72,12 +80,18 @@ function Sidebar({
           <AvatarFallback seed={workspaceName} className="rounded-md" />
         </Avatar>
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-semibold tracking-wide text-text-secondary">
+          <Typography
+            as="div"
+            variant="micro"
+            tone="secondary"
+            weight="semibold"
+            className="tracking-wide"
+          >
             WORKSPACE
-          </div>
-          <div className="truncate text-[13px] font-bold text-text-primary">
+          </Typography>
+          <Typography as="div" variant="bodySm" weight="bold" truncate>
             {workspaceName}
-          </div>
+          </Typography>
         </div>
         <Icon name="chevron-down" size={14} className="text-text-secondary" />
       </button>
@@ -119,13 +133,13 @@ function Sidebar({
               <AvatarFallback seed={user.name} />
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-bold text-text-primary">
+              <Typography as="div" variant="bodySm" weight="bold" truncate>
                 {user.name}
-              </div>
+              </Typography>
               {user.subtitle && (
-                <div className="truncate font-mono text-[11px] text-text-secondary">
+                <Typography as="div" variant="mono" tone="secondary" truncate>
                   {user.subtitle}
-                </div>
+                </Typography>
               )}
             </div>
             <Button

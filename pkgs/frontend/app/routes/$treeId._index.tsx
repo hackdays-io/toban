@@ -174,6 +174,11 @@ const WorkspaceHome: FC = () => {
       Math.floor(Number(formatEther(BigInt(receivedBalance)))).toLocaleString(),
     [receivedBalance],
   );
+  // Mock: workspace join day. `HatsTimeFrameModule.getWoreTime(wearer, hatId)`
+  // exists per-hat on-chain (see ThanksToken.mintableAmount), but no
+  // subgraph entity / aggregation hook surfaces a per-workspace join time.
+  // Tracked in issue #493.
+  const daysSinceJoin = 45;
 
   const activityItems = useMemo<ActivityItem[]>(() => {
     const resolveName = (addr: string) =>
@@ -230,12 +235,33 @@ const WorkspaceHome: FC = () => {
 
       {/* Mobile layout — single column. */}
       <div className="flex flex-col gap-6 md:hidden">
-        <SendableMobileCard
+        <WeeklyBalanceCard
           sendableAmount={sendableAmount}
-          receivedAmount={receivedFormatted}
           deltaLabel={weeklyStats.delta}
           onSend={goSendThanks}
+          className="mx-1"
         />
+
+        <div className="grid grid-cols-3 gap-2 px-1">
+          <StatCard
+            label="受け取ったサンクス"
+            value={receivedFormatted}
+            unit="THX"
+            accent="var(--color-contrib)"
+          />
+          <StatCard
+            label="今週の貢献"
+            value={weeklyStats.myThisWeek}
+            unit="件"
+            accent="var(--color-split)"
+          />
+          <StatCard
+            label="参加して"
+            value={daysSinceJoin}
+            unit="日目"
+            accent="var(--color-role)"
+          />
+        </div>
 
         <section>
           <SectionLabel className="px-1">あなたの当番</SectionLabel>
@@ -256,6 +282,23 @@ const WorkspaceHome: FC = () => {
             <Card className="mx-1 py-6 text-center">
               <Typography variant="bodySm" tone="secondary">
                 担当中の当番はありません
+              </Typography>
+            </Card>
+          )}
+        </section>
+
+        <section>
+          <SectionLabel className="px-1">進行中のクエスト</SectionLabel>
+          {quests.length > 0 ? (
+            <div className="flex flex-col gap-2 px-1">
+              {quests.slice(0, 3).map((q) => (
+                <QuestRow key={q.id} quest={q} />
+              ))}
+            </div>
+          ) : (
+            <Card className="mx-1 py-6 text-center">
+              <Typography variant="bodySm" tone="secondary">
+                進行中のクエストはありません
               </Typography>
             </Card>
           )}
@@ -287,15 +330,6 @@ const WorkspaceHome: FC = () => {
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-3 gap-3">
             <StatCard
-              label="送れるサンクス"
-              value={sendableAmount}
-              unit="THX"
-              size="wide"
-              accent="var(--color-primary)"
-              delta={weeklyStats.delta}
-              valueClassName="text-[26px]"
-            />
-            <StatCard
               label="受け取ったサンクス"
               value={receivedFormatted}
               unit="THX"
@@ -309,6 +343,14 @@ const WorkspaceHome: FC = () => {
               unit="件"
               size="wide"
               accent="var(--color-split)"
+              valueClassName="text-[26px]"
+            />
+            <StatCard
+              label="参加して"
+              value={daysSinceJoin}
+              unit="日目"
+              size="wide"
+              accent="var(--color-role)"
               valueClassName="text-[26px]"
             />
           </div>
@@ -404,87 +446,21 @@ const SectionHeader: FC<{ title: string; actionTo?: string }> = ({
   </div>
 );
 
-interface SendableMobileCardProps {
-  sendableAmount: string;
-  receivedAmount: string;
-  deltaLabel?: string;
-  onSend: () => void;
-}
-
-const SendableMobileCard: FC<SendableMobileCardProps> = ({
-  sendableAmount,
-  receivedAmount,
-  deltaLabel,
-  onSend,
-}) => (
-  <Card className="mx-1 gap-0 overflow-hidden py-0">
-    <div className="bg-primary-soft px-[18px] py-[18px]">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <Typography
-            as="div"
-            variant="caption"
-            weight="semibold"
-            className="text-[#7A5A2E]"
-          >
-            送れるサンクス
-          </Typography>
-          <div className="mt-1.5 flex items-baseline gap-1.5">
-            <Typography
-              as="span"
-              variant="statLg"
-              className="text-[32px] tracking-[-1px]"
-            >
-              {sendableAmount}
-            </Typography>
-            <Typography
-              as="span"
-              variant="bodySm"
-              weight="bold"
-              className="text-[#7A5A2E]"
-            >
-              THX
-            </Typography>
-          </div>
-        </div>
-        <div className="flex size-11 items-center justify-center rounded-full bg-primary text-white">
-          <Icon name="sparkle" size={22} />
-        </div>
-      </div>
-      <Typography
-        as="div"
-        variant="caption"
-        className="mt-3 flex items-baseline justify-between text-[#7A5A2E]"
-      >
-        <span>
-          受け取った:{" "}
-          <strong className="text-text-primary">{receivedAmount} THX</strong>
-        </span>
-        {deltaLabel && <span>{deltaLabel}</span>}
-      </Typography>
-    </div>
-    <div className="p-3.5">
-      <Button variant="primary" full onClick={onSend}>
-        <Icon name="send" size={18} />
-        サンクスを送る
-      </Button>
-    </div>
-  </Card>
-);
-
 interface WeeklyBalanceCardProps {
   sendableAmount: string;
   deltaLabel?: string;
   onSend: () => void;
+  className?: string;
 }
 
 const WeeklyBalanceCard: FC<WeeklyBalanceCardProps> = ({
   sendableAmount,
   deltaLabel,
   onSend,
+  className,
 }) => (
   <Card
-    className="gap-4 border-0 py-5 text-[#3D2D14]"
+    className={cn("gap-4 border-0 py-5 text-[#3D2D14]", className)}
     style={{ background: "linear-gradient(160deg, #FFD668, #F5B82E)" }}
   >
     <div className="px-5">
@@ -494,7 +470,7 @@ const WeeklyBalanceCard: FC<WeeklyBalanceCardProps> = ({
         weight="bold"
         className="opacity-70"
       >
-        今週の残高
+        送れるサンクス
       </Typography>
       <Typography
         as="div"
@@ -506,9 +482,11 @@ const WeeklyBalanceCard: FC<WeeklyBalanceCardProps> = ({
           THX
         </Typography>
       </Typography>
-      <Typography as="div" variant="caption" className="opacity-80">
-        送付可能量{deltaLabel ? ` ・ ${deltaLabel}` : ""}
-      </Typography>
+      {deltaLabel && (
+        <Typography as="div" variant="caption" className="opacity-80">
+          {deltaLabel}
+        </Typography>
+      )}
     </div>
     <div className="px-5">
       <Button

@@ -23,7 +23,9 @@ import { PageContainer } from "~/components/layout/PageContainer";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 const WEEK_SEC = 7 * 24 * 60 * 60;
@@ -213,13 +215,13 @@ const WorkspaceHome: FC = () => {
     <PageContainer className="pt-4 pb-8 md:pt-6">
       <header className="mb-4 px-1 md:mb-6">
         {greetingName && (
-          <p className="text-[13px] text-text-secondary">
+          <Typography variant="bodySm" tone="secondary">
             こんにちは、{greetingName} さん
-          </p>
+          </Typography>
         )}
-        <h1 className="mt-0.5 text-[22px] font-extrabold tracking-tight text-text-primary md:text-[24px]">
+        <Heading variant="h2" level={1} className="mt-0.5">
           今日もおつかれさまです！
-        </h1>
+        </Heading>
       </header>
 
       {/* Mobile layout — single column. */}
@@ -248,26 +250,28 @@ const WorkspaceHome: FC = () => {
             </div>
           ) : (
             <Card className="mx-1 py-6 text-center">
-              <p className="text-[13px] text-text-secondary">
+              <Typography variant="bodySm" tone="secondary">
                 担当中の当番はありません
-              </p>
+              </Typography>
             </Card>
           )}
         </section>
 
         <section>
           <div className="flex items-baseline justify-between px-1 pb-2">
-            <span className="text-xs font-bold tracking-[0.04em] text-text-secondary">
+            <Typography as="span" variant="label">
               最近のアクティビティ
-            </span>
+            </Typography>
             {treeId && (
-              <Link
-                to={`/${treeId}/history`}
-                className="inline-flex items-center gap-0.5 text-xs text-text-secondary"
-              >
-                すべて見る
-                <Icon name="chevron-right" size={12} />
-              </Link>
+              <Typography asChild as="span" variant="caption" tone="secondary">
+                <Link
+                  to={`/${treeId}/history`}
+                  className="inline-flex items-center gap-0.5"
+                >
+                  すべて見る
+                  <Icon name="chevron-right" size={12} />
+                </Link>
+              </Typography>
             )}
           </div>
           <ActivityList isLoading={isActivityLoading} items={activityItems} />
@@ -322,9 +326,9 @@ const WorkspaceHome: FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="px-5 text-[13px] text-text-secondary">
+              <Typography variant="bodySm" tone="secondary" className="px-5">
                 担当中の当番はありません
-              </p>
+              </Typography>
             )}
           </Card>
 
@@ -358,9 +362,9 @@ const WorkspaceHome: FC = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-[13px] text-text-secondary">
+                <Typography variant="bodySm" tone="secondary">
                   進行中のクエストはありません
-                </p>
+                </Typography>
               )}
             </div>
           </Card>
@@ -374,10 +378,12 @@ const WorkspaceHome: FC = () => {
                     {p.icon}
                   </div>
                   <div>
-                    <div className="text-[13px] font-bold">{p.label}</div>
-                    <div className="text-[11px] text-text-secondary">
+                    <Typography as="div" variant="bodySm" weight="bold">
+                      {p.label}
+                    </Typography>
+                    <Typography as="div" variant="micro" tone="secondary">
                       {p.desc}
-                    </div>
+                    </Typography>
                   </div>
                 </li>
               ))}
@@ -402,14 +408,21 @@ const SectionHeader: FC<{ title: string; actionTo?: string }> = ({
   actionTo,
 }) => (
   <div className="flex items-center justify-between px-5">
-    <h2 className="text-[15px] font-bold text-text-primary">{title}</h2>
+    <Heading variant="h6" level={2}>
+      {title}
+    </Heading>
     {actionTo && (
-      <Link
-        to={actionTo}
-        className="text-xs font-semibold text-text-secondary hover:text-text-primary"
+      <Typography
+        asChild
+        as="span"
+        variant="caption"
+        tone="secondary"
+        weight="semibold"
       >
-        すべて見る →
-      </Link>
+        <Link to={actionTo} className="hover:text-text-primary">
+          すべて見る →
+        </Link>
+      </Typography>
     )}
   </div>
 );
@@ -431,27 +444,47 @@ const SendableMobileCard: FC<SendableMobileCardProps> = ({
     <div className="bg-primary-soft px-[18px] py-[18px]">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="text-xs font-semibold text-[#7A5A2E]">
+          <Typography
+            as="div"
+            variant="caption"
+            weight="semibold"
+            className="text-[#7A5A2E]"
+          >
             送れるサンクス
-          </div>
+          </Typography>
           <div className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-[40px] font-extrabold leading-none tracking-[-1px] text-text-primary">
+            <Typography
+              as="span"
+              variant="statLg"
+              className="text-[40px] tracking-[-1px]"
+            >
               {sendableAmount}
-            </span>
-            <span className="text-sm font-bold text-[#7A5A2E]">THX</span>
+            </Typography>
+            <Typography
+              as="span"
+              variant="bodySm"
+              weight="bold"
+              className="text-[#7A5A2E]"
+            >
+              THX
+            </Typography>
           </div>
         </div>
         <div className="flex size-11 items-center justify-center rounded-full bg-primary text-white">
           <Icon name="sparkle" size={22} />
         </div>
       </div>
-      <div className="mt-3 flex items-baseline justify-between text-xs text-[#7A5A2E]">
+      <Typography
+        as="div"
+        variant="caption"
+        className="mt-3 flex items-baseline justify-between text-[#7A5A2E]"
+      >
         <span>
           受け取った:{" "}
           <strong className="text-text-primary">{receivedAmount} THX</strong>
         </span>
         {deltaLabel && <span>{deltaLabel}</span>}
-      </div>
+      </Typography>
     </div>
     <div className="p-3.5">
       <Button variant="primary" full onClick={onSend}>
@@ -478,14 +511,27 @@ const WeeklyBalanceCard: FC<WeeklyBalanceCardProps> = ({
     style={{ background: "linear-gradient(160deg, #FFD668, #F5B82E)" }}
   >
     <div className="px-5">
-      <div className="text-xs font-bold opacity-70">今週の残高</div>
-      <div className="mt-2.5 mb-1 text-[56px] font-extrabold leading-none tracking-[-2px]">
+      <Typography
+        as="div"
+        variant="caption"
+        weight="bold"
+        className="opacity-70"
+      >
+        今週の残高
+      </Typography>
+      <Typography
+        as="div"
+        variant="statLg"
+        className="mt-2.5 mb-1 text-[56px] tracking-[-2px]"
+      >
         {sendableAmount}
-        <span className="ml-1.5 text-lg opacity-80">THX</span>
-      </div>
-      <div className="text-xs opacity-80">
+        <Typography as="span" variant="body" className="ml-1.5 opacity-80">
+          THX
+        </Typography>
+      </Typography>
+      <Typography as="div" variant="caption" className="opacity-80">
         送付可能量{deltaLabel ? ` ・ ${deltaLabel}` : ""}
-      </div>
+      </Typography>
     </div>
     <div className="px-5">
       <Button
@@ -554,18 +600,25 @@ const MyDutyCard: FC<MyDutyCardProps> = ({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div
-            className={cn(
-              "truncate font-bold text-text-primary",
-              isLg ? "text-[15px]" : "text-[13px]",
-            )}
-          >
-            {name}
-          </div>
+          {isLg ? (
+            <Heading variant="h6" level={3} className="truncate">
+              {name}
+            </Heading>
+          ) : (
+            <Typography as="div" variant="bodySm" weight="bold" truncate>
+              {name}
+            </Typography>
+          )}
           {isLg && detail?.data?.description && (
-            <div className="mt-0.5 truncate text-xs text-text-secondary">
+            <Typography
+              as="div"
+              variant="caption"
+              tone="secondary"
+              truncate
+              className="mt-0.5"
+            >
               {detail.data.description}
-            </div>
+            </Typography>
           )}
         </div>
         {isLg ? (
@@ -616,9 +669,13 @@ const ActivityList: FC<ActivityListProps> = ({
   }
   if (items.length === 0) {
     const empty = (
-      <p className="px-5 py-4 text-center text-[13px] text-text-secondary">
+      <Typography
+        variant="bodySm"
+        tone="secondary"
+        className="px-5 py-4 text-center"
+      >
         アクティビティはまだありません
-      </p>
+      </Typography>
     );
     return isFlat ? empty : <Card className="mx-1 py-6">{empty}</Card>;
   }
@@ -655,28 +712,42 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
         <Icon name={iconName} size={18} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] leading-tight text-text-primary">
+        <Typography as="div" variant="bodySm" className="leading-tight">
           <strong className="font-semibold">{item.counterpartName}</strong>
-          <span className="text-text-secondary">{counterpartLabel}</span>
-        </div>
+          <Typography as="span" variant="bodySm" tone="secondary">
+            {counterpartLabel}
+          </Typography>
+        </Typography>
         {item.message && (
-          <div className="mt-0.5 truncate text-xs leading-tight text-text-secondary">
+          <Typography
+            as="div"
+            variant="caption"
+            tone="secondary"
+            truncate
+            className="mt-0.5"
+          >
             {item.message}
-          </div>
+          </Typography>
         )}
-        <div className="mt-0.5 text-[11px] text-text-secondary">
+        <Typography
+          as="div"
+          variant="micro"
+          tone="secondary"
+          className="mt-0.5"
+        >
           {item.relativeTime}
-        </div>
+        </Typography>
       </div>
-      <div
-        className={cn(
-          "text-[13px] font-bold",
-          isSent ? "text-text-secondary" : "text-contrib",
-        )}
+      <Typography
+        as="div"
+        variant="bodySm"
+        weight="bold"
+        tone={isSent ? "secondary" : "primary"}
+        className={cn(!isSent && "text-contrib")}
       >
         {isSent ? "−" : "+"}
         {item.amount} THX
-      </div>
+      </Typography>
     </div>
   );
 };
@@ -693,19 +764,26 @@ const QuestRow: FC<{ quest: Quest }> = ({ quest }) => {
   return (
     <div className="flex flex-col gap-1.5 rounded-sm border bg-[#FBF8F1] px-3.5 py-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="truncate text-[13px] font-bold">
+        <Typography as="div" variant="bodySm" weight="bold" truncate>
           Quest #{quest.questId}
-        </div>
-        <div className="text-xs font-bold text-primary">+{amount} THX</div>
+        </Typography>
+        <Typography
+          as="div"
+          variant="caption"
+          weight="bold"
+          className="text-primary"
+        >
+          +{amount} THX
+        </Typography>
       </div>
       <div className="flex items-center gap-2">
         <Badge kind={isReview ? "info" : "lead"}>
           {isReview ? "確認待ち" : "募集中"}
         </Badge>
         {quest.submitter && (
-          <span className="text-[11px] text-text-secondary">
+          <Typography as="span" variant="micro" tone="secondary">
             {abbreviateAddress(quest.submitter as `0x${string}`)}
-          </span>
+          </Typography>
         )}
       </div>
     </div>

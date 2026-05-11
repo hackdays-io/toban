@@ -19,7 +19,7 @@ Guidance for the Toban web app. The repo-root `CLAUDE.md` covers monorepo-wide c
 
 `app/components/ui/`, `app/components/composite/`, and `app/components/layout/` together **are** the design system. Routes/pages should be assembled from these — do not introduce new ad-hoc layout/typography/styling at the page level.
 
-- **`app/components/ui/`** — shadcn-vendored primitives (`new-york` style): `button`, `card`, `dialog`, `dropdown-menu`, `input`, `textarea`, `tabs`, `sheet`, `popover`, `tooltip`, `avatar`, `badge`, `checkbox`, `switch`, `radio-group`, `skeleton`, `sonner`, `field`, `label`, `menu`, `icon`. These are the lowest level — keep them close to upstream shadcn so future updates merge cleanly. Edit only when a token/variant change is needed; otherwise build *on top* in `composite/`.
+- **`app/components/ui/`** — shadcn-vendored primitives (`new-york` style): `button`, `card`, `dialog`, `dropdown-menu`, `input`, `textarea`, `tabs`, `sheet`, `popover`, `tooltip`, `avatar`, `badge`, `checkbox`, `switch`, `radio-group`, `skeleton`, `sonner`, `field`, `label`, `menu`, `icon`, plus the Toban-specific `heading` and `typography` (see Typography section below). These are the lowest level — keep them close to upstream shadcn so future updates merge cleanly. Edit only when a token/variant change is needed; otherwise build *on top* in `composite/`.
 - **`app/components/composite/`** — Toban-specific patterns built from primitives: `chip`, `divider`, `empty-state`, `field-label`, `row`, `section-label`, `segmented`, `stat-card`, `step-bar`, `summary-row`, `toggle-row`, `weight-bar`. Use these for any list-row / form-row / status-card shape that already exists.
 - **`app/components/layout/`** — page chrome: `AppShell`, `AppHeader`, `TopBar`, `BottomNav`, `Sidebar`, `PageContainer`, `ScreenHeader`, `MasterDetailLayout`. Routes should wrap their content in these instead of hand-rolling headers/containers.
 
@@ -32,6 +32,17 @@ Workflow when building a route:
 5. Every new `ui/` or `composite/` component ships with a `*.stories.tsx` next to it (Ladle previews them).
 
 Domain components (`app/components/{assistcredit,roles,splits,thankstoken,...}/`) are allowed to compose `composite/` + `ui/` for feature-specific UIs; they are **not** the design system and should not be reached for from unrelated features.
+
+## Typography — `Heading` and `Typography` primitives
+
+All headings and running text on renewed surfaces go through `app/components/ui/heading.tsx` and `app/components/ui/typography.tsx` (issue #491). **Don't reach for `text-*` / `font-*` / `tracking-*` / `leading-*` Tailwind utilities on `<h*>`/`<p>`/`<span>`/`<div>` text nodes** — pick the right `variant` instead. The variants exist so the type scale lives in one place and trivially follows token changes in `globals.css`.
+
+- `Heading variant="…"` for headings. Variant carries the full visual scale; `level={1..6}` controls the semantic element. Variants: `display` (LP hero), `hero` (auth hero), `h1` (LP section title), `h2` (app page title), `h3` (section / card title), `h4` / `h5` / `h6` (progressively tighter card-internal titles), `eyebrow` (small-caps section caption). Decouple visual size from semantic level when needed: `<Heading variant="h2" level={1}>` for a page title that's visually h2 but the page's H1 in document outline.
+- `Typography variant="…"` for body / caption / numeric stat text. Variants: `display`, `statLg` / `statMd` (numeric stat displays), `lead`, `body`, `bodySm`, `caption`, `micro`, `label`, `mono`. Use `tone` (`primary` / `secondary` / `muted` / `danger` / `success`) for colour, `weight` to bump weight without leaving the variant, `truncate` for single-line ellipsis, and `as` (`p` / `span` / `div`) when the default `<p>` is wrong (e.g. inline copy).
+- The 13 px and 14 px sizes collapse into `bodySm` on purpose — don't reintroduce a near-duplicate adjacent slot.
+- Need a one-off literal px (40 px / 56 px hero numeric on the home screen, for instance)? Compose `variant="statLg"` with a `className="text-[40px]"` override so the call site still declares "this is a stat display" rather than re-deriving the full scale.
+- When wrapping a `<Link>` so it inherits Typography styles, use `<Typography asChild as="span" variant="caption" tone="secondary"><Link …/></Typography>` — Radix `Slot.Root` passes the classes onto the link.
+- Composite-level wrappers (`SectionLabel`, `FieldLabel`, etc.) already consume Typography internally; reach for those when the role is named ("section label"). Reach for the raw primitive when no composite fits.
 
 ## Icons — react-icons only
 

@@ -8,6 +8,7 @@ import { AuthLayout } from "~/components/layout/AuthLayout";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 
 const Login: FC = () => {
   const navigate = useNavigate();
@@ -89,18 +90,30 @@ const Login: FC = () => {
                 <Icon name="mail" size={18} />
                 メール / SNS で続ける
               </Button>
-              <p className="mt-1 text-center text-xs text-text-secondary">
+              <Typography
+                variant="caption"
+                tone="secondary"
+                className="mt-1 text-center"
+              >
                 Privy が安全なウォレットを自動で作成します
-              </p>
+              </Typography>
             </>
           ) : (
             <>
-              <p className="text-center text-sm font-bold text-text-primary">
+              <Typography
+                variant="bodySm"
+                weight="bold"
+                className="text-center"
+              >
                 ウォレットに接続しています
-              </p>
-              <p className="text-center text-xs text-text-secondary">
+              </Typography>
+              <Typography
+                variant="caption"
+                tone="secondary"
+                className="text-center"
+              >
                 自動でワークスペースに移動します。問題が起きた場合はサインアウトしてやり直してください。
-              </p>
+              </Typography>
               <Button
                 variant="secondary"
                 size="lg"

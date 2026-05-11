@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 // Toban SectionLabel — small caps caption that introduces a section
@@ -7,12 +8,11 @@ import { cn } from "~/lib/utils";
 // `docs/design/handoff/project/screens.jsx:87-89`.
 function SectionLabel({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
+    <Typography
+      as="div"
+      variant="label"
       data-slot="section-label"
-      className={cn(
-        "px-5 pt-1 pb-2 text-xs font-bold tracking-[0.04em] text-text-secondary",
-        className,
-      )}
+      className={cn("px-5 pt-1 pb-2", className)}
       {...props}
     />
   );

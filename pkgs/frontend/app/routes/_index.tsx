@@ -13,6 +13,8 @@ import {
 import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
+import { Heading } from "~/components/ui/heading";
+import { Typography } from "~/components/ui/typography";
 
 // Brand quadrant colours — the four-tone identity from the Toban logo. Reused
 // across the LP for decorative accents (pills, feature cards, corner nodes).
@@ -197,15 +199,23 @@ function HeroCentered() {
       data-lp-root
       className="relative mx-auto max-w-[1200px] px-5 pt-14 pb-20 text-center md:px-7 md:pt-20 md:pb-28"
     >
-      <h1 className="mx-auto text-balance font-black leading-[1.3] tracking-tight text-text-primary text-[clamp(34px,7vw,62px)] md:max-w-4xl">
+      <Heading
+        variant="display"
+        level={1}
+        className="mx-auto text-balance leading-[1.3] md:max-w-4xl"
+      >
         <span style={{ color: ACCENT.orange }}>貢献してくれる人</span>に報いて、
         <br className="hidden sm:inline" />
         <span style={{ color: ACCENT.teal }}>長く続く活動</span>をつくる。
-      </h1>
-      <p className="mx-auto mt-6 max-w-2xl text-balance text-base font-medium leading-relaxed text-text-secondary md:text-[17px]">
+      </Heading>
+      <Typography
+        variant="lead"
+        tone="secondary"
+        className="mx-auto mt-6 max-w-2xl text-balance"
+      >
         みんなの貢献を記録し、報酬として届ける。Toban
         は、動いた人が正しく報われるコミュニティをブロックチェーンで支えるアプリです。
-      </p>
+      </Typography>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Link to="/login">
@@ -538,7 +548,7 @@ function PhilosophySection() {
         <SectionEyebrow color="var(--color-text-primary)">
           OUR PHILOSOPHY
         </SectionEyebrow>
-        <p className="text-balance font-extrabold leading-[1.45] tracking-tight text-text-primary text-[clamp(22px,3.4vw,40px)]">
+        <Typography variant="display" className="text-balance">
           コミュニティには、
           {/* hide sp */}
           <br className="hidden sm:inline" />
@@ -557,7 +567,7 @@ function PhilosophySection() {
             <span style={{ color: ACCENT.teal }}>やってくれた人を報いる</span>
           </Highlight>
           仕組みをつくります。
-        </p>
+        </Typography>
 
         <div className="mt-12 grid gap-8 border-t border-border pt-12 md:mt-14 md:grid-cols-3 md:pt-14">
           <Principle
@@ -604,10 +614,12 @@ function Principle({
       <div className="mb-3 text-[13px] font-bold tracking-[0.12em] text-text-secondary">
         PRINCIPLE {number}
       </div>
-      <h3 className="mb-3 text-xl font-extrabold tracking-tight text-text-primary md:text-[22px]">
+      <Heading variant="h3" className="mb-3">
         {title}
-      </h3>
-      <p className="text-sm leading-[1.7] text-text-secondary">{body}</p>
+      </Heading>
+      <Typography variant="bodySm" tone="secondary" className="leading-[1.7]">
+        {body}
+      </Typography>
     </div>
   );
 }
@@ -679,15 +691,19 @@ function FeaturesSection() {
       className="mx-auto max-w-[1200px] px-5 py-20 md:px-7 md:py-28"
     >
       <SectionEyebrow color={ACCENT.orange}>FEATURES</SectionEyebrow>
-      <h2 className="mb-4 text-balance font-black leading-[1.18] tracking-tight text-text-primary text-[clamp(28px,4vw,44px)]">
+      <Heading variant="h1" level={2} className="mb-4 text-balance">
         <span style={{ color: ACCENT.orange }}>ふたつの記録方法</span>
         を組み合わせて、
         <br className="hidden sm:inline" />
         <span style={{ color: ACCENT.teal }}>可視化と分配</span>をします
-      </h2>
-      <p className="mb-12 text-balance text-base text-text-secondary md:text-[17px]">
+      </Heading>
+      <Typography
+        variant="lead"
+        tone="secondary"
+        className="mb-12 text-balance"
+      >
         サンクストークンと当番クエスト、2つの方法で貢献を記録し、そのままブロックチェーンで可視化と分配につなげる。
-      </p>
+      </Typography>
 
       <FeatureGroup label="ふたつの記録方法">
         <div className="grid gap-5 sm:grid-cols-2">
@@ -766,14 +782,12 @@ function FeatureCard({
           >
             {label}
           </div>
-          <h3 className="text-[20px] font-extrabold leading-tight tracking-tight text-text-primary md:text-[22px]">
-            {title}
-          </h3>
+          <Heading variant="h3">{title}</Heading>
         </div>
       </div>
-      <p className="mb-4 text-[15px] leading-relaxed text-text-secondary">
+      <Typography variant="body" tone="secondary" className="mb-4">
         {desc}
-      </p>
+      </Typography>
       <ul className="m-0 flex flex-col gap-1.5 p-0 text-[13px] font-semibold text-text-primary">
         {items.map((it) => (
           <li key={it} className="flex items-center gap-2">
@@ -803,11 +817,11 @@ function StepsSection() {
     >
       <div className="mx-auto max-w-[1200px] px-5 py-20 md:px-7 md:py-28">
         <SectionEyebrow color={ACCENT.blue}>HOW IT WORKS</SectionEyebrow>
-        <h2 className="mb-4 text-balance font-black leading-[1.18] tracking-tight text-text-primary text-[clamp(28px,4vw,44px)]">
+        <Heading variant="h1" level={2} className="mb-4 text-balance">
           3ステップで、
           <br className="hidden sm:inline" />
           <span style={{ color: ACCENT.orange }}>循環</span>がはじまる。
-        </h2>
+        </Heading>
         <div className="grid gap-5 md:grid-cols-3">
           <Step
             number="01"
@@ -857,10 +871,12 @@ function Step({
       >
         STEP {number}
       </div>
-      <h3 className="mb-3 text-2xl font-black tracking-tight text-text-primary">
+      <Heading variant="h2" className="mb-3 font-black">
         <span style={{ color }}>{title}</span>
-      </h3>
-      <p className="m-0 text-sm text-text-secondary">{body}</p>
+      </Heading>
+      <Typography variant="bodySm" tone="secondary" className="m-0">
+        {body}
+      </Typography>
       <div className="mt-5 flex h-32 items-center justify-center overflow-hidden rounded-md bg-bg md:h-36">
         {visual}
       </div>
@@ -1061,14 +1077,18 @@ function UseCasesSection() {
       className="mx-auto max-w-[1200px] px-5 py-20 md:px-7 md:py-28"
     >
       <SectionEyebrow color={ACCENT.teal}>USE CASES</SectionEyebrow>
-      <h2 className="mb-4 text-balance font-black leading-[1.18] tracking-tight text-text-primary text-[clamp(28px,4vw,44px)]">
+      <Heading variant="h1" level={2} className="mb-4 text-balance">
         あらゆるコミュニティの
         <br className="hidden sm:inline" />
         <span style={{ color: ACCENT.orange }}>貢献が報われる</span>。
-      </h2>
-      <p className="mb-12 text-balance text-base text-text-secondary md:text-[17px]">
+      </Heading>
+      <Typography
+        variant="lead"
+        tone="secondary"
+        className="mb-12 text-balance"
+      >
         OSSコミュニティから地域の団体まで。Tobanはコミュニティの形に合わせて使えます。
-      </p>
+      </Typography>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {CASES.map((c) => (
           <UseCaseCard key={c.title} {...c} />
@@ -1108,12 +1128,10 @@ function UseCaseCard({
         >
           {tag}
         </span>
-        <h4 className="text-lg font-extrabold leading-snug tracking-tight text-text-primary">
-          {title}
-        </h4>
-        <p className="text-[13px] leading-relaxed text-text-secondary">
+        <Heading variant="h4">{title}</Heading>
+        <Typography variant="bodySm" tone="secondary">
           {body}
-        </p>
+        </Typography>
       </div>
     </div>
   );
@@ -1133,9 +1151,13 @@ function SiteFooter() {
             <BrandMark className="h-8 w-8" />
             Toban
           </Link>
-          <p className="mt-3 mb-5 max-w-xs text-[13px] text-text-secondary">
+          <Typography
+            variant="bodySm"
+            tone="secondary"
+            className="mt-3 mb-5 max-w-xs"
+          >
             貢献してくれる人に報いて、長く続く活動をつくる。
-          </p>
+          </Typography>
           <div className="flex gap-2.5">
             <SocialLink href={FOOTER_LINKS.github} label="GitHub">
               <LuGithub size={16} aria-hidden />
@@ -1206,9 +1228,13 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <h5 className="mb-3 text-[12px] font-extrabold tracking-[0.12em] text-text-secondary uppercase">
+      <Heading
+        variant="eyebrow"
+        level={5}
+        className="mb-3 tracking-[0.12em] uppercase"
+      >
         {title}
-      </h5>
+      </Heading>
       <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
         {links.map((link) => {
           const linkClassName =

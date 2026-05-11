@@ -16,8 +16,10 @@ import { SectionLabel } from "~/components/composite/section-label";
 import { WorkspaceCard } from "~/components/composite/workspace-card";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { Button } from "~/components/ui/button";
+import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
+import { Typography } from "~/components/ui/typography";
 import { useWorkspaceStore } from "~/stores/workspace";
 
 type Workspace = {
@@ -185,13 +187,13 @@ const Workspace: FC = () => {
       {/* Greeting + page title — mirrors `screens.jsx:1149-1152`. */}
       <header className="px-1">
         {greetingName && (
-          <p className="text-[13px] text-text-secondary">
+          <Typography variant="bodySm" tone="secondary">
             こんにちは、{greetingName} さん
-          </p>
+          </Typography>
         )}
-        <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-text-primary">
+        <Heading variant="h2" level={1} className="mt-0.5">
           ワークスペース
-        </h1>
+        </Heading>
       </header>
 
       <Input

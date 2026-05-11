@@ -2,6 +2,7 @@ import { useId } from "react";
 import type * as React from "react";
 
 import { Switch } from "~/components/ui/switch";
+import { Typography, typographyVariants } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface ToggleRowProps extends React.ComponentProps<"div"> {
@@ -38,14 +39,22 @@ function ToggleRow({
       <div className="min-w-0 flex-1">
         <label
           htmlFor={id}
-          className="block text-sm font-semibold text-text-primary"
+          className={cn(
+            typographyVariants({ variant: "bodySm", weight: "semibold" }),
+            "block",
+          )}
         >
           {label}
         </label>
         {sub && (
-          <div className="mt-0.5 text-[11px] leading-snug text-text-secondary">
+          <Typography
+            as="div"
+            variant="micro"
+            tone="secondary"
+            className="mt-0.5 leading-snug"
+          >
             {sub}
-          </div>
+          </Typography>
         )}
       </div>
       <Switch

@@ -1,5 +1,7 @@
 import type * as React from "react";
 
+import { Heading } from "~/components/ui/heading";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface AuthHeroProps extends Omit<React.ComponentProps<"div">, "title"> {
@@ -34,18 +36,13 @@ function AuthHero({
       )}
       {...rest}
     >
-      <h1
-        className={cn(
-          "font-extrabold leading-tight text-text-primary",
-          "text-[26px] sm:text-3xl md:text-4xl",
-        )}
-      >
+      <Heading variant="hero" level={1}>
         {title}
-      </h1>
+      </Heading>
       {description && (
-        <p className="max-w-md text-sm leading-relaxed text-text-secondary md:text-[15px]">
+        <Typography variant="bodySm" tone="secondary" className="max-w-md">
           {description}
-        </p>
+        </Typography>
       )}
       {children}
     </div>

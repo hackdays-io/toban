@@ -1,7 +1,9 @@
 import type * as React from "react";
 
 import { Button } from "~/components/ui/button";
+import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface TopBarProps extends Omit<React.ComponentProps<"header">, "title"> {
@@ -48,13 +50,18 @@ function TopBar({
       {...rest}
     >
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[22px] font-bold tracking-tight text-text-primary">
+        <Heading variant="h2" className="truncate">
           {title}
-        </div>
+        </Heading>
         {subtitle && (
-          <div className="mt-0.5 truncate text-xs text-text-secondary">
+          <Typography
+            variant="caption"
+            tone="secondary"
+            truncate
+            className="mt-0.5"
+          >
             {subtitle}
-          </div>
+          </Typography>
         )}
       </div>
       {searchPlaceholder !== undefined && (

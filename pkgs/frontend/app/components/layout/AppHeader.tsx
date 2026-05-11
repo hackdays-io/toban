@@ -3,6 +3,7 @@ import type * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface AppHeaderProps extends React.ComponentProps<"header"> {
@@ -49,9 +50,15 @@ function AppHeader({
           )}
           <AvatarFallback seed={workspaceName} />
         </Avatar>
-        <span className="flex-1 truncate text-sm font-bold text-text-primary">
+        <Typography
+          as="span"
+          variant="bodySm"
+          weight="bold"
+          truncate
+          className="flex-1"
+        >
           {workspaceName}
-        </span>
+        </Typography>
         <Icon name="chevron-down" size={16} className="text-text-secondary" />
       </button>
       <Button

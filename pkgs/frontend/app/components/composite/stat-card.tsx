@@ -14,6 +14,8 @@ interface StatCardProps extends React.ComponentProps<typeof Card> {
   delta?: React.ReactNode;
   /** "compact" matches the mobile spec; "wide" matches the desktop spec. */
   size?: "compact" | "wide";
+  /** Override className for the numeric value Typography (e.g. step the size down). */
+  valueClassName?: string;
 }
 
 // Toban StatCard — label + large numeric value + unit, with an optional
@@ -26,6 +28,7 @@ function StatCard({
   accent,
   delta,
   size = "compact",
+  valueClassName,
   className,
   ...rest
 }: StatCardProps) {
@@ -58,6 +61,7 @@ function StatCard({
         <Typography
           as="span"
           variant={isWide ? "statLg" : "statMd"}
+          className={valueClassName}
           style={accent ? { color: accent } : undefined}
         >
           {value}

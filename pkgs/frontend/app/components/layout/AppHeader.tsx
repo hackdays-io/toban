@@ -1,7 +1,6 @@
 import type * as React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
 import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
@@ -13,22 +12,16 @@ interface AppHeaderProps extends React.ComponentProps<"header"> {
   workspaceImageUrl?: string;
   /** Called when the user taps the workspace pill (open the switcher Sheet). */
   onWorkspacePress?: () => void;
-  /** Show a small dot on the bell icon. */
-  hasNotifications?: boolean;
-  /** Called when the user taps the bell. */
-  onNotificationsPress?: () => void;
   /** Optional trailing slot (extra icon buttons / user avatar dropdown). */
   right?: React.ReactNode;
 }
 
-// Toban mobile AppHeader — workspace switcher pill + notification bell.
+// Toban mobile AppHeader — workspace switcher pill plus a trailing slot.
 // Mirrors `docs/design/handoff/project/screens.jsx:91-117`.
 function AppHeader({
   workspaceName,
   workspaceImageUrl,
   onWorkspacePress,
-  hasNotifications,
-  onNotificationsPress,
   right,
   className,
   ...rest
@@ -61,18 +54,6 @@ function AppHeader({
         </Typography>
         <Icon name="chevron-down" size={16} className="text-text-secondary" />
       </button>
-      <Button
-        size="icon"
-        variant="secondary"
-        aria-label="通知"
-        onClick={onNotificationsPress}
-        className="relative size-10"
-      >
-        <Icon name="bell" size={20} />
-        {hasNotifications && (
-          <span className="absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-surface bg-danger" />
-        )}
-      </Button>
       {right}
     </header>
   );

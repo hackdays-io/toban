@@ -17,11 +17,6 @@ export default {
   title: "Layout / AppShell",
 };
 
-const SAMPLE_USER = {
-  name: "ryoma",
-  subtitle: "0xab12...c45f",
-};
-
 const sampleHomeContent = (
   <PageContainer className="py-4 md:py-6">
     <SectionLabel>あなたの当番</SectionLabel>
@@ -47,24 +42,6 @@ export const Responsive: Story = () => {
         workspace={{ name: "ひがしのシェアハウス" }}
         active={active}
         onNavigate={setActive}
-        hasNotifications
-        user={SAMPLE_USER}
-        topBar={{
-          title:
-            {
-              home: "ホーム",
-              duties: "当番",
-              splits: "分配",
-              members: "メンバー",
-              wallet: "ウォレット",
-            }[active] ?? "Toban",
-          subtitle: "Phase 2-3 デモ",
-          searchPlaceholder: "メンバーを検索",
-          primaryAction: {
-            label: "サンクスを送る",
-            icon: <Icon name="send" size={14} />,
-          },
-        }}
       >
         <div className="min-h-[480px]">{sampleHomeContent}</div>
       </AppShell>
@@ -82,14 +59,6 @@ export const WithWorkspaceSwitcher: Story = () => {
         active={active}
         onNavigate={setActive}
         onWorkspacePress={() => setOpen(true)}
-        user={SAMPLE_USER}
-        topBar={{
-          title: "ホーム",
-          primaryAction: {
-            label: "サンクスを送る",
-            icon: <Icon name="send" size={14} />,
-          },
-        }}
       >
         <div className="min-h-[480px]">{sampleHomeContent}</div>
       </AppShell>

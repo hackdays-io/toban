@@ -69,8 +69,10 @@ type Direction = "received" | "sent" | "third-party";
 interface ActivityItem {
   id: string;
   direction: Direction;
-  counterpartAddress: string;
-  counterpartName: string;
+  fromAddress: string;
+  toAddress: string;
+  fromName: string;
+  toName: string;
   amount: string;
   message?: string;
   relativeTime: string;
@@ -113,8 +115,9 @@ const WorkspaceHome: FC = () => {
       if (m.from) set.add(m.from.toLowerCase());
       if (m.to) set.add(m.to.toLowerCase());
     }
+    if (me) set.add(me.toLowerCase());
     return Array.from(set);
-  }, [recentMints]);
+  }, [recentMints, me]);
   const { names } = useNamesByAddresses(counterpartAddresses);
   const nameByAddress = useMemo(() => {
     const map = new Map<string, NameData>();
@@ -162,15 +165,19 @@ const WorkspaceHome: FC = () => {
   });
 
   const sendableAmount = useMemo(
-    () => Number(formatEther(mintableAmount || 0n)).toLocaleString(),
+    () =>
+      Math.floor(Number(formatEther(mintableAmount || 0n))).toLocaleString(),
     [mintableAmount],
   );
   const receivedFormatted = useMemo(
-    () => Number(formatEther(BigInt(receivedBalance))).toLocaleString(),
+    () =>
+      Math.floor(Number(formatEther(BigInt(receivedBalance)))).toLocaleString(),
     [receivedBalance],
   );
 
   const activityItems = useMemo<ActivityItem[]>(() => {
+    const resolveName = (addr: string) =>
+      nameByAddress.get(addr)?.name || abbreviateAddress(addr as `0x${string}`);
     return recentMints.slice(0, 4).map((m): ActivityItem => {
       const fromAddr = m.from.toLowerCase();
       const toAddr = m.to.toLowerCase();
@@ -182,11 +189,6 @@ const WorkspaceHome: FC = () => {
           : fromAddr === meAddr
             ? "sent"
             : "third-party";
-      const counterpartAddress = direction === "sent" ? toAddr : fromAddr;
-      const counterpart = nameByAddress.get(counterpartAddress);
-      const counterpartName =
-        counterpart?.name ||
-        abbreviateAddress(counterpartAddress as `0x${string}`);
       let message: string | undefined;
       try {
         const decoded = hexToString((m.data as `0x${string}`) || "0x");
@@ -197,8 +199,10 @@ const WorkspaceHome: FC = () => {
       return {
         id: m.id,
         direction,
-        counterpartAddress,
-        counterpartName,
+        fromAddress: fromAddr,
+        toAddress: toAddr,
+        fromName: resolveName(fromAddr),
+        toName: resolveName(toAddr),
         amount: Number(formatEther(BigInt(m.amount))).toLocaleString(),
         message,
         relativeTime: formatRelative(Number(m.blockTimestamp), nowMs),
@@ -289,6 +293,7 @@ const WorkspaceHome: FC = () => {
               size="wide"
               accent="var(--color-primary)"
               delta={weeklyStats.delta}
+              valueClassName="text-[26px]"
             />
             <StatCard
               label="受け取ったサンクス"
@@ -296,6 +301,7 @@ const WorkspaceHome: FC = () => {
               unit="THX"
               size="wide"
               accent="var(--color-contrib)"
+              valueClassName="text-[26px]"
             />
             <StatCard
               label="今週の貢献"
@@ -303,33 +309,25 @@ const WorkspaceHome: FC = () => {
               unit="件"
               size="wide"
               accent="var(--color-split)"
+              valueClassName="text-[26px]"
             />
           </div>
 
           <Card className="gap-3 py-5">
-            <SectionHeader
-              title="あなたの当番"
-              actionTo={treeId ? `/${treeId}/role` : undefined}
-            />
-            {myDuties.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2.5 px-5">
-                {myDuties.slice(0, 4).map((h) => (
-                  <MyDutyCard
-                    key={h.id}
-                    treeId={treeId ?? ""}
-                    hatId={h.id as `0x${string}`}
-                    imageUri={h.imageUri}
-                    detailsUri={h.details}
-                    myAddress={(me ?? "0x") as `0x${string}`}
-                    size="sm"
-                  />
-                ))}
-              </div>
-            ) : (
-              <Typography variant="bodySm" tone="secondary" className="px-5">
-                担当中の当番はありません
-              </Typography>
-            )}
+            <SectionHeader title="進行中のクエスト" />
+            <div className="px-5">
+              {quests.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {quests.slice(0, 3).map((q) => (
+                    <QuestRow key={q.id} quest={q} />
+                  ))}
+                </div>
+              ) : (
+                <Typography variant="bodySm" tone="secondary">
+                  進行中のクエストはありません
+                </Typography>
+              )}
+            </div>
           </Card>
 
           <Card className="gap-2 py-5">
@@ -353,41 +351,26 @@ const WorkspaceHome: FC = () => {
           />
 
           <Card className="gap-3 py-5">
-            <SectionHeader title="進行中のクエスト" />
-            <div className="px-5">
-              {quests.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {quests.slice(0, 3).map((q) => (
-                    <QuestRow key={q.id} quest={q} />
-                  ))}
-                </div>
-              ) : (
-                <Typography variant="bodySm" tone="secondary">
-                  進行中のクエストはありません
-                </Typography>
-              )}
-            </div>
-          </Card>
-
-          <Card className="gap-3 py-5">
-            <SectionHeader title="原則" />
-            <ul className="flex flex-col gap-3 px-5">
-              {PRINCIPLES.map((p) => (
-                <li key={p.label} className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-xs bg-primary-soft text-sm text-[#7A5A2E]">
-                    {p.icon}
-                  </div>
-                  <div>
-                    <Typography as="div" variant="bodySm" weight="bold">
-                      {p.label}
-                    </Typography>
-                    <Typography as="div" variant="micro" tone="secondary">
-                      {p.desc}
-                    </Typography>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SectionHeader title="あなたの当番" />
+            {myDuties.length > 0 ? (
+              <div className="flex flex-col gap-2.5 px-5">
+                {myDuties.slice(0, 4).map((h) => (
+                  <MyDutyCard
+                    key={h.id}
+                    treeId={treeId ?? ""}
+                    hatId={h.id as `0x${string}`}
+                    imageUri={h.imageUri}
+                    detailsUri={h.details}
+                    myAddress={(me ?? "0x") as `0x${string}`}
+                    size="sm"
+                  />
+                ))}
+              </div>
+            ) : (
+              <Typography variant="bodySm" tone="secondary" className="px-5">
+                担当中の当番はありません
+              </Typography>
+            )}
           </Card>
         </div>
       </div>
@@ -396,12 +379,6 @@ const WorkspaceHome: FC = () => {
 };
 
 export default WorkspaceHome;
-
-const PRINCIPLES = [
-  { icon: "♡", label: "Warm", desc: "やさしい人のつながり" },
-  { icon: "✺", label: "Clear", desc: "迷わないシンプルさ" },
-  { icon: "◍", label: "Community", desc: "みんなで育てる仕組み" },
-];
 
 const SectionHeader: FC<{ title: string; actionTo?: string }> = ({
   title,
@@ -456,7 +433,7 @@ const SendableMobileCard: FC<SendableMobileCardProps> = ({
             <Typography
               as="span"
               variant="statLg"
-              className="text-[40px] tracking-[-1px]"
+              className="text-[32px] tracking-[-1px]"
             >
               {sendableAmount}
             </Typography>
@@ -522,7 +499,7 @@ const WeeklyBalanceCard: FC<WeeklyBalanceCardProps> = ({
       <Typography
         as="div"
         variant="statLg"
-        className="mt-2.5 mb-1 text-[56px] tracking-[-2px]"
+        className="mt-2.5 mb-1 text-[40px] tracking-[-2px]"
       >
         {sendableAmount}
         <Typography as="span" variant="body" className="ml-1.5 opacity-80">
@@ -694,12 +671,6 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
   const accentClass = isSent ? "text-primary" : "text-contrib";
   const ringClass = isSent ? "ring-primary/20" : "ring-contrib/20";
   const iconName = isSent ? "send" : "heart";
-  const counterpartLabel =
-    item.direction === "received"
-      ? " さんから"
-      : item.direction === "sent"
-        ? " さんへ"
-        : " → ";
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div
@@ -713,10 +684,11 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
       </div>
       <div className="min-w-0 flex-1">
         <Typography as="div" variant="bodySm" className="leading-tight">
-          <strong className="font-semibold">{item.counterpartName}</strong>
+          <strong className="font-semibold">{item.fromName}</strong>
           <Typography as="span" variant="bodySm" tone="secondary">
-            {counterpartLabel}
+            {" → "}
           </Typography>
+          <strong className="font-semibold">{item.toName}</strong>
         </Typography>
         {item.message && (
           <Typography

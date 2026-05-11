@@ -6,6 +6,9 @@ export default {
   title: "Layout / Sidebar",
 };
 
+// The Sidebar's account header is driven by `AccountMenu`, which reads
+// Privy + ENS at runtime — Ladle previews fall back to the Login-button
+// state. Behavioural verification lives in the Cypress E2E suite.
 export const Default: Story = () => {
   const [active, setActive] = useState("home");
   return (
@@ -17,10 +20,6 @@ export const Default: Story = () => {
         workspaceName="ひがしのシェアハウス"
         active={active}
         onNavigate={setActive}
-        user={{
-          name: "ryoma",
-          subtitle: "0xab12...c45f",
-        }}
       />
       <div className="flex flex-1 items-center justify-center text-sm text-text-secondary">
         現在: {active}
@@ -28,16 +27,3 @@ export const Default: Story = () => {
     </div>
   );
 };
-
-export const WithoutUser: Story = () => (
-  <div className="flex h-[480px] overflow-hidden rounded-md border bg-surface">
-    <Sidebar
-      workspaceName="新規ワークスペース"
-      active="home"
-      onNavigate={() => {}}
-    />
-    <div className="flex flex-1 items-center justify-center text-sm text-text-secondary">
-      ユーザー情報なし
-    </div>
-  </div>
-);

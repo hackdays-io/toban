@@ -7,14 +7,12 @@ import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 interface TopBarProps extends Omit<React.ComponentProps<"header">, "title"> {
-  title: React.ReactNode;
+  title?: React.ReactNode;
   subtitle?: React.ReactNode;
   /** Optional placeholder for the search pill. Hides search if undefined. */
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (next: string) => void;
-  onNotificationsPress?: () => void;
-  hasNotifications?: boolean;
   /** Trailing slot before the primary CTA. */
   right?: React.ReactNode;
   /** Primary CTA — e.g. "サンクスを送る". Hidden when omitted. */
@@ -25,7 +23,7 @@ interface TopBarProps extends Omit<React.ComponentProps<"header">, "title"> {
   };
 }
 
-// Toban desktop TopBar — page title, search pill, bell and a primary CTA.
+// Toban desktop TopBar — page title (optional), search pill, and a primary CTA.
 // Mirrors `docs/design/handoff/project/desktop.jsx:134-155`.
 function TopBar({
   title,
@@ -33,8 +31,6 @@ function TopBar({
   searchPlaceholder,
   searchValue,
   onSearchChange,
-  onNotificationsPress,
-  hasNotifications,
   right,
   primaryAction,
   className,
@@ -50,9 +46,11 @@ function TopBar({
       {...rest}
     >
       <div className="min-w-0 flex-1">
-        <Heading variant="h2" className="truncate">
-          {title}
-        </Heading>
+        {title && (
+          <Heading variant="h2" className="truncate">
+            {title}
+          </Heading>
+        )}
         {subtitle && (
           <Typography
             variant="caption"
@@ -76,18 +74,6 @@ function TopBar({
           />
         </div>
       )}
-      <Button
-        size="icon"
-        variant="ghost"
-        aria-label="通知"
-        onClick={onNotificationsPress}
-        className="relative size-10"
-      >
-        <Icon name="bell" size={18} className="text-text-secondary" />
-        {hasNotifications && (
-          <span className="absolute top-2 right-2 size-2 rounded-full border-2 border-surface bg-danger" />
-        )}
-      </Button>
       {right}
       {primaryAction && (
         <Button onClick={primaryAction.onClick}>

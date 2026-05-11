@@ -1,5 +1,4 @@
 import axios from "axios";
-import { useActiveWalletIdentity } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -11,25 +10,16 @@ import {
 } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
-import { abbreviateAddress } from "utils/wallet";
 import { AccountMenu } from "./AccountMenu";
 import { AppShell } from "./AppShell";
 import { WorkspaceSwitcherMenu } from "./WorkspaceSwitcherMenu";
 
-// Per-route TopBar inputs are declared via React Router v7's `handle` export.
-// Pages opt in by exporting `export const handle: AppShellHandle = { ... }`.
+// Per-route AppShell inputs are declared via React Router v7's `handle`
+// export. Pages opt in by exporting `export const handle: AppShellHandle = {…}`.
 // The wrapper reads the deepest match's handle so nested routes win.
 interface AppShellHandle {
   /** Bottom-nav / Sidebar active key (`home` / `duties` / `splits` / ...). */
   active?: string;
-  /** Per-page TopBar title (desktop). Falls back to the workspace name. */
-  topBarTitle?: React.ReactNode;
-  /** Per-page TopBar subtitle (desktop). */
-  topBarSubtitle?: React.ReactNode;
-  /** Optional search pill placeholder. Hides search if undefined. */
-  topBarSearchPlaceholder?: string;
-  /** Skip the desktop TopBar entirely (master-detail pages). */
-  hideTopBar?: boolean;
 }
 
 // Only the `/{treeId}/...` routes get wrapped with AppShell. These segments
@@ -78,7 +68,6 @@ function ShellView({ treeId }: ShellViewProps) {
   const location = useLocation();
   const matches = useMatches();
   const treeInfo = useTreeInfo(Number(treeId));
-  const { identity } = useActiveWalletIdentity();
   const [workspaceName, setWorkspaceName] = useState<string>();
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
@@ -147,19 +136,6 @@ function ShellView({ treeId }: ShellViewProps) {
     }
   };
 
-  const userName = identity?.name ?? identity?.address;
-  const user = userName
-    ? {
-        name: userName,
-        subtitle: identity?.address
-          ? abbreviateAddress(identity.address)
-          : undefined,
-        imageUrl: identity?.text_records?.avatar
-          ? ipfs2https(identity.text_records.avatar)
-          : undefined,
-      }
-    : undefined;
-
   const displayWorkspaceName = workspaceName ?? "Toban";
 
   return (
@@ -172,14 +148,7 @@ function ShellView({ treeId }: ShellViewProps) {
         active={active}
         onNavigate={handleNavigate}
         onWorkspacePress={() => setSwitcherOpen(true)}
-        user={user}
-        topBar={{
-          title: handle.topBarTitle ?? displayWorkspaceName,
-          subtitle: handle.topBarSubtitle,
-          searchPlaceholder: handle.topBarSearchPlaceholder,
-        }}
         appHeaderRight={<AccountMenu variant="compact" />}
-        hideTopBar={handle.hideTopBar}
       >
         <Outlet />
       </AppShell>

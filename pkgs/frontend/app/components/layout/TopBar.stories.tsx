@@ -12,7 +12,6 @@ export const Default: Story = () => (
     <TopBar
       title="ホーム"
       subtitle="今週の活動"
-      hasNotifications
       primaryAction={{
         label: "サンクスを送る",
         icon: <Icon name="send" size={14} />,

@@ -1,4 +1,4 @@
-import type * as React from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Row } from "~/components/composite/row";
 import { Icon } from "~/components/ui/icon";
@@ -31,11 +31,14 @@ interface WorkspaceSwitcherMenuProps {
 }
 
 // Toban Workspace Switcher menu.
-// - Mobile (`md:hidden`): bottom Sheet anchored to the AppHeader pill.
-// - Desktop (`hidden md:block`): Popover anchored near the Sidebar workspace
-//   button via a `PopoverAnchor` positioned at the top-left of the viewport
-//   (matches the design source `desktop.jsx:72-101`).
+// - Mobile (`<md`): bottom Sheet anchored to the AppHeader pill.
+// - Desktop (`>=md`): Popover anchored near the Sidebar workspace button via
+//   a `PopoverAnchor` positioned at the top-left of the viewport (matches the
+//   design source `desktop.jsx:72-101`).
 // Both surfaces render the same three actions (switch / invite / settings).
+// Only one primitive is mounted per viewport — both Popover and Sheet portal
+// to the body, so a CSS-only `md:hidden` gate would let both open at once
+// and their focus traps would fight (the Sheet flashed shut).
 function WorkspaceSwitcherMenu({
   open,
   onOpenChange,
@@ -44,6 +47,16 @@ function WorkspaceSwitcherMenu({
   onOpenSettings,
   inviteLink,
 }: WorkspaceSwitcherMenuProps) {
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    setIsDesktop(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   const handleInvite = async () => {
     const link =
       inviteLink ?? (typeof window !== "undefined" ? window.location.href : "");
@@ -65,7 +78,7 @@ function WorkspaceSwitcherMenu({
     onOpenChange(false);
   };
 
-  const items: React.ReactNode = (
+  const items: ReactNode = (
     <div className="flex flex-col">
       <Row
         left={<Icon name="members" />}
@@ -94,52 +107,53 @@ function WorkspaceSwitcherMenu({
     </div>
   );
 
-  return (
-    <>
-      {/* Desktop — Popover anchored to a fixed point near the Sidebar's
-          workspace button. The anchor is rendered as a 1x1 invisible div so
-          Radix has something to position against without us having to thread
-          a ref through the Sidebar primitive. */}
-      <div className="hidden md:block">
-        <Popover open={open} onOpenChange={onOpenChange}>
-          <PopoverAnchor asChild>
-            <div
-              aria-hidden
-              className="pointer-events-none fixed top-[88px] left-[260px] size-px"
-            />
-          </PopoverAnchor>
-          <PopoverContent
-            align="start"
-            side="right"
-            sideOffset={8}
-            className="w-[280px] p-0"
-          >
-            <Typography
-              as="div"
-              variant="bodySm"
-              weight="bold"
-              truncate
-              className="border-b px-4 py-3"
-            >
-              {workspaceName}
-            </Typography>
-            {items}
-          </PopoverContent>
-        </Popover>
-      </div>
+  // First paint (SSR + pre-effect client render): render nothing. The menu is
+  // only meaningful once the user opens it — by then `isDesktop` is resolved.
+  if (isDesktop === null) return null;
 
-      {/* Mobile — bottom Sheet. */}
-      <div className="md:hidden">
-        <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent side="bottom">
-            <SheetHeader>
-              <SheetTitle>{workspaceName}</SheetTitle>
-            </SheetHeader>
-            <div className="px-1 pb-2">{items}</div>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </>
+  if (isDesktop) {
+    return (
+      // Desktop — Popover anchored to a fixed point near the Sidebar's
+      // workspace button. The anchor is a 1x1 invisible div so Radix has
+      // something to position against without threading a ref through the
+      // Sidebar primitive.
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverAnchor asChild>
+          <div
+            aria-hidden
+            className="pointer-events-none fixed top-[88px] left-[260px] size-px"
+          />
+        </PopoverAnchor>
+        <PopoverContent
+          align="start"
+          side="right"
+          sideOffset={8}
+          className="w-[280px] p-0"
+        >
+          <Typography
+            as="div"
+            variant="bodySm"
+            weight="bold"
+            truncate
+            className="border-b px-4 py-3"
+          >
+            {workspaceName}
+          </Typography>
+          {items}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom">
+        <SheetHeader>
+          <SheetTitle>{workspaceName}</SheetTitle>
+        </SheetHeader>
+        <div className="px-1 pb-2">{items}</div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

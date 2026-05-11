@@ -1,18 +1,11 @@
 import type * as React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
 import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
+import { AccountMenu } from "./AccountMenu";
 import { type BottomNavItem, DEFAULT_BOTTOM_NAV_ITEMS } from "./BottomNav";
-
-interface SidebarUser {
-  name: string;
-  /** Wallet address or short identifier shown under the name. */
-  subtitle?: string;
-  imageUrl?: string;
-}
 
 interface SidebarProps extends React.ComponentProps<"aside"> {
   workspaceName: string;
@@ -21,12 +14,10 @@ interface SidebarProps extends React.ComponentProps<"aside"> {
   active: string;
   onNavigate: (key: string) => void;
   items?: ReadonlyArray<BottomNavItem>;
-  user?: SidebarUser;
-  onSettingsPress?: () => void;
 }
 
-// Toban desktop Sidebar — 260 px column with brand mark, workspace
-// switcher, primary nav, and a user footer.
+// Toban desktop Sidebar — 260 px column with account header (or Login
+// button when signed-out), workspace switcher, and primary nav.
 // Mirrors `docs/design/handoff/project/desktop.jsx:56-125`.
 function Sidebar({
   workspaceName,
@@ -35,8 +26,6 @@ function Sidebar({
   active,
   onNavigate,
   items = DEFAULT_BOTTOM_NAV_ITEMS,
-  user,
-  onSettingsPress,
   className,
   ...rest
 }: SidebarProps) {
@@ -49,23 +38,8 @@ function Sidebar({
       )}
       {...rest}
     >
-      <div className="flex items-center gap-2.5 border-b px-4 pt-5 pb-3.5">
-        <span className="inline-flex size-8 items-center justify-center rounded-md bg-text-primary text-base font-extrabold text-[#FFD668]">
-          と
-        </span>
-        <div>
-          <Typography
-            as="div"
-            variant="body"
-            weight="bold"
-            className="leading-tight"
-          >
-            Toban
-          </Typography>
-          <Typography as="div" variant="micro" tone="secondary">
-            あたたかい当番帳
-          </Typography>
-        </div>
+      <div className="border-b p-3">
+        <AccountMenu variant="inline" className="w-full px-3 py-2.5" />
       </div>
 
       <button
@@ -122,40 +96,9 @@ function Sidebar({
           );
         })}
       </nav>
-
-      {user && (
-        <div className="mt-auto border-t p-3">
-          <div className="flex items-center gap-2.5">
-            <Avatar>
-              {user.imageUrl && (
-                <AvatarImage src={user.imageUrl} alt={user.name} />
-              )}
-              <AvatarFallback seed={user.name} />
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <Typography as="div" variant="bodySm" weight="bold" truncate>
-                {user.name}
-              </Typography>
-              {user.subtitle && (
-                <Typography as="div" variant="mono" tone="secondary" truncate>
-                  {user.subtitle}
-                </Typography>
-              )}
-            </div>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label="設定"
-              onClick={onSettingsPress}
-            >
-              <Icon name="gear" size={16} />
-            </Button>
-          </div>
-        </div>
-      )}
     </aside>
   );
 }
 
 export { Sidebar };
-export type { SidebarProps, SidebarUser };
+export type { SidebarProps };

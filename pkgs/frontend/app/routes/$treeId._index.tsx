@@ -14,6 +14,7 @@ import { type FC, Fragment, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
+import { getTreatEmojiByAmount } from "utils/treatEmoji";
 import { abbreviateAddress } from "utils/wallet";
 import { formatEther, hexToString } from "viem";
 import { Divider } from "~/components/composite/divider";
@@ -73,7 +74,7 @@ interface ActivityItem {
   toAddress: string;
   fromName: string;
   toName: string;
-  amount: string;
+  amount: number;
   message?: string;
   relativeTime: string;
 }
@@ -208,7 +209,7 @@ const WorkspaceHome: FC = () => {
         toAddress: toAddr,
         fromName: resolveName(fromAddr),
         toName: resolveName(toAddr),
-        amount: Number(formatEther(BigInt(m.amount))).toLocaleString(),
+        amount: Number(formatEther(BigInt(m.amount))),
         message,
         relativeTime: formatRelative(Number(m.blockTimestamp), nowMs),
       };
@@ -645,20 +646,14 @@ const ActivityList: FC<ActivityListProps> = ({
 };
 
 const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
-  const isSent = item.direction === "sent";
-  const accentClass = isSent ? "text-primary" : "text-contrib";
-  const ringClass = isSent ? "ring-primary/20" : "ring-contrib/20";
-  const iconName = isSent ? "send" : "heart";
+  // THX is non-fungible-ish in spirit (always a gift), so we don't render
+  // a +/- prefix: sender and receiver both see the amount in the same green.
+  // The icon switches to a treat emoji whose size scales with the amount.
+  const { emoji } = getTreatEmojiByAmount(item.amount);
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      <div
-        className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-full bg-card ring-[1.5px]",
-          accentClass,
-          ringClass,
-        )}
-      >
-        <Icon name={iconName} size={18} />
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-soft/60 text-[20px] leading-none">
+        <span aria-hidden>{emoji}</span>
       </div>
       <div className="min-w-0 flex-1">
         <Typography as="div" variant="bodySm" className="leading-tight">
@@ -692,11 +687,9 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
         as="div"
         variant="bodySm"
         weight="bold"
-        tone={isSent ? "secondary" : "primary"}
-        className={cn(!isSent && "text-contrib")}
+        className="text-contrib"
       >
-        {isSent ? "−" : "+"}
-        {item.amount} THX
+        {item.amount.toLocaleString()} THX
       </Typography>
     </div>
   );

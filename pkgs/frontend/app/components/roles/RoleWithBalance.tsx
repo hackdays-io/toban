@@ -66,9 +66,7 @@ const RoleWithBalance: FC<RoleProps> = (params) => {
             <CommonButton
               w="auto"
               size="sm"
-              onClick={() =>
-                navigate(`/${treeId}/${hatId}/${wearer}/assistcredit/send`)
-              }
+              onClick={() => navigate(`/${treeId}/${hatId}/${wearer}`)}
             >
               送る
             </CommonButton>

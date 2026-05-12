@@ -1,7 +1,7 @@
 import { BrowserMultiFormatReader } from "@zxing/library";
 import { type FC, useCallback, useRef, useState } from "react";
 import { MdQrCodeScanner } from "react-icons/md";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Box, IconButton } from "~/components/chakra-shim";
 import CommonButton from "./CommonButton";
 

@@ -3,7 +3,7 @@ import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { parseEther } from "viem";
 import { BasicButton } from "~/components/BasicButton";
 import { PageHeader } from "~/components/PageHeader";

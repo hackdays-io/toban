@@ -9,11 +9,6 @@ import { useTreeInfo } from "hooks/useHats";
 import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo, useState } from "react";
 import { LuCheck } from "react-icons/lu";
-// Sonner — appends its stylesheet to the END of <head> on module eval, so
-// loading it at module level is safe for hydration. react-toastify uses
-// `insertBefore(..., firstChild)` which shifts every expected <meta>
-// position and breaks SSR hydration on direct loads (see commit dfd24c0
-// + #422 migration).
 import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";

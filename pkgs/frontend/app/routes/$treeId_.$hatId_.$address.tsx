@@ -16,9 +16,6 @@ import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-// Sonner — appends its stylesheet to the END of <head>, so importing at
-// route-module level is safe for SSR hydration. react-toastify uses
-// `insertBefore(..., firstChild)` and breaks hydration on direct loads.
 import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";

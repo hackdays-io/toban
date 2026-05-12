@@ -16,7 +16,6 @@ import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { hatsApolloClient } from "utils/apollo";
 import { type Address, parseEventLogs } from "viem";
-import { base, optimism, sepolia } from "viem/chains";
 import { HATS_ADDRESS } from "./useContracts";
 import { currentChain, publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
@@ -25,24 +24,16 @@ import { useActiveWallet } from "./useWallet";
 // Read with subgraph
 // ###############################################################
 
-const theGraphAPIKey = import.meta.env.VITE_THEGRAPH_API_KEY;
+const hatsSubgraphEndpoint = import.meta.env.VITE_HATS_GRAPHQL_ENDPOINT;
+if (!hatsSubgraphEndpoint) {
+  throw new Error(
+    "VITE_HATS_GRAPHQL_ENDPOINT is not set. Point it at a Hats Protocol subgraph for the active chain (Sepolia uses a self-hosted Goldsky deployment; Hats' Studio endpoints were retired).",
+  );
+}
 
-// Subgraph用のインスタンスを生成
 export const hatsSubgraphClient = new HatsSubgraphClient({
   config: {
-    [sepolia.id]: {
-      endpoint:
-        "https://api.studio.thegraph.com/query/55784/hats-v1-sepolia/version/latest",
-    },
-    [optimism.id]: {
-      endpoint:
-        "https://api.studio.thegraph.com/query/55784/hats-v1-optimism/version/latest",
-    },
-    [base.id]: {
-      endpoint: theGraphAPIKey
-        ? `https://gateway.thegraph.com/api/${theGraphAPIKey}/subgraphs/id/FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs`
-        : "https://api.studio.thegraph.com/query/55784/hats-v1-base/version/latest",
-    },
+    [currentChain.id]: { endpoint: hatsSubgraphEndpoint },
   },
 });
 

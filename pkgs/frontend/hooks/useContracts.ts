@@ -1,6 +1,7 @@
 import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import { HATS_ABI } from "abi/hats";
 import { HATS_HAT_CREATOR_MODULE_ABI } from "abi/hatsHatCreatorModule";
+import { HATS_QUEST_MODULE_ABI } from "abi/hatsQuestModule";
 import { HATS_TIME_FRAME_MODULE_ABI } from "abi/hatsTimeFrameModule";
 import { THANKS_TOKEN_ABI } from "abi/thankstoken";
 import type { Address } from "viem";
@@ -29,6 +30,13 @@ export const hatsHatCreatorContractBaseConfig = (
 ) => ({
   address: hatsHatCreatorModuleAddress,
   abi: HATS_HAT_CREATOR_MODULE_ABI,
+});
+
+export const hatsQuestContractBaseConfig = (
+  hatsQuestModuleAddress: Address,
+) => ({
+  address: hatsQuestModuleAddress,
+  abi: HATS_QUEST_MODULE_ABI,
 });
 
 export const fractionTokenBaseConfig = (fractionTokenAddress: Address) => ({

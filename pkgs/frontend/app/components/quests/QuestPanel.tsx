@@ -1,11 +1,11 @@
+import { useQuestMetadata } from "hooks/useQuestMetadata";
 import type { Quest, QuestStatus } from "hooks/useQuests";
-import { type FC, Fragment, useMemo } from "react";
+import { type FC, Fragment } from "react";
 import { Link } from "react-router";
 import { abbreviateAddress } from "utils/wallet";
-import { formatEther } from "viem";
 
 import { SectionLabel } from "~/components/composite/section-label";
-import { Badge } from "~/components/ui/badge";
+import { QuestStateBadge } from "~/components/quests/QuestStateBadge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
@@ -36,11 +36,12 @@ const QuestPanel: FC<QuestPanelProps> = ({
     { status: "Open", title: "募集中のクエスト" },
     { status: "PendingReview", title: "確認待ち" },
     { status: "Completed", title: "完了" },
+    { status: "Cancelled", title: "キャンセル" },
   ];
 
   const createButton = canCreate ? (
     <Button asChild variant="secondary" full>
-      <Link to={`/${treeId}/${hatId}/quests/new`}>
+      <Link to={`/${treeId}/${hatId}/quest/new`}>
         <Icon name="plus" size={16} />
         クエストを作成
       </Link>
@@ -97,22 +98,17 @@ const QuestPanel: FC<QuestPanelProps> = ({
 const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
   quest,
   treeId,
-  hatId,
 }) => {
-  const amount = useMemo(() => {
-    try {
-      return Number(formatEther(BigInt(quest.amount))).toLocaleString();
-    } catch {
-      return "0";
-    }
-  }, [quest.amount]);
+  const { data: meta } = useQuestMetadata(quest.metadataHash);
+  const title = meta?.title ?? `Quest #${quest.questId}`;
+  const sharePercent = sharePercentOf(quest.amount);
 
   const card = (
     <Card className="gap-2 px-3.5 py-3 transition-colors hover:bg-bg">
       <div className="flex items-start gap-2.5">
         <div className="min-w-0 flex-1">
           <Typography as="div" variant="bodySm" weight="bold" truncate>
-            Quest #{quest.questId}
+            {title}
           </Typography>
           <div className="mt-1 flex items-center gap-2">
             <QuestStateBadge status={quest.status} />
@@ -130,14 +126,14 @@ const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
             variant="statMd"
             className="text-primary tracking-[-0.5px]"
           >
-            +{amount}
+            +{sharePercent}
             <Typography
               as="span"
               variant="micro"
               tone="secondary"
               className="ml-0.5"
             >
-              THX
+              %
             </Typography>
           </Typography>
         </div>
@@ -145,12 +141,10 @@ const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
     </Card>
   );
 
-  // Quest detail route ships in a later phase. Link back to the duty as a
-  // sensible fall-through so the card is still clickable.
-  if (treeId && hatId) {
+  if (treeId) {
     return (
       <Link
-        to={`/${treeId}/${hatId}`}
+        to={`/${treeId}/quest/${quest.questId}`}
         className="block focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         {card}
@@ -160,18 +154,14 @@ const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
   return card;
 };
 
-const QuestStateBadge: FC<{ status: QuestStatus }> = ({ status }) => {
-  switch (status) {
-    case "Open":
-      return <Badge kind="lead">募集中</Badge>;
-    case "PendingReview":
-      return <Badge kind="info">確認待ち</Badge>;
-    case "Completed":
-      return <Badge kind="member">完了</Badge>;
-    case "Cancelled":
-      return <Badge kind="role">取消</Badge>;
-    default:
-      return null;
+// RoleShare raw units → percent. 10000 raw units == 100% per
+// HatsFractionTokenModule.DEFAULT_TOKEN_SUPPLY.
+const sharePercentOf = (rawAmount: unknown): string => {
+  try {
+    const raw = BigInt(rawAmount as string | number | bigint);
+    return (Number(raw) / 100).toString();
+  } catch {
+    return "0";
   }
 };
 

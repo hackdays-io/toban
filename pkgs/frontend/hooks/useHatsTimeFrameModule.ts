@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import type { Address } from "viem";
 import { hatsTimeFrameContractBaseConfig } from "./useContracts";
@@ -59,8 +60,6 @@ export const useReactivate = (hatsTimeFrameModuleAddress?: string) => {
         await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -94,8 +93,6 @@ export const useDeactivate = (hatsTimeFrameModuleAddress?: string) => {
         await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -110,57 +107,55 @@ export const useActiveState = (
   hatsTimeFrameModuleAddress?: string,
   hatId?: string,
   wearer?: string,
-  count?: number,
 ) => {
-  const [activeState, setActiveState] = useState({
-    isActive: false,
-    woreTime: 0,
-    wearingElapsedTime: 0,
+  const enabled = !!hatsTimeFrameModuleAddress && !!hatId && !!wearer;
+  const { data, refetch } = useQuery({
+    queryKey: [
+      "hatsTimeFrame",
+      "activeState",
+      hatsTimeFrameModuleAddress,
+      hatId,
+      wearer,
+    ],
+    queryFn: async () => {
+      const [isActive, woreTime, wearingElapsedTime] = await Promise.all([
+        publicClient.readContract({
+          ...hatsTimeFrameContractBaseConfig(
+            hatsTimeFrameModuleAddress as Address,
+          ),
+          functionName: "isActive",
+          args: [BigInt(hatId as string), wearer as Address],
+        }),
+        publicClient.readContract({
+          ...hatsTimeFrameContractBaseConfig(
+            hatsTimeFrameModuleAddress as Address,
+          ),
+          functionName: "getWoreTime",
+          args: [wearer as Address, BigInt(hatId as string)],
+        }),
+        publicClient.readContract({
+          ...hatsTimeFrameContractBaseConfig(
+            hatsTimeFrameModuleAddress as Address,
+          ),
+          functionName: "getWearingElapsedTime",
+          args: [wearer as Address, BigInt(hatId as string)],
+        }),
+      ]);
+      return {
+        isActive,
+        woreTime: Number(woreTime),
+        wearingElapsedTime: Number(wearingElapsedTime),
+      };
+    },
+    enabled,
   });
 
-  useEffect(() => {
-    const fetch = async () => {
-      if (!hatsTimeFrameModuleAddress || !hatId || !wearer) return;
-
-      try {
-        const [isActive, woreTime, wearingElapsedTime] = await Promise.all([
-          publicClient.readContract({
-            ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address,
-            ),
-            functionName: "isActive",
-            args: [BigInt(hatId), wearer as Address],
-          }),
-          publicClient.readContract({
-            ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address,
-            ),
-            functionName: "getWoreTime",
-            args: [wearer as Address, BigInt(hatId)],
-          }),
-          publicClient.readContract({
-            ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address,
-            ),
-            functionName: "getWearingElapsedTime",
-            args: [wearer as Address, BigInt(hatId)],
-          }),
-        ]);
-
-        setActiveState({
-          isActive,
-          woreTime: Number(woreTime),
-          wearingElapsedTime: Number(wearingElapsedTime),
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetch();
-  }, [hatsTimeFrameModuleAddress, hatId, wearer]);
-
-  return activeState;
+  return {
+    isActive: data?.isActive ?? false,
+    woreTime: data?.woreTime ?? 0,
+    wearingElapsedTime: data?.wearingElapsedTime ?? 0,
+    refetch,
+  };
 };
 
 export const useWearingElapsedTime = (

@@ -103,6 +103,37 @@ export const useDeactivate = (hatsTimeFrameModuleAddress?: string) => {
   return { deactivate, isLoading };
 };
 
+// Mirrors `HatsTimeFrameModule.hasAuthority(address)` — true if the address
+// is the wearer or admin of the module's configured `minterHatId`, which the
+// contract uses to gate `deactivate` / `reactivate` / `renounce` for accounts
+// other than the wearer themselves.
+export const useHasAuthority = (
+  hatsTimeFrameModuleAddress?: string,
+  authority?: string,
+) => {
+  const enabled = !!hatsTimeFrameModuleAddress && !!authority;
+  const { data } = useQuery({
+    queryKey: [
+      "hatsTimeFrame",
+      "hasAuthority",
+      hatsTimeFrameModuleAddress,
+      authority,
+    ],
+    queryFn: async () => {
+      const result = await publicClient.readContract({
+        ...hatsTimeFrameContractBaseConfig(
+          hatsTimeFrameModuleAddress as Address,
+        ),
+        functionName: "hasAuthority",
+        args: [authority as Address],
+      });
+      return result;
+    },
+    enabled,
+  });
+  return data ?? false;
+};
+
 export const useActiveState = (
   hatsTimeFrameModuleAddress?: string,
   hatId?: string,

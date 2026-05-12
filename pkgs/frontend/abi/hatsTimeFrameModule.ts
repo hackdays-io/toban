@@ -152,6 +152,25 @@ export const HATS_TIME_FRAME_MODULE_ABI = [
   {
     inputs: [
       {
+        internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "hasAuthority",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "",
         type: "uint256",

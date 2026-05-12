@@ -7,6 +7,7 @@ import { useTreeInfo } from "hooks/useHats";
 import {
   useActiveState,
   useDeactivate,
+  useHasAuthority,
   useReactivate,
   useRenounceHatFromTimeFrameModule,
 } from "hooks/useHatsTimeFrameModule";
@@ -84,6 +85,11 @@ const HolderDetail: FC = () => {
     hatId,
     address,
   );
+
+  // Contract also allows admins / wearers of the module's `minterHatId` to
+  // pause / resume / renounce, not just the wearer themselves.
+  const hasModuleAuthority = useHasAuthority(hatsTimeFrameModuleAddress, me);
+  const canManage = isMe || hasModuleAuthority;
 
   const formattedWoreTime = useMemo(
     () => (woreTime ? dayjs.unix(woreTime).format("YYYY/MM/DD") : undefined),
@@ -297,7 +303,7 @@ const HolderDetail: FC = () => {
   );
 
   const authorizedActionsBlock =
-    isMe && hatsTimeFrameModuleAddress ? (
+    canManage && hatsTimeFrameModuleAddress ? (
       <div className="flex flex-col gap-2 pt-2">
         {isActive ? (
           <Button

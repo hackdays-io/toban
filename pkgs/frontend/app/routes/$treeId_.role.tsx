@@ -867,12 +867,20 @@ const DutyDetailPreview: FC<DutyDetailPreviewProps> = ({
             {name}
           </Heading>
         </div>
-        <Button variant="secondary" asChild>
-          <Link to={`/${treeId}/${hat.id}`}>
-            詳細を見る
-            <Icon name="chevron-right" size={16} />
-          </Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="secondary" asChild>
+            <Link to={`/${treeId}/${hat.id}`}>
+              詳細
+              <Icon name="chevron-right" size={16} />
+            </Link>
+          </Button>
+          <Button variant="primary" asChild>
+            <Link to={`/${treeId}/${hat.id}/assign`}>
+              <Icon name="plus" size={16} />
+              担当を追加
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {description && (

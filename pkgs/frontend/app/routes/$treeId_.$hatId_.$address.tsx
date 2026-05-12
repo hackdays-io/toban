@@ -10,6 +10,7 @@ import {
   useReactivate,
   useRenounceHatFromTimeFrameModule,
 } from "hooks/useHatsTimeFrameModule";
+import { useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo, useState } from "react";
@@ -30,6 +31,7 @@ import {
   ShareDistribution,
 } from "~/components/composite/share-distribution";
 import { PageContainer } from "~/components/layout/PageContainer";
+import { QuestPanel } from "~/components/quests/QuestPanel";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -162,6 +164,24 @@ const HolderDetail: FC = () => {
 
   const [sendSheetOpen, setSendSheetOpen] = useState(false);
 
+  // Quests scoped to this hat — same data as the duty detail page so the
+  // user can act on quests without bouncing back up the breadcrumb.
+  const hatIdDecimal = useMemo(() => {
+    if (!hatId) return undefined;
+    try {
+      return BigInt(hatId).toString();
+    } catch {
+      return undefined;
+    }
+  }, [hatId]);
+  const { quests, isLoading: questsLoading } = useQuests(treeId, {
+    first: 100,
+  });
+  const dutyQuests = useMemo(() => {
+    if (!hatIdDecimal) return [];
+    return quests.filter((q) => q.hatId === hatIdDecimal);
+  }, [quests, hatIdDecimal]);
+
   // Care-point variant — three legacy workspaces show ケアポイント copy.
   const isCarePoint = ["144", "175", "780"].includes(treeId || "");
   const shareTitle = isCarePoint ? "ケアポイント" : "ロールシェア";
@@ -204,148 +224,175 @@ const HolderDetail: FC = () => {
     );
   }
 
+  const headerBlock = (
+    <div className="flex items-center gap-3.5">
+      <DutyIcon imageUrl={imageUrl} />
+      <div className="min-w-0 flex-1">
+        <Typography
+          as="div"
+          variant="caption"
+          tone="secondary"
+          truncate
+          className="mb-0.5"
+        >
+          {dutyName}
+        </Typography>
+        <div className="flex items-center gap-2">
+          <Avatar size="sm" className="size-6">
+            {wearerAvatar && <AvatarImage src={wearerAvatar} alt="" />}
+            <AvatarFallback seed={wearerName} />
+          </Avatar>
+          <Heading variant="h4" level={1} className="truncate">
+            {wearerName}
+          </Heading>
+        </div>
+        <Typography
+          variant="micro"
+          tone="secondary"
+          as="div"
+          className="mt-0.5"
+        >
+          {abbreviateAddress(address || "")}
+        </Typography>
+      </div>
+      <Badge kind={isActive ? "lead" : "supporter"}>
+        {isActive ? "アクティブ" : "休止中"}
+      </Badge>
+    </div>
+  );
+
+  const statsBlock = (
+    <Card className="px-4 py-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="活動開始日" value={formattedWoreTime ?? "—"} />
+        <Stat
+          label="総活動日数"
+          value={formattedDays !== undefined ? `${formattedDays}日` : "—"}
+        />
+        <Stat
+          label={`あなたの${shareTitle}`}
+          value={ownBalance !== undefined ? ownBalance.toLocaleString() : "—"}
+        />
+      </div>
+    </Card>
+  );
+
+  const sendButton = me ? (
+    <Button variant="secondary" full onClick={() => setSendSheetOpen(true)}>
+      <Icon name="send" size={16} />
+      {shareTitle}を送る
+    </Button>
+  ) : null;
+
+  const shareDistributionBlock = (
+    <section className="flex flex-col gap-2">
+      <SectionLabel className="px-0">{shareTitle}の保有率</SectionLabel>
+      <Card className="px-4 py-4">
+        <ShareDistribution
+          items={shareItems}
+          emptyLabel="シェアはまだ配布されていません"
+        />
+      </Card>
+    </section>
+  );
+
+  const authorizedActionsBlock =
+    isMe && hatsTimeFrameModuleAddress ? (
+      <div className="flex flex-col gap-2 pt-2">
+        {isActive ? (
+          <Button
+            variant="secondary"
+            full
+            disabled={isDeactivating}
+            onClick={async () => {
+              if (!hatId || !address) return;
+              try {
+                await deactivate(hatId, address);
+                await refetch();
+                toast.success("一時休止しました");
+              } catch (error) {
+                console.error(error);
+                toast.error("一時休止に失敗しました");
+              }
+            }}
+          >
+            {isDeactivating ? "一時休止中…" : "一時休止"}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            full
+            disabled={isReactivating}
+            onClick={async () => {
+              if (!hatId || !address) return;
+              try {
+                await reactivate(hatId, address);
+                await refetch();
+                toast.success("当番を再開しました");
+              } catch (error) {
+                console.error(error);
+                toast.error("再開に失敗しました");
+              }
+            }}
+          >
+            {isReactivating ? "再開中…" : "再開する"}
+          </Button>
+        )}
+        <Button
+          variant="danger"
+          full
+          disabled={isRenouncing}
+          onClick={async () => {
+            if (!hatId || !address) return;
+            try {
+              await renounceHat(BigInt(hatId), address as Address);
+            } catch (error) {
+              console.error(error);
+              return;
+            }
+            navigate(`/${treeId}/${hatId}`);
+          }}
+        >
+          {isRenouncing ? "剥奪中…" : "当番を剥奪"}
+        </Button>
+      </div>
+    ) : null;
+
+  const questBlock = (
+    <QuestPanel
+      quests={dutyQuests}
+      loading={questsLoading}
+      treeId={treeId}
+      hatId={hatId}
+      canCreate={ownBalance !== undefined && ownBalance > 0}
+    />
+  );
+
   return (
     <>
       <PageContainer className="pt-2 pb-10">
         <Breadcrumb className="mb-3 px-1" items={breadcrumbItems} />
 
-        <div className="flex flex-col gap-4 px-1 pt-1">
-          {/* Header */}
-          <div className="flex items-center gap-3.5">
-            <DutyIcon imageUrl={imageUrl} />
-            <div className="min-w-0 flex-1">
-              <Typography
-                as="div"
-                variant="caption"
-                tone="secondary"
-                truncate
-                className="mb-0.5"
-              >
-                {dutyName}
-              </Typography>
-              <div className="flex items-center gap-2">
-                <Avatar size="sm" className="size-6">
-                  {wearerAvatar && <AvatarImage src={wearerAvatar} alt="" />}
-                  <AvatarFallback seed={wearerName} />
-                </Avatar>
-                <Heading variant="h4" level={1} className="truncate">
-                  {wearerName}
-                </Heading>
-              </div>
-              <Typography
-                variant="micro"
-                tone="secondary"
-                as="div"
-                className="mt-0.5"
-              >
-                {abbreviateAddress(address || "")}
-              </Typography>
-            </div>
-            <Badge kind={isActive ? "lead" : "supporter"}>
-              {isActive ? "アクティブ" : "休止中"}
-            </Badge>
+        {/* Mobile: single column */}
+        <div className="md:hidden flex flex-col gap-4 px-1 pt-1">
+          {headerBlock}
+          {statsBlock}
+          {sendButton}
+          {shareDistributionBlock}
+          {questBlock}
+          {authorizedActionsBlock}
+        </div>
+
+        {/* Desktop: 60/40 split — quests live on the side panel */}
+        <div className="hidden md:grid grid-cols-[3fr_2fr] gap-6 pt-2">
+          <div className="flex flex-col gap-4 min-w-0">
+            {headerBlock}
+            {statsBlock}
+            {sendButton}
+            {shareDistributionBlock}
+            {authorizedActionsBlock}
           </div>
-
-          {/* Stats */}
-          <Card className="px-4 py-4">
-            <div className="grid grid-cols-3 gap-3">
-              <Stat label="活動開始日" value={formattedWoreTime ?? "—"} />
-              <Stat
-                label="総活動日数"
-                value={formattedDays !== undefined ? `${formattedDays}日` : "—"}
-              />
-              <Stat
-                label={`あなたの${shareTitle}`}
-                value={
-                  ownBalance !== undefined ? ownBalance.toLocaleString() : "—"
-                }
-              />
-            </div>
-          </Card>
-
-          {me && (
-            <Button
-              variant="secondary"
-              full
-              onClick={() => setSendSheetOpen(true)}
-            >
-              <Icon name="send" size={16} />
-              {shareTitle}を送る
-            </Button>
-          )}
-
-          {/* ロールシェアの保有率 */}
-          <section className="flex flex-col gap-2">
-            <SectionLabel className="px-0">{shareTitle}の保有率</SectionLabel>
-            <Card className="px-4 py-4">
-              <ShareDistribution
-                items={shareItems}
-                emptyLabel="シェアはまだ配布されていません"
-              />
-            </Card>
-          </section>
-
-          {/* Authorized actions */}
-          {isMe && hatsTimeFrameModuleAddress && (
-            <div className="flex flex-col gap-2 pt-2">
-              {isActive ? (
-                <Button
-                  variant="secondary"
-                  full
-                  disabled={isDeactivating}
-                  onClick={async () => {
-                    if (!hatId || !address) return;
-                    try {
-                      await deactivate(hatId, address);
-                      await refetch();
-                      toast.success("一時休止しました");
-                    } catch (error) {
-                      console.error(error);
-                      toast.error("一時休止に失敗しました");
-                    }
-                  }}
-                >
-                  {isDeactivating ? "一時休止中…" : "一時休止"}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  full
-                  disabled={isReactivating}
-                  onClick={async () => {
-                    if (!hatId || !address) return;
-                    try {
-                      await reactivate(hatId, address);
-                      await refetch();
-                      toast.success("当番を再開しました");
-                    } catch (error) {
-                      console.error(error);
-                      toast.error("再開に失敗しました");
-                    }
-                  }}
-                >
-                  {isReactivating ? "再開中…" : "再開する"}
-                </Button>
-              )}
-              <Button
-                variant="danger"
-                full
-                disabled={isRenouncing}
-                onClick={async () => {
-                  if (!hatId || !address) return;
-                  try {
-                    await renounceHat(BigInt(hatId), address as Address);
-                  } catch (error) {
-                    console.error(error);
-                    return;
-                  }
-                  navigate(`/${treeId}/${hatId}`);
-                }}
-              >
-                {isRenouncing ? "剥奪中…" : "当番を剥奪"}
-              </Button>
-            </div>
-          )}
+          <aside className="flex flex-col gap-4">{questBlock}</aside>
         </div>
       </PageContainer>
 

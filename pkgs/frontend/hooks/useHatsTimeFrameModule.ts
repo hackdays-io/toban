@@ -27,9 +27,11 @@ export const useMintHatFromTimeFrameModule = (
       await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
-    } catch (error) {
-      console.error(error);
     } finally {
+      // Callers (e.g. the duty-assign route) need to distinguish success from
+      // failure to decide whether to navigate or surface a toast — so let
+      // viem's revert / user-rejection errors bubble up instead of swallowing
+      // them here.
       setIsLoading(false);
     }
   };

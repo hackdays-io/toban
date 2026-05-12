@@ -4,8 +4,11 @@ import axios from "axios";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
+import { useHasCreatorAuthority } from "hooks/useHatsHatCreatorModule";
+import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
 import { type Quest, type QuestStatus, useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
+import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -161,6 +164,23 @@ const WorkspaceRoles: FC = () => {
 
   const goCreateDuty = () => navigate(`/${treeId}/roles/new`);
 
+  // Only show 当番作成 / 担当を追加 to wallets the contracts already authorise.
+  // `HatsHatCreatorModule.hasAuthority` gates `createHat`; the matching
+  // `HatsTimeFrameModule.hasAuthority` gates `mintHat`. Both are workspace-
+  // level (admin/wearer of the module's configured hat) so a single check
+  // each is enough for every duty rendered.
+  const { data: workspaceData } = useGetWorkspace({
+    workspaceId: treeId || "",
+  });
+  const canCreateDuty = useHasCreatorAuthority(
+    workspaceData?.workspace?.hatsHatCreatorModule ?? undefined,
+    me,
+  );
+  const canAssignDuty = useHasAuthority(
+    workspaceData?.workspace?.hatsTimeFrameModule ?? undefined,
+    me,
+  );
+
   return (
     <PageContainer className="pt-4 pb-8 md:pt-6">
       <Breadcrumb
@@ -170,13 +190,26 @@ const WorkspaceRoles: FC = () => {
 
       {/* Mobile single-column. */}
       <div className="md:hidden">
-        <header className="mb-3 px-1">
-          <Heading variant="h2" level={1}>
-            当番
-          </Heading>
-          <Typography variant="bodySm" tone="secondary" className="mt-0.5">
-            コミュニティの役割と関わり
-          </Typography>
+        <header className="mb-3 flex items-start justify-between gap-3 px-1">
+          <div className="min-w-0 flex-1">
+            <Heading variant="h2" level={1}>
+              当番
+            </Heading>
+            <Typography variant="bodySm" tone="secondary" className="mt-0.5">
+              コミュニティの役割と関わり
+            </Typography>
+          </div>
+          {canCreateDuty && (
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={goCreateDuty}
+              className="shrink-0"
+            >
+              <Icon name="plus" size={14} />
+              作成
+            </Button>
+          )}
         </header>
 
         <div className="px-1 pb-3">
@@ -199,7 +232,6 @@ const WorkspaceRoles: FC = () => {
             treeId={treeId ?? ""}
             nameByAddress={nameByAddress}
             supportersByHat={supportersByHat}
-            onCreate={goCreateDuty}
           />
         ) : (
           <QuestsPanel treeId={treeId} dutyHats={dutyHats} />
@@ -218,6 +250,8 @@ const WorkspaceRoles: FC = () => {
           treeId={treeId ?? ""}
           nameByAddress={nameByAddress}
           supportersByHat={supportersByHat}
+          canCreateDuty={canCreateDuty}
+          canAssignDuty={canAssignDuty}
           onCreate={goCreateDuty}
         />
       </div>
@@ -236,7 +270,6 @@ interface DutiesPanelProps {
   treeId: string;
   nameByAddress: Map<string, NameData>;
   supportersByHat: Map<string, string[]>;
-  onCreate: () => void;
 }
 
 const DutiesPanel: FC<DutiesPanelProps> = ({
@@ -246,7 +279,6 @@ const DutiesPanel: FC<DutiesPanelProps> = ({
   treeId,
   nameByAddress,
   supportersByHat,
-  onCreate,
 }) => (
   <>
     <div className="px-1 pb-3">
@@ -281,13 +313,6 @@ const DutiesPanel: FC<DutiesPanelProps> = ({
         </Typography>
       </Card>
     )}
-
-    <div className="px-1 pt-4">
-      <Button variant="secondary" full onClick={onCreate}>
-        <Icon name="plus" size={16} />
-        当番を作成
-      </Button>
-    </div>
   </>
 );
 
@@ -707,6 +732,8 @@ interface DesktopRolesViewProps {
   treeId: string;
   nameByAddress: Map<string, NameData>;
   supportersByHat: Map<string, string[]>;
+  canCreateDuty: boolean;
+  canAssignDuty: boolean;
   onCreate: () => void;
 }
 
@@ -720,6 +747,8 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
   treeId,
   nameByAddress,
   supportersByHat,
+  canCreateDuty,
+  canAssignDuty,
   onCreate,
 }) => {
   const [selectedId, setSelectedId] = useState<string | undefined>(
@@ -734,13 +763,26 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
     <div className="grid grid-cols-[320px_1fr] gap-6">
       {/* Master */}
       <aside className="flex flex-col gap-3">
-        <header className="px-1">
-          <Heading variant="h2" level={1}>
-            当番
-          </Heading>
-          <Typography variant="bodySm" tone="secondary" className="mt-0.5">
-            コミュニティの役割と関わり
-          </Typography>
+        <header className="flex items-start justify-between gap-3 px-1">
+          <div className="min-w-0 flex-1">
+            <Heading variant="h2" level={1}>
+              当番
+            </Heading>
+            <Typography variant="bodySm" tone="secondary" className="mt-0.5">
+              コミュニティの役割と関わり
+            </Typography>
+          </div>
+          {canCreateDuty && (
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={onCreate}
+              className="shrink-0"
+            >
+              <Icon name="plus" size={14} />
+              作成
+            </Button>
+          )}
         </header>
         <Segmented
           value={view}
@@ -785,15 +827,6 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
                 </Typography>
               </Card>
             )}
-            <Button
-              variant="secondary"
-              full
-              onClick={onCreate}
-              className="mt-1"
-            >
-              <Icon name="plus" size={16} />
-              当番を作成
-            </Button>
           </>
         ) : (
           <QuestsPanel treeId={treeId} dutyHats={dutyHats} />
@@ -808,6 +841,7 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
             treeId={treeId}
             nameByAddress={nameByAddress}
             supporters={supportersByHat.get(selectedHat.id.toLowerCase()) ?? []}
+            canAssign={canAssignDuty}
           />
         ) : view === "duties" ? (
           <Card className="py-12 text-center">
@@ -832,6 +866,7 @@ interface DutyDetailPreviewProps {
   treeId: string;
   nameByAddress: Map<string, NameData>;
   supporters: string[];
+  canAssign: boolean;
 }
 
 // Lightweight preview for the master-detail right pane. The full duty detail
@@ -842,6 +877,7 @@ const DutyDetailPreview: FC<DutyDetailPreviewProps> = ({
   treeId,
   nameByAddress,
   supporters,
+  canAssign,
 }) => {
   const detail = useHatDetail(hat.details);
   const imageUrl = ipfs2https(hat.imageUri);
@@ -874,12 +910,14 @@ const DutyDetailPreview: FC<DutyDetailPreviewProps> = ({
               <Icon name="chevron-right" size={16} />
             </Link>
           </Button>
-          <Button variant="primary" asChild>
-            <Link to={`/${treeId}/${hat.id}/assign`}>
-              <Icon name="plus" size={16} />
-              担当を追加
-            </Link>
-          </Button>
+          {canAssign && (
+            <Button variant="primary" asChild>
+              <Link to={`/${treeId}/${hat.id}/assign`}>
+                <Icon name="plus" size={16} />
+                担当を追加
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

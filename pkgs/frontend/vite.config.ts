@@ -118,7 +118,6 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       "@privy-io/react-auth",
-      "react-toastify",
       "react-i18next",
       "@apollo/client",
       "@tanstack/react-query",

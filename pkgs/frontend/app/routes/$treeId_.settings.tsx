@@ -23,7 +23,7 @@ import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { FaCircleCheck } from "react-icons/fa6";
 import { useParams } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";

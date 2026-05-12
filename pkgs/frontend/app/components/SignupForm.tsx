@@ -3,7 +3,7 @@ import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FieldLabel } from "~/components/composite/field-label";
 import {
   Avatar,

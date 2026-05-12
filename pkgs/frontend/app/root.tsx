@@ -1,7 +1,6 @@
 import { ApolloProvider } from "@apollo/client/react";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
-import toastStyles from "react-toastify/ReactToastify.css?url";
 import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
 // Self-host the brand fonts (Issue #426). Inter carries Latin numerals/labels
@@ -72,7 +71,6 @@ export const links = () => [
   { rel: "icon", href: "/images/favicon.ico" },
   { rel: "manifest", href: "/manifest.webmanifest" },
   { rel: "apple-touch-icon", href: "/images/apple-touch-icon.png" },
-  { rel: "stylesheet", href: toastStyles },
   { rel: "stylesheet", href: swiperStyles },
 ];
 

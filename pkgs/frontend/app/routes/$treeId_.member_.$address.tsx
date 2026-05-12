@@ -13,7 +13,7 @@ import {
 import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Box, Flex, Input, Text } from "~/components/chakra-shim";
 import { UserThanksHistory } from "~/components/thankstoken/History";
 import {

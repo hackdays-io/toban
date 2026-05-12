@@ -2,7 +2,7 @@ import type { Split } from "@0xsplits/splits-sdk";
 import { useQuery } from "@tanstack/react-query";
 import { SPLITS_CREATOR_ABI } from "abi/splits";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { getSplitsWriteClient, splitsDataClient } from "utils/splits";
 import { type AbiItemArgs, type Address, parseEventLogs } from "viem";
 import { currentChain, publicClient } from "./useViem";
@@ -113,23 +113,28 @@ export const useSplitsCreatorRelatedSplits = (splitsCreator?: Address) => {
   return { isLoading, splits };
 };
 
-export const useSplit = (contractAddress: Address) => {
+export const useSplit = (contractAddress: Address | undefined) => {
   const { wallet } = useActiveWallet();
 
   const splitEarnings = useQuery({
     queryKey: ["split", contractAddress],
+    // React Query forbids `undefined` returns from a queryFn — gate via
+    // `enabled` so we never enter the function without a real address.
+    enabled: !!contractAddress && !!splitsDataClient,
     queryFn: async () => {
-      if (!contractAddress || !splitsDataClient) return;
+      if (!contractAddress || !splitsDataClient) return null;
       try {
+        // Omit `erc20TokenList` so the SDK auto-discovers every ERC20 ever
+        // transferred to this split via `getLogs` (requires the Alchemy-backed
+        // public client, wired up in `utils/splits.ts`).
         const res = await splitsDataClient.getSplitEarnings({
           chainId: currentChain.id,
           splitAddress: contractAddress.toLocaleLowerCase(),
-          erc20TokenList: ["0x652b67d6BA758CC604940FAd585DC638C3F4a6A6"],
         });
-        return res;
+        return res ?? null;
       } catch (error) {
         console.log(error);
-        return;
+        return null;
       }
     },
     staleTime: 1000 * 60 * 5,
@@ -138,11 +143,11 @@ export const useSplit = (contractAddress: Address) => {
   const [isDistributing, setIsDistributing] = useState(false);
   const distribute = useCallback(
     async (tokenAddress: Address) => {
-      if (!wallet) return;
+      if (!wallet || !contractAddress) return;
       setIsDistributing(true);
       const client = getSplitsWriteClient(wallet);
       await client.splitV2.distribute({
-        splitAddress: contractAddress as Address,
+        splitAddress: contractAddress,
         tokenAddress,
         distributorAddress: wallet.account.address,
       });
@@ -164,16 +169,16 @@ export const useUserEarnings = () => {
   const userEarnings = useQuery({
     queryKey: ["userEarnings"],
     queryFn: async () => {
-      if (!wallet || !splitsDataClient) return;
+      if (!wallet || !splitsDataClient) return null;
       try {
         const res = await splitsDataClient.getUserEarnings({
           chainId: currentChain.id,
           userAddress: wallet.account.address,
         });
-        return res;
+        return res ?? null;
       } catch (error) {
         console.log(error);
-        return;
+        return null;
       }
     },
     enabled: !!wallet && !!splitsDataClient,

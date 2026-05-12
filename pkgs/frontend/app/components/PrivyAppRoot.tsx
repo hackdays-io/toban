@@ -3,7 +3,6 @@ import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
-import { ToastContainer } from "react-toastify";
 import { PWAUpdater } from "./PWAUpdater";
 import { SmartWalletLoading } from "./SmartWalletLoading";
 import { SwitchNetwork } from "./SwitchNetwork";
@@ -42,7 +41,6 @@ export default function PrivyAppRoot() {
           <SwitchNetwork />
           <PWAUpdater />
           <AppContent />
-          <ToastContainer />
           <Toaster />
         </QueryClientProvider>
       </SmartWalletsProvider>

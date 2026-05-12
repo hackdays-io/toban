@@ -6,63 +6,76 @@ import {
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { type FC, useCallback } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+  type FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate, useParams } from "react-router";
-import type {
-  HatsDetailsAttributes,
-  HatsDetailsAuthorities,
-  HatsDetailsResponsabilities,
-} from "types/hats";
+import { toast } from "sonner";
 import type { Address } from "viem";
-import { BasicButton } from "~/components/BasicButton";
-import { ContentContainer } from "~/components/ContentContainer";
-import { PageHeader } from "~/components/PageHeader";
-import { RoleAttributesList } from "~/components/RoleAttributesList";
-import { Box, Stack, Text } from "~/components/chakra-shim";
-import { InputDescription } from "~/components/input/InputDescription";
-import { InputImage } from "~/components/input/InputImage";
-import { InputName } from "~/components/input/InputName";
-import { InputNumber } from "~/components/input/InputNumber";
-import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
+import { ScreenHeader } from "~/components/layout/ScreenHeader";
+import { DutyForm, type DutyFormValues } from "~/components/roles/DutyForm";
+import { SEED_PALETTE } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { Icon } from "~/components/ui/icon";
+import {
+  type FallbackIconKind,
+  buildFallbackSvgFile,
+  pickRandomColor,
+  pickRandomDutyIcon,
+} from "~/lib/avatar-fallback";
 
-interface FormData {
-  name: string;
-  description: string;
-  image: File;
-  responsibilities: HatsDetailsResponsabilities;
-  authorities: HatsDetailsAuthorities;
-  maxSupply: number | undefined;
-}
+const DEFAULT_MAX_SUPPLY = 10;
 
-const SectionHeading: FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Text mt={7}>{children}</Text>
-);
+const buildInitialFormValues = (): DutyFormValues => ({
+  name: "",
+  description: "",
+  responsibilities: [],
+  authorities: [],
+});
 
 const NewRole: FC = () => {
   const { treeId } = useParams();
+  const navigate = useNavigate();
 
-  const defaultMaxSupply = 10;
+  const [form, setForm] = useState<DutyFormValues>(buildInitialFormValues);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { control, watch, handleSubmit, formState } = useForm<FormData>({
-    defaultValues: {
-      name: "",
-      description: "",
-      responsibilities: [],
-      authorities: [],
-      maxSupply: defaultMaxSupply,
-    },
-  });
+  // Random color + icon are chosen on mount (post-hydration) to avoid an
+  // SSR/CSR mismatch from Math.random in the initialiser. Stay stable across
+  // re-renders so the avatar preview doesn't flicker as the user types.
+  const [fallbackColor, setFallbackColor] = useState<string>(SEED_PALETTE[0]);
+  const [fallbackIcon, setFallbackIcon] = useState<FallbackIconKind>("user");
+  useEffect(() => {
+    setFallbackColor(pickRandomColor());
+    setFallbackIcon(pickRandomDutyIcon());
+  }, []);
 
-  const responsibilities = useFieldArray({
-    name: "responsibilities",
-    control,
-  });
-
-  const authorities = useFieldArray({
-    name: "authorities",
-    control,
-  });
+  // Reset the AppShell's scroll container to the top on mount — otherwise the
+  // user lands on this form scrolled down to wherever they were on the
+  // previous page. `window.scrollTo` is a no-op because AppShell wraps the
+  // routes in `<main overflow-y-auto>`, so we walk up the DOM to find the
+  // actual scroll container.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    let node: HTMLElement | null = el;
+    while (node) {
+      if (node.scrollHeight > node.clientHeight) {
+        node.scrollTo({ top: 0, behavior: "auto" });
+        break;
+      }
+      node = node.parentElement;
+    }
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, []);
 
   const { wallet } = useActiveWallet();
   const { data: workspace } = useGetWorkspace({ workspaceId: treeId || "" });
@@ -70,181 +83,133 @@ const NewRole: FC = () => {
     workspace?.workspace?.hatsHatCreatorModule as Address,
   );
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
-  const { uploadImageFileToIpfs } = useUploadImageFileToIpfs();
+  const { uploadImageFileToIpfs, imageFile, setImageFile } =
+    useUploadImageFileToIpfs();
   const { getTreeInfo } = useHats();
-  const navigate = useNavigate();
 
-  const submit = useCallback(
-    async (data: FormData) => {
-      if (!wallet) {
-        alert("ウォレットを接続してください。");
-        return;
-      }
-      if (!data.name) {
-        alert("ロール名を入力してください。");
-        return;
-      }
-
-      try {
-        const [resUploadHatsDetails, resUploadImage, treeInfo] =
-          await Promise.all([
-            uploadHatsDetailsToIpfs({
-              name: data.name,
-              description: data.description,
-              responsabilities: data.responsibilities,
-              authorities: data.authorities,
-            }),
-            uploadImageFileToIpfs(data.image),
-            getTreeInfo({ treeId: Number(treeId) }),
-          ]);
-
-        if (!resUploadHatsDetails)
-          throw new Error("Failed to upload metadata to ipfs");
-
-        const hatterHatId = treeInfo?.hats?.[1]?.id;
-        if (!hatterHatId) throw new Error("Hat ID is required");
-
-        const parsedLog = await createHat({
-          parentHatId: BigInt(hatterHatId),
-          details: resUploadHatsDetails?.ipfsUri,
-          maxSupply: Number(data.maxSupply),
-          imageURI: resUploadImage?.ipfsUri || "",
-        });
-
-        const log = parsedLog?.find((log) => log.eventName === "HatCreated");
-
-        if (!log) throw new Error("Failed to create hat transaction");
-
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        const hatIdLength = log.args.id?.toString(16).length || 0;
-        const requiredPadding = 64 - hatIdLength;
-        navigate(
-          `/${treeId}/0x${"0".repeat(
-            requiredPadding,
-          )}${log.args.id?.toString(16)}`,
-        );
-      } catch (error) {
-        console.error(error);
-        alert(`エラーが発生しました。${error}`);
-      }
-    },
-    [
-      createHat,
-      getTreeInfo,
-      navigate,
-      treeId,
-      uploadHatsDetailsToIpfs,
-      uploadImageFileToIpfs,
-      wallet,
-    ],
+  const imagePreview = useMemo(
+    () => (imageFile ? URL.createObjectURL(imageFile) : undefined),
+    [imageFile],
   );
 
+  const isValid = form.name.trim().length > 0 && !!wallet;
+
+  const handleSubmit = useCallback(async () => {
+    if (!wallet) {
+      toast.error("ウォレットを接続してください。");
+      return;
+    }
+    if (!form.name.trim()) {
+      toast.error("当番名を入力してください。");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const fileToUpload =
+        imageFile ??
+        buildFallbackSvgFile(fallbackColor, fallbackIcon, "duty-icon.svg");
+
+      const [resUploadHatsDetails, resUploadImage, treeInfo] =
+        await Promise.all([
+          uploadHatsDetailsToIpfs({
+            name: form.name.trim(),
+            description: form.description,
+            responsabilities: form.responsibilities,
+            authorities: form.authorities,
+          }),
+          uploadImageFileToIpfs(fileToUpload),
+          getTreeInfo({ treeId: Number(treeId) }),
+        ]);
+
+      if (!resUploadHatsDetails) {
+        throw new Error("当番メタデータの保存に失敗しました。");
+      }
+
+      const hatterHatId = treeInfo?.hats?.[1]?.id;
+      if (!hatterHatId) {
+        throw new Error("親 Hat の取得に失敗しました。");
+      }
+
+      const parsedLog = await createHat({
+        parentHatId: BigInt(hatterHatId),
+        details: resUploadHatsDetails.ipfsUri,
+        maxSupply: DEFAULT_MAX_SUPPLY,
+        imageURI: resUploadImage?.ipfsUri || "",
+      });
+
+      const log = parsedLog?.find((l) => l.eventName === "HatCreated");
+      if (!log) {
+        throw new Error("当番作成トランザクションに失敗しました。");
+      }
+
+      // Give the subgraph a moment to index the new hat before navigating.
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const hatIdHex = log.args.id?.toString(16) ?? "";
+      const padded = hatIdHex.padStart(64, "0");
+      navigate(`/${treeId}/0x${padded}`);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "当番の作成中にエラーが発生しました。",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    createHat,
+    fallbackColor,
+    fallbackIcon,
+    form,
+    getTreeInfo,
+    imageFile,
+    navigate,
+    treeId,
+    uploadHatsDetailsToIpfs,
+    uploadImageFileToIpfs,
+    wallet,
+  ]);
+
   return (
-    <Box w="100%" pb={10}>
-      <PageHeader title="新しいロールを作成" />
-      <form onSubmit={handleSubmit(submit)}>
-        <ContentContainer>
-          <Stack my="30px" gap={3}>
-            <Controller
-              control={control}
-              name="image"
-              render={({ field: { onChange, value } }) => (
-                <InputImage imageFile={value} setImageFile={onChange} />
-              )}
-            />
-          </Stack>
-
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, value } }) => (
-              <InputName name={value} setName={onChange} />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="description"
-            render={({ field: { onChange, value } }) => (
-              <InputDescription
-                description={value}
-                setDescription={onChange}
-                mt={6}
-              />
-            )}
-          />
-        </ContentContainer>
-
-        <SectionHeading>当番</SectionHeading>
-        <ContentContainer>
-          <RoleAttributesList
-            items={responsibilities.fields}
-            setItem={(index: number, value: HatsDetailsAttributes[number]) => {
-              responsibilities.update(index, value);
-            }}
-            deleteItem={(index: number) => {
-              responsibilities.remove(index);
-            }}
-          />
-          <AddRoleAttributeDialog
-            type="responsibility"
-            attributes={responsibilities.fields}
-            setAttributes={responsibilities.append}
-          />
-        </ContentContainer>
-
-        <SectionHeading>権限</SectionHeading>
-        <ContentContainer>
-          <RoleAttributesList
-            items={authorities.fields}
-            setItem={(index: number, value: HatsDetailsAttributes[number]) => {
-              authorities.update(index, value);
-            }}
-            deleteItem={(index: number) => {
-              authorities.remove(index);
-            }}
-          />
-          <AddRoleAttributeDialog
-            type="authority"
-            attributes={authorities.fields}
-            setAttributes={authorities.append}
-          />
-        </ContentContainer>
-
-        <SectionHeading>ロールの上限人数</SectionHeading>
-        <ContentContainer>
-          <Controller
-            control={control}
-            name="maxSupply"
-            render={({ field: { onChange, value } }) => (
-              <InputNumber
-                mt={3}
-                number={value}
-                setNumber={onChange}
-                defaultValue={defaultMaxSupply}
-              />
-            )}
-          />
-        </ContentContainer>
-
-        <Box
-          mt={10}
-          mb="4vh"
-          width="100%"
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
+    <div ref={rootRef} className="flex min-h-dvh flex-col bg-bg">
+      <ScreenHeader
+        title="当番を作成"
+        onBack={() => navigate(`/${treeId}/role`)}
+      />
+      <DutyForm
+        value={form}
+        onChange={setForm}
+        imagePreview={imagePreview}
+        onImageSelect={setImageFile}
+        fallbackColor={fallbackColor}
+        fallbackIcon={fallbackIcon}
+        disabled={isSubmitting}
+      />
+      <div className="flex gap-2.5 px-4 pt-2 pb-6">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => navigate(`/${treeId}/role`)}
+          disabled={isSubmitting}
+          className="shrink-0"
         >
-          <BasicButton
-            disabled={!watch("name") || !watch("maxSupply")}
-            loading={formState.isSubmitting}
-            type="submit"
-          >
-            作成
-          </BasicButton>
-        </Box>
-      </form>
-    </Box>
+          キャンセル
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!isValid || isSubmitting}
+          onClick={handleSubmit}
+          data-testid="duty-create-submit"
+          className="flex-1"
+        >
+          <Icon name="plus" size={16} />
+          {isSubmitting ? "作成中..." : "作成する"}
+        </Button>
+      </div>
+    </div>
   );
 };
 

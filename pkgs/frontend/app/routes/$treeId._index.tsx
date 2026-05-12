@@ -670,8 +670,7 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
             as="div"
             variant="caption"
             tone="secondary"
-            truncate
-            className="mt-0.5"
+            className="mt-0.5 line-clamp-3 leading-snug"
           >
             {item.message}
           </Typography>

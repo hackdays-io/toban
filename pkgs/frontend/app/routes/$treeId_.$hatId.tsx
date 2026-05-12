@@ -3,8 +3,10 @@ import axios from "axios";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
+import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
 import { useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
+import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo } from "react";
 import { Link, useParams } from "react-router";
@@ -72,6 +74,18 @@ const DutyDetail: FC = () => {
     if (!me) return false;
     return topHat?.wearers?.some((w) => w.id?.toLowerCase() === me) ?? false;
   }, [me, topHat]);
+
+  // ── Authorization for assigning new wearers ────────────────
+  // Mirrors `HatsTimeFrameModule.hasAuthority` (admin/wearer of `minterHatId`);
+  // the contract reverts `mintHat` otherwise, so we hide the "担当を追加"
+  // button rather than letting the user kick off a doomed transaction.
+  const { data: workspaceData } = useGetWorkspace({
+    workspaceId: treeId || "",
+  });
+  const canAssign = useHasAuthority(
+    workspaceData?.workspace?.hatsTimeFrameModule ?? undefined,
+    me,
+  );
 
   // ── Wearers & supporters ───────────────────────────────────
   const wearerAddresses = useMemo(
@@ -230,14 +244,16 @@ const DutyDetail: FC = () => {
             hatId={hatId ?? ""}
           />
 
-          <div className="pt-2">
-            <Button asChild variant="primary" full>
-              <Link to={`/${treeId}/${hatId}/assign`}>
-                <Icon name="plus" size={16} />
-                担当を追加
-              </Link>
-            </Button>
-          </div>
+          {canAssign && (
+            <div className="pt-2">
+              <Button asChild variant="primary" full>
+                <Link to={`/${treeId}/${hatId}/assign`}>
+                  <Icon name="plus" size={16} />
+                  担当を追加
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Desktop: 60% main + 40% side (quests live on the side panel) */}
@@ -277,12 +293,14 @@ const DutyDetail: FC = () => {
               hatId={hatId ?? ""}
             />
 
-            <Button asChild variant="primary" full>
-              <Link to={`/${treeId}/${hatId}/assign`}>
-                <Icon name="plus" size={16} />
-                担当を追加
-              </Link>
-            </Button>
+            {canAssign && (
+              <Button asChild variant="primary" full>
+                <Link to={`/${treeId}/${hatId}/assign`}>
+                  <Icon name="plus" size={16} />
+                  担当を追加
+                </Link>
+              </Button>
+            )}
           </div>
 
           <aside className="flex flex-col gap-4">

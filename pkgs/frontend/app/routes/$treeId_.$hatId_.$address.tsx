@@ -1,107 +1,106 @@
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import dayjs from "dayjs";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import {
   useActiveState,
   useDeactivate,
+  useHasAuthority,
   useReactivate,
   useRenounceHatFromTimeFrameModule,
 } from "hooks/useHatsTimeFrameModule";
+import { useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+// Sonner — appends its stylesheet to the END of <head>, so importing at
+// route-module level is safe for SSR hydration. react-toastify uses
+// `insertBefore(..., firstChild)` and breaks hydration on direct loads.
+import { toast } from "sonner";
+import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
-import { BasicButton } from "~/components/BasicButton";
-import { StickyNav } from "~/components/StickyNav";
 import { AssistCreditSendSheet } from "~/components/assistcredit/AssistCreditSendSheet";
-import { Box, HStack, Heading, Text, VStack } from "~/components/chakra-shim";
-import { HatsListItemParser } from "~/components/common/HatsListItemParser";
-import { UserIcon } from "~/components/icon/UserIcon";
+import { Breadcrumb } from "~/components/composite/breadcrumb";
+import { SectionLabel } from "~/components/composite/section-label";
 import {
-  ActiveState,
-  HatDetail,
-  RoleNameWithWearer,
-} from "~/components/roles/HolderDetail";
+  SHARE_PALETTE,
+  ShareDistribution,
+} from "~/components/composite/share-distribution";
+import { PageContainer } from "~/components/layout/PageContainer";
+import { QuestPanel } from "~/components/quests/QuestPanel";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { Heading } from "~/components/ui/heading";
+import { Icon } from "~/components/ui/icon";
+import { Typography } from "~/components/ui/typography";
+import { cn } from "~/lib/utils";
 
-const RoleHolderDetails: FC = () => {
+const useHatDetail = (detailsUri?: string) => {
+  const httpsUri = useMemo(() => ipfs2https(detailsUri), [detailsUri]);
+  const { data } = useQuery({
+    queryKey: ["hats-detail", httpsUri],
+    queryFn: async (): Promise<HatsDetailSchama | undefined> => {
+      if (!httpsUri) return;
+      const { data } = await axios.get<HatsDetailSchama>(httpsUri);
+      return data;
+    },
+    enabled: !!httpsUri,
+    staleTime: 1000 * 60 * 60,
+  });
+  return data;
+};
+
+const HolderDetail: FC = () => {
   const { treeId, hatId, address } = useParams();
-
+  const navigate = useNavigate();
   const { wallet } = useActiveWallet();
-  const me = wallet?.account?.address;
+  const me = wallet?.account?.address?.toLowerCase();
+  const isMe = !!me && me === address?.toLowerCase();
 
   const tree = useTreeInfo(Number(treeId));
-
   const hat = useMemo(() => {
-    if (!tree || !tree.hats) return;
+    if (!tree?.hats) return;
     return tree.hats.find((h) => h.id === hatId);
   }, [tree, hatId]);
+  const detail = useHatDetail(hat?.details);
+  const dutyName = detail?.data?.name ?? "当番";
+  const imageUrl = ipfs2https(hat?.imageUri);
 
-  // HatsTimeFrameModuleのアドレスを取得
-  const { data } = useGetWorkspace({ workspaceId: treeId || "" });
-  const hatsTimeFrameModuleAuthorities = useMemo(() => {
-    return [];
-  }, []);
-  const hatsTimeFrameModuleAddress = useMemo(
-    () => data?.workspace?.hatsTimeFrameModule,
-    [data],
-  );
-
-  // ログインユーザーがこのhatの権限を持っているかどうか
-  const isAuthorised = useMemo(() => {
-    return false; // Simplified for now since authorities are not implemented
-  }, []);
-
-  // wearerの名前とアイコンを取得
-  const addresses = useMemo(() => (address ? [address] : undefined), [address]);
-  const { names: wearerNames } = useNamesByAddresses(addresses);
-  const { wearerName, wearerIcon } = useMemo(
-    () =>
-      wearerNames.flat().length > 0
-        ? {
-            wearerName: wearerNames.flat()[0].name,
-            wearerIcon: wearerNames.flat()[0].text_records?.avatar,
-          }
-        : {},
-    [wearerNames],
-  );
-
-  // holderをbalanceとともに取得
-  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
-    where: {
-      wearer: address?.toLowerCase(),
-      hatId: BigInt(hatId || 0).toString(10),
-    },
+  // ── HatsTimeFrameModule (active / wore time / renounce) ────
+  const { data: workspaceData } = useGetWorkspace({
+    workspaceId: treeId || "",
   });
-  const holders = useMemo(
-    () => balanceOfFractionTokens?.balanceOfFractionTokens.map((d) => d.owner),
-    [balanceOfFractionTokens],
-  );
-  const { names: holderNames } = useNamesByAddresses(holders);
-  const holderDetail = useMemo(
-    () =>
-      holderNames.flat().map((n) => ({
-        ...n,
-        balance: balanceOfFractionTokens?.balanceOfFractionTokens.find(
-          ({ owner }) => owner.toLowerCase() === n.address.toLowerCase(),
-        )?.balance,
-      })),
-    [balanceOfFractionTokens, holderNames],
-  );
+  const hatsTimeFrameModuleAddress = workspaceData?.workspace
+    ?.hatsTimeFrameModule as Address | undefined;
 
-  // HatsTimeFrameModule関連の情報をボタンクリックの後再取得できるようにカウンターを設置
-  const [count, setCount] = useState(0);
-  const [sendSheetOpen, setSendSheetOpen] = useState(false);
-  const { isActive, woreTime, wearingElapsedTime } = useActiveState(
+  const { isActive, woreTime, wearingElapsedTime, refetch } = useActiveState(
     hatsTimeFrameModuleAddress,
     hatId,
     address,
-    count,
   );
 
-  // reactivate, deactivate, renounce
+  // Contract also allows admins / wearers of the module's `minterHatId` to
+  // pause / resume / renounce, not just the wearer themselves.
+  const hasModuleAuthority = useHasAuthority(hatsTimeFrameModuleAddress, me);
+  const canManage = isMe || hasModuleAuthority;
+
+  const formattedWoreTime = useMemo(
+    () => (woreTime ? dayjs.unix(woreTime).format("YYYY/MM/DD") : undefined),
+    [woreTime],
+  );
+  const formattedDays = useMemo(
+    () =>
+      wearingElapsedTime ? Math.floor(wearingElapsedTime / 86400) : undefined,
+    [wearingElapsedTime],
+  );
+
   const { reactivate, isLoading: isReactivating } = useReactivate(
     hatsTimeFrameModuleAddress,
   );
@@ -111,121 +110,297 @@ const RoleHolderDetails: FC = () => {
   const { renounceHat, isLoading: isRenouncing } =
     useRenounceHatFromTimeFrameModule(hatsTimeFrameModuleAddress as Address);
 
-  const navigate = useNavigate();
+  // ── Wearer name + avatar ───────────────────────────────────
+  const addresses = useMemo(() => (address ? [address] : undefined), [address]);
+  const { names: wearerNames } = useNamesByAddresses(addresses);
+  const wearer = useMemo(() => wearerNames.flat()[0], [wearerNames]);
+  const wearerName = wearer?.name ?? abbreviateAddress(address || "");
+  const wearerAvatar = ipfs2https(wearer?.text_records?.avatar);
 
-  if (!hat) return;
+  // ── Holders for this (wearer, hat) shard ────────────────────
+  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
+    where: {
+      wearer: address?.toLowerCase(),
+      hatId: BigInt(hatId || 0).toString(10),
+    },
+  });
+  const holderAddresses = useMemo(
+    () =>
+      balanceOfFractionTokens?.balanceOfFractionTokens.map((d) =>
+        d.owner.toLowerCase(),
+      ) ?? [],
+    [balanceOfFractionTokens],
+  );
+  const { names: holderNames } = useNamesByAddresses(holderAddresses);
+  const holderDetails = useMemo(
+    () =>
+      holderNames.flat().map((n) => {
+        const lower = n.address.toLowerCase();
+        const balanceStr =
+          balanceOfFractionTokens?.balanceOfFractionTokens.find(
+            ({ owner }) => owner.toLowerCase() === lower,
+          )?.balance;
+        // FractionToken is ERC-1155 — balances are raw integer counts, not
+        // 18-decimal wei. Do not formatEther here.
+        const balance = balanceStr ? Number(balanceStr) : 0;
+        return {
+          address: lower,
+          name: n.name ?? abbreviateAddress(lower),
+          avatar: ipfs2https(n.text_records?.avatar),
+          balance,
+        };
+      }),
+    [balanceOfFractionTokens, holderNames],
+  );
 
-  return (
-    <Box>
-      <HatsListItemParser imageUri={hat.imageUri} detailUri={hat.details}>
-        <RoleNameWithWearer
-          treeId={treeId}
-          hatId={hatId}
-          wearerId={address}
-          wearerName={wearerName}
-          wearerIcon={wearerIcon}
-        />
-        <ActiveState
-          isActive={isActive}
-          woreTime={woreTime}
-          wearingElapsedTime={wearingElapsedTime}
-        />
-        <HatDetail />
-      </HatsListItemParser>
+  // The logged-in user's holdings of THIS wearer's (hat, wearer) shard.
+  // FractionToken is ERC-1155 — balances are raw integer counts, no
+  // formatEther. Returns `undefined` whenever the value shouldn't be a
+  // numeric "0": still loading, not logged in, or the shard hasn't been
+  // minted yet (no balance entries at all). A real "0" only shows when
+  // other people hold this shard but the current user doesn't.
+  const ownBalance = useMemo<number | undefined>(() => {
+    if (!me || !balanceOfFractionTokens) return undefined;
+    const entries = balanceOfFractionTokens.balanceOfFractionTokens;
+    if (entries.length === 0) return undefined;
+    const mine = entries.find((b) => b.owner.toLowerCase() === me);
+    if (!mine) return 0;
+    return Number(mine.balance);
+  }, [balanceOfFractionTokens, me]);
 
-      <HStack paddingTop={8} justifyContent="space-between">
-        <Heading size="lg">
-          {["144", "175", "780"].includes(treeId || "")
-            ? "ケアポイント"
-            : "ロールシェア"}
-        </Heading>
-        <BasicButton
-          minH={5}
-          size="xs"
-          bgColor="yellow.400"
-          onClick={() => setSendSheetOpen(true)}
+  const [sendSheetOpen, setSendSheetOpen] = useState(false);
+
+  // Quests scoped to this hat — same data as the duty detail page so the
+  // user can act on quests without bouncing back up the breadcrumb.
+  const hatIdDecimal = useMemo(() => {
+    if (!hatId) return undefined;
+    try {
+      return BigInt(hatId).toString();
+    } catch {
+      return undefined;
+    }
+  }, [hatId]);
+  const { quests, isLoading: questsLoading } = useQuests(treeId, {
+    first: 100,
+  });
+  const dutyQuests = useMemo(() => {
+    if (!hatIdDecimal) return [];
+    return quests.filter((q) => q.hatId === hatIdDecimal);
+  }, [quests, hatIdDecimal]);
+
+  // Care-point variant — three legacy workspaces show ケアポイント copy.
+  const isCarePoint = ["144", "175", "780"].includes(treeId || "");
+  const shareTitle = isCarePoint ? "ケアポイント" : "ロールシェア";
+
+  // ロールシェアの保有率 — sort by balance desc, then map to percent of total.
+  const shareItems = useMemo(() => {
+    const total = holderDetails.reduce((acc, h) => acc + h.balance, 0);
+    if (total <= 0) return [];
+    const sorted = [...holderDetails].sort((a, b) => b.balance - a.balance);
+    return sorted.map((h, i) => ({
+      key: h.address,
+      percent: (h.balance / total) * 100,
+      color: SHARE_PALETTE[i % SHARE_PALETTE.length],
+      leading: (
+        <Avatar size="sm" className="size-6">
+          {h.avatar && <AvatarImage src={h.avatar} alt="" />}
+          <AvatarFallback seed={h.name} />
+        </Avatar>
+      ),
+      label: h.name,
+    }));
+  }, [holderDetails]);
+
+  const breadcrumbItems = [
+    { label: "当番一覧", to: `/${treeId}/role` },
+    { label: dutyName, to: `/${treeId}/${hatId}` },
+    { label: wearerName },
+  ];
+
+  if (!hat) {
+    return (
+      <PageContainer className="pt-2 pb-8">
+        <Breadcrumb className="mb-3 px-1" items={breadcrumbItems} />
+        <Card className="mt-3 py-12 text-center">
+          <Typography variant="bodySm" tone="secondary">
+            担当者情報が見つかりませんでした
+          </Typography>
+        </Card>
+      </PageContainer>
+    );
+  }
+
+  const headerBlock = (
+    <div className="flex items-center gap-3.5">
+      <DutyIcon imageUrl={imageUrl} />
+      <div className="min-w-0 flex-1">
+        <Typography
+          as="div"
+          variant="caption"
+          tone="secondary"
+          truncate
+          className="mb-0.5"
         >
-          誰かに送る
-        </BasicButton>
-      </HStack>
+          {dutyName}
+        </Typography>
+        <div className="flex items-center gap-2">
+          <Avatar size="sm" className="size-6">
+            {wearerAvatar && <AvatarImage src={wearerAvatar} alt="" />}
+            <AvatarFallback seed={wearerName} />
+          </Avatar>
+          <Heading variant="h4" level={1} className="truncate">
+            {wearerName}
+          </Heading>
+        </div>
+        <Typography
+          variant="micro"
+          tone="secondary"
+          as="div"
+          className="mt-0.5"
+        >
+          {abbreviateAddress(address || "")}
+        </Typography>
+      </div>
+      <Badge kind={isActive ? "lead" : "supporter"}>
+        {isActive ? "アクティブ" : "休止中"}
+      </Badge>
+    </div>
+  );
 
-      <VStack width="full" alignItems="start" gap={3} paddingY={4}>
-        {holderDetail.length === 0 ? (
-          <Text fontStyle="italic" color="gray.400">
-            No holders
-          </Text>
-        ) : (
-          holderDetail.map((h) => (
-            <HStack key={`${h.name}h`} width="full">
-              <UserIcon
-                userImageUrl={ipfs2https(h.text_records?.avatar)}
-                size={10}
-              />
-              <Text lineBreak="anywhere" flexGrow={1}>
-                {h.name
-                  ? `${h.name} (${abbreviateAddress(h.address)})`
-                  : abbreviateAddress(h.address)}
-              </Text>
-              {h.balance !== undefined && (
-                <Text>{Number(h.balance).toLocaleString()}</Text>
-              )}
-            </HStack>
-          ))
-        )}
-      </VStack>
+  const statsBlock = (
+    <Card className="px-4 py-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="活動開始日" value={formattedWoreTime ?? "—"} />
+        <Stat
+          label="総活動日数"
+          value={formattedDays !== undefined ? `${formattedDays}日` : "—"}
+        />
+        <Stat
+          label={`あなたの${shareTitle}`}
+          value={ownBalance !== undefined ? ownBalance.toLocaleString() : "—"}
+        />
+      </div>
+    </Card>
+  );
 
-      {/* hatについて権限があるかどうかで表示の有無が変わるボタン */}
-      {isAuthorised && (
-        <>
-          {isActive ? (
-            <BasicButton
-              marginTop={8}
-              bgColor="red.200"
-              onClick={async () => {
-                await deactivate(hatId, address);
-                setCount(count + 1);
-              }}
-              disabled={isDeactivating}
-              loading={isDeactivating}
-            >
-              一時休止
-            </BasicButton>
-          ) : (
-            <BasicButton
-              marginTop={8}
-              bgColor="blue.400"
-              onClick={async () => {
-                await reactivate(hatId, address);
-                setCount(count + 1);
-              }}
-              disabled={isReactivating}
-            >
-              {isReactivating ? "Reactivating..." : "Reactivate"}
-            </BasicButton>
-          )}
-          {/* 現時点では表示されても実際にrevokeできるのはwearerのみ */}
-          <BasicButton
-            marginY={4}
-            bgColor="red.400"
-            color="white"
+  const sendButton = me ? (
+    <Button variant="secondary" full onClick={() => setSendSheetOpen(true)}>
+      <Icon name="send" size={16} />
+      {shareTitle}を送る
+    </Button>
+  ) : null;
+
+  const shareDistributionBlock = (
+    <section className="flex flex-col gap-2">
+      <SectionLabel className="px-0">{shareTitle}の保有率</SectionLabel>
+      <Card className="px-4 py-4">
+        <ShareDistribution
+          items={shareItems}
+          emptyLabel="シェアはまだ配布されていません"
+        />
+      </Card>
+    </section>
+  );
+
+  const authorizedActionsBlock =
+    canManage && hatsTimeFrameModuleAddress ? (
+      <div className="flex flex-col gap-2 pt-2">
+        {isActive ? (
+          <Button
+            variant="secondary"
+            full
+            disabled={isDeactivating}
             onClick={async () => {
+              if (!hatId || !address) return;
               try {
-                await renounceHat(BigInt(hatId || 0), address as Address);
+                await deactivate(hatId, address);
+                await refetch();
+                toast.success("一時休止しました");
               } catch (error) {
                 console.error(error);
-                return;
+                toast.error("一時休止に失敗しました");
               }
-              navigate(`/${treeId}/${hatId}`);
             }}
-            disabled={isRenouncing}
-            loading={isRenouncing}
           >
-            当番を剥奪
-          </BasicButton>
-        </>
-      )}
+            {isDeactivating ? "一時休止中…" : "一時休止"}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            full
+            disabled={isReactivating}
+            onClick={async () => {
+              if (!hatId || !address) return;
+              try {
+                await reactivate(hatId, address);
+                await refetch();
+                toast.success("当番を再開しました");
+              } catch (error) {
+                console.error(error);
+                toast.error("再開に失敗しました");
+              }
+            }}
+          >
+            {isReactivating ? "再開中…" : "再開する"}
+          </Button>
+        )}
+        <Button
+          variant="danger"
+          full
+          disabled={isRenouncing}
+          onClick={async () => {
+            if (!hatId || !address) return;
+            try {
+              await renounceHat(BigInt(hatId), address as Address);
+            } catch (error) {
+              console.error(error);
+              return;
+            }
+            navigate(`/${treeId}/${hatId}`);
+          }}
+        >
+          {isRenouncing ? "剥奪中…" : "当番を剥奪"}
+        </Button>
+      </div>
+    ) : null;
 
-      <StickyNav />
+  const questBlock = (
+    <QuestPanel
+      quests={dutyQuests}
+      loading={questsLoading}
+      treeId={treeId}
+      hatId={hatId}
+      canCreate={ownBalance !== undefined && ownBalance > 0}
+    />
+  );
+
+  return (
+    <>
+      <PageContainer className="pt-2 pb-10">
+        <Breadcrumb className="mb-3 px-1" items={breadcrumbItems} />
+
+        {/* Mobile: single column */}
+        <div className="md:hidden flex flex-col gap-4 px-1 pt-1">
+          {headerBlock}
+          {statsBlock}
+          {sendButton}
+          {shareDistributionBlock}
+          {questBlock}
+          {authorizedActionsBlock}
+        </div>
+
+        {/* Desktop: 60/40 split — quests live on the side panel */}
+        <div className="hidden md:grid grid-cols-[3fr_2fr] gap-6 pt-2">
+          <div className="flex flex-col gap-4 min-w-0">
+            {headerBlock}
+            {statsBlock}
+            {sendButton}
+            {shareDistributionBlock}
+            {authorizedActionsBlock}
+          </div>
+          <aside className="flex flex-col gap-4">{questBlock}</aside>
+        </div>
+      </PageContainer>
 
       {treeId && hatId && address && (
         <AssistCreditSendSheet
@@ -236,8 +411,36 @@ const RoleHolderDetails: FC = () => {
           wearer={address as Address}
         />
       )}
-    </Box>
+    </>
   );
 };
 
-export default RoleHolderDetails;
+export default HolderDetail;
+
+const DutyIcon: FC<{ imageUrl?: string }> = ({ imageUrl }) => (
+  <div
+    className={cn(
+      "flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#F2EAD9]",
+    )}
+  >
+    {imageUrl ? (
+      <img src={imageUrl} alt="" className="size-full object-cover" />
+    ) : (
+      <Icon name="duty" size={28} className="text-[#7A5A2E]" />
+    )}
+  </div>
+);
+
+const Stat: FC<{ label: React.ReactNode; value: React.ReactNode }> = ({
+  label,
+  value,
+}) => (
+  <div className="flex flex-col gap-1">
+    <Typography variant="micro" tone="secondary" as="span" weight="semibold">
+      {label}
+    </Typography>
+    <Typography variant="bodySm" as="span" weight="bold">
+      {value}
+    </Typography>
+  </div>
+);

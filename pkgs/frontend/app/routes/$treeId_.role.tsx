@@ -13,6 +13,7 @@ import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { formatEther } from "viem";
+import { Breadcrumb } from "~/components/composite/breadcrumb";
 import { SectionLabel } from "~/components/composite/section-label";
 import { Segmented } from "~/components/composite/segmented";
 import { PageContainer } from "~/components/layout/PageContainer";
@@ -162,6 +163,11 @@ const WorkspaceRoles: FC = () => {
 
   return (
     <PageContainer className="pt-4 pb-8 md:pt-6">
+      <Breadcrumb
+        className="mb-3 px-1"
+        items={[{ label: "ホーム", to: `/${treeId}` }, { label: "当番一覧" }]}
+      />
+
       {/* Mobile single-column. */}
       <div className="md:hidden">
         <header className="mb-3 px-1">
@@ -861,12 +867,20 @@ const DutyDetailPreview: FC<DutyDetailPreviewProps> = ({
             {name}
           </Heading>
         </div>
-        <Button variant="secondary" asChild>
-          <Link to={`/${treeId}/${hat.id}`}>
-            詳細を見る
-            <Icon name="chevron-right" size={16} />
-          </Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="secondary" asChild>
+            <Link to={`/${treeId}/${hat.id}`}>
+              詳細
+              <Icon name="chevron-right" size={16} />
+            </Link>
+          </Button>
+          <Button variant="primary" asChild>
+            <Link to={`/${treeId}/${hat.id}/assign`}>
+              <Icon name="plus" size={16} />
+              担当を追加
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {description && (

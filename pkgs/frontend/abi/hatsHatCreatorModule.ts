@@ -184,6 +184,25 @@ export const HATS_HAT_CREATOR_MODULE_ABI = [
     inputs: [
       {
         internalType: "address",
+        name: "authority",
+        type: "address",
+      },
+    ],
+    name: "hasAuthority",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
         name: "",
         type: "address",
       },

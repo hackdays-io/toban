@@ -7,7 +7,14 @@ import {
 } from "hooks/useENS";
 import { useAssignableHats } from "hooks/useHats";
 import { useSplitsCreator } from "hooks/useSplitsCreator";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
@@ -22,9 +29,19 @@ import { FieldLabel } from "~/components/composite/field-label";
 import { SectionLabel } from "~/components/composite/section-label";
 import { StepBar } from "~/components/composite/step-bar";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
+import { RuleCard, type WeightInfo } from "~/components/splits/RuleCard";
+import { SplitBreakdownCard } from "~/components/splits/SplitBreakdownCard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Typography } from "~/components/ui/typography";
@@ -132,6 +149,28 @@ const SplitterNew: FC = () => {
   // Flow state.
   const [step, setStep] = useState<Step>("form");
 
+  // Each step change resets the scroll position to the top. AppShell wraps
+  // routes in its own `<main>` with `overflow-y-auto`, so `window.scrollTo`
+  // is a no-op here — we walk up from this component's root and ask the
+  // ancestor scroll container to reset.
+  const rootRef = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll-on-step-change is the entire point of this effect; `step` must stay in the deps array even though the body doesn't read it.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    let node: HTMLElement | null = el;
+    while (node) {
+      if (node.scrollHeight > node.clientHeight) {
+        node.scrollTo({ top: 0, behavior: "auto" });
+        break;
+      }
+      node = node.parentElement;
+    }
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [step]);
+
   // Step 1 — form state.
   const [splitterName, setSplitterName] = useState("");
   const _candidateName = useMemo(
@@ -180,6 +219,62 @@ const SplitterNew: FC = () => {
     });
   };
 
+  // Flip an individual wearer in / out of the per-duty selection. The duty row
+  // toggles inclusion of the duty as a whole; this toggles which wearers count
+  // when the duty IS included (mirrors the legacy "詳細設定" dialog).
+  const toggleWearer = (hatId: Address, wearer: Address) => {
+    const key = hatId.toLowerCase();
+    const wearerLower = wearer.toLowerCase() as Address;
+    setRoles((current) => {
+      const existing = current[key];
+      if (!existing) return current;
+      const has = existing.wearers.some((w) => w.toLowerCase() === wearerLower);
+      const wearers = has
+        ? existing.wearers.filter((w) => w.toLowerCase() !== wearerLower)
+        : [...existing.wearers, wearer];
+      return { ...current, [key]: { ...existing, wearers } };
+    });
+  };
+
+  // Resolve display names + avatars for every wearer across every duty in one
+  // batched Namestone call so the per-duty detail dialog renders without an
+  // extra round-trip when opened.
+  const allWearerAddresses = useMemo(() => {
+    const set = new Set<string>();
+    for (const o of dutyOptions) {
+      for (const w of o.wearers) set.add(w.toLowerCase());
+    }
+    return Array.from(set);
+  }, [dutyOptions]);
+  const { names: wearerNames } = useNamesByAddresses(allWearerAddresses);
+  const wearerInfoByAddress = useMemo(() => {
+    const m = new Map<string, { name: string; avatar?: string }>();
+    wearerNames.forEach((group, i) => {
+      const addr = allWearerAddresses[i];
+      const entry = group[0];
+      if (!addr) return;
+      if (entry?.name) {
+        m.set(addr, {
+          name: entry.name,
+          avatar: ipfs2https(entry.text_records?.avatar),
+        });
+      }
+    });
+    return m;
+  }, [wearerNames, allWearerAddresses]);
+
+  // Which duty's per-wearer detail dialog is open. null = closed.
+  const [openDetailHatId, setOpenDetailHatId] = useState<Address | null>(null);
+  const openDetailDuty = useMemo(() => {
+    if (!openDetailHatId) return undefined;
+    const target = openDetailHatId.toLowerCase();
+    return {
+      detail: dutyDetails.find((d) => d.hatId.toLowerCase() === target),
+      option: dutyOptions.find((o) => o.hatId.toLowerCase() === target),
+      role: roles[target],
+    };
+  }, [openDetailHatId, dutyDetails, dutyOptions, roles]);
+
   // Step 2 — preview state.
   const { createSplits, previewSplits, isLoading } = useSplitsCreator(
     treeId ?? "",
@@ -201,6 +296,18 @@ const SplitterNew: FC = () => {
       thanksTokenSentWeight: BigInt(100 - recvWeight),
     };
   }, [dutyWeight, recvWeight]);
+
+  // Same shape the detail page's `RuleCard` expects — share the component
+  // between authoring and viewing so the rule layout stays identical.
+  const previewWeights = useMemo<WeightInfo>(
+    () => ({
+      roleWeight: dutyWeight,
+      thanksTokenWeight: 100 - dutyWeight,
+      thanksTokenReceivedWeight: recvWeight,
+      thanksTokenSentWeight: 100 - recvWeight,
+    }),
+    [dutyWeight, recvWeight],
+  );
 
   const calcSplitsParams = useCallback(() => {
     return Object.values(roles)
@@ -263,14 +370,16 @@ const SplitterNew: FC = () => {
     }
   }, [calcSplitsParams, isFormValid, previewSplits, weightParams]);
 
-  // Resolve names for the preview rows once we have results.
+  // Resolve names for the preview rows once we have results. Shape matches
+  // `SplitBreakdownCard`'s `BreakdownNameInfo` so the same map can be passed
+  // through directly.
   const previewAddresses = useMemo(
     () => preview?.list.map((r) => r.address) ?? [],
     [preview],
   );
   const { names: previewNames } = useNamesByAddresses(previewAddresses);
   const previewNameByAddress = useMemo(() => {
-    const m = new Map<string, { name: string; avatar?: string }>();
+    const m = new Map<string, { name?: string; avatarUrl?: string }>();
     previewNames.forEach((group, i) => {
       const entry = group[0];
       const addr = previewAddresses[i]?.toLowerCase();
@@ -278,12 +387,21 @@ const SplitterNew: FC = () => {
       if (entry) {
         m.set(addr, {
           name: entry.name,
-          avatar: ipfs2https(entry.text_records?.avatar),
+          avatarUrl: ipfs2https(entry.text_records?.avatar),
         });
       }
     });
     return m;
   }, [previewNames, previewAddresses]);
+
+  // Pre-computed rows for the shared SplitBreakdownCard.
+  const previewBreakdownRows = useMemo(() => {
+    if (!preview || preview.totalOwnership === 0) return [];
+    return preview.list.map((r) => ({
+      address: r.address,
+      pct: (r.ownership / preview.totalOwnership) * 100,
+    }));
+  }, [preview]);
 
   const { setName } = useSetName();
   const handleCreate = useCallback(async () => {
@@ -358,7 +476,10 @@ const SplitterNew: FC = () => {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg pb-6">
+    <div
+      ref={rootRef}
+      className="flex min-h-dvh flex-col bg-bg pt-4 pb-6 md:pt-6"
+    >
       <ScreenHeader
         title={step === "form" ? "分配ルールを作成" : "分配プレビュー"}
         subtitle={
@@ -410,20 +531,20 @@ const SplitterNew: FC = () => {
           <div className="px-5">
             <FieldLabel>何を重視する？</FieldLabel>
             <Card className="gap-3 px-4 py-4">
-              <PercentRow
-                label="当番ベース"
-                value={dutyWeight}
-                valueColor="var(--color-role)"
+              <WeightLabels
+                leftLabel="当番ベース"
+                leftValue={dutyWeight}
+                leftColor="var(--color-role)"
+                rightLabel="サンクスベース"
+                rightValue={100 - dutyWeight}
+                rightColor="var(--color-contrib)"
               />
               <PercentSlider
                 value={dutyWeight}
                 onChange={setDutyWeight}
                 ariaLabel="当番ベースとサンクスベースの比重"
-              />
-              <PercentRow
-                label="サンクスベース"
-                value={100 - dutyWeight}
-                valueColor="var(--color-contrib)"
+                leftColor="var(--color-role)"
+                rightColor="var(--color-contrib)"
               />
             </Card>
           </div>
@@ -431,21 +552,20 @@ const SplitterNew: FC = () => {
           <div className="px-5">
             <FieldLabel>サンクスの中で何を重視する？</FieldLabel>
             <Card className="gap-3 px-4 py-4">
-              <PercentRow
-                label="受け取った量"
-                value={recvWeight}
-                valueColor="var(--color-contrib)"
+              <WeightLabels
+                leftLabel="受け取った量"
+                leftValue={recvWeight}
+                leftColor="var(--color-contrib)"
+                rightLabel="送った量"
+                rightValue={100 - recvWeight}
+                rightColor="var(--color-primary)"
               />
               <PercentSlider
                 value={recvWeight}
                 onChange={setRecvWeight}
                 ariaLabel="サンクス受取量と送付量の比重"
-                accentColor="var(--color-contrib)"
-              />
-              <PercentRow
-                label="送った量"
-                value={100 - recvWeight}
-                valueColor="var(--color-primary)"
+                leftColor="var(--color-contrib)"
+                rightColor="var(--color-primary)"
               />
             </Card>
           </div>
@@ -464,52 +584,91 @@ const SplitterNew: FC = () => {
                   const key = duty.hatId.toLowerCase();
                   const role = roles[key];
                   const checked = role?.active ?? false;
+                  const totalWearers =
+                    dutyOptions.find((o) => o.hatId.toLowerCase() === key)
+                      ?.wearers.length ?? 0;
+                  const selectedWearers = role?.wearers.length ?? 0;
+                  const allSelected =
+                    totalWearers > 0 && selectedWearers === totalWearers;
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={duty.hatId}
-                      onClick={() => toggleRole(duty.hatId)}
                       className={cn(
-                        "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg",
+                        "flex items-center gap-3 px-4 py-3 transition-colors",
                         i > 0 && "border-t border-border",
+                        checked && "hover:bg-bg",
                       )}
-                      aria-pressed={checked}
                     >
-                      <div
+                      <button
+                        type="button"
+                        onClick={() => toggleRole(duty.hatId)}
+                        aria-pressed={checked}
+                        aria-label={`${duty.name}を${checked ? "外す" : "選ぶ"}`}
                         className={cn(
-                          "flex size-[22px] shrink-0 items-center justify-center rounded-[6px] border-[1.5px] transition-colors",
+                          "flex size-[22px] shrink-0 items-center justify-center rounded-[6px] border-[1.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                           checked
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-border bg-surface",
                         )}
                       >
                         {checked && <Icon name="check" size={14} />}
-                      </div>
-                      <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[#F2EAD9]">
-                        {duty.imageUrl ? (
-                          <img
-                            src={duty.imageUrl}
-                            alt=""
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <Icon
-                            name="duty"
-                            size={18}
-                            className="text-[#7A5A2E]"
-                          />
-                        )}
-                      </div>
-                      <Typography
-                        as="span"
-                        variant="bodySm"
-                        weight="semibold"
-                        truncate
-                        className="min-w-0 flex-1"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleRole(duty.hatId)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        {duty.name}
-                      </Typography>
-                    </button>
+                        <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[#F2EAD9]">
+                          {duty.imageUrl ? (
+                            <img
+                              src={duty.imageUrl}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <Icon
+                              name="duty"
+                              size={18}
+                              className="text-[#7A5A2E]"
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Typography
+                            as="div"
+                            variant="bodySm"
+                            weight="semibold"
+                            truncate
+                          >
+                            {duty.name}
+                          </Typography>
+                          {totalWearers > 0 && (
+                            <Typography
+                              as="div"
+                              variant="micro"
+                              tone="secondary"
+                              className="mt-0.5"
+                            >
+                              対象メンバー{" "}
+                              {allSelected
+                                ? `全${totalWearers}人`
+                                : `${selectedWearers} / ${totalWearers}人`}
+                            </Typography>
+                          )}
+                        </div>
+                      </button>
+                      {totalWearers > 0 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={!checked}
+                          onClick={() => setOpenDetailHatId(duty.hatId)}
+                        >
+                          詳細
+                        </Button>
+                      )}
+                    </div>
                   );
                 })}
               </Card>
@@ -527,12 +686,96 @@ const SplitterNew: FC = () => {
               {isPreviewing ? "プレビューを準備中…" : "プレビューを見る"}
             </Button>
           </div>
+
+          <Dialog
+            open={!!openDetailHatId}
+            onOpenChange={(next) => {
+              if (!next) setOpenDetailHatId(null);
+            }}
+          >
+            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {openDetailDuty?.detail?.name ?? "当番"} の対象メンバー
+                </DialogTitle>
+                <DialogDescription>
+                  この当番で分配対象にするメンバーを選択します。
+                </DialogDescription>
+              </DialogHeader>
+              {openDetailDuty?.option && openDetailDuty.role ? (
+                <ul className="flex flex-col">
+                  {openDetailDuty.option.wearers.map((wearer, i) => {
+                    const lower = wearer.toLowerCase();
+                    const info = wearerInfoByAddress.get(lower);
+                    const name = info?.name ?? abbreviateAddress(wearer);
+                    const checked = openDetailDuty.role?.wearers.some(
+                      (w) => w.toLowerCase() === lower,
+                    );
+                    return (
+                      <li
+                        key={wearer}
+                        className={cn(
+                          "flex items-center gap-3 py-2.5",
+                          i > 0 && "border-t border-border",
+                        )}
+                      >
+                        <Checkbox
+                          id={`wearer-${wearer}`}
+                          checked={checked}
+                          onCheckedChange={() =>
+                            openDetailDuty.option &&
+                            toggleWearer(openDetailDuty.option.hatId, wearer)
+                          }
+                        />
+                        <Avatar size="default" className="size-9">
+                          {info?.avatar && (
+                            <AvatarImage src={info.avatar} alt="" />
+                          )}
+                          <AvatarFallback seed={name} />
+                        </Avatar>
+                        <label
+                          htmlFor={`wearer-${wearer}`}
+                          className="flex min-w-0 flex-1 cursor-pointer flex-col"
+                        >
+                          <Typography
+                            as="span"
+                            variant="bodySm"
+                            weight="semibold"
+                            truncate
+                          >
+                            {name}
+                          </Typography>
+                          <Typography
+                            as="span"
+                            variant="micro"
+                            tone="secondary"
+                            className="truncate font-mono"
+                          >
+                            {abbreviateAddress(wearer)}
+                          </Typography>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <Typography
+                  variant="bodySm"
+                  tone="secondary"
+                  className="py-4 text-center"
+                >
+                  メンバー情報を読み込み中…
+                </Typography>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
       {step === "preview" && preview && (
-        <div className="flex flex-col gap-5">
-          <div className="px-4">
+        <div className="flex flex-col gap-5 px-4 md:grid md:grid-cols-[2fr_1fr] md:gap-6 md:px-6">
+          {/* Left column (mobile = full width, desktop = 2/3): donut + breakdown */}
+          <div className="flex min-w-0 flex-col gap-5 md:gap-4">
             <Card
               className="items-center gap-3 px-5 py-5 text-center"
               style={{
@@ -558,56 +801,23 @@ const SplitterNew: FC = () => {
                 {splitterName}
               </Typography>
             </Card>
+
+            <section className="flex flex-col gap-2">
+              <SectionLabel className="px-0">分配の内訳</SectionLabel>
+              <SplitBreakdownCard
+                recipients={previewBreakdownRows}
+                nameByAddress={previewNameByAddress}
+              />
+            </section>
           </div>
 
-          <SectionLabel className="px-5">分配の内訳</SectionLabel>
-          <div className="px-4">
-            <Card className="gap-0 p-0">
-              {preview.list.map((r, i) => {
-                const entry = previewNameByAddress.get(r.address.toLowerCase());
-                const name = entry?.name ?? abbreviateAddress(r.address);
-                const pct =
-                  preview.totalOwnership > 0
-                    ? (r.ownership / preview.totalOwnership) * 100
-                    : 0;
-                return (
-                  <div
-                    key={r.address}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3",
-                      i > 0 && "border-t border-border",
-                    )}
-                  >
-                    <Avatar size="default" className="size-8">
-                      {entry?.avatar && (
-                        <AvatarImage src={entry.avatar} alt="" />
-                      )}
-                      <AvatarFallback seed={name} />
-                    </Avatar>
-                    <Typography
-                      as="div"
-                      variant="bodySm"
-                      weight="semibold"
-                      truncate
-                      className="min-w-0 flex-1"
-                    >
-                      {name}
-                    </Typography>
-                    <Typography
-                      as="span"
-                      variant="bodySm"
-                      weight="bold"
-                      className="tabular-nums"
-                    >
-                      {pct.toFixed(2)}%
-                    </Typography>
-                  </div>
-                );
-              })}
-            </Card>
-          </div>
+          {/* Right column (mobile = below, desktop = 1/3): rule + actions */}
+          <aside className="flex flex-col gap-4">
+            <section className="flex flex-col gap-2">
+              <SectionLabel className="px-0">分配ルール</SectionLabel>
+              <RuleCard weights={previewWeights} />
+            </section>
 
-          <div className="px-4">
             <Card
               className="gap-1 px-3.5 py-3"
               style={{
@@ -621,49 +831,42 @@ const SplitterNew: FC = () => {
                 weight="bold"
                 className="text-[#7A5A2E]"
               >
-                分配のもとになった要素
-              </Typography>
-              <Typography
-                as="div"
-                variant="caption"
-                className="leading-relaxed"
-              >
-                ・ 当番への参加（{dutyWeight}%）
-                <br />・ サンクスの受け取り・送付（{100 - dutyWeight}%）
+                対象にした当番
               </Typography>
               <Typography
                 as="div"
                 variant="micro"
                 tone="secondary"
-                className="mt-1"
+                className="mt-0.5 leading-relaxed"
               >
-                対象の当番:{" "}
                 {Object.values(roles)
                   .filter((r) => r.active)
                   .map((r) => dutyNameById.get(r.hatId.toLowerCase()) ?? "当番")
                   .join("、")}
               </Typography>
             </Card>
-          </div>
 
-          <div className="flex gap-2.5 px-4 pt-2">
-            <Button
-              variant="secondary"
-              onClick={() => setStep("form")}
-              disabled={isLoading}
-              className="shrink-0"
-            >
-              戻って修正
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreate}
-              disabled={isLoading}
-              className="flex-1"
-            >
-              {isLoading ? "作成中…" : "作成する"}
-            </Button>
-          </div>
+            <div className="flex gap-2.5 pt-1 md:flex-col md:gap-2">
+              <Button
+                variant="primary"
+                onClick={handleCreate}
+                disabled={isLoading}
+                full
+                className="md:order-1"
+              >
+                {isLoading ? "作成中…" : "作成する"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setStep("form")}
+                disabled={isLoading}
+                full
+                className="md:order-2"
+              >
+                戻って修正
+              </Button>
+            </div>
+          </aside>
         </div>
       )}
     </div>
@@ -672,28 +875,67 @@ const SplitterNew: FC = () => {
 
 export default SplitterNew;
 
-// ─── PercentRow ────────────────────────────────────────────────────────────
+// ─── WeightLabels ──────────────────────────────────────────────────────────
 
-interface PercentRowProps {
-  label: string;
-  value: number;
-  valueColor: string;
+interface WeightLabelsProps {
+  leftLabel: string;
+  leftValue: number;
+  leftColor: string;
+  rightLabel: string;
+  rightValue: number;
+  rightColor: string;
 }
 
-const PercentRow: FC<PercentRowProps> = ({ label, value, valueColor }) => (
-  <div className="flex items-baseline justify-between text-[13px]">
-    <Typography as="span" variant="bodySm" weight="semibold">
-      {label}
-    </Typography>
-    <Typography
-      as="span"
-      variant="bodySm"
-      weight="bold"
-      className="tabular-nums"
-      style={{ color: valueColor }}
-    >
-      {value}%
-    </Typography>
+// One opposing-ends row above the slider: left side hugs the start of the
+// track, right side hugs the end. Each side stacks its percentage above the
+// label so the colour-coded value sits visually closer to the slider.
+const WeightLabels: FC<WeightLabelsProps> = ({
+  leftLabel,
+  leftValue,
+  leftColor,
+  rightLabel,
+  rightValue,
+  rightColor,
+}) => (
+  <div className="flex items-end justify-between gap-2 text-[13px]">
+    <div className="flex flex-col items-start">
+      <Typography
+        as="span"
+        variant="bodySm"
+        weight="bold"
+        className="tabular-nums leading-none"
+        style={{ color: leftColor }}
+      >
+        {leftValue}%
+      </Typography>
+      <Typography
+        as="span"
+        variant="caption"
+        weight="semibold"
+        className="mt-0.5"
+      >
+        {leftLabel}
+      </Typography>
+    </div>
+    <div className="flex flex-col items-end">
+      <Typography
+        as="span"
+        variant="bodySm"
+        weight="bold"
+        className="tabular-nums leading-none"
+        style={{ color: rightColor }}
+      >
+        {rightValue}%
+      </Typography>
+      <Typography
+        as="span"
+        variant="caption"
+        weight="semibold"
+        className="mt-0.5"
+      >
+        {rightLabel}
+      </Typography>
+    </div>
   </div>
 );
 
@@ -703,16 +945,23 @@ interface PercentSliderProps {
   value: number;
   onChange: (next: number) => void;
   ariaLabel: string;
-  accentColor?: string;
+  /** Colour of the track left of the thumb (the "left label" side). */
+  leftColor: string;
+  /** Colour of the track right of the thumb (the "right label" side). */
+  rightColor: string;
 }
 
-// Native range styled to fit the design tokens — same accent as the legacy
-// Chakra slider, but tiny enough to avoid introducing a new dependency.
+// Native range whose track is painted via a linear-gradient — splitting at the
+// current value — so each side carries its label's brand colour. The thumb is
+// solid white with a dark border so it stays visible against either side of
+// the track. (Native `::-webkit-slider-runnable-track` styling is unreliable
+// across browsers; a gradient background sidesteps the inconsistency.)
 const PercentSlider: FC<PercentSliderProps> = ({
   value,
   onChange,
   ariaLabel,
-  accentColor = "var(--color-primary)",
+  leftColor,
+  rightColor,
 }) => (
   <input
     type="range"
@@ -722,12 +971,9 @@ const PercentSlider: FC<PercentSliderProps> = ({
     value={value}
     onChange={(e) => onChange(Number(e.target.value))}
     aria-label={ariaLabel}
-    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#F0EBE0] outline-none focus-visible:ring-2 focus-visible:ring-ring/40 [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-2 [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-2"
-    style={
-      {
-        accentColor,
-        "--thumb-color": accentColor,
-      } as React.CSSProperties
-    }
+    className="h-2 w-full cursor-pointer appearance-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-text-secondary/40 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-2 [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-text-secondary/40 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-2"
+    style={{
+      background: `linear-gradient(to right, ${leftColor} 0%, ${leftColor} ${value}%, ${rightColor} ${value}%, ${rightColor} 100%)`,
+    }}
   />
 );

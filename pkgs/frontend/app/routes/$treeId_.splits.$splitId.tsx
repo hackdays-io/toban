@@ -18,16 +18,14 @@ import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { type Address, decodeFunctionData } from "viem";
 import { Breadcrumb } from "~/components/composite/breadcrumb";
-import { Divider } from "~/components/composite/divider";
 import {
-  DONUT_PALETTE,
   DonutChart,
   type DonutSlice,
 } from "~/components/composite/donut-chart";
 import { SectionLabel } from "~/components/composite/section-label";
-import { WeightBar } from "~/components/composite/weight-bar";
 import { PageContainer } from "~/components/layout/PageContainer";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { RuleCard, type WeightInfo } from "~/components/splits/RuleCard";
+import { SplitBreakdownCard } from "~/components/splits/SplitBreakdownCard";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
@@ -59,13 +57,6 @@ const consolidateRecipients = (
     totalOwnership: total,
   };
 };
-
-interface WeightInfo {
-  roleWeight: number;
-  thanksTokenWeight: number;
-  thanksTokenReceivedWeight: number;
-  thanksTokenSentWeight: number;
-}
 
 // The Toban subgraph doesn't index split creation weights — they exist only as
 // `create()` calldata. We recover them by finding the `SplitsCreated` log that
@@ -212,23 +203,23 @@ const SplitDetailPage: FC = () => {
     [recipients],
   );
 
-  const ranking = useMemo(() => {
+  const breakdownRows = useMemo(() => {
     if (recipients.totalOwnership === 0) return [];
-    return recipients.list.map((r, i) => {
-      const pct = (r.ownership / recipients.totalOwnership) * 100;
-      const entry = recipientNameByAddress.get(r.address.toLowerCase());
-      const name = entry?.name ?? abbreviateAddress(r.address as `0x${string}`);
-      const avatarUrl = ipfs2https(entry?.text_records?.avatar);
-      const color = DONUT_PALETTE[i % DONUT_PALETTE.length];
-      return {
-        address: r.address,
-        name,
-        avatarUrl,
-        pct,
-        color,
-      };
-    });
-  }, [recipients, recipientNameByAddress]);
+    return recipients.list.map((r) => ({
+      address: r.address,
+      pct: (r.ownership / recipients.totalOwnership) * 100,
+    }));
+  }, [recipients]);
+  const breakdownNameByAddress = useMemo(() => {
+    const m = new Map<string, { name?: string; avatarUrl?: string }>();
+    for (const [addr, entry] of recipientNameByAddress) {
+      m.set(addr, {
+        name: entry.name,
+        avatarUrl: ipfs2https(entry.text_records?.avatar),
+      });
+    }
+    return m;
+  }, [recipientNameByAddress]);
 
   const goBack = () => navigate(`/${treeId}/splits`);
 
@@ -294,25 +285,11 @@ const SplitDetailPage: FC = () => {
         </div>
 
         <section className="flex flex-col gap-2">
-          <SectionLabel className="px-0">分配結果</SectionLabel>
-          <Card className="gap-0 p-0">
-            {ranking.length === 0 ? (
-              <Typography
-                variant="bodySm"
-                tone="secondary"
-                className="px-4 py-6 text-center"
-              >
-                分配先がありません
-              </Typography>
-            ) : (
-              ranking.map((row, i) => (
-                <div key={row.address}>
-                  <RankRow row={row} rank={i + 1} />
-                  {i < ranking.length - 1 && <Divider inset={16} />}
-                </div>
-              ))
-            )}
-          </Card>
+          <SectionLabel className="px-0">分配の内訳</SectionLabel>
+          <SplitBreakdownCard
+            recipients={breakdownRows}
+            nameByAddress={breakdownNameByAddress}
+          />
         </section>
 
         <ClaimableBalancesCard
@@ -364,25 +341,11 @@ const SplitDetailPage: FC = () => {
           </div>
 
           <section className="flex flex-col gap-2">
-            <SectionLabel className="px-0">分配結果</SectionLabel>
-            <Card className="gap-0 p-0">
-              {ranking.length === 0 ? (
-                <Typography
-                  variant="bodySm"
-                  tone="secondary"
-                  className="px-4 py-6 text-center"
-                >
-                  分配先がありません
-                </Typography>
-              ) : (
-                ranking.map((row, i) => (
-                  <div key={row.address}>
-                    <RankRow row={row} rank={i + 1} />
-                    {i < ranking.length - 1 && <Divider inset={16} />}
-                  </div>
-                ))
-              )}
-            </Card>
+            <SectionLabel className="px-0">分配の内訳</SectionLabel>
+            <SplitBreakdownCard
+              recipients={breakdownRows}
+              nameByAddress={breakdownNameByAddress}
+            />
           </section>
         </div>
 
@@ -438,161 +401,6 @@ const DonutSummaryCard: FC<DonutSummaryCardProps> = ({
       }
     />
   </Card>
-);
-
-// ─── RankRow ───────────────────────────────────────────────────────────────
-
-interface RankRowProps {
-  row: {
-    address: string;
-    name: string;
-    avatarUrl?: string;
-    pct: number;
-    color: string;
-  };
-  rank: number;
-}
-
-// Bar width is the recipient's percentage of the whole (0-100). Earlier this
-// was scaled to the top recipient so the leader always showed a full bar; the
-// design wants an absolute scale so reading "30%" matches a bar a third full.
-const RankRow: FC<RankRowProps> = ({ row, rank }) => (
-  <div className="flex items-center gap-3 px-4 py-3">
-    <Typography
-      as="span"
-      variant="caption"
-      weight="bold"
-      tone="secondary"
-      className="w-6 shrink-0"
-    >
-      {rank}
-    </Typography>
-    <Avatar size="default" className="size-8">
-      {row.avatarUrl && <AvatarImage src={row.avatarUrl} alt="" />}
-      <AvatarFallback seed={row.name} />
-    </Avatar>
-    <Typography
-      as="div"
-      variant="bodySm"
-      weight="semibold"
-      truncate
-      className="min-w-0 flex-1"
-    >
-      {row.name}
-    </Typography>
-    <div className="hidden h-1.5 w-20 overflow-hidden rounded-xs bg-[#F0EBE0] sm:block">
-      <div
-        className="h-full"
-        style={{
-          width: `${Math.max(0, Math.min(100, row.pct))}%`,
-          backgroundColor: row.color,
-        }}
-      />
-    </div>
-    <Typography
-      as="span"
-      variant="bodySm"
-      weight="bold"
-      className="w-14 shrink-0 text-right tabular-nums"
-    >
-      {row.pct.toFixed(2)}%
-    </Typography>
-  </div>
-);
-
-// ─── RuleCard ──────────────────────────────────────────────────────────────
-
-interface RuleCardProps {
-  weights?: WeightInfo | null;
-  loading: boolean;
-}
-
-const RuleCard: FC<RuleCardProps> = ({ weights, loading }) => {
-  if (loading) {
-    return (
-      <Card className="px-4 py-6 text-center">
-        <Typography variant="bodySm" tone="secondary">
-          ルールを読み込み中…
-        </Typography>
-      </Card>
-    );
-  }
-  if (!weights) {
-    return (
-      <Card className="px-4 py-6 text-center">
-        <Typography variant="bodySm" tone="secondary">
-          ルール情報を取得できませんでした
-        </Typography>
-      </Card>
-    );
-  }
-
-  const total = weights.roleWeight + weights.thanksTokenWeight;
-  const dutyPct =
-    total > 0 ? Math.round((weights.roleWeight / total) * 100) : 0;
-  const thanksPct =
-    total > 0 ? Math.round((weights.thanksTokenWeight / total) * 100) : 0;
-  const recvTotal =
-    weights.thanksTokenReceivedWeight + weights.thanksTokenSentWeight;
-  const recvPct =
-    recvTotal > 0
-      ? Math.round((weights.thanksTokenReceivedWeight / recvTotal) * 100)
-      : 0;
-  const sentPct =
-    recvTotal > 0
-      ? Math.round((weights.thanksTokenSentWeight / recvTotal) * 100)
-      : 0;
-
-  return (
-    <Card className="gap-4 px-4 py-4">
-      <WeightBar label="当番ベース" pct={dutyPct} color="var(--color-role)" />
-      <WeightBar
-        label="サンクスベース"
-        pct={thanksPct}
-        color="var(--color-contrib)"
-      />
-      <Divider />
-      <div>
-        <Typography
-          as="div"
-          variant="caption"
-          tone="secondary"
-          weight="semibold"
-          className="mb-2"
-        >
-          サンクス内の重み
-        </Typography>
-        <div className="flex gap-2.5">
-          <RuleStat
-            label="受け取り"
-            value={recvPct}
-            color="var(--color-contrib)"
-          />
-          <RuleStat label="送付" value={sentPct} color="var(--color-primary)" />
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-const RuleStat: FC<{ label: string; value: number; color: string }> = ({
-  label,
-  value,
-  color,
-}) => (
-  <div className="flex flex-1 flex-col items-center gap-1 rounded-sm bg-bg px-3 py-3 text-center">
-    <Typography variant="micro" tone="secondary" as="span">
-      {label}
-    </Typography>
-    <Typography
-      as="span"
-      variant="statMd"
-      className="tabular-nums"
-      style={{ color }}
-    >
-      {value}%
-    </Typography>
-  </div>
 );
 
 // ─── AddressRow / CopyIconButton ───────────────────────────────────────────

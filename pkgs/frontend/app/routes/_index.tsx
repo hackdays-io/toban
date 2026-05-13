@@ -579,7 +579,7 @@ function PhilosophySection() {
           <Principle
             color={ACCENT.blue}
             number="02"
-            title="必要なことをみんなで"
+            title="必要なことをみんなで分担"
             body="当番を持つ人が一人で抱え込まなくていいように、当番クエストで他のメンバーに委ねやすくする。必要なことはみんなで分担して、無理なく続ける。"
           />
           <Principle

@@ -24,17 +24,26 @@ import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 // HatsFractionTokenModule mints DEFAULT_TOKEN_SUPPLY = 10000 share units per
-// (hatId, wearer). UI surfaces the user's holding as a percent of that scale,
-// so 1% == 100 raw units. See BigBang.sol where 10_000 is passed as the
-// fraction token's default supply during workspace init.
-const SHARE_UNITS_PER_PERCENT = 100n;
+// (hatId, wearer). The form lets the wearer hand off a raw-unit count to a
+// quest; no percent conversion happens on the way to the contract.
 const TOTAL_SHARE_UNITS = 10_000;
+const DEFAULT_SHARE_AMOUNT = 100;
+const QUICK_SHARE_AMOUNTS = [100, 300, 500, 1000];
 
 const QuestCreate: FC = () => {
-  const { treeId, hatId } = useParams();
+  const { treeId, hatId, address } = useParams();
   const navigate = useNavigate();
   const { wallet } = useActiveWallet();
   const me = wallet?.account?.address as Address | undefined;
+
+  // The role-share tokenId is keccak256(hatId, wearer); the wearer is fixed by
+  // the URL. The viewer (me) is the depositor — `createQuest` pulls share from
+  // msg.sender for that specific (hatId, wearer) shard.
+  const wearer = address as Address | undefined;
+  const holderBackPath =
+    treeId && hatId && address
+      ? `/${treeId}/${hatId}/${address}`
+      : `/${treeId}/${hatId}`;
 
   const tree = useTreeInfo(Number(treeId));
   const hat = useMemo(
@@ -64,13 +73,13 @@ const QuestCreate: FC = () => {
     }
   }, [hatId]);
 
-  // Viewer's RoleShare balance for (hatId, wearer=me). MVP scope: only
-  // wearers create quests, so we only look up the (hatId, me) tokenId.
+  // Viewer's balance for the (hatId, wearer) shard identified by the URL.
+  // `wearer` fixes the tokenId; `owner=me` filters to the depositor's row.
   const { data: balanceData } = useGetBalanceOfFractionTokens({
     where: {
       hatId: hatIdDecimal,
       owner: me?.toLowerCase(),
-      wearer: me?.toLowerCase(),
+      wearer: wearer?.toLowerCase(),
     },
     first: 1,
   });
@@ -83,10 +92,8 @@ const QuestCreate: FC = () => {
       return 0n;
     }
   }, [balanceData]);
-  const myPercent = useMemo(
-    () => Number(myShareUnits / SHARE_UNITS_PER_PERCENT),
-    [myShareUnits],
-  );
+  // Cap by DEFAULT_TOKEN_SUPPLY (10_000) on the module — fits in a JS Number.
+  const myUnits = useMemo(() => Number(myShareUnits), [myShareUnits]);
 
   const { data: workspace } = useGetWorkspace({
     workspaceId: treeId ?? "",
@@ -94,6 +101,8 @@ const QuestCreate: FC = () => {
   const questModuleAddress = workspace?.workspace?.hatsQuestModule as
     | Address
     | undefined;
+  const fractionTokenAddress = workspace?.workspace?.hatsFractionTokenModule
+    ?.id as Address | undefined;
 
   // ── Form state ────────────────────────────────────────────────
   const [title, setTitle] = useState("");
@@ -101,42 +110,49 @@ const QuestCreate: FC = () => {
   const [share, setShare] = useState(0);
 
   // Default the stepper to a useful starting value once we know the user's
-  // share — Math.min(10, myPercent). Only runs while the input is still
-  // pristine (share === 0) so user adjustments aren't overwritten on rerender.
+  // share — Math.min(DEFAULT_SHARE_AMOUNT, myUnits). Only runs while the input
+  // is still pristine (share === 0) so user adjustments aren't overwritten on
+  // rerender.
   useEffect(() => {
-    if (myPercent > 0) {
-      setShare((prev) => (prev === 0 ? Math.min(10, myPercent) : prev));
+    if (myUnits > 0) {
+      setShare((prev) =>
+        prev === 0 ? Math.min(DEFAULT_SHARE_AMOUNT, myUnits) : prev,
+      );
     }
-  }, [myPercent]);
+  }, [myUnits]);
 
-  const after = Math.max(0, myPercent - share);
+  const after = Math.max(0, myUnits - share);
   const titleTrimmed = title.trim();
   const valid =
     !!questModuleAddress &&
     !!me &&
+    !!wearer &&
     !!hatIdDecimal &&
     titleTrimmed.length > 0 &&
     share > 0 &&
-    share <= myPercent;
+    share <= myUnits;
 
   // ── Submit ────────────────────────────────────────────────────
-  const { createQuest, isLoading: isCreating } =
-    useCreateQuest(questModuleAddress);
+  const { createQuest, isLoading: isCreating } = useCreateQuest(
+    questModuleAddress,
+    fractionTokenAddress,
+  );
   const { upload, isLoading: isUploading } = useUploadQuestMetadata();
   const isSubmitting = isCreating || isUploading;
 
   const onSubmit = async () => {
-    if (!valid || !me || !hatIdDecimal || !questModuleAddress) return;
+    if (!valid || !me || !wearer || !hatIdDecimal || !questModuleAddress)
+      return;
     try {
       const meta = await upload({ title: titleTrimmed, description });
       if (!meta) {
         toast.error("メタデータのアップロードに失敗しました");
         return;
       }
-      const amount = BigInt(share) * SHARE_UNITS_PER_PERCENT;
+      const amount = BigInt(share);
       const questId = await createQuest({
         hatId: BigInt(hatIdDecimal),
-        wearer: me,
+        wearer,
         amount,
         metadataHash: meta.metadataHash,
       });
@@ -160,7 +176,7 @@ const QuestCreate: FC = () => {
       <PageContainer className="pt-4 pb-8 md:pt-6">
         <ScreenHeader
           title="クエストを作成"
-          onBack={() => navigate(`/${treeId}/${hatId}`)}
+          onBack={() => navigate(holderBackPath)}
         />
         <Card className="mx-1 mt-3 py-6 text-center">
           <Typography variant="bodySm" tone="secondary">
@@ -170,7 +186,7 @@ const QuestCreate: FC = () => {
             <Button
               variant="secondary"
               full
-              onClick={() => navigate(`/${treeId}/${hatId}`)}
+              onClick={() => navigate(holderBackPath)}
             >
               当番に戻る
             </Button>
@@ -184,7 +200,7 @@ const QuestCreate: FC = () => {
     <PageContainer className="pt-4 pb-8 md:pt-6">
       <ScreenHeader
         title="クエストを作成"
-        onBack={() => navigate(`/${treeId}/${hatId}`)}
+        onBack={() => navigate(holderBackPath)}
       />
 
       <div className="px-1 pb-3">
@@ -209,7 +225,7 @@ const QuestCreate: FC = () => {
             {dutyName}
           </Typography>
           <div className="mt-1 flex items-end gap-3">
-            <ShareNumber label="あなたのシェア" value={myPercent} />
+            <ShareNumber label="あなたのシェア" value={myUnits} />
             <Typography
               as="span"
               variant="body"
@@ -242,50 +258,50 @@ const QuestCreate: FC = () => {
               onClick={() => setShare((s) => Math.max(1, s - 1))}
               disabled={share <= 1}
             />
-            <div className="flex-1 text-center">
-              <Typography
-                as="div"
-                variant="statLg"
-                className="tracking-[-0.5px]"
-              >
-                {share}
-                <Typography
-                  as="span"
-                  variant="caption"
-                  tone="secondary"
-                  className="ml-1"
-                >
-                  %
-                </Typography>
-              </Typography>
-            </div>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={myUnits || undefined}
+              step={1}
+              value={share === 0 ? "" : share}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  setShare(0);
+                  return;
+                }
+                const n = Math.floor(Number(raw));
+                if (!Number.isFinite(n)) return;
+                setShare(Math.max(0, Math.min(myUnits, n)));
+              }}
+              className="h-14 flex-1 text-center text-3xl font-bold tracking-[-0.5px]"
+            />
             <StepButton
               symbol="+"
-              onClick={() => setShare((s) => Math.min(myPercent, s + 1))}
-              disabled={share >= myPercent}
+              onClick={() => setShare((s) => Math.min(myUnits, s + 1))}
+              disabled={share >= myUnits}
             />
           </div>
           <div className="mt-1 flex gap-1.5">
-            {[5, 10, 15, 20]
-              .filter((n) => n <= myPercent)
-              .map((n) => {
-                const active = share === n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setShare(n)}
-                    className={cn(
-                      "flex-1 rounded-full border px-0 py-2 text-xs font-bold transition-colors",
-                      active
-                        ? "border-primary bg-primary text-white"
-                        : "border-border bg-surface text-text-primary hover:bg-bg",
-                    )}
-                  >
-                    {n}%
-                  </button>
-                );
-              })}
+            {QUICK_SHARE_AMOUNTS.filter((n) => n <= myUnits).map((n) => {
+              const active = share === n;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setShare(n)}
+                  className={cn(
+                    "flex-1 rounded-full border px-0 py-2 text-xs font-bold transition-colors",
+                    active
+                      ? "border-primary bg-primary text-white"
+                      : "border-border bg-surface text-text-primary hover:bg-bg",
+                  )}
+                >
+                  {n.toLocaleString()}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -315,15 +331,12 @@ const QuestCreate: FC = () => {
       </div>
 
       <div className="flex gap-2.5 px-1 pt-6">
-        <Button
-          variant="secondary"
-          onClick={() => navigate(`/${treeId}/${hatId}`)}
-        >
+        <Button variant="secondary" onClick={() => navigate(holderBackPath)}>
           キャンセル
         </Button>
         <Button
           variant="primary"
-          full
+          className="flex-1"
           onClick={onSubmit}
           disabled={!valid || isSubmitting}
         >
@@ -344,9 +357,8 @@ const QuestCreate: FC = () => {
         tone="secondary"
         className="px-2 pt-4 leading-relaxed"
       >
-        作成すると、選んだシェア（{share}% ={" "}
-        {Number(share * 100).toLocaleString()}
-        単位 / 全{TOTAL_SHARE_UNITS.toLocaleString()}）が
+        作成すると、選んだシェア（{share.toLocaleString()}単位 / 全
+        {TOTAL_SHARE_UNITS.toLocaleString()}）が
         クエストモジュールに預け入れられます。完了承認で申請者に渡り、キャンセル時には差し戻されます。
       </Typography>
     </PageContainer>
@@ -384,10 +396,7 @@ const ShareNumber: FC<ShareNumberProps> = ({
         highlight ? "text-[30px] text-primary" : "text-[24px] text-[#3D2D14]",
       )}
     >
-      {value}
-      <Typography as="span" variant="caption" className="ml-1 text-[#7A5A2E]">
-        %
-      </Typography>
+      {value.toLocaleString()}
     </Typography>
   </div>
 );

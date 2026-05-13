@@ -618,9 +618,9 @@ const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
   const dutyName = detail?.data?.name;
   const { data: meta } = useQuestMetadata(quest.metadataHash);
   const title = meta?.title ?? `Quest #${quest.questId}`;
-  const sharePercent = (() => {
+  const shareAmount = (() => {
     try {
-      return (Number(BigInt(quest.amount)) / 100).toString();
+      return BigInt(quest.amount).toLocaleString();
     } catch {
       return "0";
     }
@@ -661,15 +661,7 @@ const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
             variant="statMd"
             className="text-primary tracking-[-0.5px]"
           >
-            +{sharePercent}
-            <Typography
-              as="span"
-              variant="micro"
-              tone="secondary"
-              className="ml-0.5"
-            >
-              %
-            </Typography>
+            +{shareAmount}
           </Typography>
         </div>
       </div>

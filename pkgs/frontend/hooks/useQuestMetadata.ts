@@ -21,11 +21,14 @@ export const useQuestMetadata = (metadataHash?: `0x${string}` | string) => {
     : undefined;
   return useQuery({
     queryKey: ["quest-metadata", normalized],
-    queryFn: async (): Promise<QuestMetadata | undefined> => {
-      if (!normalized) return;
+    // React Query v5 disallows `undefined` from queryFn (it can't distinguish
+    // "no data yet" from "fetched nothing"). Return `null` for the gateway
+    // failure / wrong-shape paths so the consumer can still render a fallback.
+    queryFn: async (): Promise<QuestMetadata | null> => {
+      if (!normalized) return null;
       const cid = bytes32ToCid(normalized);
       const json = await ipfs2httpsJson(`ipfs://${cid}`);
-      return isQuestMetadata(json) ? json : undefined;
+      return isQuestMetadata(json) ? json : null;
     },
     enabled: !!normalized,
     staleTime: 1000 * 60 * 60,

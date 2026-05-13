@@ -1,7 +1,10 @@
 import { HATS_QUEST_MODULE_ABI } from "abi/hatsQuestModule";
 import { useCallback, useState } from "react";
 import { type Address, parseEventLogs } from "viem";
-import { hatsQuestContractBaseConfig } from "./useContracts";
+import {
+  fractionTokenBaseConfig,
+  hatsQuestContractBaseConfig,
+} from "./useContracts";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
 
@@ -10,7 +13,10 @@ import { useActiveWallet } from "./useWallet";
 // id we need on the next screen. We split one hook per action so callers can
 // import only what they need, mirroring useHatsHatCreatorModule.
 
-export const useCreateQuest = (hatsQuestModuleAddress?: Address) => {
+export const useCreateQuest = (
+  hatsQuestModuleAddress?: Address,
+  fractionTokenAddress?: Address,
+) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,9 +27,26 @@ export const useCreateQuest = (hatsQuestModuleAddress?: Address) => {
       amount: bigint;
       metadataHash: `0x${string}`;
     }): Promise<bigint | undefined> => {
-      if (!hatsQuestModuleAddress || !wallet) return;
+      if (!hatsQuestModuleAddress || !fractionTokenAddress || !wallet) return;
       setIsLoading(true);
       try {
+        // `createQuest` calls `safeTransferFrom(msg.sender, address(this), …)`
+        // on the FractionToken — ERC1155 requires the module to be an approved
+        // operator of the caller. Approve once (idempotent) before escrowing.
+        const approved = (await publicClient.readContract({
+          ...fractionTokenBaseConfig(fractionTokenAddress),
+          functionName: "isApprovedForAll",
+          args: [wallet.account.address as Address, hatsQuestModuleAddress],
+        })) as boolean;
+        if (!approved) {
+          const approveTx = await wallet.writeContract({
+            ...fractionTokenBaseConfig(fractionTokenAddress),
+            functionName: "setApprovalForAll",
+            args: [hatsQuestModuleAddress, true],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: approveTx });
+        }
+
         const txHash = await wallet.writeContract({
           ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
           functionName: "createQuest",
@@ -50,7 +73,7 @@ export const useCreateQuest = (hatsQuestModuleAddress?: Address) => {
         setIsLoading(false);
       }
     },
-    [hatsQuestModuleAddress, wallet],
+    [hatsQuestModuleAddress, fractionTokenAddress, wallet],
   );
 
   return { createQuest, isLoading };

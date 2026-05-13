@@ -155,13 +155,16 @@ const DutyDetail: FC = () => {
     return quests.filter((q) => q.hatId === hatIdDecimal);
   }, [quests, hatIdDecimal]);
 
-  // Quest creation requires the viewer to actually hold some role share for
-  // this hat (any wearer's shard). Check across all balances we already
-  // fetched for this hatId.
+  // Quest creation requires picking a specific (hatId, wearer) tokenId in the
+  // URL. From the duty page we don't have a wearer context, so we default to
+  // the viewer's own shard: me must be a wearer of this hat AND hold positive
+  // balance of the (hatId, me) tokenId. Supporters of other wearers' shards
+  // still create quests via the holder detail page.
   const canCreateQuest = useMemo(() => {
     if (!me || !balanceData) return false;
     return balanceData.balanceOfFractionTokens.some((b) => {
       if (b.owner.toLowerCase() !== me) return false;
+      if (b.wearer.toLowerCase() !== me) return false;
       try {
         return BigInt(b.balance) > 0n;
       } catch {
@@ -233,6 +236,7 @@ const DutyDetail: FC = () => {
             loading={questsLoading}
             treeId={treeId}
             hatId={hatId}
+            wearerAddress={me}
             canCreate={canCreateQuest}
           />
 
@@ -309,6 +313,7 @@ const DutyDetail: FC = () => {
               loading={questsLoading}
               treeId={treeId}
               hatId={hatId}
+              wearerAddress={me}
               canCreate={canCreateQuest}
             />
           </aside>

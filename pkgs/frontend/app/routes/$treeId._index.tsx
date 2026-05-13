@@ -699,9 +699,9 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
 const QuestRow: FC<{ quest: Quest; treeId?: string }> = ({ quest, treeId }) => {
   const { data: meta } = useQuestMetadata(quest.metadataHash);
   const title = meta?.title ?? `Quest #${quest.questId}`;
-  const sharePercent = (() => {
+  const shareAmount = (() => {
     try {
-      return (Number(BigInt(quest.amount)) / 100).toString();
+      return BigInt(quest.amount).toLocaleString();
     } catch {
       return "0";
     }
@@ -719,7 +719,7 @@ const QuestRow: FC<{ quest: Quest; treeId?: string }> = ({ quest, treeId }) => {
           weight="bold"
           className="text-primary"
         >
-          +{sharePercent}%
+          +{shareAmount}
         </Typography>
       </div>
       <div className="flex items-center gap-2">

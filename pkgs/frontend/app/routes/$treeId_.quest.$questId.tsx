@@ -203,7 +203,17 @@ const QuestDetailRoute: FC = () => {
   };
 
   // ── Render ───────────────────────────────────────────────────
-  const onBack = () => navigate(`/${treeId}/role`);
+  // Prefer the actual previous entry so deep-linked detail pages return to
+  // their original context (duty page, workspace home, etc.). When the user
+  // arrived here directly (`window.history.length === 1` in a fresh tab),
+  // fall back to the workspace home — `/role` is too narrow to assume.
+  const onBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(treeId ? `/${treeId}` : "/");
+  };
 
   if (isLoading && !quest) {
     return (
@@ -242,7 +252,7 @@ const QuestDetailRoute: FC = () => {
         ) ?? false)
       : false;
 
-  const sharePercent = sharePercentOf(quest.amount);
+  const shareAmount = shareAmountOf(quest.amount);
   const title = meta?.title ?? `Quest #${quest.questId}`;
   const description = meta?.description;
 
@@ -284,7 +294,7 @@ const QuestDetailRoute: FC = () => {
               }
             />
             <div className="w-px self-stretch bg-border" />
-            <ShareValue label="もらえるシェア" value={sharePercent} />
+            <ShareValue label="もらえるシェア" value={shareAmount} />
           </div>
 
           <CreatorSubmitterRow
@@ -301,7 +311,7 @@ const QuestDetailRoute: FC = () => {
           {quest.status === "Completed" && (
             <CompletedCard
               dutyName={dutyName}
-              sharePercent={sharePercent}
+              shareAmount={shareAmount}
               submitterName={resolveName(quest.submitter)}
             />
           )}
@@ -337,12 +347,10 @@ const QuestDetailRoute: FC = () => {
 
 export default QuestDetailRoute;
 
-// RoleShare raw units → percent. 10000 raw units == 100%.
-const sharePercentOf = (rawAmount: unknown): string => {
+// RoleShare raw unit count, formatted with thousands separators.
+const shareAmountOf = (rawAmount: unknown): string => {
   try {
-    return (
-      Number(BigInt(rawAmount as string | number | bigint)) / 100
-    ).toString();
+    return BigInt(rawAmount as string | number | bigint).toLocaleString();
   } catch {
     return "0";
   }
@@ -468,9 +476,9 @@ const ApprovalProgressCard: FC<{ count: number }> = ({ count }) => (
 
 const CompletedCard: FC<{
   dutyName: string;
-  sharePercent: string;
+  shareAmount: string;
   submitterName: string;
-}> = ({ dutyName, sharePercent, submitterName }) => (
+}> = ({ dutyName, shareAmount, submitterName }) => (
   <Card className="gap-1 border-[#2F8B58]/55 bg-[#E5F5EC] px-3.5 py-3">
     <Typography
       as="div"
@@ -481,7 +489,7 @@ const CompletedCard: FC<{
       {submitterName} が完了しました
     </Typography>
     <Typography as="div" variant="caption" className="text-[#2F8B58]">
-      {dutyName} の当番シェア +{sharePercent}%
+      {dutyName} の当番シェア +{shareAmount}
     </Typography>
   </Card>
 );

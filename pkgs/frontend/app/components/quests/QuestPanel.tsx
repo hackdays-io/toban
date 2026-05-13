@@ -1,6 +1,7 @@
+import { useNamesByAddresses } from "hooks/useENS";
 import { useQuestMetadata } from "hooks/useQuestMetadata";
 import type { Quest, QuestStatus } from "hooks/useQuests";
-import { type FC, Fragment } from "react";
+import { type FC, Fragment, useMemo } from "react";
 import { Link } from "react-router";
 import { abbreviateAddress } from "utils/wallet";
 
@@ -16,6 +17,12 @@ interface QuestPanelProps {
   loading: boolean;
   treeId?: string;
   hatId?: string;
+  /** Wearer that fixes the (hatId, wearer) role-share tokenId the viewer will
+   *  spend from. The CTA links to `/<tree>/<hat>/<wearer>/quest/new`, so this
+   *  must be set when `canCreate` is true. From the holder detail page it's
+   *  the page's `address` param; from the duty detail page it's the viewer
+   *  themselves (MVP scope: wearers create quests for their own shard). */
+  wearerAddress?: string;
   /** Only render the "クエストを作成" CTA when the viewer actually holds role
    *  share — quest creation requires spending share, so the button would be
    *  a dead-end otherwise. Defaults to false. */
@@ -30,6 +37,7 @@ const QuestPanel: FC<QuestPanelProps> = ({
   loading,
   treeId,
   hatId,
+  wearerAddress,
   canCreate = false,
 }) => {
   const groups: { status: QuestStatus; title: string }[] = [
@@ -39,14 +47,47 @@ const QuestPanel: FC<QuestPanelProps> = ({
     { status: "Cancelled", title: "キャンセル" },
   ];
 
-  const createButton = canCreate ? (
-    <Button asChild variant="secondary" full>
-      <Link to={`/${treeId}/${hatId}/quest/new`}>
-        <Icon name="plus" size={16} />
-        クエストを作成
-      </Link>
-    </Button>
-  ) : null;
+  const createButton =
+    canCreate && wearerAddress ? (
+      <Button asChild variant="secondary" full>
+        <Link to={`/${treeId}/${hatId}/${wearerAddress}/quest/new`}>
+          <Icon name="plus" size={16} />
+          クエストを作成
+        </Link>
+      </Button>
+    ) : null;
+
+  // Resolve creator addresses to ENS / Namestone names in a single batch so
+  // each row shows a human name instead of a 0x… stub. Submitters are
+  // included on the same call since they share the same column in `questMeta`
+  // and the lookup cost is dominated by the network round-trip, not by the
+  // address count.
+  const addressesToResolve = useMemo(() => {
+    const set = new Set<string>();
+    for (const q of quests) {
+      if (q.creator) set.add(q.creator.toLowerCase());
+      if (q.submitter) set.add(q.submitter.toLowerCase());
+    }
+    return Array.from(set);
+  }, [quests]);
+  const { names } = useNamesByAddresses(addressesToResolve);
+  const nameByAddress = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of names) {
+      const entry = group[0];
+      if (entry?.address && entry.name) {
+        map.set(entry.address.toLowerCase(), entry.name);
+      }
+    }
+    return map;
+  }, [names]);
+  const resolveName = (addr?: string | null): string => {
+    if (!addr) return "-";
+    return (
+      nameByAddress.get(addr.toLowerCase()) ??
+      abbreviateAddress(addr as `0x${string}`)
+    );
+  };
 
   return (
     <section className="flex flex-col gap-3">
@@ -81,6 +122,7 @@ const QuestPanel: FC<QuestPanelProps> = ({
                       quest={q}
                       treeId={treeId}
                       hatId={hatId}
+                      resolveName={resolveName}
                     />
                   ))}
                 </div>
@@ -95,13 +137,15 @@ const QuestPanel: FC<QuestPanelProps> = ({
   );
 };
 
-const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
-  quest,
-  treeId,
-}) => {
+const QuestCard: FC<{
+  quest: Quest;
+  treeId?: string;
+  hatId?: string;
+  resolveName: (addr?: string | null) => string;
+}> = ({ quest, treeId, resolveName }) => {
   const { data: meta } = useQuestMetadata(quest.metadataHash);
   const title = meta?.title ?? `Quest #${quest.questId}`;
-  const sharePercent = sharePercentOf(quest.amount);
+  const shareAmount = shareAmountOf(quest.amount);
 
   const card = (
     <Card className="gap-2 px-3.5 py-3 transition-colors hover:bg-bg">
@@ -113,7 +157,7 @@ const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
           <div className="mt-1 flex items-center gap-2">
             <QuestStateBadge status={quest.status} />
             <Typography variant="micro" tone="secondary" as="span">
-              {questMeta(quest)}
+              {questMeta(quest, resolveName)}
             </Typography>
           </div>
         </div>
@@ -126,15 +170,7 @@ const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
             variant="statMd"
             className="text-primary tracking-[-0.5px]"
           >
-            +{sharePercent}
-            <Typography
-              as="span"
-              variant="micro"
-              tone="secondary"
-              className="ml-0.5"
-            >
-              %
-            </Typography>
+            +{shareAmount}
           </Typography>
         </div>
       </div>
@@ -154,28 +190,29 @@ const QuestCard: FC<{ quest: Quest; treeId?: string; hatId?: string }> = ({
   return card;
 };
 
-// RoleShare raw units → percent. 10000 raw units == 100% per
-// HatsFractionTokenModule.DEFAULT_TOKEN_SUPPLY.
-const sharePercentOf = (rawAmount: unknown): string => {
+// RoleShare raw unit count, formatted with thousands separators. The escrow
+// stored on-chain by HatsQuestModule is already in raw units (no percent
+// conversion happens at any layer).
+const shareAmountOf = (rawAmount: unknown): string => {
   try {
-    const raw = BigInt(rawAmount as string | number | bigint);
-    return (Number(raw) / 100).toString();
+    return BigInt(rawAmount as string | number | bigint).toLocaleString();
   } catch {
     return "0";
   }
 };
 
-const questMeta = (q: Quest): string => {
+const questMeta = (
+  q: Quest,
+  resolveName: (addr?: string | null) => string,
+): string => {
   if (q.status === "Open") {
-    return `作成者: ${abbreviateAddress(q.creator)}`;
+    return `作成者: ${resolveName(q.creator)}`;
   }
   if (q.status === "PendingReview") {
-    return `申請者: ${
-      q.submitter ? abbreviateAddress(q.submitter) : "-"
-    }・承認 ${q.approvalCount}/2`;
+    return `申請者: ${resolveName(q.submitter)}・承認 ${q.approvalCount}/2`;
   }
   if (q.status === "Completed") {
-    return `${q.submitter ? abbreviateAddress(q.submitter) : "-"} が完了`;
+    return `${resolveName(q.submitter)} が完了`;
   }
   return "";
 };

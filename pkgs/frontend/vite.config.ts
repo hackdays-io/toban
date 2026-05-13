@@ -78,6 +78,9 @@ const pwa = (): Plugin[] =>
       // index.html to fall back to, so navigations stay on the network.
       globPatterns: ["assets/**/*.{js,css,woff,woff2}"],
       globIgnores: ["**/server/**", "**/.vite/**"],
+      // viem + permissionless + @privy-io get bundled into a single wallet
+      // chunk that exceeds Workbox's 2 MiB default.
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       navigateFallback: null,
       runtimeCaching: [
         {

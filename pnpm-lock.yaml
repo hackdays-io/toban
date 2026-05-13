@@ -214,6 +214,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.68.0
         version: 5.77.2(react@18.3.1)
+      '@vercel/react-router':
+        specifier: ^1.3.0
+        version: 1.3.0(@react-router/dev@7.15.0(@react-router/serve@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(@types/node@22.15.24)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.40.0)(typescript@5.6.3)(vite@7.3.3(@types/node@22.15.24)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.40.0)(yaml@2.8.0))(yaml@2.8.0))(@react-router/node@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(isbot@5.1.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@zxing/library':
         specifier: ^0.21.3
         version: 0.21.3
@@ -5204,6 +5207,9 @@ packages:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
 
+  '@ts-morph/common@0.11.1':
+    resolution: {integrity: sha512-7hWZS0NRpEsNV8vWJzg7FEz6V8MaLNeJOmwmghqUXTpzk16V1LLZhdo+4QvE/+zv4cVci0OviuJFnqhEfoV3+g==}
+
   '@tsconfig/node10@1.0.11':
     resolution: {integrity: sha512-DcRjDCujK/kCk/cUe8Xz8ZSpm8mS3mNNpta+jGCA6USEDfktlNvm1+IuZ9eTcDbNk41BHwpHHeW+N1lKCz4zOw==}
 
@@ -5642,6 +5648,18 @@ packages:
   '@urql/core@4.3.0':
     resolution: {integrity: sha512-wT+FeL8DG4x5o6RfHEnONNFVDM3616ouzATMYUClB6CB+iIu2mwfBKd7xSUxYOZmwtxna5/hDRQdMl3nbQZlnw==}
 
+  '@vercel/react-router@1.3.0':
+    resolution: {integrity: sha512-z952pqHTGje/LSFRcbKyFSL7DDDFsIStsEmFbdF4cQDBYgTXQWepuQEfdRouNz3FTodib0/hXyWR1OVWd8hxtw==}
+    peerDependencies:
+      '@react-router/dev': '7'
+      '@react-router/node': '7'
+      isbot: '5'
+      react: '>=18'
+      react-dom: '>=18'
+
+  '@vercel/static-config@3.3.0':
+    resolution: {integrity: sha512-GpS3tPwUeDJCkrKbMNtS2XLRFgfxTlN7YNUL+Bo23+fGolrDw6Oq79R3yvxTYgqRaJMGSEqC7iMw6mj6I5loxg==}
+
   '@viem/anvil@0.0.7':
     resolution: {integrity: sha512-F+3ljCT1bEt8T4Fzm9gWpIgO3Dc7bzG1TtUtkStkJFMuummqZ8kvYc3UFMo5j3F51fSWZZvEkjs3+i7qf0AOqQ==}
 
@@ -5996,6 +6014,9 @@ packages:
 
   ajv@8.17.1:
     resolution: {integrity: sha512-B/gBuNg5SiMTrPkC+A2+cW0RszwxYmn6VYxB/inlBStS5nx6xHIt/ehKRhIMhqusl7a8LjQoZnjCs5vhwxOQ1g==}
+
+  ajv@8.6.3:
+    resolution: {integrity: sha512-SMJOdDP6LqTkD0Uq8qLi+gMwSt0imXLSV080qFVwJCpH9U6Mb+SUGHAXM0KNbcBPguytWyvFxcHgMLe2D2XSpw==}
 
   algoliasearch-helper@3.25.0:
     resolution: {integrity: sha512-vQoK43U6HXA9/euCqLjvyNdM4G2Fiu/VFp4ae0Gau9sZeIKBPvUPnXfLYAe65Bg7PFuw03coeu5K6lTPSXRObw==}
@@ -6876,6 +6897,9 @@ packages:
   co@4.6.0:
     resolution: {integrity: sha512-QVb0dM5HvG+uaxitm8wONl7jltx8dqhfU33DcqtOZcLSVIKSDDLDi7+0LbAKiyI8hD9u42m2YxXSkMGWThaecQ==}
     engines: {iojs: '>= 1.0.0', node: '>= 0.12.0'}
+
+  code-block-writer@10.1.1:
+    resolution: {integrity: sha512-67ueh2IRGst/51p0n6FvPrnRjAGHY5F8xdjkgrYE7DDzpJe6qA07RYQ9VcoUeo5ATOjSOiWpSL3SWBRRbempMw==}
 
   collapse-white-space@2.1.0:
     resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
@@ -9645,6 +9669,9 @@ packages:
 
   json-parse-even-better-errors@2.3.1:
     resolution: {integrity: sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==}
+
+  json-schema-to-ts@1.6.4:
+    resolution: {integrity: sha512-pR4yQ9DHz6itqswtHCm26mw45FSNfQ9rEQjosaZErhn5J3J2sIViQiz8rDaezjKAhFGpmsoczYVBgGHzFw/stA==}
 
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
@@ -13061,6 +13088,9 @@ packages:
   ts-log@2.2.7:
     resolution: {integrity: sha512-320x5Ggei84AxzlXp91QkIGSw5wgaLT6GeAH0KsqDmRZdVWW2OiSeVvElVoatk3f7nicwXlElXsoFkARiGE2yg==}
 
+  ts-morph@12.0.0:
+    resolution: {integrity: sha512-VHC8XgU2fFW7yO1f/b3mxKDje1vmyzFXHWzOYmKEkCEwcLjDtbdLgBQviqj4ZwP4MJkQtRo6Ha2I29lq/B+VxA==}
+
   ts-node@10.9.2:
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
     hasBin: true
@@ -13074,6 +13104,9 @@ packages:
         optional: true
       '@swc/wasm':
         optional: true
+
+  ts-toolbelt@6.15.5:
+    resolution: {integrity: sha512-FZIXf1ksVyLcfr7M317jbB67XFJhOO1YqdTcuGaq9q5jLUoTikukZ+98TPjKiP2jC5CgmYdWWYs0s2nLSU0/1A==}
 
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
@@ -21634,6 +21667,13 @@ snapshots:
 
   '@trysound/sax@0.2.0': {}
 
+  '@ts-morph/common@0.11.1':
+    dependencies:
+      fast-glob: 3.3.3
+      minimatch: 3.1.2
+      mkdirp: 1.0.4
+      path-browserify: 1.0.1
+
   '@tsconfig/node10@1.0.11': {}
 
   '@tsconfig/node12@1.0.11': {}
@@ -22096,6 +22136,22 @@ snapshots:
       wonka: 6.3.5
     transitivePeerDependencies:
       - graphql
+
+  '@vercel/react-router@1.3.0(@react-router/dev@7.15.0(@react-router/serve@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(@types/node@22.15.24)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.40.0)(typescript@5.6.3)(vite@7.3.3(@types/node@22.15.24)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.40.0)(yaml@2.8.0))(yaml@2.8.0))(@react-router/node@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(isbot@5.1.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@react-router/dev': 7.15.0(@react-router/serve@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(@types/node@22.15.24)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.40.0)(typescript@5.6.3)(vite@7.3.3(@types/node@22.15.24)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.40.0)(yaml@2.8.0))(yaml@2.8.0)
+      '@react-router/node': 7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3)
+      '@vercel/static-config': 3.3.0
+      isbot: 5.1.28
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      ts-morph: 12.0.0
+
+  '@vercel/static-config@3.3.0':
+    dependencies:
+      ajv: 8.6.3
+      json-schema-to-ts: 1.6.4
+      ts-morph: 12.0.0
 
   '@viem/anvil@0.0.7(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
@@ -22950,6 +23006,13 @@ snapshots:
       fast-uri: 3.0.6
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
+
+  ajv@8.6.3:
+    dependencies:
+      fast-deep-equal: 3.1.3
+      json-schema-traverse: 1.0.0
+      require-from-string: 2.0.2
+      uri-js: 4.4.1
 
   algoliasearch-helper@3.25.0(algoliasearch@4.24.0):
     dependencies:
@@ -24050,6 +24113,8 @@ snapshots:
   clsx@2.1.1: {}
 
   co@4.6.0: {}
+
+  code-block-writer@10.1.1: {}
 
   collapse-white-space@2.1.0: {}
 
@@ -27563,6 +27628,11 @@ snapshots:
   json-buffer@3.0.1: {}
 
   json-parse-even-better-errors@2.3.1: {}
+
+  json-schema-to-ts@1.6.4:
+    dependencies:
+      '@types/json-schema': 7.0.15
+      ts-toolbelt: 6.15.5
 
   json-schema-traverse@0.4.1: {}
 
@@ -31703,6 +31773,11 @@ snapshots:
 
   ts-log@2.2.7: {}
 
+  ts-morph@12.0.0:
+    dependencies:
+      '@ts-morph/common': 0.11.1
+      code-block-writer: 10.1.1
+
   ts-node@10.9.2(@swc/core@1.15.33(@swc/helpers@0.5.17))(@types/node@22.15.24)(typescript@5.6.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
@@ -31722,6 +31797,8 @@ snapshots:
       yn: 3.1.1
     optionalDependencies:
       '@swc/core': 1.15.33(@swc/helpers@0.5.17)
+
+  ts-toolbelt@6.15.5: {}
 
   tsconfck@3.1.6(typescript@5.6.3):
     optionalDependencies:

@@ -2,7 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
 import { useNamesByAddresses } from "hooks/useENS";
-import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
+import {
+  useFractionToken,
+  useGetBalanceOfFractionTokens,
+} from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import {
   useActiveState,
@@ -115,12 +118,23 @@ const HolderDetail: FC = () => {
   const wearerAvatar = ipfs2https(wearer?.text_records?.avatar);
 
   // ── Holders for this (wearer, hat) shard ────────────────────
-  const { data: balanceOfFractionTokens } = useGetBalanceOfFractionTokens({
-    where: {
-      wearer: address?.toLowerCase(),
-      hatId: BigInt(hatId || 0).toString(10),
-    },
-  });
+  const { data: balanceOfFractionTokens, refetch: refetchBalances } =
+    useGetBalanceOfFractionTokens({
+      where: {
+        wearer: address?.toLowerCase(),
+        hatId: BigInt(hatId || 0).toString(10),
+      },
+    });
+
+  // Subgraph has zero balance entries only when `mintInitialSupply` has
+  // never run for this (hat, wearer) shard — the contract always pushes
+  // the wearer into `tokenRecipients` on initial mint.
+  const notYetMinted =
+    !!balanceOfFractionTokens &&
+    balanceOfFractionTokens.balanceOfFractionTokens.length === 0;
+
+  const { mintInitialSupplyFractionToken, isLoading: isInitialMinting } =
+    useFractionToken(treeId || "");
   const holderAddresses = useMemo(
     () =>
       balanceOfFractionTokens?.balanceOfFractionTokens.map((d) =>
@@ -167,23 +181,34 @@ const HolderDetail: FC = () => {
 
   const [sendSheetOpen, setSendSheetOpen] = useState(false);
 
-  // Quests scoped to this hat — same data as the duty detail page so the
-  // user can act on quests without bouncing back up the breadcrumb.
-  const hatIdDecimal = useMemo(() => {
+  // Quests scoped to this (hatId, wearer) shard. The role-share tokenId is
+  // keccak256(hatId, wearer), so each holder page filters by *both* — the
+  // duty page (no wearer in the URL) shows the full hat's quests instead.
+  const hatIdBig = useMemo(() => {
     if (!hatId) return undefined;
     try {
-      return BigInt(hatId).toString();
+      return BigInt(hatId);
     } catch {
       return undefined;
     }
   }, [hatId]);
+  const wearerLower = useMemo(() => address?.toLowerCase(), [address]);
   const { quests, isLoading: questsLoading } = useQuests(treeId, {
     first: 100,
   });
   const dutyQuests = useMemo(() => {
-    if (!hatIdDecimal) return [];
-    return quests.filter((q) => q.hatId === hatIdDecimal);
-  }, [quests, hatIdDecimal]);
+    if (hatIdBig === undefined || !wearerLower) return [];
+    return quests.filter((q) => {
+      // Subgraph returns hatId as a decimal-string BigInt. Compare numerically
+      // so any leading-zero / hex-vs-decimal mismatch in the URL still matches.
+      try {
+        if (BigInt(q.hatId) !== hatIdBig) return false;
+      } catch {
+        return false;
+      }
+      return q.wearer.toLowerCase() === wearerLower;
+    });
+  }, [quests, hatIdBig, wearerLower]);
 
   // Care-point variant — three legacy workspaces show ケアポイント copy.
   const isCarePoint = ["144", "175", "780"].includes(treeId || "");
@@ -280,12 +305,38 @@ const HolderDetail: FC = () => {
     </Card>
   );
 
-  const sendButton = me ? (
-    <Button variant="secondary" full onClick={() => setSendSheetOpen(true)}>
-      <Icon name="send" size={16} />
-      {shareTitle}を送る
-    </Button>
-  ) : null;
+  const sendButton =
+    me && !notYetMinted ? (
+      <Button variant="secondary" full onClick={() => setSendSheetOpen(true)}>
+        <Icon name="send" size={16} />
+        {shareTitle}を送る
+      </Button>
+    ) : null;
+
+  const initialMintButton =
+    isMe && notYetMinted ? (
+      <Button
+        variant="primary"
+        full
+        disabled={isInitialMinting}
+        onClick={async () => {
+          if (!hatId || !address) return;
+          try {
+            await mintInitialSupplyFractionToken({
+              hatId: BigInt(hatId),
+              account: address as Address,
+            });
+            await refetchBalances();
+            toast.success(`${shareTitle}を初期発行しました`);
+          } catch (error) {
+            console.error(error);
+            toast.error("初期発行に失敗しました");
+          }
+        }}
+      >
+        {isInitialMinting ? "初期発行中…" : `${shareTitle}を初期発行する`}
+      </Button>
+    ) : null;
 
   const shareDistributionBlock = (
     <section className="flex flex-col gap-2">
@@ -367,6 +418,7 @@ const HolderDetail: FC = () => {
       loading={questsLoading}
       treeId={treeId}
       hatId={hatId}
+      wearerAddress={address}
       canCreate={ownBalance !== undefined && ownBalance > 0}
     />
   );
@@ -380,6 +432,7 @@ const HolderDetail: FC = () => {
         <div className="md:hidden flex flex-col gap-4 px-1 pt-1">
           {headerBlock}
           {statsBlock}
+          {initialMintButton}
           {sendButton}
           {shareDistributionBlock}
           {questBlock}
@@ -391,6 +444,7 @@ const HolderDetail: FC = () => {
           <div className="flex flex-col gap-4 min-w-0">
             {headerBlock}
             {statsBlock}
+            {initialMintButton}
             {sendButton}
             {shareDistributionBlock}
             {authorizedActionsBlock}

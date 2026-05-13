@@ -6,6 +6,7 @@ import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useHasCreatorAuthority } from "hooks/useHatsHatCreatorModule";
 import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
+import { useQuestMetadata } from "hooks/useQuestMetadata";
 import { type Quest, type QuestStatus, useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -15,11 +16,11 @@ import { Link, useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
-import { formatEther } from "viem";
 import { Breadcrumb } from "~/components/composite/breadcrumb";
 import { SectionLabel } from "~/components/composite/section-label";
 import { Segmented } from "~/components/composite/segmented";
 import { PageContainer } from "~/components/layout/PageContainer";
+import { QuestStateBadge } from "~/components/quests/QuestStateBadge";
 import {
   Avatar,
   AvatarFallback,
@@ -27,7 +28,6 @@ import {
   AvatarGroupCount,
   AvatarImage,
 } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
@@ -555,6 +555,7 @@ const QuestsPanel: FC<QuestsPanelProps> = ({ treeId, dutyHats }) => {
     { status: "Open", title: "募集中のクエスト" },
     { status: "PendingReview", title: "確認待ち" },
     { status: "Completed", title: "完了" },
+    { status: "Cancelled", title: "キャンセル" },
   ];
 
   const hasAny = quests.length > 0;
@@ -615,9 +616,11 @@ interface QuestCardProps {
 const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
   const detail = useHatDetail(hat?.details);
   const dutyName = detail?.data?.name;
-  const amount = (() => {
+  const { data: meta } = useQuestMetadata(quest.metadataHash);
+  const title = meta?.title ?? `Quest #${quest.questId}`;
+  const shareAmount = (() => {
     try {
-      return Number(formatEther(BigInt(quest.amount))).toLocaleString();
+      return BigInt(quest.amount).toLocaleString();
     } catch {
       return "0";
     }
@@ -640,7 +643,7 @@ const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
             </Typography>
           )}
           <Typography as="div" variant="bodySm" weight="bold" truncate>
-            Quest #{quest.questId}
+            {title}
           </Typography>
           <div className="mt-1 flex items-center gap-2">
             <QuestStateBadge status={quest.status} />
@@ -658,27 +661,17 @@ const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
             variant="statMd"
             className="text-primary tracking-[-0.5px]"
           >
-            +{amount}
-            <Typography
-              as="span"
-              variant="micro"
-              tone="secondary"
-              className="ml-0.5"
-            >
-              THX
-            </Typography>
+            +{shareAmount}
           </Typography>
         </div>
       </div>
     </Card>
   );
 
-  // Quest detail route doesn't ship until #446. Wrap in Link only when we have
-  // a sensible hat to fall back to (parent duty), otherwise render unlinked.
-  if (treeId && hat?.id) {
+  if (treeId) {
     return (
       <Link
-        to={`/${treeId}/${hat.id}`}
+        to={`/${treeId}/quest/${quest.questId}`}
         className="block focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         {card}
@@ -686,21 +679,6 @@ const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
     );
   }
   return card;
-};
-
-const QuestStateBadge: FC<{ status: QuestStatus }> = ({ status }) => {
-  switch (status) {
-    case "Open":
-      return <Badge kind="lead">募集中</Badge>;
-    case "PendingReview":
-      return <Badge kind="info">確認待ち</Badge>;
-    case "Completed":
-      return <Badge kind="member">完了</Badge>;
-    case "Cancelled":
-      return <Badge kind="role">取消</Badge>;
-    default:
-      return null;
-  }
 };
 
 const questMeta = (q: Quest): string => {

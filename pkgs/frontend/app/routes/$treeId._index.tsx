@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
+import { useQuestMetadata } from "hooks/useQuestMetadata";
 import { type Quest, useQuests } from "hooks/useQuests";
 import {
   useThanksToken,
@@ -21,6 +22,7 @@ import { Divider } from "~/components/composite/divider";
 import { SectionLabel } from "~/components/composite/section-label";
 import { StatCard } from "~/components/composite/stat-card";
 import { PageContainer } from "~/components/layout/PageContainer";
+import { QuestStateBadge } from "~/components/quests/QuestStateBadge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -293,7 +295,7 @@ const WorkspaceHome: FC = () => {
           {quests.length > 0 ? (
             <div className="flex flex-col gap-2 px-1">
               {quests.slice(0, 3).map((q) => (
-                <QuestRow key={q.id} quest={q} />
+                <QuestRow key={q.id} quest={q} treeId={treeId} />
               ))}
             </div>
           ) : (
@@ -362,7 +364,7 @@ const WorkspaceHome: FC = () => {
               {quests.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   {quests.slice(0, 3).map((q) => (
-                    <QuestRow key={q.id} quest={q} />
+                    <QuestRow key={q.id} quest={q} treeId={treeId} />
                   ))}
                 </div>
               ) : (
@@ -694,20 +696,22 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
   );
 };
 
-const QuestRow: FC<{ quest: Quest }> = ({ quest }) => {
-  const amount = (() => {
+const QuestRow: FC<{ quest: Quest; treeId?: string }> = ({ quest, treeId }) => {
+  const { data: meta } = useQuestMetadata(quest.metadataHash);
+  const title = meta?.title ?? `Quest #${quest.questId}`;
+  const shareAmount = (() => {
     try {
-      return Number(formatEther(BigInt(quest.amount))).toLocaleString();
+      return BigInt(quest.amount).toLocaleString();
     } catch {
       return "0";
     }
   })();
-  const isReview = quest.status === "PendingReview";
-  return (
-    <div className="flex flex-col gap-1.5 rounded-sm border bg-[#FBF8F1] px-3.5 py-3">
+
+  const body = (
+    <div className="flex flex-col gap-1.5 rounded-sm border bg-[#FBF8F1] px-3.5 py-3 transition-colors hover:bg-bg">
       <div className="flex items-center justify-between gap-2">
         <Typography as="div" variant="bodySm" weight="bold" truncate>
-          Quest #{quest.questId}
+          {title}
         </Typography>
         <Typography
           as="div"
@@ -715,13 +719,11 @@ const QuestRow: FC<{ quest: Quest }> = ({ quest }) => {
           weight="bold"
           className="text-primary"
         >
-          +{amount} THX
+          +{shareAmount}
         </Typography>
       </div>
       <div className="flex items-center gap-2">
-        <Badge kind={isReview ? "info" : "lead"}>
-          {isReview ? "確認待ち" : "募集中"}
-        </Badge>
+        <QuestStateBadge status={quest.status} />
         {quest.submitter && (
           <Typography as="span" variant="micro" tone="secondary">
             {abbreviateAddress(quest.submitter as `0x${string}`)}
@@ -730,4 +732,16 @@ const QuestRow: FC<{ quest: Quest }> = ({ quest }) => {
       </div>
     </div>
   );
+
+  if (treeId) {
+    return (
+      <Link
+        to={`/${treeId}/quest/${quest.questId}`}
+        className="block focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      >
+        {body}
+      </Link>
+    );
+  }
+  return body;
 };

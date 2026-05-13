@@ -13,7 +13,8 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\"",
-    "codegen": "graphql-codegen --config codegen.ts",
+    "codegen": "dotenv graphql-codegen --config codegen.ts",
+    "codegen:base": "dotenv -e .env.base graphql-codegen --config codegen.ts",
     "test:e2e:dev": "cypress open",
     "ladle": "ladle serve",
     "ladle:build": "ladle build"
@@ -44,6 +45,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-http-backend": "^4.0.0",
     "isbot": "^5.1.11",
+    "multiformats": "^13.3.6",
     "namestone-sdk": "^0.2.11",
     "next-themes": "^0.4.6",
     "permissionless": "^0.2.35",

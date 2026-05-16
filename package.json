@@ -16,7 +16,8 @@
     "contract": "pnpm --filter contract",
     "cli": "pnpm --filter cli",
     "document": "pnpm --filter document",
-    "subgraph": "pnpm --filter subgraph"
+    "subgraph": "pnpm --filter subgraph",
+    "identity": "pnpm --filter @toban/identity"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

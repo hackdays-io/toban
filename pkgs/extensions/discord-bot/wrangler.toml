@@ -1,0 +1,36 @@
+name = "toban-discord-bot"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 is shared with extensions/identity. database_id is environment-specific
+# and should be set per-environment via [env.<name>.d1_databases] in CI/CD.
+# This top-level binding is a placeholder for local dev; replace database_id
+# with the actual D1 instance ID when provisioning.
+[[d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+THANKS_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000"
+TOBAN_FRONTEND_URL = "https://toban.xyz"
+RPC_URL = "https://mainnet.base.org"
+CHAIN_ID = "8453"
+TURNKEY_API_BASE_URL = "https://api.turnkey.com"
+TURNKEY_ORGANIZATION_ID = "00000000-0000-0000-0000-000000000000"
+TURNKEY_BOT_SIGNER_ADDRESS = "0x0000000000000000000000000000000000000000"
+IDENTITY_WORKER_URL = "https://toban-identity.example.workers.dev"
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   DISCORD_PUBLIC_KEY            - Discord interactions Ed25519 public key (hex)
+#   DISCORD_BOT_TOKEN             - Discord bot token (for REST API: register
+#                                   slash commands, send followups)
+#   DISCORD_APP_ID                - Discord application id
+#   DISCORD_CLIENT_SECRET         - For OAuth bot-install callback
+#   TURNKEY_API_PUBLIC_KEY        - Turnkey API stamper public key (P-256, hex)
+#   TURNKEY_API_PRIVATE_KEY       - Turnkey API stamper private key (PEM PKCS8)
+#   VERIFIER_PRIVATE_KEY          - ES256 (P-256) private key for verifier_token
+#                                   JWT signing (PEM PKCS8). Identity worker
+#                                   holds the matching public key.
+#   INSTALL_STATE_SECRET          - HMAC secret for OAuth install state JWT

@@ -1,21 +1,11 @@
 /**
  * viem public client + ThanksToken ABI fragment.
  *
- * IMPORTANT — ABI fragment is a placeholder.
- *
- * The authoritative ABI is produced by agent A (#506 contract) once that
- * PR lands. Until then we hand-roll the minimum fragment needed for
- * `/thx` and `/balance`. Differences expected at integration time:
- *
- *   - The `RelatedRole` struct's exact field names (we use `hatId`,
- *     `wearTime` as placeholders — agent A may name them differently).
- *   - Additional MintFrom event topics (e.g. memo/tag) that the subgraph
- *     will start indexing.
- *   - `mintAllowance` may be renamed (e.g. `allowance(owner, spender)`).
- *
- * When the real ABI lands, replace this fragment ONLY here. `chain.ts`
- * is the single source of truth for ABI in this package — every command
- * imports {@link THANKS_TOKEN_ABI} from this module.
+ * The full ABI is produced by `pkgs/contract` (#506). This module exposes
+ * only the slice the bot calls (`mintAllowance`, `mintableAmount`,
+ * `mintFrom`) plus the `MintFrom` event for indexer reference. When the
+ * contract's ABI changes, update only this file — every command imports
+ * {@link THANKS_TOKEN_ABI} from here.
  */
 import {
   http,
@@ -27,8 +17,6 @@ import {
 import { base, sepolia } from "viem/chains";
 import type { Env } from "./env";
 
-// TODO(#506-integration): replace with `pkgs/contract/artifacts/.../ThanksToken.json`
-//   abi export once #506 lands. Until then, struct field names are placeholders.
 export const THANKS_TOKEN_ABI = [
   {
     type: "function",
@@ -45,14 +33,13 @@ export const THANKS_TOKEN_ABI = [
     name: "mintableAmount",
     stateMutability: "view",
     inputs: [
-      { name: "from", type: "address" },
-      { name: "to", type: "address" },
+      { name: "owner", type: "address" },
       {
         name: "relatedRoles",
         type: "tuple[]",
         components: [
           { name: "hatId", type: "uint256" },
-          { name: "wearTime", type: "uint256" },
+          { name: "wearer", type: "address" },
         ],
       },
     ],
@@ -71,7 +58,7 @@ export const THANKS_TOKEN_ABI = [
         type: "tuple[]",
         components: [
           { name: "hatId", type: "uint256" },
-          { name: "wearTime", type: "uint256" },
+          { name: "wearer", type: "address" },
         ],
       },
       { name: "data", type: "bytes" },
@@ -92,10 +79,14 @@ export const THANKS_TOKEN_ABI = [
   },
 ] as const;
 
-/** Placeholder used by `/thx` until real role-context plumbing lands. */
+/**
+ * MVP `/thx` sends `relatedRoles = []`. `mintableAmount(owner, [])` falls
+ * back to the address-coefficient cap (see ThanksToken.sol), which is the
+ * defensive boundary we want until role-context plumbing arrives.
+ */
 export const EMPTY_RELATED_ROLES: readonly {
   hatId: bigint;
-  wearTime: bigint;
+  wearer: `0x${string}`;
 }[] = [];
 
 export function getChain(env: Env) {

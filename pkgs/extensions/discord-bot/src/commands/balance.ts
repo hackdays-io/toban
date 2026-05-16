@@ -3,13 +3,9 @@
  *
  * Read-only. Resolves the caller's Discord snowflake -> wallet via the
  * identity worker, then reads `mintAllowance(self, bot)` and
- * `mintableAmount(self, self, [])` from the ThanksToken contract.
- *
- * `mintableAmount` is queried with `to = self` and an empty
- * `relatedRoles` array as a probe — agent A's spec says that returns
- * the upper bound under the caller's current role context. This will
- * be replaced with proper role context once the role-resolver is wired
- * up (TODO).
+ * `mintableAmount(self, [])` from the ThanksToken contract. With an
+ * empty `relatedRoles`, `mintableAmount` returns the address-coefficient
+ * cap — a safe upper bound until role-context plumbing arrives.
  */
 import type {
   APIChatInputApplicationCommandInteraction,
@@ -62,7 +58,7 @@ export async function handleBalance(
       address: token,
       abi: THANKS_TOKEN_ABI,
       functionName: "mintableAmount",
-      args: [owner, owner, EMPTY_RELATED_ROLES],
+      args: [owner, EMPTY_RELATED_ROLES],
     }),
   ]);
 

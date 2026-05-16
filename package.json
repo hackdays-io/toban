@@ -17,11 +17,15 @@
     "cli": "pnpm --filter cli",
     "document": "pnpm --filter document",
     "subgraph": "pnpm --filter subgraph",
-    "identity": "pnpm --filter @toban/identity"
+    "identity": "pnpm --filter @toban/identity",
+    "discord-bot": "pnpm --filter @toban/discord-bot"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "lefthook": "^1.10.1"
   },
-  "packageManager": "pnpm@10.15.0"
+  "packageManager": "pnpm@10.15.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "esbuild", "sharp", "workerd"]
+  }
 }

@@ -1,4 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
+import { useQuery } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo, useState } from "react";
@@ -89,6 +90,43 @@ const ConnectDiscord: FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  // "rebindIntent" lets the user explicitly opt into overwriting an existing
+  // (different-wallet) binding. Default: show a confirmation step so we don't
+  // silently move the binding off the previously bound wallet.
+  const [rebindIntent, setRebindIntent] = useState(false);
+
+  const identityWorkerUrl = import.meta.env.VITE_IDENTITY_WORKER_URL as
+    | string
+    | undefined;
+
+  const existingBindingQuery = useQuery({
+    queryKey: [
+      "identity-lookup",
+      "discord",
+      claims?.accountId,
+      identityWorkerUrl,
+    ],
+    enabled: !!claims?.accountId && !!identityWorkerUrl,
+    queryFn: async (): Promise<{ wallet: Address } | null> => {
+      if (!claims?.accountId || !identityWorkerUrl) return null;
+      const url = `${identityWorkerUrl.replace(/\/$/, "")}/api/lookup?provider=discord&account_id=${encodeURIComponent(
+        claims.accountId,
+      )}`;
+      const res = await fetch(url);
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        throw new Error(`identity lookup failed: ${res.status}`);
+      }
+      return (await res.json()) as { wallet: Address };
+    },
+  });
+
+  const boundWallet = existingBindingQuery.data?.wallet;
+  const currentWallet = wallet?.account?.address as Address | undefined;
+  const sameWalletAsBound = useMemo(() => {
+    if (!boundWallet || !currentWallet) return false;
+    return boundWallet.toLowerCase() === currentWallet.toLowerCase();
+  }, [boundWallet, currentWallet]);
 
   const onSubmit = async () => {
     if (!token || !claims || !wallet?.account?.address) return;
@@ -163,6 +201,8 @@ const ConnectDiscord: FC = () => {
       }
 
       setDone(true);
+      setRebindIntent(false);
+      await existingBindingQuery.refetch();
       toast.success("Discord を連携しました");
     } catch (e) {
       console.error(e);
@@ -234,6 +274,17 @@ const ConnectDiscord: FC = () => {
             </div>
           </div>
 
+          {boundWallet && (
+            <div className="flex flex-col gap-1 rounded-md border bg-muted/30 p-3">
+              <Typography variant="bodySm" tone="secondary">
+                既に連携済みのウォレット
+              </Typography>
+              <Typography variant="mono" weight="bold">
+                {boundWallet}
+              </Typography>
+            </div>
+          )}
+
           <Typography variant="bodySm" tone="secondary">
             このウォレットを上記の Discord アカウントに紐づけます。Discord での
             `/thx` 送信時に、この紐づけからウォレットが解決されます。
@@ -275,7 +326,7 @@ const ConnectDiscord: FC = () => {
                 </Typography>
               )}
             </div>
-          ) : !ready ? (
+          ) : !ready || existingBindingQuery.isLoading ? (
             <Button full disabled>
               読み込み中…
             </Button>
@@ -284,6 +335,75 @@ const ConnectDiscord: FC = () => {
               <Icon name="wallet" size={18} />
               ウォレットを接続
             </Button>
+          ) : sameWalletAsBound && !rebindIntent ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Icon name="check" />
+                <Typography variant="body" weight="bold" tone="success">
+                  このウォレットで既に連携されています
+                </Typography>
+              </div>
+              <Typography variant="bodySm" tone="secondary">
+                追加の操作は不要です。引き続き bot に mint
+                許可を設定してください。
+              </Typography>
+              <Button
+                full
+                disabled={!treeId}
+                onClick={() => {
+                  if (!treeId) return;
+                  navigate(`/${encodeURIComponent(treeId)}/discord-bot`);
+                }}
+              >
+                許可設定に進む
+                <Icon name="arrow-right" size={18} />
+              </Button>
+              {!treeId && (
+                <Typography variant="caption" tone="secondary">
+                  ワークスペース指定が無いため、トップから手動で開いてください
+                  (/&lt;treeId&gt;/discord-bot)。
+                </Typography>
+              )}
+              <Button
+                variant="ghost"
+                onClick={() => setRebindIntent(true)}
+                disabled={tokenExpired}
+              >
+                同じウォレットで再連携 (上書き)
+              </Button>
+            </div>
+          ) : boundWallet && !sameWalletAsBound && !rebindIntent ? (
+            <div className="flex flex-col gap-3">
+              <Typography variant="body" tone="danger" weight="bold">
+                別のウォレットに連携されています
+              </Typography>
+              <Typography variant="bodySm" tone="secondary">
+                この Discord アカウントは上記のウォレットに紐づいています。今
+                ログイン中の <code>{currentWallet}</code> に切替えると、Discord
+                での <code>/thx</code> 経路が新しいウォレットに移ります。元の
+                ウォレット上の <code>mintAllowance</code> は手動で revoke
+                してください。
+              </Typography>
+              <Button
+                variant="danger"
+                onClick={() => setRebindIntent(true)}
+                disabled={tokenExpired}
+              >
+                このウォレットに切替える
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (!treeId) {
+                    navigate("/");
+                    return;
+                  }
+                  navigate(`/${encodeURIComponent(treeId)}/discord-bot`);
+                }}
+              >
+                切替えずに戻る
+              </Button>
+            </div>
           ) : (
             <div className="flex flex-col gap-2">
               <Typography variant="bodySm" tone="secondary">

@@ -11,21 +11,16 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "toban-identity"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
 
-[vars]
-# ES256 public key (PEM SPKI) for verifying verifier_token JWTs issued by the
-# Discord bot. Loaded from secret in production; vars here lets local dev
-# use a fixture key (set via `wrangler dev --var DISCORD_BOT_VERIFIER_PUBLIC_KEY:...`
-# or a `.dev.vars` file).
-DISCORD_BOT_VERIFIER_PUBLIC_KEY = ""
-
-# RPC URL used for EIP-1271 / ERC-6492 smart-wallet signature verification.
-# Must reach the chain whose `chainId` the frontend signs typed-data with
-# (Sepolia in dev, Base in prod). Override per-environment via .dev.vars
-# (local) or `wrangler secret put` (deploy).
-RPC_URL = ""
-
-# Secrets (set via `wrangler secret put <NAME>`):
-#   DISCORD_BOT_VERIFIER_PUBLIC_KEY  - For prod; in local dev keep in .dev.vars
-#   RPC_URL                          - Same, environment-specific RPC endpoint
+# Secrets (set via `wrangler secret put <NAME>`, or via `.dev.vars` for local):
+#   DISCORD_BOT_VERIFIER_PUBLIC_KEY  - ES256 SPKI PEM matching the discord-bot
+#                                      worker's VERIFIER_PRIVATE_KEY. Used to
+#                                      verify verifier_token JWTs.
+#   RPC_URL                          - Sepolia/Base RPC endpoint for EIP-1271
+#                                      and ERC-6492 smart-wallet signature
+#                                      verification on /api/connect.
+#
+# No top-level [vars] block: keep both values as secrets so the Alchemy API
+# key inside RPC_URL never lands in git. Local dev reads .dev.vars (also
+# gitignored) for the same names.

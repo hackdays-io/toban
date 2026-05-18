@@ -11,6 +11,7 @@ import type {
   APIInteractionResponse,
 } from "discord-api-types/v10";
 import type { Env } from "../env";
+import { createIdentityClient } from "../identity";
 import { issueVerifierToken } from "../verifier";
 import { ephemeral } from "./responses";
 
@@ -25,7 +26,28 @@ export async function handleTobanSetup(
     );
   }
   const token = await issueVerifierToken(env.VERIFIER_PRIVATE_KEY, snowflake);
-  const url = `${env.TOBAN_FRONTEND_URL.replace(/\/$/, "")}/connect/discord?token=${encodeURIComponent(token)}`;
+
+  // Lookup the platform_link for this guild so we can hand the
+  // frontend a treeId for the next step (allowance setup). Best-effort:
+  // if the guild isn't linked yet we still let the user finish identity
+  // binding and pick a workspace afterwards.
+  let treeId: string | undefined;
+  if (interaction.guild_id) {
+    try {
+      const link = await createIdentityClient(env).getPlatformLink(
+        "discord",
+        interaction.guild_id,
+      );
+      treeId = link?.treeId;
+    } catch {
+      // Identity worker down — proceed without treeId.
+    }
+  }
+
+  const base = env.TOBAN_FRONTEND_URL.replace(/\/$/, "");
+  const url = `${base}/connect/discord?token=${encodeURIComponent(token)}${
+    treeId ? `&treeId=${encodeURIComponent(treeId)}` : ""
+  }`;
   return ephemeral(
     [
       "Open this link in your browser within 15 minutes to connect your wallet:",

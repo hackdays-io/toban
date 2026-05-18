@@ -112,6 +112,49 @@ export function getPublicClient(env: Env): PublicClient {
   }) as unknown as PublicClient;
 }
 
-export function thanksTokenAddress(env: Env): Hex {
-  return env.THANKS_TOKEN_ADDRESS as Hex;
+/**
+ * Resolve a workspace's current ThanksToken address from Goldsky.
+ *
+ * Each workspace owns its own ThanksToken clone (and may switch to a
+ * fresh contract via `BigBang.switchThanksToken`), so we never hardcode
+ * a single address. The subgraph's `Workspace.thanksToken.id` is the
+ * authoritative source.
+ *
+ * Returns `null` when the workspace isn't indexed yet or has no
+ * ThanksToken associated. Callers should treat that as a user-facing
+ * error ("workspace not initialised").
+ */
+export async function resolveThanksTokenAddress(
+  env: Env,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Hex | null> {
+  const endpoint = env.GOLDSKY_GRAPHQL_ENDPOINT;
+  if (!endpoint) {
+    throw new Error("GOLDSKY_GRAPHQL_ENDPOINT is not configured");
+  }
+  const res = await fetchImpl(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: "query($id: ID!) { workspace(id: $id) { thanksToken { id } } }",
+      variables: { id: treeId },
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `subgraph workspace lookup failed: ${res.status} ${res.statusText}`,
+    );
+  }
+  const body = (await res.json()) as {
+    data?: { workspace?: { thanksToken?: { id?: string } | null } | null };
+    errors?: Array<{ message: string }>;
+  };
+  if (body.errors?.length) {
+    throw new Error(
+      `subgraph workspace lookup errored: ${body.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  const id = body.data?.workspace?.thanksToken?.id;
+  return id ? (id as Hex) : null;
 }

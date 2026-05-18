@@ -24,7 +24,7 @@ import { createTurnkeySigner } from "../src/signer/turnkey";
 function makeEnv(address: string) {
   return {
     DB: {} as unknown as D1Database,
-    THANKS_TOKEN_ADDRESS: `0x${"11".repeat(20)}`,
+    GOLDSKY_GRAPHQL_ENDPOINT: "https://goldsky.example.invalid/graphql",
     TOBAN_FRONTEND_URL: "https://toban.xyz",
     RPC_URL: "https://example.invalid",
     CHAIN_ID: "8453",

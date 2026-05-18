@@ -3,12 +3,29 @@ import type { Address, Hex, PublicClient } from "viem";
 import { describe, expect, it } from "vitest";
 import { executeThx, parseThxArgs } from "../src/commands/thx";
 import type { Env } from "../src/env";
-import type { IdentityClient, IdentityRecord } from "../src/identity";
+import type {
+  IdentityClient,
+  IdentityRecord,
+  PlatformLink,
+} from "../src/identity";
+
+const TEST_TREE_ID = "3002";
+const TEST_GUILD_ID = "g123";
+const TEST_THANKS_TOKEN = `0x${"11".repeat(20)}` as Hex;
+
+const fakePlatformLink: PlatformLink = {
+  provider: "discord",
+  platformId: TEST_GUILD_ID,
+  treeId: TEST_TREE_ID,
+  adminWallet: `0x${"ad".repeat(20)}` as Address,
+};
+
+const fakeResolveTokenAddress = async () => TEST_THANKS_TOKEN;
 
 function fakeEnv(): Env {
   return {
     DB: {} as unknown as D1Database,
-    THANKS_TOKEN_ADDRESS: `0x${"11".repeat(20)}`,
+    GOLDSKY_GRAPHQL_ENDPOINT: "https://goldsky.example.invalid/graphql",
     TOBAN_FRONTEND_URL: "https://toban.xyz",
     RPC_URL: "https://example.invalid",
     CHAIN_ID: "8453",
@@ -39,6 +56,7 @@ function fakeInteraction(
     token: "tok",
     type: 2,
     version: 1,
+    guild_id: TEST_GUILD_ID,
     member: {
       user: {
         id: sender,
@@ -70,12 +88,15 @@ function fakeInteraction(
 }
 
 class StubIdentity implements IdentityClient {
-  constructor(private readonly records: Record<string, IdentityRecord>) {}
+  constructor(
+    private readonly records: Record<string, IdentityRecord>,
+    private readonly link: PlatformLink | null = fakePlatformLink,
+  ) {}
   async getIdentity(_p: "discord", accountId: string) {
     return this.records[accountId] ?? null;
   }
   async getPlatformLink() {
-    return null;
+    return this.link;
   }
   async upsertPlatformLink() {
     /* no-op */
@@ -142,6 +163,7 @@ describe("executeThx", () => {
     await executeThx(fakeEnv(), fakeInteraction("100", "200", 5), {
       identity: new StubIdentity({ "100": sender, "200": recipient }),
       publicClient,
+      resolveTokenAddress: fakeResolveTokenAddress,
       followup: async (_a, _t, c) => {
         messages.push(c);
       },
@@ -227,6 +249,7 @@ describe("executeThx", () => {
       identity: new StubIdentity({ "100": sender, "200": recipient }),
       publicClient: richPublicClient,
       signer,
+      resolveTokenAddress: fakeResolveTokenAddress,
       followup: async (_a, _t, c) => {
         messages.push(c);
       },

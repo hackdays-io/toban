@@ -26,7 +26,7 @@ import {
   THANKS_TOKEN_ABI,
   getChain,
   getPublicClient,
-  thanksTokenAddress,
+  resolveThanksTokenAddress,
 } from "../chain";
 import type { Env } from "../env";
 import { type IdentityClient, createIdentityClient } from "../identity";
@@ -74,6 +74,11 @@ export interface ThxDeps {
   identity?: IdentityClient;
   publicClient?: PublicClient;
   signer?: LocalAccount;
+  /**
+   * Resolve `treeId -> ThanksToken address`. Defaults to a Goldsky
+   * subgraph fetch — tests inject a stub to avoid network calls.
+   */
+  resolveTokenAddress?: (treeId: string) => Promise<Hex | null>;
   /** Inject the followup-message sender for tests. */
   followup?: (appId: string, token: string, content: string) => Promise<void>;
 }
@@ -95,10 +100,21 @@ export async function executeThx(
     return;
   }
 
+  const guildId = interaction.guild_id;
+  if (!guildId) {
+    await followup(
+      env.DISCORD_APP_ID,
+      interaction.token,
+      "This command must be run inside a server.",
+    );
+    return;
+  }
+
   const identity = deps.identity ?? createIdentityClient(env);
-  const [sender, recipient] = await Promise.all([
+  const [sender, recipient, platformLink] = await Promise.all([
     identity.getIdentity("discord", senderSf),
     identity.getIdentity("discord", parsed.recipientSnowflake),
+    identity.getPlatformLink("discord", guildId),
   ]);
   if (!sender) {
     await followup(
@@ -116,9 +132,28 @@ export async function executeThx(
     );
     return;
   }
+  if (!platformLink) {
+    await followup(
+      env.DISCORD_APP_ID,
+      interaction.token,
+      "This server isn't linked to a Toban workspace yet. Ask an admin to run `/toban-link` first.",
+    );
+    return;
+  }
 
+  const resolveTokenAddress =
+    deps.resolveTokenAddress ??
+    ((treeId) => resolveThanksTokenAddress(env, treeId));
+  const token = await resolveTokenAddress(platformLink.treeId);
+  if (!token) {
+    await followup(
+      env.DISCORD_APP_ID,
+      interaction.token,
+      `Could not resolve the workspace's ThanksToken (tree ${platformLink.treeId}). Indexing may still be in progress.`,
+    );
+    return;
+  }
   const publicClient = deps.publicClient ?? getPublicClient(env);
-  const token = thanksTokenAddress(env);
   const botAddress = env.TURNKEY_BOT_SIGNER_ADDRESS as Hex;
 
   const allowance = (await publicClient.readContract({
@@ -131,7 +166,7 @@ export async function executeThx(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `Not enough allowance for the bot (have ${allowance.toString()}, need ${parsed.amount.toString()}). Increase it at ${env.TOBAN_FRONTEND_URL}/allowance/discord-bot`,
+      `Not enough allowance for the bot (have ${allowance.toString()}, need ${parsed.amount.toString()}). Increase it at ${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot`,
     );
     return;
   }

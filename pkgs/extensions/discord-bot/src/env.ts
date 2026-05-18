@@ -15,8 +15,13 @@ export interface Env {
   DB: D1Database;
 
   // -- public vars --------------------------------------------------------
-  /** ThanksToken contract address on the target chain. */
-  THANKS_TOKEN_ADDRESS: string;
+  /**
+   * Goldsky subgraph endpoint for the chain in `CHAIN_ID`. Used to look up
+   * a workspace's current ThanksToken address from its tree id (the bot
+   * never hardcodes a single token address — each workspace can switch
+   * implementations independently, see `BigBang.switchThanksToken`).
+   */
+  GOLDSKY_GRAPHQL_ENDPOINT: string;
   /** Public frontend URL; used to construct `/connect/discord?token=...`. */
   TOBAN_FRONTEND_URL: string;
   /** JSON-RPC endpoint (Base mainnet by default). */

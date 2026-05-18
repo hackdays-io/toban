@@ -17,7 +17,7 @@ import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Typography } from "~/components/ui/typography";
 
-const PRESETS = [10n, 100n, 1000n] as const;
+const PRESETS = [1000n, 5000n, 10000n] as const;
 
 function formatAllowance(value: bigint | undefined): string {
   if (value === undefined) return "—";

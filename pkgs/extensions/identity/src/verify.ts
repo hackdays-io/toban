@@ -1,6 +1,12 @@
 import { errors, importSPKI, jwtVerify } from "jose";
-import { recoverTypedDataAddress } from "viem";
-import type { Address, Hex } from "viem";
+import {
+  http,
+  createPublicClient,
+  defineChain,
+  recoverTypedDataAddress,
+} from "viem";
+import type { Address, Chain, Hex } from "viem";
+import { sepolia } from "viem/chains";
 import type { IdentityBindingTypedData } from "./eip712/identity-binding.js";
 
 /**
@@ -16,6 +22,48 @@ export async function recoverIdentityBindingSigner(
   signature: Hex,
 ): Promise<Address> {
   return recoverTypedDataAddress({
+    domain: typedData.domain,
+    types: typedData.types,
+    primaryType: typedData.primaryType,
+    message: typedData.message,
+    signature,
+  });
+}
+
+function resolveChain(chainId: number, rpcUrl: string): Chain {
+  if (chainId === sepolia.id) return sepolia;
+  return defineChain({
+    id: chainId,
+    name: `chain-${chainId}`,
+    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  });
+}
+
+/**
+ * Verify that `signature` over `typedData` proves `expectedAddress` consents
+ * to the binding, accommodating EOA, EIP-1271 smart-account, and ERC-6492
+ * counterfactual signatures uniformly.
+ *
+ * Delegates to viem's `publicClient.verifyTypedData`, which:
+ *   - For EOA addresses (no contract code): recovers the signer and compares.
+ *   - For deployed smart wallets: calls `isValidSignature(hash, signature)`
+ *     on-chain and checks for the EIP-1271 magic return value.
+ *   - For undeployed smart wallets: unwraps the ERC-6492 envelope and
+ *     simulates the would-be contract.
+ *
+ * The RPC URL must point to the chain matching `typedData.domain.chainId`.
+ */
+export async function verifyIdentityBindingViaRpc(
+  typedData: IdentityBindingTypedData,
+  signature: Hex,
+  expectedAddress: Address,
+  rpcUrl: string,
+): Promise<boolean> {
+  const chain = resolveChain(typedData.domain.chainId, rpcUrl);
+  const client = createPublicClient({ chain, transport: http(rpcUrl) });
+  return await client.verifyTypedData({
+    address: expectedAddress,
     domain: typedData.domain,
     types: typedData.types,
     primaryType: typedData.primaryType,

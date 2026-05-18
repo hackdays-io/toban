@@ -18,7 +18,9 @@ import {
   hashVerifierToken,
 } from "../eip712/identity-binding.js";
 import type { IdentityBindingTypedData } from "../eip712/identity-binding.js";
+import type { IdentityBindingVerifier } from "../handlers/connect.js";
 import { DISCORD_VERIFIER_ISSUER } from "../providers/discord.js";
+import { recoverIdentityBindingSigner } from "../verify.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = join(__filename, "..");
@@ -149,6 +151,19 @@ export async function buildSignedBinding(opts: {
   });
 
   return { typedData, signature, nonce };
+}
+
+/**
+ * Offline verifier matching the production `verifyTypedData` contract but
+ * without an RPC dep: recovers the EOA signer and compares against
+ * `expectedAddress`. Use this in tests so they stay hermetic — production
+ * uses the RPC-based verifier that additionally handles EIP-1271 / 6492.
+ */
+export function makeOfflineRecoverVerifier(): IdentityBindingVerifier {
+  return async (typedData, signature, expectedAddress) => {
+    const recovered = await recoverIdentityBindingSigner(typedData, signature);
+    return recovered.toLowerCase() === expectedAddress.toLowerCase();
+  };
 }
 
 /**

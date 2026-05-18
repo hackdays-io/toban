@@ -14,6 +14,7 @@ import {
   getTestAccount,
   makeEs256Keys,
   makeNonce,
+  makeOfflineRecoverVerifier,
   makeTestDb,
   serialiseConnectBody,
   signDiscordVerifierToken,
@@ -31,7 +32,8 @@ async function setup() {
   const registry: Record<string, ProviderDefinition> = {
     [discordProvider.name]: discordProvider,
   };
-  return { db, keys, env, account, registry };
+  const verifySignature = makeOfflineRecoverVerifier();
+  return { db, keys, env, account, registry, verifySignature };
 }
 
 async function happyPath(opts: { accountId?: string } = {}) {
@@ -74,7 +76,12 @@ describe("handlers/connect — happy path", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
@@ -96,7 +103,12 @@ describe("handlers/connect — failure paths", () => {
         method: "POST",
         body: "not json",
       }),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "invalid_body" });
@@ -105,7 +117,12 @@ describe("handlers/connect — failure paths", () => {
   it("400 invalid_body for missing fields", async () => {
     const res = await handleConnect(
       makeRequest(JSON.stringify({ provider: "discord" })),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "invalid_body" });
@@ -123,7 +140,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "unknown_provider" });
@@ -149,7 +171,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "provider_mismatch" });
@@ -175,7 +202,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "binding_expired" });
@@ -202,7 +234,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({
@@ -237,7 +274,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "verifier_token_invalid" });
@@ -269,7 +311,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "verifier_token_expired" });
@@ -295,7 +342,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "account_id_mismatch" });
@@ -325,7 +377,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "wallet_mismatch" });
@@ -353,7 +410,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res1.status).toBe(200);
 
@@ -377,7 +439,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res2.status).toBe(400);
     expect(await res2.json()).toMatchObject({ error: "nonce_reused" });
@@ -396,7 +463,12 @@ describe("handlers/connect — failure paths", () => {
           },
         }),
       ),
-      { db: ctx.db, env: ctx.env, registry: ctx.registry },
+      {
+        db: ctx.db,
+        env: ctx.env,
+        registry: ctx.registry,
+        verifySignature: ctx.verifySignature,
+      },
     );
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "wallet_mismatch" });

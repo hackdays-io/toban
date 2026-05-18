@@ -1,5 +1,6 @@
 import { getAddress, isAddress } from "viem";
 import type { Hex } from "viem";
+import type { Address } from "viem";
 import {
   IDENTITY_BINDING_DOMAIN_NAME,
   IDENTITY_BINDING_DOMAIN_VERSION,
@@ -18,7 +19,7 @@ import {
 } from "../queries.js";
 import {
   JwtVerificationError,
-  recoverIdentityBindingSigner,
+  verifyIdentityBindingViaRpc,
 } from "../verify.js";
 
 /**
@@ -48,6 +49,19 @@ export type ConnectErrorCode =
   | "domain_mismatch"
   | "internal_error";
 
+/**
+ * Signature verification function. The default implementation calls
+ * `viem.publicClient.verifyTypedData` against `env.RPC_URL`, which handles
+ * EOA, EIP-1271 smart wallets, and ERC-6492 counterfactual signatures
+ * uniformly. Tests pass an in-process verifier (plain ECDSA recover) so
+ * they stay offline.
+ */
+export type IdentityBindingVerifier = (
+  typedData: IdentityBindingTypedData,
+  signature: Hex,
+  expectedAddress: Address,
+) => Promise<boolean>;
+
 export type ConnectHandlerDeps = {
   db: IdentityDb;
   env: IdentityEnv;
@@ -55,6 +69,11 @@ export type ConnectHandlerDeps = {
   now?: () => number;
   /** Provider registry override (tests pass a minimal map). */
   registry?: Record<string, ProviderDefinition>;
+  /**
+   * Override the IdentityBinding signature verification step.
+   * Defaults to the RPC-based verifier — required for smart wallets.
+   */
+  verifySignature?: IdentityBindingVerifier;
 };
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -73,6 +92,24 @@ function errorResponse(
     status,
     details === undefined ? { error: code } : { error: code, details },
   );
+}
+
+function makeDefaultVerifier(env: IdentityEnv): IdentityBindingVerifier {
+  return async (typedData, signature, expectedAddress) => {
+    if (!env.RPC_URL) {
+      throw new Error(
+        "IdentityEnv.RPC_URL is required for signature verification. " +
+          "Set it on the consumer Worker (smart wallets need RPC for " +
+          "EIP-1271 / ERC-6492 verification).",
+      );
+    }
+    return verifyIdentityBindingViaRpc(
+      typedData,
+      signature,
+      expectedAddress,
+      env.RPC_URL,
+    );
+  };
 }
 
 /**
@@ -268,23 +305,28 @@ export async function handleConnect(
     );
   }
 
-  // EIP-712 recover.
-  let recovered: string;
+  // Verify the signature against message.wallet. Handles EOA, EIP-1271
+  // smart wallets, and ERC-6492 counterfactual signatures through viem.
+  const verify = deps.verifySignature ?? makeDefaultVerifier(deps.env);
+  let isValid: boolean;
   try {
-    recovered = await recoverIdentityBindingSigner(
+    isValid = await verify(
       td,
       parsed.identity_binding.signature,
+      td.message.wallet as Address,
     );
   } catch (err) {
     const details =
-      err instanceof Error ? err.message : "Signature recovery failed";
+      err instanceof Error
+        ? err.message
+        : "Signature verification call threw an unknown error";
     return errorResponse(400, "wallet_mismatch", details);
   }
-  if (recovered.toLowerCase() !== td.message.wallet.toLowerCase()) {
+  if (!isValid) {
     return errorResponse(
       400,
       "wallet_mismatch",
-      "Recovered address does not match message.wallet",
+      "Signature is not valid for message.wallet (EOA recovery / EIP-1271 / ERC-6492 all failed)",
     );
   }
 

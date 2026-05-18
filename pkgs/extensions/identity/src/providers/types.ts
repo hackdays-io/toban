@@ -9,6 +9,21 @@ export type IdentityEnv = {
    * Required if the `discord` provider is enabled.
    */
   DISCORD_BOT_VERIFIER_PUBLIC_KEY?: string;
+  /**
+   * RPC endpoint used for EIP-1271 / ERC-6492 signature verification.
+   *
+   * Privy and other smart-wallet stacks sign typed data with the embedded
+   * owner EOA, so a naive `recoverTypedDataAddress` returns the EOA, not the
+   * smart wallet that `wallet.account.address` exposes. viem's
+   * `publicClient.verifyTypedData` handles all three cases (EOA, EIP-1271
+   * contract, ERC-6492 counterfactual) through a single RPC.
+   *
+   * The chain is taken from `typedData.domain.chainId` at request time; the
+   * URL just needs to point to an RPC that supports the chain(s) the worker
+   * accepts bindings from. For MVP we run on a single chain (Sepolia in dev,
+   * Base in prod), so a single URL is enough.
+   */
+  RPC_URL?: string;
 };
 
 export type VerifiedAccount = {

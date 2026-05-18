@@ -1,0 +1,31 @@
+name = "toban-identity"
+main = "src/worker.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 is shared with `@toban/discord-bot`. `database_id` is per-environment —
+# replace with the real ID when provisioning a Cloudflare account
+# (`wrangler d1 create toban-identity-<env>`). In local dev `wrangler dev`
+# defaults to a local SQLite under `.wrangler/state/` keyed by `database_name`,
+# so the placeholder ID below works fine for `pnpm identity dev`.
+[[d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+# ES256 public key (PEM SPKI) for verifying verifier_token JWTs issued by the
+# Discord bot. Loaded from secret in production; vars here lets local dev
+# use a fixture key (set via `wrangler dev --var DISCORD_BOT_VERIFIER_PUBLIC_KEY:...`
+# or a `.dev.vars` file).
+DISCORD_BOT_VERIFIER_PUBLIC_KEY = ""
+
+# RPC URL used for EIP-1271 / ERC-6492 smart-wallet signature verification.
+# Must reach the chain whose `chainId` the frontend signs typed-data with
+# (Sepolia in dev, Base in prod). Override per-environment via .dev.vars
+# (local) or `wrangler secret put` (deploy).
+RPC_URL = ""
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   DISCORD_BOT_VERIFIER_PUBLIC_KEY  - For prod; in local dev keep in .dev.vars
+#   RPC_URL                          - Same, environment-specific RPC endpoint

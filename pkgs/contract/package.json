@@ -19,6 +19,7 @@
     "createSplit": "npx hardhat run scripts/createSplit.ts",
     "upgrade:FractionToken": "npx hardhat run scripts/upgrade/fractionToken.ts",
     "upgrade:BigBang": "npx hardhat run scripts/upgrade/BigBang.ts",
+    "upgrade:ThanksTokenImpl": "npx hardhat run scripts/upgrade/thanksTokenImpl.ts",
     "bigbang": "npx hardhat bigbang",
     "getWoreTime": "npx hardhat getWoreTime",
     "mintHat": "npx hardhat mintHat",

@@ -53,7 +53,19 @@ const commands = [
     description: "Send THX to another member",
     type: 1,
     options: [
-      { name: "user", description: "Recipient", type: 6, required: true },
+      {
+        name: "user",
+        description: "Recipient (pick from this server)",
+        type: 6,
+        required: false,
+      },
+      {
+        name: "address",
+        description:
+          "Recipient by 0x address or ENS name (e.g. vitalik.eth). Use instead of 'user'.",
+        type: 3,
+        required: false,
+      },
       {
         name: "amount",
         description: "Amount of THX (positive integer)",

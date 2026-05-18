@@ -24,7 +24,10 @@ export async function handleLookup(
 
   const url = new URL(request.url);
   const provider = url.searchParams.get("provider");
-  const accountId = url.searchParams.get("account_id");
+  // Accept either snake_case (canonical, per #507 wire spec) or
+  // camelCase to match the bot's TS-style HttpIdentityClient.
+  const accountId =
+    url.searchParams.get("account_id") ?? url.searchParams.get("accountId");
   if (!provider || !accountId) {
     return new Response(
       JSON.stringify({

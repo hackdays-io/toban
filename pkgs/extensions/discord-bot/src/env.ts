@@ -13,6 +13,12 @@ export interface Env {
   // -- bindings -----------------------------------------------------------
   /** D1 database shared with @toban/identity for cross-extension lookups. */
   DB: D1Database;
+  /**
+   * Service binding to the @toban/identity Worker. Use `IDENTITY.fetch(...)`
+   * instead of `fetch(IDENTITY_WORKER_URL/...)` — Cloudflare blocks
+   * same-account workers.dev cross-Worker fetches (error 1042).
+   */
+  IDENTITY: Fetcher;
 
   // -- public vars --------------------------------------------------------
   /**
@@ -24,10 +30,24 @@ export interface Env {
   GOLDSKY_GRAPHQL_ENDPOINT: string;
   /** Public frontend URL; used to construct `/connect/discord?token=...`. */
   TOBAN_FRONTEND_URL: string;
+  /**
+   * This Worker's own public URL — used as Discord OAuth `redirect_uri`
+   * (must exactly match the URL registered in the Discord Developer
+   * Portal's OAuth Redirects). Required by /toban-link when handing off
+   * the install URL.
+   */
+  BOT_WORKER_URL: string;
   /** JSON-RPC endpoint (Base mainnet by default). */
   RPC_URL: string;
   /** EVM chain id as a string (e.g. "8453"). */
   CHAIN_ID: string;
+  /**
+   * Ethereum mainnet JSON-RPC endpoint, used only for ENS resolution
+   * (ENS records live on mainnet regardless of the chain the bot's
+   * `mintFrom` runs on). Optional — when unset, /thx rejects ENS-form
+   * recipients with a clear error.
+   */
+  MAINNET_RPC_URL?: string;
   /** Turnkey HTTP API base URL (e.g. https://api.turnkey.com). */
   TURNKEY_API_BASE_URL: string;
   /** Turnkey sub-organization id that owns the bot signing key. */

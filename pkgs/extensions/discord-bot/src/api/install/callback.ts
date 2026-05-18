@@ -133,7 +133,7 @@ export async function handleInstallCallback(
 
   // TODO(#506): verify admin Hat on-chain via Hats contract once the
   //   workspace registry is wired in. For MVP we trust the URL-bearer.
-  const adminWallet: Address =
+  const installedBy: Address =
     "0x0000000000000000000000000000000000000000" as Address;
 
   const identity = createIdentityClient(env);
@@ -141,14 +141,15 @@ export async function handleInstallCallback(
     provider: "discord",
     platformId: guildId,
     treeId: parsedState.treeId,
-    adminWallet,
+    installedBy,
   });
 
   await registerGuildCommands(env, guildId);
 
-  // 302 to frontend "installed" page.
+  // 302 to the workspace's bot-config page — that's where the admin
+  // now needs to be (to set their own mintAllowance for the bot).
   return Response.redirect(
-    `${env.TOBAN_FRONTEND_URL.replace(/\/$/, "")}/connect/discord/installed?guild=${guildId}&tree=${parsedState.treeId}`,
+    `${env.TOBAN_FRONTEND_URL.replace(/\/$/, "")}/${parsedState.treeId}/discord-bot`,
     302,
   );
 }

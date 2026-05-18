@@ -19,8 +19,11 @@ import {
   type Hex,
   type LocalAccount,
   type PublicClient,
+  createPublicClient,
   createWalletClient,
+  isAddress,
 } from "viem";
+import { mainnet } from "viem/chains";
 import {
   EMPTY_RELATED_ROLES,
   THANKS_TOKEN_ABI,
@@ -33,8 +36,17 @@ import { type IdentityClient, createIdentityClient } from "../identity";
 import { createTurnkeySigner } from "../signer/turnkey";
 import { sendFollowup } from "./responses";
 
+/**
+ * Recipient is either a Discord member (snowflake → identity lookup) or
+ * a raw chain identifier (hex address or ENS name → direct resolve, no
+ * identity binding required).
+ */
+type RecipientArg =
+  | { kind: "snowflake"; value: string }
+  | { kind: "address"; value: string };
+
 interface ThxArgs {
-  recipientSnowflake: string;
+  recipient: RecipientArg;
   amount: bigint;
   message: string;
 }
@@ -44,7 +56,8 @@ export function parseThxArgs(
   interaction: APIChatInputApplicationCommandInteraction,
 ): ThxArgs | { error: string } {
   const opts = interaction.data?.options ?? [];
-  let recipientSnowflake: string | undefined;
+  let snowflake: string | undefined;
+  let addressLiteral: string | undefined;
   let amountRaw: number | undefined;
   let message = "";
   for (const opt of opts) {
@@ -52,19 +65,33 @@ export function parseThxArgs(
     // permissive shape and validate by `name`.
     const o = opt as { name: string; value?: string | number | boolean };
     if (o.name === "user" && typeof o.value === "string") {
-      recipientSnowflake = o.value;
+      snowflake = o.value;
+    } else if (o.name === "address" && typeof o.value === "string") {
+      addressLiteral = o.value.trim();
     } else if (o.name === "amount" && typeof o.value === "number") {
       amountRaw = o.value;
     } else if (o.name === "message" && typeof o.value === "string") {
       message = o.value;
     }
   }
-  if (!recipientSnowflake) return { error: "missing user option" };
+
+  const haveSnowflake = typeof snowflake === "string" && snowflake.length > 0;
+  const haveAddress =
+    typeof addressLiteral === "string" && addressLiteral.length > 0;
+  if (haveSnowflake === haveAddress) {
+    // Both set or neither set — ambiguous.
+    return {
+      error:
+        "Specify exactly one of `user` (Discord pick) or `address` (0x.../ENS).",
+    };
+  }
   if (amountRaw === undefined || amountRaw <= 0) {
     return { error: "amount must be a positive integer" };
   }
   return {
-    recipientSnowflake,
+    recipient: haveSnowflake
+      ? { kind: "snowflake", value: snowflake as string }
+      : { kind: "address", value: addressLiteral as string },
     amount: BigInt(amountRaw),
     message,
   };
@@ -79,8 +106,50 @@ export interface ThxDeps {
    * subgraph fetch — tests inject a stub to avoid network calls.
    */
   resolveTokenAddress?: (treeId: string) => Promise<Hex | null>;
+  /**
+   * Resolve an ENS name to an address on Ethereum mainnet. Defaults to
+   * a viem mainnet client built from `env.MAINNET_RPC_URL`. Tests can
+   * stub this to avoid network calls.
+   */
+  resolveEnsAddress?: (name: string) => Promise<Address | null>;
   /** Inject the followup-message sender for tests. */
   followup?: (appId: string, token: string, content: string) => Promise<void>;
+}
+
+async function resolveRecipientWallet(
+  recipient: RecipientArg,
+  env: Env,
+  identity: IdentityClient,
+  resolveEns: (name: string) => Promise<Address | null>,
+): Promise<{ wallet: Address } | { error: string }> {
+  if (recipient.kind === "snowflake") {
+    const rec = await identity.getIdentity("discord", recipient.value);
+    if (!rec) {
+      return {
+        error:
+          "The recipient hasn't linked a wallet yet. Ask them to run `/toban-setup`, or specify their address/ENS via the `address` option.",
+      };
+    }
+    return { wallet: rec.wallet as Address };
+  }
+
+  const literal = recipient.value;
+  if (literal.startsWith("0x")) {
+    if (!isAddress(literal)) {
+      return { error: `Not a valid 0x address: ${literal}` };
+    }
+    return { wallet: literal as Address };
+  }
+  if (literal.endsWith(".eth")) {
+    const resolved = await resolveEns(literal);
+    if (!resolved) {
+      return { error: `Could not resolve ENS name: ${literal}` };
+    }
+    return { wallet: resolved };
+  }
+  return {
+    error: `Unsupported address format: ${literal}. Use 0x... or *.eth.`,
+  };
 }
 
 /**
@@ -111,9 +180,8 @@ export async function executeThx(
   }
 
   const identity = deps.identity ?? createIdentityClient(env);
-  const [sender, recipient, platformLink] = await Promise.all([
+  const [sender, platformLink] = await Promise.all([
     identity.getIdentity("discord", senderSf),
-    identity.getIdentity("discord", parsed.recipientSnowflake),
     identity.getPlatformLink("discord", guildId),
   ]);
   if (!sender) {
@@ -121,14 +189,6 @@ export async function executeThx(
       env.DISCORD_APP_ID,
       interaction.token,
       "You haven't linked a wallet. Run `/toban-setup` first.",
-    );
-    return;
-  }
-  if (!recipient) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "The recipient hasn't linked a wallet yet. Ask them to run `/toban-setup`.",
     );
     return;
   }
@@ -140,6 +200,32 @@ export async function executeThx(
     );
     return;
   }
+
+  const resolveEns =
+    deps.resolveEnsAddress ??
+    (async (name: string) => {
+      if (!env.MAINNET_RPC_URL) return null;
+      const client = createPublicClient({
+        chain: mainnet,
+        transport: http(env.MAINNET_RPC_URL),
+      });
+      return (await client.getEnsAddress({ name })) ?? null;
+    });
+  const recipientResolution = await resolveRecipientWallet(
+    parsed.recipient,
+    env,
+    identity,
+    resolveEns,
+  );
+  if ("error" in recipientResolution) {
+    await followup(
+      env.DISCORD_APP_ID,
+      interaction.token,
+      recipientResolution.error,
+    );
+    return;
+  }
+  const recipientWallet = recipientResolution.wallet;
 
   const resolveTokenAddress =
     deps.resolveTokenAddress ??
@@ -186,7 +272,7 @@ export async function executeThx(
       functionName: "mintFrom",
       args: [
         sender.wallet as Address,
-        recipient.wallet as Address,
+        recipientWallet,
         parsed.amount,
         EMPTY_RELATED_ROLES,
         `0x${Buffer.from(parsed.message, "utf8").toString("hex")}` as Hex,
@@ -201,11 +287,18 @@ export async function executeThx(
     return;
   }
 
+  const recipientLabel =
+    parsed.recipient.kind === "snowflake"
+      ? `<@${parsed.recipient.value}>`
+      : parsed.recipient.value;
   await followup(
     env.DISCORD_APP_ID,
     interaction.token,
     [
-      `Sent **${parsed.amount.toString()}** THX to <@${parsed.recipientSnowflake}>.`,
+      `Sent **${parsed.amount.toString()}** THX to ${recipientLabel}.`,
+      parsed.recipient.kind === "address"
+        ? `Address: \`${recipientWallet}\``
+        : null,
       parsed.message ? `> ${parsed.message}` : null,
       `Tx: \`${txHash}\``,
     ]

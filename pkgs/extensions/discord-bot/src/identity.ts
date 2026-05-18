@@ -29,7 +29,9 @@ export interface PlatformLink {
   provider: ProviderId;
   platformId: string;
   treeId: string;
-  adminWallet: Address;
+  // Wallet that registered the workspace ↔ platform binding. Matches the
+  // identity worker's `installed_by` column / `installedBy` JSON field.
+  installedBy: Address;
 }
 
 export interface IdentityClient {
@@ -52,19 +54,41 @@ export interface IdentityClient {
   upsertPlatformLink(link: PlatformLink): Promise<void>;
 }
 
-class HttpIdentityClient implements IdentityClient {
-  constructor(private readonly baseUrl: string) {}
+/**
+ * IdentityClient backed by either a Cloudflare service binding (in
+ * production / staging Workers) or a plain HTTPS URL (for local dev or
+ * tests). Same-account Workers cannot reach each other through
+ * workers.dev (Cloudflare error 1042), so production must go through the
+ * service binding.
+ *
+ * The URL hostname when called via a Fetcher binding is irrelevant —
+ * Cloudflare's binding intercepts the request and routes it directly to
+ * the target Worker. We still construct a URL so the receiving Worker
+ * sees a proper Request object with path + query.
+ */
+class IdentityFetchClient implements IdentityClient {
+  constructor(private readonly fetcher: Fetcher | typeof fetch) {}
+
+  private async go(path: string, init?: RequestInit): Promise<Response> {
+    // Use a synthetic host since service bindings ignore it.
+    const url = `https://identity.toban.internal${path}`;
+    if (typeof this.fetcher === "function") {
+      return this.fetcher(url, init);
+    }
+    return this.fetcher.fetch(url, init);
+  }
 
   async getIdentity(
     provider: ProviderId,
     accountId: string,
   ): Promise<IdentityRecord | null> {
-    const res = await fetch(
-      `${this.baseUrl}/api/lookup?provider=${encodeURIComponent(provider)}&accountId=${encodeURIComponent(accountId)}`,
-    );
+    const path = `/api/lookup?provider=${encodeURIComponent(provider)}&account_id=${encodeURIComponent(accountId)}`;
+    const res = await this.go(path);
     if (res.status === 404) return null;
     if (!res.ok) {
-      throw new Error(`identity lookup failed: ${res.status}`);
+      throw new Error(
+        `identity lookup failed: ${res.status} ${await res.text()}`,
+      );
     }
     return (await res.json()) as IdentityRecord;
   }
@@ -73,28 +97,31 @@ class HttpIdentityClient implements IdentityClient {
     provider: ProviderId,
     platformId: string,
   ): Promise<PlatformLink | null> {
-    const res = await fetch(
-      `${this.baseUrl}/api/platform-link?provider=${encodeURIComponent(provider)}&platformId=${encodeURIComponent(platformId)}`,
-    );
+    const path = `/api/platform-link?provider=${encodeURIComponent(provider)}&platform_id=${encodeURIComponent(platformId)}`;
+    const res = await this.go(path);
     if (res.status === 404) return null;
     if (!res.ok) {
-      throw new Error(`platform-link lookup failed: ${res.status}`);
+      throw new Error(
+        `platform-link lookup failed: ${res.status} ${await res.text()}`,
+      );
     }
     return (await res.json()) as PlatformLink;
   }
 
   async upsertPlatformLink(link: PlatformLink): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/api/platform-link`, {
+    const res = await this.go("/api/platform-link", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(link),
     });
     if (!res.ok) {
-      throw new Error(`platform-link upsert failed: ${res.status}`);
+      throw new Error(
+        `platform-link upsert failed: ${res.status} ${await res.text()}`,
+      );
     }
   }
 }
 
 export function createIdentityClient(env: Env): IdentityClient {
-  return new HttpIdentityClient(env.IDENTITY_WORKER_URL);
+  return new IdentityFetchClient(env.IDENTITY);
 }

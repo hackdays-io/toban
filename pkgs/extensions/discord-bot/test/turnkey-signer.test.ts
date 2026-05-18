@@ -24,8 +24,10 @@ import { createTurnkeySigner } from "../src/signer/turnkey";
 function makeEnv(address: string) {
   return {
     DB: {} as unknown as D1Database,
+    IDENTITY: {} as unknown as Fetcher,
     GOLDSKY_GRAPHQL_ENDPOINT: "https://goldsky.example.invalid/graphql",
     TOBAN_FRONTEND_URL: "https://toban.xyz",
+    BOT_WORKER_URL: "https://bot.example.invalid",
     RPC_URL: "https://example.invalid",
     CHAIN_ID: "8453",
     TURNKEY_API_BASE_URL: "https://api.turnkey.com",

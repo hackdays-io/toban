@@ -17,7 +17,7 @@ const fakePlatformLink: PlatformLink = {
   provider: "discord",
   platformId: TEST_GUILD_ID,
   treeId: TEST_TREE_ID,
-  adminWallet: `0x${"ad".repeat(20)}` as Address,
+  installedBy: `0x${"ad".repeat(20)}` as Address,
 };
 
 const fakeResolveTokenAddress = async () => TEST_THANKS_TOKEN;
@@ -25,8 +25,10 @@ const fakeResolveTokenAddress = async () => TEST_THANKS_TOKEN;
 function fakeEnv(): Env {
   return {
     DB: {} as unknown as D1Database,
+    IDENTITY: {} as unknown as Fetcher,
     GOLDSKY_GRAPHQL_ENDPOINT: "https://goldsky.example.invalid/graphql",
     TOBAN_FRONTEND_URL: "https://toban.xyz",
+    BOT_WORKER_URL: "https://bot.example.invalid",
     RPC_URL: "https://example.invalid",
     CHAIN_ID: "8453",
     TURNKEY_API_BASE_URL: "https://api.turnkey.com",
@@ -109,7 +111,7 @@ describe("parseThxArgs", () => {
     const out = parseThxArgs(i);
     expect("error" in out).toBe(false);
     if ("error" in out) return;
-    expect(out.recipientSnowflake).toBe("200");
+    expect(out.recipient).toEqual({ kind: "snowflake", value: "200" });
     expect(out.amount).toBe(5n);
     expect(out.message).toBe("thanks");
   });

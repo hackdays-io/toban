@@ -1,13 +1,13 @@
 # `@toban/identity`
 
-A Cloudflare Worker that owns the **off-chain "this Web2 account belongs to this wallet"** binding for Toban. It exposes four HTTP endpoints, persists state in a Cloudflare D1 database, and is provider-abstracted so additional integrations (Slack, GitHub, …) can be added without touching the connect flow.
+Toban における **「この Web2 アカウントはこの wallet に属する」** という off-chain な紐づけを管理する Cloudflare Worker です。4 つの HTTP エンドポイントを公開し、状態は Cloudflare D1 に保存します。provider 抽象化されているので、Slack / GitHub などの追加連携を connect フロー本体に触れずに増やせる構造になっています。
 
-The Worker is the canonical source for two things:
+この Worker が一次情報になるのは 2 種類のレコードです:
 
-1. **Identity** — `(provider, account_id) → wallet`, populated when a user signs an EIP-712 `IdentityBinding` with their wallet.
-2. **Platform link** — `(provider, platform_id) → tree_id`, populated when a workspace admin installs the corresponding extension (e.g. invites the Discord bot and runs `/toban-link`).
+1. **Identity** — `(provider, account_id) → wallet`。ユーザーが自分の wallet で EIP-712 の `IdentityBinding` に署名した時点で登録されます。
+2. **Platform link** — `(provider, platform_id) → tree_id`。workspace 管理者が対応する extension をインストールしたときに登録されます (例: Discord bot を招待して `/toban-link` を打つ)。
 
-The MVP ships with the `discord` provider only. The companion extension is [`@toban/discord-bot`](../discord-bot/README.md), which is the only client of the writeback endpoints today and forwards user actions into this Worker over a Cloudflare service binding. Reading this README is enough to understand and operate the Worker; pointers to the bot doc explain *who triggers each call* without duplicating that doc's interaction details.
+MVP では `discord` provider のみが同梱されています。対になる extension は [`@toban/discord-bot`](../discord-bot/README.md) で、今のところ書き込み系エンドポイントの唯一のクライアントであり、Cloudflare の service binding 経由でこの Worker を叩きます。この README だけ読んでも Worker を動かすには十分ですが、「誰がそれを呼び出しているのか」を補足する形で随所に bot 側 README へのリンクを置いています。
 
 ## TL;DR
 
@@ -19,21 +19,21 @@ member (Discord) /thx         →  GET   /api/lookup ×2  (sender + recipient)
                               →  GET   /api/platform-link  (resolve workspace)
 ```
 
-Every state mutation comes from a flow described below; lookups are pure reads.
+状態変更はすべて以下のフローに対応します。lookup 系は純粋な読み取りです。
 
-## Project owner flow (full sequence)
+## プロジェクトオーナー視点での全体フロー
 
-This is the same sequence captured in [discord-bot README](../discord-bot/README.md#project-owner-flow-full-sequence), expressed from this Worker's vantage point. Either doc reads standalone.
+[discord-bot README](../discord-bot/README.md#プロジェクトオーナー視点での全体フロー) と同じシーケンスを、この Worker から見た姿で記述したものです。どちらの README も単体で読めるようにしてあります。
 
-### 1. The bot is invited to a Discord server
+### 1. bot が Discord サーバーに招待される
 
-No interaction with this Worker yet — the bot is just present in the guild and listening on Discord's interactions endpoint.
+この時点では Worker は何もしません。bot は guild に参加し、Discord 側 interactions エンドポイントへの POST を待ち受けるだけです。
 
 ### 2. Identity binding — `/toban-setup` → `/connect/discord` → `POST /api/connect`
 
-The discord-bot issues an ES256 verifier_token JWT for the calling Discord snowflake and DMs the user a `https://toban.xyz/connect/discord?token=<jwt>&treeId=<tree>` link. The frontend handles wallet login and EIP-712 signing.
+discord-bot が呼び出し元の Discord snowflake 向けに ES256 verifier_token (JWT) を発行し、`https://toban.xyz/connect/discord?token=<jwt>&treeId=<tree>` の URL を DM で渡します。frontend が wallet login と EIP-712 署名を担当します。
 
-The frontend then POSTs to this Worker:
+その後 frontend がこの Worker へ POST してきます:
 
 ```http
 POST /api/connect
@@ -61,28 +61,28 @@ Content-Type: application/json
 }
 ```
 
-The handler in `src/handlers/connect.ts` runs the checks in cheap-first order and short-circuits on the first failure with a stable `{ error: <code> }` JSON 400. Codes are listed in `ConnectErrorCode`; the frontend already knows how to render each.
+`src/handlers/connect.ts` のハンドラは「軽いチェック → 重いチェック」の順で短絡評価し、最初に落ちた段階で安定した `{ error: <code> }` JSON (HTTP 400) を返します。エラーコードは `ConnectErrorCode` 型に列挙されていて、frontend 側はコードごとに分岐済みです。
 
-Validation invariants — every connect request must satisfy **all** of these:
+検証の不変条件 — すべて満たさないと失敗します:
 
-1. JWT verifies under the configured `DISCORD_BOT_VERIFIER_PUBLIC_KEY` (ES256, P-256 SPKI PEM) and isn't expired (claim `exp`).
-2. `typedData.message.provider === provider` (request-level).
-3. `typedData.message.accountId === claims.accountId` (JWT-derived).
-4. `typedData.message.verifierTokenHash === keccak256(utf8Bytes(verifier_token))`.
-5. EIP-712 signature verifies for `typedData.message.wallet`. This goes through viem's `publicClient.verifyTypedData(env.RPC_URL)`, which uniformly handles EOA recover, EIP-1271 smart accounts (Privy embedded smart wallets fall in here), and ERC-6492 counterfactual signatures.
-6. `typedData.message.expires > now`.
-7. `typedData.message.nonce` is not already in `used_binding_nonces`.
+1. JWT が `DISCORD_BOT_VERIFIER_PUBLIC_KEY` (ES256, P-256 SPKI PEM) で検証できて `exp` が未来。
+2. `typedData.message.provider === provider` (request-level)。
+3. `typedData.message.accountId === claims.accountId` (JWT 由来)。
+4. `typedData.message.verifierTokenHash === keccak256(utf8Bytes(verifier_token))`。
+5. `typedData.message.wallet` 名義の EIP-712 署名として正当。viem の `publicClient.verifyTypedData(env.RPC_URL)` を呼ぶので、EOA recover / EIP-1271 smart account (Privy embedded smart wallet がここ) / ERC-6492 counterfactual の 3 つを統一処理します。
+6. `typedData.message.expires > now`。
+7. `typedData.message.nonce` が `used_binding_nonces` に未登録。
 
-On success the handler atomically writes the `(provider, account_id) → wallet` row in `identities` and the nonce in `used_binding_nonces`. Re-binding the same Web2 account to a different wallet is allowed and overwrites `wallet` + `updated_at`. The original `created_at` is preserved.
+成功時は `(provider, account_id) → wallet` を `identities` に upsert し、nonce を `used_binding_nonces` に書き込みます。同じ Web2 アカウントを別 wallet に再 bind することは許可していて、`wallet` と `updated_at` が上書きされます。`created_at` は保存されたまま。
 
-The EIP-712 type fixture (kept in sync with the discord-bot and the frontend `/connect/discord` page):
+EIP-712 の型定義 (discord-bot + frontend `/connect/discord` 側と同期):
 
 ```ts
 domain: {
   name: "TobanIdentity",
   version: "1",
   chainId: <signer's network chainId>,
-  // no verifyingContract — off-chain use
+  // verifyingContract なし — off-chain 用途
 }
 types: {
   IdentityBinding: [
@@ -96,11 +96,11 @@ types: {
 }
 ```
 
-How the bot issues the JWT and how the frontend builds the typedData are documented in [discord-bot README: identity binding](../discord-bot/README.md#3-each-member-binds-their-discord-account-to-a-wallet).
+bot がどう JWT を発行し、frontend がどう typedData を組むかは [discord-bot README: identity binding](../discord-bot/README.md#3-各メンバーが-discord-アカウントと-wallet-を結びつける) を参照してください。
 
-### 3. Server-to-workspace binding — `/toban-link` → `POST /api/platform-link`
+### 3. サーバーと workspace の紐づけ — `/toban-link` → `POST /api/platform-link`
 
-After binding their wallet, the admin runs `/toban-link <workspace-url>` in the linked Discord server. The bot calls this Worker via the service binding:
+wallet を紐づけた管理者が Discord 上で `/toban-link <workspace-url>` を打ちます。bot は service binding 経由でこの Worker を叩きます:
 
 ```http
 POST /api/platform-link
@@ -108,18 +108,18 @@ Content-Type: application/json
 
 {
   "provider":    "discord",
-  "platformId":  "<guild_id>",        // also accepts platform_id
+  "platformId":  "<guild_id>",        // platform_id も受け付ける
   "treeId":      "<workspace tree id, decimal string>",
-  "installedBy": "<address of installer>",
-  "metadata":    { ... }              // optional, JSON object or string
+  "installedBy": "<installer の address>",
+  "metadata":    { ... }              // optional, JSON object か string
 }
 ```
 
-The handler upserts a row in `platform_links`. On conflict (`provider, platform_id`), it updates `tree_id`, `installed_by`, and `metadata` — useful if the workspace is later switched to a different tree without re-installing the bot.
+ハンドラは `platform_links` に upsert します。`(provider, platform_id)` 競合時は `tree_id` / `installed_by` / `metadata` を更新します。これは bot を再 install せずに workspace を別 tree に乗せ換えたい場合にも便利です。
 
-### 4. THX flow — `/thx` → `/api/lookup`s + `/api/platform-link`
+### 4. THX 送付フロー — `/thx` → `/api/lookup` × 2 + `/api/platform-link`
 
-`/thx amount user:@bob` causes the bot to make three reads against this Worker:
+`/thx amount user:@bob` が発火すると、bot はこの Worker に対して 3 つの読み取りを行います:
 
 ```http
 GET /api/lookup?provider=discord&account_id=<sender snowflake>
@@ -127,34 +127,34 @@ GET /api/lookup?provider=discord&account_id=<recipient snowflake>
 GET /api/platform-link?provider=discord&platform_id=<guild_id>
 ```
 
-`/api/lookup` returns `{ "wallet": "0x…", "metadata"?: object }` (200) or `{ "error": "not_found" }` (404).
-`/api/platform-link` returns `{ provider, platformId, treeId, installedBy, metadata? }` (200) or `{ "error": "not_found" }` (404).
+`/api/lookup` は 200 で `{ "wallet": "0x…", "metadata"?: object }`、未登録なら 404 で `{ "error": "not_found" }`。
+`/api/platform-link` は 200 で `{ provider, platformId, treeId, installedBy, metadata? }`、未登録なら 404。
 
-If the recipient is supplied via `address:` (raw `0x…` or ENS) instead of a Discord user, the bot bypasses the recipient lookup — see [discord-bot README: members send THX](../discord-bot/README.md#5-members-send-thx).
+受け取り側を `address:` (生 `0x…` か ENS) で指定した場合、bot は recipient lookup をスキップします — 詳細は [discord-bot README: メンバーが THX を送る](../discord-bot/README.md#5-メンバーが-thx-を送る) 参照。
 
-This Worker is purely a read at `/thx` time. All on-chain action lives in the bot.
+`/thx` 時のこの Worker は完全に読み取り専用で、on-chain 操作は全部 bot 側で行います。
 
-## HTTP surface
+## HTTP API 一覧
 
-| Path | Method | Body / Query | Response | Source |
+| Path | Method | Body / Query | Response | 実装 |
 |---|---|---|---|---|
 | `/api/connect` | POST | `{ provider, verifier_token, identity_binding }` | 200 `{ ok: true }` / 400 `{ error, details? }` | `handlers/connect.ts` |
-| `/api/lookup` | GET | `?provider&account_id` (or `accountId`) | 200 `{ wallet, metadata? }` / 404 `{ error: "not_found" }` | `handlers/lookup.ts` |
-| `/api/platform-link` | GET | `?provider&platform_id` (or `platformId`) | 200 `{ provider, platformId, treeId, installedBy, metadata? }` / 404 | `handlers/platform-link.ts` |
+| `/api/lookup` | GET | `?provider&account_id` (もしくは `accountId`) | 200 `{ wallet, metadata? }` / 404 `{ error: "not_found" }` | `handlers/lookup.ts` |
+| `/api/platform-link` | GET | `?provider&platform_id` (もしくは `platformId`) | 200 `{ provider, platformId, treeId, installedBy, metadata? }` / 404 | `handlers/platform-link.ts` |
 | `/api/platform-link` | POST | `{ provider, platformId, treeId, installedBy, metadata? }` | 200 `{ ok: true }` | `handlers/platform-link.ts` |
 | `/health` | GET | — | 200 `{ ok: true }` | `worker.ts` |
 
-CORS allows any origin on `/api/*`; auth comes from the cryptographic proofs in the request bodies (JWT + EIP-712), not from origin.
+CORS は `/api/*` で全 origin 許可。認証は同一オリジンポリシーではなく、リクエスト本文に含まれる暗号証明 (JWT + EIP-712) で行います。
 
-## D1 schema
+## D1 スキーマ
 
 ```sql
 -- (provider, account_id) → wallet
 CREATE TABLE identities (
   provider     TEXT NOT NULL,
   account_id   TEXT NOT NULL,
-  wallet       TEXT NOT NULL,           -- checksum address (mixed case preserved)
-  metadata     TEXT,                    -- JSON string, provider-specific
+  wallet       TEXT NOT NULL,           -- checksum address (mixed case 保持)
+  metadata     TEXT,                    -- JSON 文字列、provider 固有
   created_at   INTEGER NOT NULL,
   updated_at   INTEGER NOT NULL,
   PRIMARY KEY (provider, account_id)
@@ -173,54 +173,54 @@ CREATE TABLE platform_links (
 );
 CREATE INDEX idx_platform_links_tree ON platform_links(tree_id);
 
--- replay protection for IdentityBinding signatures
+-- IdentityBinding 署名の replay 対策
 CREATE TABLE used_binding_nonces (
   nonce        BLOB PRIMARY KEY,
   used_at      INTEGER NOT NULL
 );
 ```
 
-Apply via `pnpm --filter @toban/identity db:migrate:local` (Miniflare-backed local D1) or `db:migrate:remote` (deployed D1).
+`pnpm --filter @toban/identity db:migrate:local` (Miniflare のローカル D1) または `db:migrate:remote` (deploy 済み D1) で適用します。
 
-## Layout
+## 構成
 
 ```
 src/
-  worker.ts                       fetch entry — routes /api/* and /health
-  schema.ts                       Drizzle definitions for identities,
-                                  platform_links, used_binding_nonces
+  worker.ts                       fetch entry — /api/* と /health のルーティング
+  schema.ts                       identities / platform_links / used_binding_nonces
+                                  の Drizzle 定義
   queries.ts                      Drizzle helpers (getIdentity, upsert*, etc.)
-  eip712/identity-binding.ts      Typed-data definition + verifierTokenHash
+  eip712/identity-binding.ts      typed-data 定義 + verifierTokenHash
   verify.ts                       recoverIdentityBindingSigner +
                                   verifyIdentityBindingViaRpc +
                                   verifyJwtES256
   providers/
-    types.ts                      ProviderDefinition / IdentityEnv contract
-    discord.ts                    ES256 JWT verify against
-                                  DISCORD_BOT_VERIFIER_PUBLIC_KEY
+    types.ts                      ProviderDefinition / IdentityEnv 契約
+    discord.ts                    DISCORD_BOT_VERIFIER_PUBLIC_KEY に対する
+                                  ES256 JWT 検証
     index.ts                      registry: { discord: discordProvider }
   handlers/
-    connect.ts                    POST /api/connect — full verification flow
+    connect.ts                    POST /api/connect — フル検証フロー
     lookup.ts                     GET  /api/lookup
     platform-link.ts              GET/POST /api/platform-link
-  __tests__/                      vitest suites (real JWT + EIP-712 fixtures)
+  __tests__/                      vitest (実 JWT + EIP-712 fixture)
 migrations/
-  0001_init.sql                   D1-compatible SQL, byte-for-byte schema.ts
+  0001_init.sql                   D1 互換 SQL、schema.ts と完全一致
 scripts/
-  dev-token.ts                    One-off helper: generate a P-256 verifier
-                                  keypair (under .dev-keys/) and issue a
-                                  signed verifier_token for local testing
+  dev-token.ts                    開発用ヘルパ。P-256 verifier keypair を
+                                  生成 (.dev-keys/ 配下) し、ローカルテスト用
+                                  に署名済み verifier_token を発行
 ```
 
 ## Stack
 
-- **Cloudflare Workers** runtime (no Node-only APIs). The CLAUDE.md in this directory enumerates allowed deps.
-- **viem** — `recoverTypedDataAddress`, `publicClient.verifyTypedData`, `keccak256`. Worker-safe.
-- **jose** — ES256 JWT verify via `importSPKI` + `jwtVerify`. Worker-safe.
-- **drizzle-orm/d1** — typed queries against D1. The same `queries.ts` runs against in-memory `better-sqlite3` in tests.
-- **vitest** — unit tests sign real ES256 JWTs and EIP-712 payloads so production code paths are exercised end-to-end.
+- **Cloudflare Workers** ランタイム (Node 専用 API は禁止)。許可された依存ライブラリの一覧はこのディレクトリの CLAUDE.md にあります。
+- **viem** — `recoverTypedDataAddress`, `publicClient.verifyTypedData`, `keccak256`。Worker 互換。
+- **jose** — ES256 JWT 検証 (`importSPKI` + `jwtVerify`)。Worker 互換。
+- **drizzle-orm/d1** — D1 への型付きクエリ。同じ `queries.ts` がテストでは in-memory `better-sqlite3` でも動きます。
+- **vitest** — テストでは本物の ES256 JWT と EIP-712 を署名するので、本番コードパスがそのまま回ります。
 
-## Commands
+## コマンド
 
 ```
 pnpm --filter @toban/identity dev              # wrangler dev (Miniflare)
@@ -233,107 +233,107 @@ pnpm --filter @toban/identity db:migrate:remote
 pnpm --filter @toban/identity dev-token --snowflake <id> --tree-id <tree>
 ```
 
-## Deployment
+## デプロイ手順
 
-The identity Worker depends on two external services — a Cloudflare account (Workers + D1) and an Ethereum RPC provider (for EIP-1271/6492 signature verification). A third dependency, the discord-bot's verifier public key, is supplied **by the discord-bot deploy** — see step 4 below and [discord-bot README: Deployment](../discord-bot/README.md#deployment).
+identity Worker は 2 つの外部サービスに依存します — Cloudflare アカウント (Workers + D1) と Ethereum RPC プロバイダ (EIP-1271/6492 署名検証用)。3 つ目の依存先である discord-bot 側の verifier 公開鍵は **discord-bot のデプロイ手順で生成** したものを使い回します — Step 4 と [discord-bot README: デプロイ手順](../discord-bot/README.md#デプロイ手順) を参照してください。
 
-### Step 1 — Cloudflare prerequisites
+### Step 1 — Cloudflare の前準備
 
-1. **Create an account** at https://dash.cloudflare.com if you don't have one (free tier is fine for staging).
-2. **Authenticate wrangler** locally:
+1. **アカウント作成** — https://dash.cloudflare.com で。staging 用なら free tier で十分です。
+2. **wrangler でログイン**:
    ```bash
    pnpm --filter @toban/identity exec wrangler login
    ```
-   This opens a browser to grant OAuth permission (`workers:write`, `d1:write`, etc.).
-3. **Confirm the account** you'll deploy into:
+   ブラウザが開き、OAuth で `workers:write` / `d1:write` 等の権限を付与します。
+3. **デプロイ先アカウントを確認**:
    ```bash
    pnpm --filter @toban/identity exec wrangler whoami
    ```
 
-### Step 2 — Create the D1 database
+### Step 2 — D1 データベースを作る
 
 ```bash
 pnpm --filter @toban/identity exec wrangler d1 create toban-identity
 ```
 
-The command prints a `database_id` (UUID). Put it into `wrangler.toml` under the `[[d1_databases]]` block — the `binding = "DB"`, `database_name = "toban-identity"` lines stay as-is.
+`database_id` (UUID) が出力されるので、`wrangler.toml` の `[[d1_databases]]` ブロックに貼ります。`binding = "DB"` と `database_name = "toban-identity"` の行はそのままで OK。
 
-Apply the schema:
+スキーマを適用:
 
 ```bash
 pnpm --filter @toban/identity db:migrate:remote
 ```
 
-(Sanity-check with `wrangler d1 execute toban-identity --remote --command="SELECT name FROM sqlite_master WHERE type='table'"` — you should see `identities`, `platform_links`, `used_binding_nonces`.)
+(動作確認: `wrangler d1 execute toban-identity --remote --command="SELECT name FROM sqlite_master WHERE type='table'"` で `identities` / `platform_links` / `used_binding_nonces` の 3 つが見えれば成功)
 
-### Step 3 — Get an Ethereum RPC URL
+### Step 3 — Ethereum RPC URL を取得
 
-The connect handler calls `publicClient.verifyTypedData` against `RPC_URL` to validate EIP-1271/6492 signatures from Privy smart wallets. The chain queried is the one the frontend signs typed-data on (Sepolia for staging, Base for production).
+connect ハンドラが `publicClient.verifyTypedData` を `RPC_URL` 経由で呼び、Privy smart wallet などからの EIP-1271/6492 署名を検証します。問い合わせる chain は frontend が typed-data に書く chainId と同じものを指す必要があります (staging なら Sepolia、production なら Base)。
 
-Options:
+選択肢:
 
-- **Alchemy** (recommended) — https://www.alchemy.com → free account → "Create new app" → pick the right network (Sepolia / Base mainnet) → copy the HTTPS URL (looks like `https://eth-sepolia.g.alchemy.com/v2/<key>`).
-- **Infura** — analogous flow at https://www.infura.io.
-- **Public RPCs** (`cloudflare-eth.com`, `ankr.com`, …) work for basic calls but smart-wallet ENSIP-10 / CCIP-Read paths are unreliable; stick to Alchemy/Infura.
+- **Alchemy** (推奨) — https://www.alchemy.com で無料アカウント → "Create new app" → 対象 network 選択 → HTTPS URL をコピー (`https://eth-sepolia.g.alchemy.com/v2/<key>` のような形)。
+- **Infura** — https://www.infura.io でほぼ同じ手順。
+- **公開 RPC** (`cloudflare-eth.com`, `ankr.com` 等) — 基本コール用途では動くけれど、smart wallet 系の ENSIP-10 / CCIP-Read 経路は不安定。Alchemy / Infura に揃えるのが安全です。
 
-The frontend already uses an Alchemy key for the same chain; reuse the same URL.
+frontend が同 chain の Alchemy key を既に使っているなら、それを使い回せます。
 
-### Step 4 — Generate the verifier keypair (paired with the bot)
+### Step 4 — verifier keypair を生成 (bot と対称)
 
-The identity Worker verifies verifier_token JWTs against `DISCORD_BOT_VERIFIER_PUBLIC_KEY`. The matching private half lives in the bot Worker as `VERIFIER_PRIVATE_KEY`. **Generate both halves at the same time** so they're guaranteed to pair.
+identity Worker は verifier_token JWT を `DISCORD_BOT_VERIFIER_PUBLIC_KEY` で検証します。秘密鍵側は bot Worker の `VERIFIER_PRIVATE_KEY` として配置されます。**両者を同時に生成**して必ずペアになるようにしてください。
 
-The easiest path is to run the local helper here (this also writes a Sepolia-friendly `.dev.vars` for `pnpm dev`):
+ローカルでは付属のヘルパーが楽です (Sepolia 用の `.dev.vars` も併せて書いてくれます):
 
 ```bash
 pnpm --filter @toban/identity dev-token --snowflake 1 --tree-id 1
-cat pkgs/extensions/identity/.dev-keys/verifier-public.pem    # → identity secret
-cat pkgs/extensions/identity/.dev-keys/verifier-private.pem   # → discord-bot secret
+cat pkgs/extensions/identity/.dev-keys/verifier-public.pem    # → identity の secret
+cat pkgs/extensions/identity/.dev-keys/verifier-private.pem   # → discord-bot の secret
 ```
 
-Both files are gitignored. The discord-bot deploy guide will pull the private half. For production, generate a fresh keypair (`openssl ecparam -name prime256v1 -genkey -noout` → derive SPKI) and discard the dev keys.
+両ファイルとも gitignore 済みです。discord-bot のデプロイガイドが秘密鍵側を参照します。production では新しい keypair を生成して dev keys は破棄してください (`openssl ecparam -name prime256v1 -genkey -noout` → SPKI 派生)。
 
-### Step 5 — Set the production secrets
+### Step 5 — production の secret 投入
 
-`DISCORD_BOT_VERIFIER_PUBLIC_KEY` and `RPC_URL` are not committed (the latter embeds an API key). Set them as Cloudflare Workers secrets.
+`DISCORD_BOT_VERIFIER_PUBLIC_KEY` と `RPC_URL` はコミットしません (後者は API key を含む)。Cloudflare Workers Secrets として設定します。
 
-**Public key (multi-line PEM)** — the CLI prompt may not handle newlines well in every terminal. The most reliable paths:
+**公開鍵 (複数行 PEM)** — CLI プロンプトは環境によって改行を取りこぼすことがあります。確実なのは:
 
 ```bash
-# A. Pipe from file (Bash, zsh):
+# A. ファイルから pipe (Bash, zsh):
 cd pkgs/extensions/identity
 pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY \
   < .dev-keys/verifier-public.pem
 
 # B. Cloudflare dashboard:
 #    dash.cloudflare.com → Workers & Pages → toban-identity → Settings →
-#    Variables and Secrets → Add (encrypted) → paste the multi-line PEM.
+#    Variables and Secrets → Add (encrypted) → 複数行 PEM を貼り付け。
 ```
 
-**RPC URL (single-line)**:
+**RPC URL (単一行)**:
 
 ```bash
 echo -n "https://eth-sepolia.g.alchemy.com/v2/<key>" \
   | pnpm --filter @toban/identity exec wrangler secret put RPC_URL
 ```
 
-### Step 6 — Deploy
+### Step 6 — デプロイ
 
 ```bash
 pnpm --filter @toban/identity deploy
 ```
 
-The deploy URL (`https://toban-identity.<account>.workers.dev`) is printed in the output. Smoke-test:
+出力にデプロイ先 URL (`https://toban-identity.<account>.workers.dev`) が出ます。動作確認:
 
 ```bash
 curl -s https://toban-identity.<account>.workers.dev/health
 # → {"ok":true}
 ```
 
-If the bot Worker has already been deployed against an older identity URL, no change is required — the bot reaches this Worker via a service binding (`env.IDENTITY`), not a URL, so identity-side redeploys are transparent.
+bot Worker が古い identity URL でデプロイ済みでも修正は不要です。bot からは URL ではなく service binding (`env.IDENTITY`) で叩くので、identity 側の再デプロイは透過的に反映されます。
 
-### Step 7 — Cross-reference with the discord-bot
+### Step 7 — discord-bot 側との連携確認
 
-The discord-bot's `wrangler.toml` declares:
+discord-bot 側の `wrangler.toml` に以下があります:
 
 ```toml
 [[services]]
@@ -341,29 +341,27 @@ binding = "IDENTITY"
 service = "toban-identity"
 ```
 
-This name (`toban-identity`) must match `name =` at the top of *this* package's `wrangler.toml`. If you rename one, rename both and redeploy the bot to refresh the binding.
+この `toban-identity` という名前が **この package の `wrangler.toml` の `name =`** と完全一致している必要があります。リネームしたら両方更新 + bot 側を再デプロイ。
 
-The bot also needs `VERIFIER_PRIVATE_KEY` to match the public key set above — see [discord-bot README: Deployment](../discord-bot/README.md#deployment) for the symmetric step.
+bot 側にも上で設定した公開鍵に対応する `VERIFIER_PRIVATE_KEY` を投入する必要があります — 対称の手順が [discord-bot README: デプロイ手順](../discord-bot/README.md#デプロイ手順) にあります。
 
-### Migrating between environments
+### 環境を増やすとき
 
-`wrangler.toml` ships with a single `[[d1_databases]]` block. For staging vs production, the cleanest pattern is to use `[env.staging]` / `[env.production]` overrides (Cloudflare docs: "Wrangler environments"). At MVP scale a single environment is enough; revisit when Base mainnet ships.
+`wrangler.toml` には 1 つの `[[d1_databases]]` ブロックしかありません。staging vs production を分けたいときは `[env.staging]` / `[env.production]` セクションを使うのが Cloudflare 公式パターンです ("Wrangler environments" 参照)。MVP の今は 1 環境で足りるので、Base mainnet 移行時にあらためて検討してください。
 
-`dev-token` is the local-dev shortcut for issuing a verifier_token without running the bot Worker. It generates a fresh P-256 keypair on first invocation, writes the matching SPKI public key plus a Sepolia RPC URL into `.dev.vars` (gitignored), and prints both the bare JWT (stdout) and a copy-pasteable `/connect/discord?token=…` URL (stderr).
+## 新しい provider を追加する
 
-## Adding a new provider
+1. `src/providers/<name>.ts` を作って `verifyVerifierToken` を持つ `ProviderDefinition` を export。`verify.ts` のデフォルト JWT verifier は ES256 issuer なら再利用できます。
+2. `src/providers/index.ts` の registry に登録。
+3. verifier のテスト (正常系 + expired + tampered + issuer 不一致) を追加。
+4. issuer + token のフォーマットを本 README に追記。
 
-1. Create `src/providers/<name>.ts` exporting a `ProviderDefinition` with `verifyVerifierToken`. The default JWT verifier in `verify.ts` is reusable for any ES256 issuer.
-2. Register it in `src/providers/index.ts`.
-3. Add tests that cover the verifier (valid + expired + tampered token + wrong issuer).
-4. Document the new provider's issuer + token format here.
+`handlers/connect.ts` は provider 非依存に保ってください。provider 別の分岐をそこに足さない方針です。
 
-`handlers/connect.ts` is provider-agnostic by design — do not add provider-specific branches there.
+## 重要な不変条件
 
-## Important invariants
-
-- **Privy is not an identity oracle.** The frontend uses Privy only to obtain a wallet that can sign EIP-712 — `linkedAccounts` is never consulted here.
-- **The Discord bot is not authoritative.** It is one (privileged) caller of this Worker. New extensions are first-class peers, not children.
-- **Wallet is stored in checksum form** so callers don't re-checksum on every read.
-- **Nonces are stored as BLOBs.** The PRIMARY KEY on `nonce` enforces single-use; the handler also pre-checks via `isNonceUsed` so duplicates return a `nonce_reused` error code rather than a constraint violation.
-- **No D1 transactions** (D1 transactions are not GA): the connect handler orders writes so the nonce insertion fails on conflict before the identity upsert becomes visible to readers.
+- **Privy は identity oracle ではない**。frontend は EIP-712 署名できる wallet を取得する目的でしか Privy を使わず、`linkedAccounts` は参照しません。
+- **Discord bot は authoritative ではない**。bot は (特権を持った) 一クライアントに過ぎず、新しい extension は対等な仲間です。
+- **wallet は checksum 形式で保存** することで読み手側の checksum 再計算を不要にしています。
+- **nonce は BLOB として保存**。PRIMARY KEY で single-use を強制しつつ、ハンドラ側で `isNonceUsed` を先に呼ぶことで、二重利用は制約違反ではなく `nonce_reused` エラーコードとして返ります。
+- **D1 トランザクションは使わない** (D1 のトランザクションは GA 前)。connect ハンドラでは nonce の挿入が衝突で先に失敗してから identity の upsert が観測される順序になるよう書き分けてあります。

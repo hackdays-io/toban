@@ -233,6 +233,122 @@ pnpm --filter @toban/identity db:migrate:remote
 pnpm --filter @toban/identity dev-token --snowflake <id> --tree-id <tree>
 ```
 
+## Deployment
+
+The identity Worker depends on two external services — a Cloudflare account (Workers + D1) and an Ethereum RPC provider (for EIP-1271/6492 signature verification). A third dependency, the discord-bot's verifier public key, is supplied **by the discord-bot deploy** — see step 4 below and [discord-bot README: Deployment](../discord-bot/README.md#deployment).
+
+### Step 1 — Cloudflare prerequisites
+
+1. **Create an account** at https://dash.cloudflare.com if you don't have one (free tier is fine for staging).
+2. **Authenticate wrangler** locally:
+   ```bash
+   pnpm --filter @toban/identity exec wrangler login
+   ```
+   This opens a browser to grant OAuth permission (`workers:write`, `d1:write`, etc.).
+3. **Confirm the account** you'll deploy into:
+   ```bash
+   pnpm --filter @toban/identity exec wrangler whoami
+   ```
+
+### Step 2 — Create the D1 database
+
+```bash
+pnpm --filter @toban/identity exec wrangler d1 create toban-identity
+```
+
+The command prints a `database_id` (UUID). Put it into `wrangler.toml` under the `[[d1_databases]]` block — the `binding = "DB"`, `database_name = "toban-identity"` lines stay as-is.
+
+Apply the schema:
+
+```bash
+pnpm --filter @toban/identity db:migrate:remote
+```
+
+(Sanity-check with `wrangler d1 execute toban-identity --remote --command="SELECT name FROM sqlite_master WHERE type='table'"` — you should see `identities`, `platform_links`, `used_binding_nonces`.)
+
+### Step 3 — Get an Ethereum RPC URL
+
+The connect handler calls `publicClient.verifyTypedData` against `RPC_URL` to validate EIP-1271/6492 signatures from Privy smart wallets. The chain queried is the one the frontend signs typed-data on (Sepolia for staging, Base for production).
+
+Options:
+
+- **Alchemy** (recommended) — https://www.alchemy.com → free account → "Create new app" → pick the right network (Sepolia / Base mainnet) → copy the HTTPS URL (looks like `https://eth-sepolia.g.alchemy.com/v2/<key>`).
+- **Infura** — analogous flow at https://www.infura.io.
+- **Public RPCs** (`cloudflare-eth.com`, `ankr.com`, …) work for basic calls but smart-wallet ENSIP-10 / CCIP-Read paths are unreliable; stick to Alchemy/Infura.
+
+The frontend already uses an Alchemy key for the same chain; reuse the same URL.
+
+### Step 4 — Generate the verifier keypair (paired with the bot)
+
+The identity Worker verifies verifier_token JWTs against `DISCORD_BOT_VERIFIER_PUBLIC_KEY`. The matching private half lives in the bot Worker as `VERIFIER_PRIVATE_KEY`. **Generate both halves at the same time** so they're guaranteed to pair.
+
+The easiest path is to run the local helper here (this also writes a Sepolia-friendly `.dev.vars` for `pnpm dev`):
+
+```bash
+pnpm --filter @toban/identity dev-token --snowflake 1 --tree-id 1
+cat pkgs/extensions/identity/.dev-keys/verifier-public.pem    # → identity secret
+cat pkgs/extensions/identity/.dev-keys/verifier-private.pem   # → discord-bot secret
+```
+
+Both files are gitignored. The discord-bot deploy guide will pull the private half. For production, generate a fresh keypair (`openssl ecparam -name prime256v1 -genkey -noout` → derive SPKI) and discard the dev keys.
+
+### Step 5 — Set the production secrets
+
+`DISCORD_BOT_VERIFIER_PUBLIC_KEY` and `RPC_URL` are not committed (the latter embeds an API key). Set them as Cloudflare Workers secrets.
+
+**Public key (multi-line PEM)** — the CLI prompt may not handle newlines well in every terminal. The most reliable paths:
+
+```bash
+# A. Pipe from file (Bash, zsh):
+cd pkgs/extensions/identity
+pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY \
+  < .dev-keys/verifier-public.pem
+
+# B. Cloudflare dashboard:
+#    dash.cloudflare.com → Workers & Pages → toban-identity → Settings →
+#    Variables and Secrets → Add (encrypted) → paste the multi-line PEM.
+```
+
+**RPC URL (single-line)**:
+
+```bash
+echo -n "https://eth-sepolia.g.alchemy.com/v2/<key>" \
+  | pnpm --filter @toban/identity exec wrangler secret put RPC_URL
+```
+
+### Step 6 — Deploy
+
+```bash
+pnpm --filter @toban/identity deploy
+```
+
+The deploy URL (`https://toban-identity.<account>.workers.dev`) is printed in the output. Smoke-test:
+
+```bash
+curl -s https://toban-identity.<account>.workers.dev/health
+# → {"ok":true}
+```
+
+If the bot Worker has already been deployed against an older identity URL, no change is required — the bot reaches this Worker via a service binding (`env.IDENTITY`), not a URL, so identity-side redeploys are transparent.
+
+### Step 7 — Cross-reference with the discord-bot
+
+The discord-bot's `wrangler.toml` declares:
+
+```toml
+[[services]]
+binding = "IDENTITY"
+service = "toban-identity"
+```
+
+This name (`toban-identity`) must match `name =` at the top of *this* package's `wrangler.toml`. If you rename one, rename both and redeploy the bot to refresh the binding.
+
+The bot also needs `VERIFIER_PRIVATE_KEY` to match the public key set above — see [discord-bot README: Deployment](../discord-bot/README.md#deployment) for the symmetric step.
+
+### Migrating between environments
+
+`wrangler.toml` ships with a single `[[d1_databases]]` block. For staging vs production, the cleanest pattern is to use `[env.staging]` / `[env.production]` overrides (Cloudflare docs: "Wrangler environments"). At MVP scale a single environment is enough; revisit when Base mainnet ships.
+
 `dev-token` is the local-dev shortcut for issuing a verifier_token without running the bot Worker. It generates a fresh P-256 keypair on first invocation, writes the matching SPKI public key plus a Sepolia RPC URL into `.dev.vars` (gitignored), and prints both the bare JWT (stdout) and a copy-pasteable `/connect/discord?token=…` URL (stderr).
 
 ## Adding a new provider

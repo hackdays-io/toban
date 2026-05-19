@@ -11,11 +11,11 @@ import type {
   APIChatInputApplicationCommandInteraction,
   APIInteractionResponse,
 } from "discord-api-types/v10";
-import type { Address, Hex } from "viem";
+import { type Address, type Hex, formatEther } from "viem";
 import {
-  EMPTY_RELATED_ROLES,
   THANKS_TOKEN_ABI,
   getPublicClient,
+  resolveRelatedRoles,
   resolveThanksTokenAddress,
 } from "../chain";
 import type { Env } from "../env";
@@ -70,6 +70,12 @@ export async function handleBalance(
   const spender = env.TURNKEY_BOT_SIGNER_ADDRESS as Hex;
   const owner = record.wallet as Address;
 
+  const relatedRoles = await resolveRelatedRoles(
+    env,
+    owner,
+    platformLink.treeId,
+  );
+
   const [allowance, mintable] = await Promise.all([
     client.readContract({
       address: token,
@@ -81,15 +87,15 @@ export async function handleBalance(
       address: token,
       abi: THANKS_TOKEN_ABI,
       functionName: "mintableAmount",
-      args: [owner, EMPTY_RELATED_ROLES],
+      args: [owner, relatedRoles],
     }),
   ]);
 
   return ephemeral(
     [
       `Wallet: \`${owner}\``,
-      `Allowance for bot: **${allowance.toString()}** THX`,
-      `Mintable budget : **${mintable.toString()}** THX`,
+      `Allowance for bot: **${formatEther(allowance as bigint)}** THX`,
+      `Mintable budget : **${formatEther(mintable as bigint)}** THX`,
     ].join("\n"),
   );
 }

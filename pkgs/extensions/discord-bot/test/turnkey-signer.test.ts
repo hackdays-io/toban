@@ -26,6 +26,7 @@ function makeEnv(address: string) {
     DB: {} as unknown as D1Database,
     IDENTITY: {} as unknown as Fetcher,
     GOLDSKY_GRAPHQL_ENDPOINT: "https://goldsky.example.invalid/graphql",
+    HATS_GRAPHQL_ENDPOINT: "https://hats.example.invalid/graphql",
     TOBAN_FRONTEND_URL: "https://toban.xyz",
     BOT_WORKER_URL: "https://bot.example.invalid",
     RPC_URL: "https://example.invalid",

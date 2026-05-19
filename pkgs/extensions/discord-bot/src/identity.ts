@@ -1,18 +1,17 @@
 /**
- * Interface to the @toban/identity worker.
+ * HTTP client for the `@toban/identity` Worker.
  *
- * @toban/identity is implemented by a sibling agent (#507) and is not yet
- * present in this worktree. We declare the contract here as a structural
- * interface plus a thin fetch client. When the package is merged we can
- * either:
- *   (a) keep this client (HTTP boundary stays explicit), or
- *   (b) swap to a `type`-only import from `@toban/identity` and use a
- *       direct D1 query helper if/when the packages decide to share a
- *       library entry-point.
+ * The bot Worker doesn't touch identity D1 tables directly — all
+ * `(provider, account_id) -> wallet` lookups and `guild -> tree_id`
+ * platform-link writes go through the identity Worker's `/api/*`
+ * surface. In production both Workers live on the same Cloudflare
+ * account, so the client uses a service binding (env.IDENTITY) rather
+ * than the public workers.dev URL (Cloudflare blocks same-account
+ * cross-Worker fetches via workers.dev with error 1042).
  *
- * Test code should stub `IdentityClient` directly rather than mocking
- * `fetch`. Production code should construct a single client per request
- * via {@link createIdentityClient}.
+ * Test code stubs `IdentityClient` directly via the {@link ThxDeps}
+ * `identity` field rather than mocking `fetch`, so HTTP plumbing here
+ * stays a thin pass-through.
  */
 import type { Address } from "viem";
 import type { Env } from "./env";

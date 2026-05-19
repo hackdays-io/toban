@@ -53,25 +53,27 @@ const commands = [
     description: "Send THX to another member",
     type: 1,
     options: [
-      {
-        name: "user",
-        description: "Recipient (pick from this server)",
-        type: 6,
-        required: false,
-      },
-      {
-        name: "address",
-        description:
-          "Recipient by 0x address or ENS name (e.g. vitalik.eth). Use instead of 'user'.",
-        type: 3,
-        required: false,
-      },
+      // Discord requires `required: true` options to come before optional
+      // ones, so amount sits at the top.
       {
         name: "amount",
         description: "Amount of THX (positive integer)",
         type: 4,
         required: true,
         min_value: 1,
+      },
+      {
+        name: "user",
+        description: "Recipient (pick from this server)",
+        type: 6,
+        required: true,
+      },
+      {
+        name: "address",
+        description:
+          "Override: send to this 0x address or ENS name instead of the user's linked wallet.",
+        type: 3,
+        required: false,
       },
       {
         name: "message",

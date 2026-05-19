@@ -24,14 +24,20 @@ service = "toban-identity"
 # hardcodes a single token address — each workspace owns its own clone
 # and may switch implementations via BigBang.switchThanksToken.
 GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-sepolia/1.0.3/gn"
+# Hats Protocol subgraph (same Goldsky project). Used to find which hats
+# the sender wears in a workspace — combined with FractionToken balances
+# to build relatedRoles for mintFrom.
+HATS_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/hats-v1-sepolia/0.0.1/gn"
 TOBAN_FRONTEND_URL = "http://localhost:5173"
 BOT_WORKER_URL = "https://toban-discord-bot.kawabeyuki23.workers.dev"
 RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/pQeMdJwPF6EI-mS_F4d0oJXzDq68coxL"
 CHAIN_ID = "11155111"
 # Used only for ENS name resolution in /thx (ENS records live on mainnet
-# even though we transact on Sepolia). A public RPC is fine — we never
-# send anything here, just `getEnsAddress` view calls.
-MAINNET_RPC_URL = "https://eth.llamarpc.com"
+# even though we transact on Sepolia). viem's getEnsAddress uses the
+# ENSIP-10 Universal Resolver which makes a compound eth_call — several
+# public RPCs (llamarpc, cloudflare-eth) fail or time out on this. Ankr
+# handles it reliably for free.
+MAINNET_RPC_URL = "https://rpc.ankr.com/eth"
 TURNKEY_API_BASE_URL = "https://api.turnkey.com"
 TURNKEY_ORGANIZATION_ID = "24cfae8c-aae0-4341-8492-295057f66bac"
 TURNKEY_BOT_SIGNER_ADDRESS = "0xae4E13De7C14Dff7ff296De69cADf3A7F5208461"

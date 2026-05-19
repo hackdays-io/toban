@@ -9,6 +9,7 @@
  */
 import {
   http,
+  type Address,
   type Hex,
   type PublicClient,
   createPublicClient,
@@ -157,4 +158,126 @@ export async function resolveThanksTokenAddress(
   }
   const id = body.data?.workspace?.thanksToken?.id;
   return id ? (id as Hex) : null;
+}
+
+/**
+ * The Hats subgraph stores tree IDs as 8-hex-digit, 0x-prefixed strings
+ * ("0x00000bba" for decimal 3002). The Toban subgraph uses the decimal
+ * form. This helper converts the decimal treeId we get from
+ * platform_links to the hex form the Hats subgraph expects.
+ */
+function treeIdToHatsHex(treeId: string): string {
+  const decimal = BigInt(treeId);
+  return `0x${decimal.toString(16).padStart(8, "0")}`;
+}
+
+/**
+ * Resolve the role-context array required by ThanksToken's
+ * `mintableAmount` / `mintFrom`. The contract sums up
+ * `(wearingTime/10min) * shareBalance / shareTotalSupply` across each
+ * (hatId, wearer) pair plus a flat 10% of the sender's THX balance.
+ *
+ * Mirrors `frontend/hooks/useThanksToken`: combine
+ *   (a) FractionToken balances the sender owns (Toban subgraph),
+ *   (b) hats the sender wears in this workspace (Hats subgraph).
+ * (b) is necessary because freshly-minted hats are not always indexed
+ * promptly in (a); the on-chain FractionToken balance still resolves
+ * correctly when passed (hatId, wearer=self).
+ */
+export async function resolveRelatedRoles(
+  env: Env,
+  owner: Address,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<readonly { hatId: bigint; wearer: Address }[]> {
+  if (!env.GOLDSKY_GRAPHQL_ENDPOINT) {
+    throw new Error("GOLDSKY_GRAPHQL_ENDPOINT is not configured");
+  }
+  if (!env.HATS_GRAPHQL_ENDPOINT) {
+    throw new Error("HATS_GRAPHQL_ENDPOINT is not configured");
+  }
+
+  const ownerLower = owner.toLowerCase();
+
+  // (a) FractionToken balances from the Toban subgraph.
+  const tobanRes = await fetchImpl(env.GOLDSKY_GRAPHQL_ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query:
+        "query($owner: String!, $workspaceId: String!) {" +
+        " balanceOfFractionTokens(where: {owner: $owner, workspaceId: $workspaceId}, first: 200) {" +
+        " hatId wearer } }",
+      variables: { owner: ownerLower, workspaceId: treeId },
+    }),
+  });
+  if (!tobanRes.ok) {
+    throw new Error(
+      `Toban subgraph relatedRoles lookup failed: ${tobanRes.status} ${tobanRes.statusText}`,
+    );
+  }
+  const tobanBody = (await tobanRes.json()) as {
+    data?: {
+      balanceOfFractionTokens?: Array<{ hatId: string; wearer: string }>;
+    };
+    errors?: Array<{ message: string }>;
+  };
+  if (tobanBody.errors?.length) {
+    throw new Error(
+      `Toban subgraph errored: ${tobanBody.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  const fractionRows = tobanBody.data?.balanceOfFractionTokens ?? [];
+
+  // (b) Hats the user wears, from the Hats subgraph.
+  const hatsRes = await fetchImpl(env.HATS_GRAPHQL_ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query:
+        "query($treeId: ID!) {" +
+        " tree(id: $treeId) { hats { id wearers { id } } } }",
+      variables: { treeId: treeIdToHatsHex(treeId) },
+    }),
+  });
+  if (!hatsRes.ok) {
+    throw new Error(
+      `Hats subgraph lookup failed: ${hatsRes.status} ${hatsRes.statusText}`,
+    );
+  }
+  const hatsBody = (await hatsRes.json()) as {
+    data?: {
+      tree?: {
+        hats?: Array<{ id: string; wearers: Array<{ id: string }> }>;
+      } | null;
+    };
+    errors?: Array<{ message: string }>;
+  };
+  if (hatsBody.errors?.length) {
+    throw new Error(
+      `Hats subgraph errored: ${hatsBody.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  const myHats = (hatsBody.data?.tree?.hats ?? []).filter((h) =>
+    h.wearers.some((w) => w.id.toLowerCase() === ownerLower),
+  );
+
+  // Combine. De-duplicate by (hatId, wearer) string key — the same pair
+  // could in principle appear in both feeds.
+  const map = new Map<string, { hatId: bigint; wearer: Address }>();
+  for (const r of fractionRows) {
+    const key = `${r.hatId}:${r.wearer.toLowerCase()}`;
+    map.set(key, {
+      hatId: BigInt(r.hatId),
+      wearer: r.wearer as Address,
+    });
+  }
+  for (const h of myHats) {
+    const key = `${h.id}:${ownerLower}`;
+    map.set(key, {
+      hatId: BigInt(h.id),
+      wearer: owner,
+    });
+  }
+  return Array.from(map.values());
 }

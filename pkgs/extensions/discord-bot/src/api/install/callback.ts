@@ -1,21 +1,25 @@
 /**
  * GET /api/install/callback
  *
- * Discord OAuth bot-install callback. Steps:
- *   1. Verify the `state` JWT (issued by `/toban-link`).
- *   2. Exchange `code` for an access token (Discord OAuth) — used here
- *      only to confirm the install happened; the bot token itself is
- *      configured per-app, not per-install.
- *   3. (TODO once #506 lands) Verify that the admin holds the workspace
- *      admin Hat on-chain via the Hats contract. Without that check we
- *      skip this step in MVP and trust the workspace-url-bearer to be
- *      admin; integration will tighten this.
- *   4. `identity.upsertPlatformLink(...)` to persist guild_id -> tree_id.
- *   5. Register the slash commands on the new guild.
- *   6. Redirect the admin back to the frontend "installed" page.
+ * Discord OAuth bot-install callback for the frontend-initiated install
+ * flow ("Connect Discord" button on a workspace page). Steps:
+ *   1. Verify the install-state JWT (issued by the frontend with the
+ *      workspace's tree_id encoded).
+ *   2. Exchange `code` for an access token — used only to confirm the
+ *      install happened; the bot token itself is per-app, not per-install.
+ *   3. `identity.upsertPlatformLink(...)` to persist guild_id -> tree_id.
+ *   4. Register the slash commands on the new guild.
+ *   5. Redirect the admin back to the workspace allowance page.
  *
- * This handler is best-effort idempotent — repeated installs to the
- * same guild overwrite the same row in identity.platform_links.
+ * Discord-initiated installs (admin runs `/toban-link <workspace_url>`
+ * in an already-invited server) bypass this handler and bind directly
+ * — see `commands/toban-link.ts`.
+ *
+ * TODO: verify the admin's wallet holds the workspace admin Hat on-chain
+ * via the Hats contract. MVP trusts the URL-bearer.
+ *
+ * Idempotent — repeated installs to the same guild overwrite the same
+ * row in `platform_links`.
  */
 import { importPKCS8, jwtVerify } from "jose";
 import type { Address } from "viem";
@@ -131,8 +135,10 @@ export async function handleInstallCallback(
     });
   }
 
-  // TODO(#506): verify admin Hat on-chain via Hats contract once the
-  //   workspace registry is wired in. For MVP we trust the URL-bearer.
+  // TODO: verify the admin's wallet holds the workspace admin Hat via the
+  //   Hats contract. MVP trusts the URL-bearer, so we record a zero
+  //   sentinel for `installedBy`. Discord-initiated /toban-link uses
+  //   the caller's identity-bound wallet instead — see commands/toban-link.ts.
   const installedBy: Address =
     "0x0000000000000000000000000000000000000000" as Address;
 

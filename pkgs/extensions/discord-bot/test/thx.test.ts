@@ -27,6 +27,7 @@ function fakeEnv(): Env {
     DB: {} as unknown as D1Database,
     IDENTITY: {} as unknown as Fetcher,
     GOLDSKY_GRAPHQL_ENDPOINT: "https://goldsky.example.invalid/graphql",
+    HATS_GRAPHQL_ENDPOINT: "https://hats.example.invalid/graphql",
     TOBAN_FRONTEND_URL: "https://toban.xyz",
     BOT_WORKER_URL: "https://bot.example.invalid",
     RPC_URL: "https://example.invalid",
@@ -112,7 +113,8 @@ describe("parseThxArgs", () => {
     expect("error" in out).toBe(false);
     if ("error" in out) return;
     expect(out.recipient).toEqual({ kind: "snowflake", value: "200" });
-    expect(out.amount).toBe(5n);
+    // amount is parsed as 18-decimal ERC-20 units, so 5 -> 5e18.
+    expect(out.amount).toBe(5_000_000_000_000_000_000n);
     expect(out.message).toBe("thanks");
   });
 
@@ -175,8 +177,10 @@ describe("executeThx", () => {
 
   it("happy path: signs and broadcasts then posts tx hash", async () => {
     const messages: string[] = [];
+    // amount=5 in the interaction becomes 5e18 wei after scaling, so the
+    // stub allowance has to dwarf that.
     const publicClient = {
-      readContract: async () => 100n,
+      readContract: async () => 1_000_000_000_000_000_000_000n, // 1e21
     } as unknown as PublicClient;
     const fakeHash = `0x${"f".repeat(64)}` as Hex;
     // Build a stub signer object viem will hand to a wallet client.
@@ -252,6 +256,7 @@ describe("executeThx", () => {
       publicClient: richPublicClient,
       signer,
       resolveTokenAddress: fakeResolveTokenAddress,
+      resolveRelatedRoles: async () => [],
       followup: async (_a, _t, c) => {
         messages.push(c);
       },

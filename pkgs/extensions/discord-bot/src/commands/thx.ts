@@ -21,14 +21,16 @@ import {
   type PublicClient,
   createPublicClient,
   createWalletClient,
+  formatEther,
   isAddress,
+  parseEther,
 } from "viem";
 import { mainnet } from "viem/chains";
 import {
-  EMPTY_RELATED_ROLES,
   THANKS_TOKEN_ABI,
   getChain,
   getPublicClient,
+  resolveRelatedRoles,
   resolveThanksTokenAddress,
 } from "../chain";
 import type { Env } from "../env";
@@ -78,21 +80,21 @@ export function parseThxArgs(
   const haveSnowflake = typeof snowflake === "string" && snowflake.length > 0;
   const haveAddress =
     typeof addressLiteral === "string" && addressLiteral.length > 0;
-  if (haveSnowflake === haveAddress) {
-    // Both set or neither set — ambiguous.
-    return {
-      error:
-        "Specify exactly one of `user` (Discord pick) or `address` (0x.../ENS).",
-    };
+  if (!haveSnowflake) {
+    return { error: "`user` is required." };
   }
   if (amountRaw === undefined || amountRaw <= 0) {
     return { error: "amount must be a positive integer" };
   }
   return {
-    recipient: haveSnowflake
-      ? { kind: "snowflake", value: snowflake as string }
-      : { kind: "address", value: addressLiteral as string },
-    amount: BigInt(amountRaw),
+    // `address` overrides `user` when both are supplied. This lets the
+    // sender redirect to a wallet the recipient hasn't (yet) linked.
+    recipient: haveAddress
+      ? { kind: "address", value: addressLiteral as string }
+      : { kind: "snowflake", value: snowflake as string },
+    // Discord INTEGER options carry the human-readable THX count; the
+    // contract stores ThanksToken as an 18-decimal ERC-20, so scale here.
+    amount: parseEther(amountRaw.toString()),
     message,
   };
 }
@@ -112,6 +114,15 @@ export interface ThxDeps {
    * stub this to avoid network calls.
    */
   resolveEnsAddress?: (name: string) => Promise<Address | null>;
+  /**
+   * Resolve the sender's role-context array for ThanksToken
+   * `mintFrom` / `mintableAmount`. Defaults to a Goldsky subgraph
+   * fetch via {@link resolveRelatedRoles}. Tests inject a stub.
+   */
+  resolveRelatedRoles?: (
+    owner: Address,
+    treeId: string,
+  ) => Promise<readonly { hatId: bigint; wearer: Address }[]>;
   /** Inject the followup-message sender for tests. */
   followup?: (appId: string, token: string, content: string) => Promise<void>;
 }
@@ -252,10 +263,19 @@ export async function executeThx(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `Not enough allowance for the bot (have ${allowance.toString()}, need ${parsed.amount.toString()}). Increase it at ${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot`,
+      `Not enough allowance for the bot (have ${formatEther(allowance)} THX, need ${formatEther(parsed.amount)} THX). Increase it at ${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot`,
     );
     return;
   }
+
+  const fetchRelatedRoles =
+    deps.resolveRelatedRoles ??
+    ((owner: Address, treeId: string) =>
+      resolveRelatedRoles(env, owner, treeId));
+  const relatedRoles = await fetchRelatedRoles(
+    sender.wallet as Address,
+    platformLink.treeId,
+  );
 
   const signer = deps.signer ?? createTurnkeySigner(env);
   const wallet = createWalletClient({
@@ -274,7 +294,7 @@ export async function executeThx(
         sender.wallet as Address,
         recipientWallet,
         parsed.amount,
-        EMPTY_RELATED_ROLES,
+        relatedRoles,
         `0x${Buffer.from(parsed.message, "utf8").toString("hex")}` as Hex,
       ],
     });
@@ -295,7 +315,7 @@ export async function executeThx(
     env.DISCORD_APP_ID,
     interaction.token,
     [
-      `Sent **${parsed.amount.toString()}** THX to ${recipientLabel}.`,
+      `Sent **${formatEther(parsed.amount)}** THX to ${recipientLabel}.`,
       parsed.recipient.kind === "address"
         ? `Address: \`${recipientWallet}\``
         : null,

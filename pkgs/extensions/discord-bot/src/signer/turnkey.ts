@@ -69,12 +69,99 @@ export interface TurnkeyStamp {
  *
  * Exported for unit-testing — production code uses {@link callTurnkey}.
  */
+async function importStamperKey(material: string): Promise<CryptoKey> {
+  const trimmed = material.trim();
+  // Turnkey UI hands the API stamper private key out as a 64-hex-char
+  // raw scalar (32 bytes). jose's importPKCS8 only accepts PEM, so accept
+  // both forms here and convert hex → raw P-256 PKCS8 ourselves using
+  // WebCrypto's pkcs8 importer.
+  if (/^(0x)?[0-9a-fA-F]{64}$/.test(trimmed)) {
+    const hex = trimmed.startsWith("0x") ? trimmed.slice(2) : trimmed;
+    const scalar = new Uint8Array(32);
+    for (let i = 0; i < 32; i += 1) {
+      scalar[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+    return crypto.subtle.importKey(
+      "pkcs8",
+      buildP256Pkcs8(scalar),
+      { name: "ECDSA", namedCurve: "P-256" },
+      false,
+      ["sign"],
+    );
+  }
+  return importPKCS8(trimmed, "ES256");
+}
+
+/**
+ * Build a minimal PKCS#8 PrivateKeyInfo blob for a P-256 (secp256r1)
+ * raw scalar. Avoids a full ASN.1 lib by relying on the fixed prefix
+ * `0x308141020100301306072a8648ce3d020106082a8648ce3d0301070427302502...`
+ * sequence used by every P-256 PKCS8. Confirmed against OpenSSL output.
+ */
+function buildP256Pkcs8(scalar32: Uint8Array): ArrayBuffer {
+  // PKCS8 DER prefix for an EC P-256 private key, followed by the
+  // 32-byte scalar inside an OCTET STRING within a SEQUENCE. Encoded
+  // statically; only the trailing 32 bytes vary.
+  const prefix = new Uint8Array([
+    0x30, 0x41, 0x02, 0x01, 0x00, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48,
+    0xce, 0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03,
+    0x01, 0x07, 0x04, 0x27, 0x30, 0x25, 0x02, 0x01, 0x01, 0x04, 0x20,
+  ]);
+  const out = new Uint8Array(prefix.length + scalar32.length);
+  out.set(prefix, 0);
+  out.set(scalar32, prefix.length);
+  return out.buffer;
+}
+
+/**
+ * DER-encode a raw ECDSA `r || s` blob (64 bytes for P-256). Turnkey
+ * expects this DER form, lowercase hex, in the stamp envelope's
+ * `signature` field — WebCrypto's `crypto.subtle.sign` returns raw
+ * concatenated r‖s instead, so we convert here.
+ */
+function rsToDerHex(rs: Uint8Array): string {
+  if (rs.length !== 64) {
+    throw new Error(
+      `unexpected ECDSA signature length: ${rs.length} (want 64 for P-256 r||s)`,
+    );
+  }
+  const encodeInteger = (value: Uint8Array): Uint8Array => {
+    let start = 0;
+    while (start < value.length - 1 && value[start] === 0) start += 1;
+    let body = value.slice(start);
+    // DER INTEGER is two's-complement signed; prepend 0x00 if the high
+    // bit of the first byte would otherwise mark the value negative.
+    if (body[0] & 0x80) {
+      const padded = new Uint8Array(body.length + 1);
+      padded[0] = 0x00;
+      padded.set(body, 1);
+      body = padded;
+    }
+    const out = new Uint8Array(body.length + 2);
+    out[0] = 0x02; // INTEGER tag
+    out[1] = body.length;
+    out.set(body, 2);
+    return out;
+  };
+  const rEnc = encodeInteger(rs.slice(0, 32));
+  const sEnc = encodeInteger(rs.slice(32, 64));
+  const seqLen = rEnc.length + sEnc.length;
+  const der = new Uint8Array(seqLen + 2);
+  der[0] = 0x30; // SEQUENCE tag
+  der[1] = seqLen;
+  der.set(rEnc, 2);
+  der.set(sEnc, 2 + rEnc.length);
+  return Array.from(der)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function createStamp(
   privateKeyPem: string,
   publicKeyHex: string,
   requestBody: string,
 ): Promise<TurnkeyStamp> {
-  const key = await importPKCS8(privateKeyPem, "ES256");
+  const key = await importStamperKey(privateKeyPem);
   const sigBytes = new Uint8Array(
     await crypto.subtle.sign(
       { name: "ECDSA", hash: { name: "SHA-256" } },
@@ -85,7 +172,7 @@ export async function createStamp(
   const envelope = JSON.stringify({
     publicKey: publicKeyHex,
     scheme: "SIGNATURE_SCHEME_TK_API_P256",
-    signature: bytesToBase64Url(sigBytes),
+    signature: rsToDerHex(sigBytes),
   });
   return { header: strToBase64Url(envelope) };
 }

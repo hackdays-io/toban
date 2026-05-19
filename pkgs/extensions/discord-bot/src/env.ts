@@ -28,6 +28,15 @@ export interface Env {
    * implementations independently, see `BigBang.switchThanksToken`).
    */
   GOLDSKY_GRAPHQL_ENDPOINT: string;
+  /**
+   * Goldsky Hats Protocol subgraph endpoint for the same chain. /thx
+   * combines the Toban subgraph's FractionToken balances with the
+   * Hats subgraph's "hats this wallet wears" to build the role-context
+   * array for `mintFrom`. Freshly-minted hats may not yet be reflected
+   * in the Toban subgraph's auto-share-mint indexing, so the Hats path
+   * is the authoritative "I'm wearing this" signal.
+   */
+  HATS_GRAPHQL_ENDPOINT: string;
   /** Public frontend URL; used to construct `/connect/discord?token=...`. */
   TOBAN_FRONTEND_URL: string;
   /**

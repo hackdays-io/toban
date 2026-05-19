@@ -10,7 +10,8 @@
     "HatsTimeFrameModule": "0x7fa6c0F8e4412ED72Ded8d591ABF58B276A992C9",
     "ProxyAdmin": "0xdAEC7C851DA8E9b041e4592fdCF19843Bc1f8bE8\"",
     "ThanksTokenFactory_Implementation": "0x9ab446cBC1082B654d604721879Fd9f368d39370",
-    "ThanksTokenFactory": "0xa52E399Bc54f7CeB9d74784dC5D6289B7d970d1C"
+    "ThanksTokenFactory": "0xa52E399Bc54f7CeB9d74784dC5D6289B7d970d1C",
+    "ThanksToken_Implementation": "0xc19A8B77c7127d28e8C7881ba72e9A9128BbD5D1"
   },
   "implementations": {
     "FractionToken_Implementation": "0x6d701256205019e40cE02e13D799ed2cd3BBE8e8",

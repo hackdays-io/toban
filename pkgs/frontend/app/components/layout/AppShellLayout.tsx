@@ -25,6 +25,8 @@ interface AppShellHandle {
 // Only the `/{treeId}/...` routes get wrapped with AppShell. These segments
 // must be excluded so the auth and workspace-bootstrap surfaces stay
 // shell-less. `transaction` is included for the legacy send screen.
+// `connect` is the external-service binding landing (e.g. /connect/discord)
+// — a deep-link single-purpose page, so no nav.
 const SHELL_LESS_FIRST_SEGMENTS = new Set([
   "",
   "login",
@@ -32,6 +34,7 @@ const SHELL_LESS_FIRST_SEGMENTS = new Set([
   "transaction",
   "workspace",
   "api",
+  "connect",
 ]);
 
 function isShellRoute(pathname: string): { active: boolean; treeId?: string } {

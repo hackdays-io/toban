@@ -1,0 +1,26 @@
+name = "toban-identity"
+main = "src/worker.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 is shared with `@toban/discord-bot`. `database_id` is per-environment —
+# replace with the real ID when provisioning a Cloudflare account
+# (`wrangler d1 create toban-identity-<env>`). In local dev `wrangler dev`
+# defaults to a local SQLite under `.wrangler/state/` keyed by `database_name`,
+# so the placeholder ID below works fine for `pnpm identity dev`.
+[[d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
+
+# Secrets (set via `wrangler secret put <NAME>`, or via `.dev.vars` for local):
+#   DISCORD_BOT_VERIFIER_PUBLIC_KEY  - ES256 SPKI PEM matching the discord-bot
+#                                      worker's VERIFIER_PRIVATE_KEY. Used to
+#                                      verify verifier_token JWTs.
+#   RPC_URL                          - Sepolia/Base RPC endpoint for EIP-1271
+#                                      and ERC-6492 smart-wallet signature
+#                                      verification on /api/connect.
+#
+# No top-level [vars] block: keep both values as secrets so the Alchemy API
+# key inside RPC_URL never lands in git. Local dev reads .dev.vars (also
+# gitignored) for the same names.

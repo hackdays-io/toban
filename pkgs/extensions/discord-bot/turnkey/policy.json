@@ -1,0 +1,93 @@
+{
+  "_comment": [
+    "Turnkey policy attached to the bot's signing key. This file is the",
+    "source of truth — changes are PR-reviewed and applied to Turnkey via",
+    "`docs/turnkey-setup.md`.",
+    "",
+    "Turnkey's policy schema continues to evolve (selector / `from` set",
+    "matching in particular). The fields below reflect the model we",
+    "design against in code; the actual JSON you upload may need shape",
+    "adjustments. Read this as 'the rules we intend to enforce', not",
+    "'the literal Turnkey JSON'."
+  ],
+  "policyName": "toban-discord-bot-mintFrom-only",
+  "effect": "EFFECT_ALLOW",
+  "consensus": "approvers.any(user, user.tags.contains('toban-discord-bot'))",
+  "condition": "and(allOf)",
+  "rules": [
+    {
+      "id": "to-must-be-registered-thanks-token",
+      "_comment": [
+        "Only allow txs whose `to` is a Toban-registered ThanksToken",
+        "contract. The registry is maintained out of band (env var",
+        "`THANKS_TOKEN_ADDRESS` for MVP single-workspace; future: a",
+        "subgraph-synced JSON list of addresses uploaded as a Turnkey",
+        "tag set)."
+      ],
+      "expression": "eth.tx.to in tag('toban-thanks-token-registry')"
+    },
+    {
+      "id": "selector-must-be-mintFrom",
+      "_comment": [
+        "Function selector for the ThanksToken mint primitive (#506):",
+        "  mintFrom(address,address,uint256,(uint256,address)[],bytes)",
+        "= keccak256(sig)[0:4] = 0x40062e89.",
+        "If the contract's `mintFrom` signature ever changes (including",
+        "the `RelatedRole` struct shape), recompute and update both this",
+        "selector and the matching ABI in `src/chain.ts`."
+      ],
+      "expression": "eth.tx.data.selector == '0x40062e89'"
+    },
+    {
+      "id": "from-must-be-known-wallet",
+      "_comment": [
+        "The decoded `from` argument of mintFrom (the token holder",
+        "whose allowance is being spent) must be a wallet known to the",
+        "subgraph as IdentityBound. We maintain this as a Turnkey tag",
+        "set updated by a periodic worker cron that reads the",
+        "subgraph's IdentityBinding entity. TODO: implement the cron",
+        "in a follow-up issue."
+      ],
+      "expression": "eth.tx.data.args[0] in tag('toban-identity-bound-wallets')"
+    },
+    {
+      "id": "spender-must-be-this-signer",
+      "_comment": [
+        "Defence in depth: the `msg.sender` of mintFrom (set by",
+        "Turnkey to the signing key's own address) is automatically",
+        "this key, but we re-state it here so a future change that",
+        "splits signing across multiple keys doesn't bypass it."
+      ],
+      "expression": "eth.tx.from == private_key.address"
+    },
+    {
+      "id": "value-must-be-zero",
+      "_comment": [
+        "mintFrom is non-payable; reject any tx that attaches ETH to",
+        "avoid funding bugs from draining the gas balance."
+      ],
+      "expression": "eth.tx.value == 0"
+    },
+    {
+      "id": "rate-limit",
+      "_comment": [
+        "Example rate limit; Turnkey's rate-limit primitive may be",
+        "named differently or live outside policy. Adjust when",
+        "applying. The intent: cap mintFrom rate per signer key per",
+        "minute to limit blast radius of a stamper-key compromise."
+      ],
+      "expression": "rate(eth.tx.signCount, 60s) < 30"
+    }
+  ],
+  "_notes": [
+    "Tag-based sets ('toban-thanks-token-registry',",
+    "'toban-identity-bound-wallets') are intended to be kept in sync by",
+    "an out-of-band worker / cron that reads the Toban subgraph and",
+    "calls Turnkey's tag-update API. Until that cron exists, we operate",
+    "with a single ThanksToken address and an explicit allowlist.",
+    "",
+    "The selector `0x40062e89` is bound to the canonical signature",
+    "`mintFrom(address,address,uint256,(uint256,address)[],bytes)` —",
+    "see `src/chain.ts` for the matching ABI fragment."
+  ]
+}

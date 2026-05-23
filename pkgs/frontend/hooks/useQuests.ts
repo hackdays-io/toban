@@ -21,12 +21,13 @@ export type QuestApprovalEntry = NonNullable<
 >[number]["approvals"][number];
 
 const queryGetQuests = gql(`
-  query GetQuestsForWorkspace($workspaceId: String!, $first: Int = 10, $statuses: [QuestStatus!]) {
+  query GetQuestsForWorkspace($workspaceId: String!, $first: Int = 10, $skip: Int = 0, $statuses: [QuestStatus!]) {
     quests(
       where: { workspace: $workspaceId, status_in: $statuses }
       orderBy: createdAt
       orderDirection: desc
       first: $first
+      skip: $skip
     ) {
       id
       questId
@@ -94,15 +95,17 @@ const ALL_QUEST_STATUSES: QuestStatusGql[] = [
 
 export const useQuests = (
   workspaceId?: string,
-  options?: { statuses?: QuestStatus[]; first?: number },
+  options?: { statuses?: QuestStatus[]; first?: number; skip?: number },
 ) => {
-  const { data, loading, error, refetch } = useQuery<
+  const first = options?.first ?? 10;
+  const { data, loading, error, refetch, fetchMore } = useQuery<
     GetQuestsForWorkspaceQuery,
     GetQuestsForWorkspaceQueryVariables
   >(queryGetQuests, {
     variables: {
       workspaceId: workspaceId ?? "",
-      first: options?.first ?? 10,
+      first,
+      skip: options?.skip ?? 0,
       statuses:
         (options?.statuses as QuestStatusGql[] | undefined) ??
         ALL_QUEST_STATUSES,
@@ -116,11 +119,32 @@ export const useQuests = (
     nextFetchPolicy: "cache-and-network",
   });
 
+  const quests = data?.quests ?? [];
+
+  // Paginates by issuing a new `first/skip` request and concatenating the
+  // new batch onto the existing list in cache. Returns the number of new
+  // rows fetched so the caller can decide whether more pages remain.
+  const loadMore = async (pageSize: number = first): Promise<number> => {
+    if (!workspaceId) return 0;
+    const result = await fetchMore({
+      variables: { skip: quests.length, first: pageSize },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult?.quests?.length) return prev;
+        return {
+          ...prev,
+          quests: [...prev.quests, ...fetchMoreResult.quests],
+        };
+      },
+    });
+    return result.data?.quests?.length ?? 0;
+  };
+
   return {
-    quests: data?.quests ?? [],
+    quests,
     isLoading: loading,
     error,
     refetch,
+    loadMore,
   };
 };
 

@@ -11,6 +11,7 @@ import {
   LuCopy,
   LuHeart,
   LuHouse,
+  LuListChecks,
   LuLogOut,
   LuMail,
   LuPencil,
@@ -42,6 +43,7 @@ import { cn } from "~/lib/utils";
 const iconRegistry = {
   home: LuHouse,
   duty: LuUserCog,
+  quest: LuListChecks,
   split: LuChartPie,
   members: LuUsers,
   wallet: LuWallet,

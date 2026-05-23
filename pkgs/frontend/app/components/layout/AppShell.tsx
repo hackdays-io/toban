@@ -11,7 +11,7 @@ interface AppShellProps extends React.ComponentProps<"div"> {
     name: string;
     imageUrl?: string;
   };
-  /** Active nav key — e.g. "home" / "duties" / "splits" / "members" / "wallet". */
+  /** Active nav key — e.g. "home" / "duties" / "splits" / "members" / "activity". */
   active: string;
   /** Called from BottomNav (mobile) and Sidebar (desktop). */
   onNavigate: (key: string) => void;

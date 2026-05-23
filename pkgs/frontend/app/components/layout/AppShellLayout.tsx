@@ -51,8 +51,8 @@ function deriveActiveKey(pathname: string): string {
   if (!section) return "home";
   if (section === "splits") return "splits";
   if (section === "member" || section === "members") return "members";
-  if (section === "thankstoken") return "wallet";
-  if (section === "history") return "wallet";
+  if (section === "thankstoken") return "activity";
+  if (section === "history") return "activity";
   if (section === "role" || section === "roles") return "duties";
   if (section === "settings") return "home";
   // Hat-id deep paths like `/{treeId}/{hatId}/...` count as duties.
@@ -128,8 +128,8 @@ function ShellView({ treeId }: ShellViewProps) {
       case "members":
         navigate(`/${treeId}/member`);
         break;
-      case "wallet":
-        navigate(`/${treeId}/thankstoken/history`);
+      case "activity":
+        navigate(`/${treeId}/history`);
         break;
       default:
         navigate(`/${treeId}`);

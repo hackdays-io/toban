@@ -14,7 +14,7 @@ const DEFAULT_ITEMS: ReadonlyArray<BottomNavItem> = [
   { key: "duties", label: "当番", icon: "duty" },
   { key: "splits", label: "分配", icon: "split" },
   { key: "members", label: "メンバー", icon: "members" },
-  { key: "wallet", label: "ウォレット", icon: "wallet" },
+  { key: "activity", label: "アクティビティ", icon: "bell" },
 ];
 
 interface BottomNavProps extends Omit<React.ComponentProps<"nav">, "onChange"> {

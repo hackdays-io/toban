@@ -20,7 +20,7 @@ export const Interactive: Story = () => {
 
 export const EachActiveState: Story = () => (
   <div className="space-y-3">
-    {["home", "duties", "splits", "members", "wallet"].map((key) => (
+    {["home", "duties", "splits", "members", "activity"].map((key) => (
       <div key={key} className="w-[420px] border-x">
         <BottomNav active={key} onChange={() => {}} />
       </div>

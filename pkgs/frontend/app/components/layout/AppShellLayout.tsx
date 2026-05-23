@@ -54,6 +54,7 @@ function deriveActiveKey(pathname: string): string {
   if (section === "thankstoken") return "activity";
   if (section === "history") return "activity";
   if (section === "role" || section === "roles") return "duties";
+  if (section === "quest") return "quests";
   if (section === "settings") return "home";
   // Hat-id deep paths like `/{treeId}/{hatId}/...` count as duties.
   return "duties";
@@ -122,6 +123,9 @@ function ShellView({ treeId }: ShellViewProps) {
       case "duties":
         navigate(`/${treeId}/role`);
         break;
+      case "quests":
+        navigate(`/${treeId}/quest`);
+        break;
       case "splits":
         navigate(`/${treeId}/splits`);
         break;
@@ -148,6 +152,8 @@ function ShellView({ treeId }: ShellViewProps) {
         active={active}
         onNavigate={handleNavigate}
         onWorkspacePress={() => setSwitcherOpen(true)}
+        onNotificationsPress={() => navigate(`/${treeId}/history`)}
+        notificationsActive={active === "activity"}
         appHeaderRight={<AccountMenu variant="compact" />}
       >
         <Outlet />

@@ -5,7 +5,7 @@ import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 import { AccountMenu } from "./AccountMenu";
-import { type BottomNavItem, DEFAULT_BOTTOM_NAV_ITEMS } from "./BottomNav";
+import { type BottomNavItem, DESKTOP_NAV_ITEMS } from "./BottomNav";
 
 interface SidebarProps extends React.ComponentProps<"aside"> {
   workspaceName: string;
@@ -25,7 +25,7 @@ function Sidebar({
   onWorkspacePress,
   active,
   onNavigate,
-  items = DEFAULT_BOTTOM_NAV_ITEMS,
+  items = DESKTOP_NAV_ITEMS,
   className,
   ...rest
 }: SidebarProps) {

@@ -6,21 +6,19 @@ import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useHasCreatorAuthority } from "hooks/useHatsHatCreatorModule";
 import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
-import { useQuestMetadata } from "hooks/useQuestMetadata";
-import { type Quest, type QuestStatus, useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
-import { type FC, Fragment, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
+
 import { Breadcrumb } from "~/components/composite/breadcrumb";
 import { SectionLabel } from "~/components/composite/section-label";
 import { Segmented } from "~/components/composite/segmented";
 import { PageContainer } from "~/components/layout/PageContainer";
-import { QuestStateBadge } from "~/components/quests/QuestStateBadge";
 import {
   Avatar,
   AvatarFallback,
@@ -33,9 +31,9 @@ import { Card } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
+import { WorkspaceHeader } from "~/components/workspace/WorkspaceHeader";
 import { cn } from "~/lib/utils";
 
-type DutyView = "duties" | "quests";
 type DutyFilter = "mine" | "all" | "open";
 
 // IPFS-backed Hat metadata. Shares the `["hats-detail", url]` cache key with
@@ -64,7 +62,6 @@ const WorkspaceRoles: FC = () => {
 
   const tree = useTreeInfo(Number(treeId));
 
-  const [view, setView] = useState<DutyView>("duties");
   const [filter, setFilter] = useState<DutyFilter>("all");
 
   // Role-branch hats only (0001). 0002 is the admin/operator branch and is
@@ -190,52 +187,24 @@ const WorkspaceRoles: FC = () => {
 
       {/* Mobile single-column. */}
       <div className="md:hidden">
-        <header className="mb-3 flex items-start justify-between gap-3 px-1">
-          <div className="min-w-0 flex-1">
-            <Heading variant="h2" level={1}>
-              当番
-            </Heading>
-            <Typography variant="bodySm" tone="secondary" className="mt-0.5">
-              コミュニティの役割と関わり
-            </Typography>
-          </div>
-          {canCreateDuty && (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={goCreateDuty}
-              className="shrink-0"
-            >
-              <Icon name="plus" size={14} />
-              作成
-            </Button>
-          )}
-        </header>
+        <WorkspaceHeader
+          title="当番"
+          subtitle="コミュニティの役割と関わり"
+          ctaLabel="作成"
+          onCtaClick={goCreateDuty}
+          showCta={canCreateDuty}
+        />
 
-        <div className="px-1 pb-3">
-          <Segmented
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "duties", label: "当番" },
-              { value: "quests", label: "クエスト" },
-            ]}
-            className="w-full"
-          />
-        </div>
+        <div className="pt-3" />
 
-        {view === "duties" ? (
-          <DutiesPanel
-            duties={filteredDuties}
-            filter={filter}
-            onFilterChange={setFilter}
-            treeId={treeId ?? ""}
-            nameByAddress={nameByAddress}
-            supportersByHat={supportersByHat}
-          />
-        ) : (
-          <QuestsPanel treeId={treeId} dutyHats={dutyHats} />
-        )}
+        <DutiesPanel
+          duties={filteredDuties}
+          filter={filter}
+          onFilterChange={setFilter}
+          treeId={treeId ?? ""}
+          nameByAddress={nameByAddress}
+          supportersByHat={supportersByHat}
+        />
       </div>
 
       {/* Desktop master + summary. */}
@@ -243,8 +212,6 @@ const WorkspaceRoles: FC = () => {
         <DesktopRolesView
           dutyHats={dutyHats}
           filteredDuties={filteredDuties}
-          view={view}
-          onViewChange={setView}
           filter={filter}
           onFilterChange={setFilter}
           treeId={treeId ?? ""}
@@ -527,184 +494,11 @@ const DutyIcon: FC<{ imageUrl?: string; size: "sm" | "md" }> = ({
   </div>
 );
 
-// ───────────────────────── Quests panel ─────────────────────────
-
-interface QuestsPanelProps {
-  treeId?: string;
-  dutyHats: Hat[];
-}
-
-const QuestsPanel: FC<QuestsPanelProps> = ({ treeId, dutyHats }) => {
-  const { quests, isLoading } = useQuests(treeId, { first: 50 });
-
-  // Map hatId (decimal, returned by the Quest entity) → hat detail URI so
-  // each quest card can show its parent duty's name without re-fetching.
-  const hatByDecimalId = useMemo(() => {
-    const map = new Map<string, Hat>();
-    for (const h of dutyHats) {
-      try {
-        map.set(BigInt(h.id).toString(), h);
-      } catch {
-        // ignore non-hex ids
-      }
-    }
-    return map;
-  }, [dutyHats]);
-
-  const groups: { status: QuestStatus; title: string }[] = [
-    { status: "Open", title: "募集中のクエスト" },
-    { status: "PendingReview", title: "確認待ち" },
-    { status: "Completed", title: "完了" },
-    { status: "Cancelled", title: "キャンセル" },
-  ];
-
-  const hasAny = quests.length > 0;
-
-  if (isLoading && !hasAny) {
-    return (
-      <Card className="mx-1 py-8 text-center">
-        <Typography variant="bodySm" tone="secondary">
-          クエストを読み込み中…
-        </Typography>
-      </Card>
-    );
-  }
-
-  if (!hasAny) {
-    return (
-      <Card className="mx-1 py-8 text-center">
-        <Typography variant="bodySm" tone="secondary">
-          クエストはまだありません
-        </Typography>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {groups.map((g) => {
-        const items = quests.filter((q) => q.status === g.status);
-        if (items.length === 0) return null;
-        return (
-          <Fragment key={g.status}>
-            <SectionLabel className="px-1">
-              {g.title}（{items.length}）
-            </SectionLabel>
-            <div className="flex flex-col gap-2 px-1">
-              {items.map((q) => (
-                <QuestCard
-                  key={q.id}
-                  quest={q}
-                  hat={hatByDecimalId.get(q.hatId)}
-                  treeId={treeId}
-                />
-              ))}
-            </div>
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-};
-
-interface QuestCardProps {
-  quest: Quest;
-  hat?: Hat;
-  treeId?: string;
-}
-
-const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
-  const detail = useHatDetail(hat?.details);
-  const dutyName = detail?.data?.name;
-  const { data: meta } = useQuestMetadata(quest.metadataHash);
-  const title = meta?.title ?? `Quest #${quest.questId}`;
-  const shareAmount = (() => {
-    try {
-      return BigInt(quest.amount).toLocaleString();
-    } catch {
-      return "0";
-    }
-  })();
-
-  const card = (
-    <Card className="gap-2 px-3.5 py-3 transition-colors hover:bg-bg">
-      <div className="flex items-start gap-2.5">
-        <div className="min-w-0 flex-1">
-          {dutyName && (
-            <Typography
-              as="div"
-              variant="micro"
-              tone="secondary"
-              weight="bold"
-              truncate
-              className="mb-0.5"
-            >
-              {dutyName}
-            </Typography>
-          )}
-          <Typography as="div" variant="bodySm" weight="bold" truncate>
-            {title}
-          </Typography>
-          <div className="mt-1 flex items-center gap-2">
-            <QuestStateBadge status={quest.status} />
-            <Typography variant="micro" tone="secondary" as="span">
-              {questMeta(quest)}
-            </Typography>
-          </div>
-        </div>
-        <div className="shrink-0 text-right">
-          <Typography variant="micro" tone="secondary" as="div">
-            当番シェア
-          </Typography>
-          <Typography
-            as="div"
-            variant="statMd"
-            className="text-primary tracking-[-0.5px]"
-          >
-            +{shareAmount}
-          </Typography>
-        </div>
-      </div>
-    </Card>
-  );
-
-  if (treeId) {
-    return (
-      <Link
-        to={`/${treeId}/quest/${quest.questId}`}
-        className="block focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-      >
-        {card}
-      </Link>
-    );
-  }
-  return card;
-};
-
-const questMeta = (q: Quest): string => {
-  if (q.status === "Open") {
-    return `作成者: ${abbreviateAddress(q.creator as `0x${string}`)}`;
-  }
-  if (q.status === "PendingReview") {
-    return `申請者: ${
-      q.submitter ? abbreviateAddress(q.submitter as `0x${string}`) : "-"
-    }・承認 ${q.approvalCount}/2`;
-  }
-  if (q.status === "Completed") {
-    return `${
-      q.submitter ? abbreviateAddress(q.submitter as `0x${string}`) : "-"
-    } が完了`;
-  }
-  return "";
-};
-
 // ───────────────────────── Desktop master-detail ─────────────────────────
 
 interface DesktopRolesViewProps {
   dutyHats: Hat[];
   filteredDuties: Hat[];
-  view: DutyView;
-  onViewChange: (v: DutyView) => void;
   filter: DutyFilter;
   onFilterChange: (f: DutyFilter) => void;
   treeId: string;
@@ -718,8 +512,6 @@ interface DesktopRolesViewProps {
 const DesktopRolesView: FC<DesktopRolesViewProps> = ({
   dutyHats,
   filteredDuties,
-  view,
-  onViewChange,
   filter,
   onFilterChange,
   treeId,
@@ -741,79 +533,50 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
     <div className="grid grid-cols-[320px_1fr] gap-6">
       {/* Master */}
       <aside className="flex flex-col gap-3">
-        <header className="flex items-start justify-between gap-3 px-1">
-          <div className="min-w-0 flex-1">
-            <Heading variant="h2" level={1}>
-              当番
-            </Heading>
-            <Typography variant="bodySm" tone="secondary" className="mt-0.5">
-              コミュニティの役割と関わり
-            </Typography>
-          </div>
-          {canCreateDuty && (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={onCreate}
-              className="shrink-0"
-            >
-              <Icon name="plus" size={14} />
-              作成
-            </Button>
-          )}
-        </header>
+        <WorkspaceHeader
+          title="当番"
+          subtitle="コミュニティの役割と関わり"
+          ctaLabel="作成"
+          onCtaClick={onCreate}
+          showCta={canCreateDuty}
+        />
         <Segmented
-          value={view}
-          onChange={onViewChange}
+          value={filter}
+          onChange={onFilterChange}
           options={[
-            { value: "duties", label: "当番" },
-            { value: "quests", label: "クエスト" },
+            { value: "mine", label: "あなた" },
+            { value: "all", label: "すべて" },
+            { value: "open", label: "空き" },
           ]}
           className="w-full"
         />
-        {view === "duties" ? (
-          <>
-            <Segmented
-              value={filter}
-              onChange={onFilterChange}
-              options={[
-                { value: "mine", label: "あなた" },
-                { value: "all", label: "すべて" },
-                { value: "open", label: "空き" },
-              ]}
-              className="w-full"
-            />
-            {filteredDuties.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                {filteredDuties.map((h) => (
-                  <DutyCard
-                    key={h.id}
-                    hat={h}
-                    treeId={treeId}
-                    nameByAddress={nameByAddress}
-                    supporters={supportersByHat.get(h.id.toLowerCase()) ?? []}
-                    compact
-                    selected={h.id === selectedHat?.id}
-                    onSelect={() => setSelectedId(h.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card className="py-6 text-center">
-                <Typography variant="bodySm" tone="secondary">
-                  {emptyLabel(filter)}
-                </Typography>
-              </Card>
-            )}
-          </>
+        {filteredDuties.length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            {filteredDuties.map((h) => (
+              <DutyCard
+                key={h.id}
+                hat={h}
+                treeId={treeId}
+                nameByAddress={nameByAddress}
+                supporters={supportersByHat.get(h.id.toLowerCase()) ?? []}
+                compact
+                selected={h.id === selectedHat?.id}
+                onSelect={() => setSelectedId(h.id)}
+              />
+            ))}
+          </div>
         ) : (
-          <QuestsPanel treeId={treeId} dutyHats={dutyHats} />
+          <Card className="py-6 text-center">
+            <Typography variant="bodySm" tone="secondary">
+              {emptyLabel(filter)}
+            </Typography>
+          </Card>
         )}
       </aside>
 
       {/* Detail */}
       <section>
-        {view === "duties" && selectedHat ? (
+        {selectedHat ? (
           <DutyDetailPreview
             hat={selectedHat}
             treeId={treeId}
@@ -821,16 +584,10 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
             supporters={supportersByHat.get(selectedHat.id.toLowerCase()) ?? []}
             canAssign={canAssignDuty}
           />
-        ) : view === "duties" ? (
-          <Card className="py-12 text-center">
-            <Typography variant="bodySm" tone="secondary">
-              当番を選択してください
-            </Typography>
-          </Card>
         ) : (
           <Card className="py-12 text-center">
             <Typography variant="bodySm" tone="secondary">
-              左のリストからクエストを選択してください
+              当番を選択してください
             </Typography>
           </Card>
         )}

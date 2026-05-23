@@ -15,6 +15,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
+import { Breadcrumb } from "~/components/composite/breadcrumb";
 import {
   DONUT_PALETTE,
   DonutChart,
@@ -22,13 +23,13 @@ import {
 } from "~/components/composite/donut-chart";
 import { EmptyState } from "~/components/composite/empty-state";
 import { SectionLabel } from "~/components/composite/section-label";
-import { MasterDetailLayout } from "~/components/layout/MasterDetailLayout";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
+import { WorkspaceHeader } from "~/components/workspace/WorkspaceHeader";
 import { cn } from "~/lib/utils";
 
 interface ConsolidatedRecipients {
@@ -183,45 +184,41 @@ const SplitsIndex: FC = () => {
   const goToDetail = (addr: string) => navigate(`/${treeId}/splits/${addr}`);
 
   return (
-    <>
-      {/* Mobile / tablet layout. */}
-      <PageContainer className="md:hidden pt-2 pb-10">
-        <header className="mb-4 flex items-end justify-between gap-3 px-1">
-          <div className="min-w-0">
-            <Heading variant="h2" level={1}>
-              分配
-            </Heading>
-            <Typography variant="bodySm" tone="secondary" className="mt-0.5">
-              貢献記録から、納得できる分配へ
-            </Typography>
-          </div>
-          <Button asChild size="sm" variant="primary" className="shrink-0">
-            <Link to={`/${treeId}/splits/new`}>
-              <Icon name="plus" size={16} />
-              新規作成
-            </Link>
-          </Button>
-        </header>
+    <PageContainer className="pt-4 pb-8 md:pt-6">
+      <Breadcrumb
+        className="mb-3 px-1"
+        items={[{ label: "ホーム", to: `/${treeId}` }, { label: "分配ルール" }]}
+      />
+
+      {/* Mobile single-column. */}
+      <div className="md:hidden">
+        <WorkspaceHeader
+          title="分配"
+          subtitle="splitsで安全に分配"
+          ctaLabel="作成"
+          ctaTo={`/${treeId}/splits/new`}
+          showCta
+        />
 
         {activeBalances.length > 0 && (
           <UnclaimedRewardsCard
             balances={activeBalances}
             onWithdraw={(addr) => userEarnings.withdraw(addr as Address)}
             isWithdrawing={userEarnings.isWithdrawing}
-            className="mx-1 mb-4"
+            className="mx-1 mt-4 mb-4"
           />
         )}
 
-        <SectionLabel className="px-1">分配ルール</SectionLabel>
+        <SectionLabel className="mt-4 px-1">分配ルール</SectionLabel>
 
         {isLoading && items.length === 0 ? (
-          <Card className="mx-1 py-8 text-center">
+          <Card className="mx-1 mt-2 py-8 text-center">
             <Typography variant="bodySm" tone="secondary">
               読み込み中…
             </Typography>
           </Card>
         ) : items.length === 0 ? (
-          <Card className="mx-1">
+          <Card className="mx-1 mt-2">
             <EmptyState
               icon={<Icon name="pie" size={26} />}
               title="まだ分配ルールはありません"
@@ -237,7 +234,7 @@ const SplitsIndex: FC = () => {
             />
           </Card>
         ) : (
-          <div className="flex flex-col gap-3 px-1">
+          <div className="mt-2 flex flex-col gap-3 px-1">
             {items.map((item) => (
               <SplitListCard
                 key={item.split.address}
@@ -248,80 +245,73 @@ const SplitsIndex: FC = () => {
             ))}
           </div>
         )}
-      </PageContainer>
+      </div>
 
-      {/* Desktop master-detail. */}
+      {/* Desktop master-detail — matches the role / member 320 + 1fr grid. */}
       <div className="hidden md:block">
-        <MasterDetailLayout
-          master={
-            <div className="flex flex-col gap-3 p-4">
-              <Button asChild variant="primary" full>
-                <Link to={`/${treeId}/splits/new`}>
-                  <Icon name="plus" size={16} />
-                  新規作成
-                </Link>
-              </Button>
-              {isLoading && items.length === 0 ? (
-                <Typography
-                  variant="bodySm"
-                  tone="secondary"
-                  className="px-2 py-4 text-center"
-                >
+        <div className="grid grid-cols-[320px_1fr] gap-6">
+          <aside className="flex flex-col gap-3">
+            <WorkspaceHeader
+              title="分配"
+              subtitle="splitsで安全に分配"
+              ctaLabel="作成"
+              ctaTo={`/${treeId}/splits/new`}
+              showCta
+            />
+            {isLoading && items.length === 0 ? (
+              <Card className="py-6 text-center">
+                <Typography variant="bodySm" tone="secondary">
                   読み込み中…
                 </Typography>
-              ) : items.length === 0 ? (
-                <Typography
-                  variant="bodySm"
-                  tone="secondary"
-                  className="px-2 py-4 text-center"
-                >
+              </Card>
+            ) : items.length === 0 ? (
+              <Card className="py-6 text-center">
+                <Typography variant="bodySm" tone="secondary">
                   分配ルールはまだありません
                 </Typography>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {items.map((item) => (
-                    <li key={item.split.address}>
-                      <MasterRow
-                        item={item}
-                        selected={
-                          item.split.address.toLowerCase() ===
-                          selectedItem?.split.address.toLowerCase()
-                        }
-                        onClick={() => setSelectedAddress(item.split.address)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          }
-          detail={
-            <div className="flex flex-col gap-5">
-              {activeBalances.length > 0 && (
-                <UnclaimedRewardsCard
-                  balances={activeBalances}
-                  onWithdraw={(addr) => userEarnings.withdraw(addr as Address)}
-                  isWithdrawing={userEarnings.isWithdrawing}
-                />
-              )}
-              {selectedItem ? (
-                <DesktopDetailPreview
-                  item={selectedItem}
-                  recipientNameByAddress={recipientNameByAddress}
-                  treeId={treeId ?? ""}
-                />
-              ) : (
-                <Card className="py-12 text-center">
-                  <Typography variant="bodySm" tone="secondary">
-                    分配ルールを選択してください
-                  </Typography>
-                </Card>
-              )}
-            </div>
-          }
-        />
+              </Card>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {items.map((item) => (
+                  <li key={item.split.address}>
+                    <MasterRow
+                      item={item}
+                      selected={
+                        item.split.address.toLowerCase() ===
+                        selectedItem?.split.address.toLowerCase()
+                      }
+                      onClick={() => setSelectedAddress(item.split.address)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+          <section className="flex flex-col gap-5">
+            {activeBalances.length > 0 && (
+              <UnclaimedRewardsCard
+                balances={activeBalances}
+                onWithdraw={(addr) => userEarnings.withdraw(addr as Address)}
+                isWithdrawing={userEarnings.isWithdrawing}
+              />
+            )}
+            {selectedItem ? (
+              <DesktopDetailPreview
+                item={selectedItem}
+                recipientNameByAddress={recipientNameByAddress}
+                treeId={treeId ?? ""}
+              />
+            ) : (
+              <Card className="py-12 text-center">
+                <Typography variant="bodySm" tone="secondary">
+                  分配ルールを選択してください
+                </Typography>
+              </Card>
+            )}
+          </section>
+        </div>
       </div>
-    </>
+    </PageContainer>
   );
 };
 

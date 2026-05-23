@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Heading } from "~/components/ui/heading";
@@ -8,19 +9,26 @@ import { Typography } from "~/components/ui/typography";
 interface WorkspaceHeaderProps {
   title: string;
   subtitle?: string;
-  /** Renders a primary CTA in the trailing slot. Hidden when omitted. */
+  /** Label of the trailing primary CTA. Hidden when `showCta` is false. */
   ctaLabel?: string;
+  /** Click handler for the CTA. Mutually exclusive with `ctaTo` — when both are
+   *  set, `ctaTo` wins and the button renders as a `<Link>`. */
   onCtaClick?: () => void;
+  /** Navigation target for the CTA. Right-click / middle-click / cmd-click
+   *  behave like a normal link this way (the `<button>` variant doesn't). */
+  ctaTo?: string;
   showCta?: boolean;
 }
 
-// Shared page header for the workspace duty / quest routes. Owns the title,
-// subtitle, and optional "作成" CTA so both routes render identical chrome.
+// Shared page header for the workspace list routes (当番 / クエスト / 分配).
+// Owns the title, subtitle, and optional CTA so each list page renders
+// identical chrome.
 const WorkspaceHeader: FC<WorkspaceHeaderProps> = ({
   title,
   subtitle,
   ctaLabel,
   onCtaClick,
+  ctaTo,
   showCta = false,
 }) => (
   <header className="flex items-start justify-between gap-3 px-1">
@@ -35,18 +43,35 @@ const WorkspaceHeader: FC<WorkspaceHeaderProps> = ({
       )}
     </div>
     {showCta && ctaLabel && (
-      <Button
-        size="sm"
-        variant="primary"
-        onClick={onCtaClick}
-        className="shrink-0"
-      >
-        <Icon name="plus" size={14} />
-        {ctaLabel}
-      </Button>
+      <Cta label={ctaLabel} to={ctaTo} onClick={onCtaClick} />
     )}
   </header>
 );
+
+interface CtaProps {
+  label: string;
+  to?: string;
+  onClick?: () => void;
+}
+
+const Cta: FC<CtaProps> = ({ label, to, onClick }) => {
+  if (to) {
+    return (
+      <Button asChild size="sm" variant="primary" className="shrink-0">
+        <Link to={to}>
+          <Icon name="plus" size={14} />
+          {label}
+        </Link>
+      </Button>
+    );
+  }
+  return (
+    <Button size="sm" variant="primary" onClick={onClick} className="shrink-0">
+      <Icon name="plus" size={14} />
+      {label}
+    </Button>
+  );
+};
 
 export { WorkspaceHeader };
 export type { WorkspaceHeaderProps };

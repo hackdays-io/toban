@@ -45,21 +45,42 @@ const Login: FC = () => {
     }
   }, [wallets, isSmartWallet, logout]);
 
-  // Post-auth navigation. Once the embedded + smart wallet are ready,
-  // route returning users to /workspace and brand-new accounts (no ENS name
-  // yet) to /signup. Fixes issue #504: the previous flow awaited the
-  // namestone lookup with no error handling, so a failed request silently
-  // hung and left the user stranded on the login card. We now treat a
-  // lookup failure as "no profile yet" → /signup so the user always advances.
+  // Post-auth navigation. Routes returning users to /workspace and
+  // brand-new accounts (no ENS name yet) to /signup. Fixes issue #504:
+  //
+  // 1. The previous flow awaited the namestone lookup with no error
+  //    handling AND no timeout, so a slow/failed
+  //    `/api/namestone/resolve-names` call silently aborted the navigate
+  //    step and stuck the user on the "ウォレットに接続しています" card.
+  //    We now race the lookup against a short timeout and treat any
+  //    failure as "no profile yet" → /signup.
+  //
+  // 2. Previously the effect waited for `useActiveWallet`'s composite
+  //    wallet (smart wallet client or the viem walletClient). When
+  //    `useAccountClient` stalled on `getEthereumProvider`, that wallet
+  //    never resolved and the user was stuck. For embedded wallets the
+  //    `PrivyAppRoot` SmartWalletLoading gate already keeps this code
+  //    path off until the smart wallet is ready, so falling back to
+  //    `wallets[0].address` only kicks in for external wallets — where
+  //    that address is the right one to look up anyway.
   useEffect(() => {
-    if (!wallet) return;
-    const address = wallet.account?.address;
+    const address = wallet?.account?.address ?? wallets[0]?.address;
     if (!address) return;
 
+    const NAMESTONE_TIMEOUT_MS = 5000;
     let cancelled = false;
+
     const run = async () => {
       try {
-        const names = await fetchNames([address]);
+        const names = await Promise.race([
+          fetchNames([address]),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error("namestone-timeout")),
+              NAMESTONE_TIMEOUT_MS,
+            ),
+          ),
+        ]);
         if (cancelled) return;
         if (names?.[0]?.length === 0) {
           navigate("/signup");
@@ -76,7 +97,7 @@ const Login: FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [wallet, navigate, fetchNames]);
+  }, [wallet, wallets, navigate, fetchNames]);
 
   const isAuthenticated = wallets.length > 0;
   const isEmailValid = EMAIL_PATTERN.test(email);

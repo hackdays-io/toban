@@ -11,13 +11,11 @@ import { Link } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
-import { formatEther } from "viem";
 import { Divider } from "~/components/composite/divider";
 import { Row } from "~/components/composite/row";
 import { SectionLabel } from "~/components/composite/section-label";
 import { StatCard } from "~/components/composite/stat-card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
@@ -40,14 +38,6 @@ const useHatDetail = (detailsUri?: string) => {
     staleTime: 1000 * 60 * 60,
   });
   return data;
-};
-
-type MemberRole = "lead" | "supporter" | "member";
-
-const ROLE_LABEL: Record<MemberRole, string> = {
-  lead: "当番リード",
-  supporter: "サポーター",
-  member: "メンバー",
 };
 
 interface MemberDetailContentProps {
@@ -101,12 +91,6 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
     );
   }, [balanceData, lowerAddress]);
 
-  // FractionToken is ERC-1155 — balances are raw integer counts, no formatEther.
-  const totalShare = useMemo(
-    () => myBalances.reduce((acc, b) => acc + Number(b.balance), 0),
-    [myBalances],
-  );
-
   // Duty hats this member supports (holds a share in) but does not wear.
   const wearerHatIds = useMemo(
     () => new Set(wearerHats.map((h) => h.id.toLowerCase())),
@@ -127,31 +111,36 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
     );
   }, [myBalances, dutyHats, wearerHatIds]);
 
-  // Received ThanksToken — `amount` is 18-decimal wei; sum then format.
+  // ThanksToken — `useGetMintThanksTokens` already passes amounts through
+  // `formatEther`, so they come back as decimal strings ("1.0"). Sum as floats.
   const { data: receivedThanks } = useGetMintThanksTokens({
     where: { workspaceId: treeId, to: lowerAddress },
     orderBy: MintThanksToken_OrderBy.BlockTimestamp,
     orderDirection: OrderDirection.Desc,
     first: 1000,
   });
+  const { data: sentThanks } = useGetMintThanksTokens({
+    where: { workspaceId: treeId, from: lowerAddress },
+    orderBy: MintThanksToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
+    first: 1000,
+  });
   const receivedThx = useMemo(() => {
-    let total = 0n;
+    let total = 0;
     for (const m of receivedThanks?.mintThanksTokens ?? []) {
-      try {
-        total += BigInt(m.amount);
-      } catch {
-        // ignore unparseable amounts
-      }
+      const n = Number(m.amount);
+      if (Number.isFinite(n)) total += n;
     }
-    return Math.floor(Number(formatEther(total)));
+    return Math.floor(total);
   }, [receivedThanks]);
-
-  const role: MemberRole =
-    wearerHats.length > 0
-      ? "lead"
-      : supporterHats.length > 0
-        ? "supporter"
-        : "member";
+  const sentThx = useMemo(() => {
+    let total = 0;
+    for (const m of sentThanks?.mintThanksTokens ?? []) {
+      const n = Number(m.amount);
+      if (Number.isFinite(n)) total += n;
+    }
+    return Math.floor(total);
+  }, [sentThanks]);
 
   const displayName =
     identity?.name ?? abbreviateAddress(address as `0x${string}`);
@@ -181,9 +170,6 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
           <Typography as="span" variant="mono" tone="secondary">
             {abbreviateAddress(address as `0x${string}`)}
           </Typography>
-          <Badge kind={role} className="mt-1">
-            {ROLE_LABEL[role]}
-          </Badge>
         </div>
         {bio && (
           <Typography
@@ -216,8 +202,9 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
           unit="THX"
         />
         <StatCard
-          label="保有ロールシェア"
-          value={totalShare.toLocaleString()}
+          label="送ったサンクス"
+          value={sentThx.toLocaleString()}
+          unit="THX"
         />
       </div>
 

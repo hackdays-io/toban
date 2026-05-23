@@ -115,6 +115,8 @@ const ThanksTokenSend: FC = () => {
     const entry = preselectNames?.[0]?.[0];
     if (entry?.address) {
       setRecipients([entry]);
+      // Skip the recipient picker — the member detail CTA already named them.
+      setStep("compose");
       didPreselect.current = true;
     }
   }, [preselectTo, preselectNames, meAddrLower]);

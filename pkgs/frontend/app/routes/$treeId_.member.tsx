@@ -12,7 +12,6 @@ import { Row } from "~/components/composite/row";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { MemberDetailContent } from "~/components/members/MemberDetailContent";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
@@ -29,11 +28,6 @@ interface MemberEntry {
   avatarUrl?: string;
   role: MemberRole;
 }
-
-const ROLE_LABEL: Record<MemberRole, string> = {
-  lead: "当番リード",
-  supporter: "サポーター",
-};
 
 const WorkspaceMember: FC = () => {
   const { treeId } = useParams();
@@ -212,7 +206,6 @@ const MemberList: FC<MemberListProps> = ({
               left={<MemberAvatar member={m} />}
               title={m.name ?? abbreviateAddress(m.address as `0x${string}`)}
               subtitle={abbreviateAddress(m.address as `0x${string}`)}
-              right={<Badge kind={m.role}>{ROLE_LABEL[m.role]}</Badge>}
             />
           </Link>
         </div>
@@ -320,7 +313,6 @@ const DesktopMembersView: FC<DesktopMembersViewProps> = ({
                     {abbreviateAddress(m.address as `0x${string}`)}
                   </Typography>
                 </div>
-                <Badge kind={m.role}>{ROLE_LABEL[m.role]}</Badge>
               </button>
             ))}
           </div>
@@ -330,21 +322,19 @@ const DesktopMembersView: FC<DesktopMembersViewProps> = ({
       {/* Detail */}
       <section>
         {selected ? (
-          <Card className="px-6 py-7">
+          <Card className="gap-5 px-6 py-7">
             <MemberDetailContent
               treeId={treeId}
               address={selected.address}
               tree={tree}
               nameLevel={2}
             />
-            <div className="mt-5 flex justify-center">
-              <Button variant="secondary" size="sm" asChild>
-                <Link to={`/${treeId}/member/${selected.address}`}>
-                  詳細ページへ
-                  <Icon name="chevron-right" size={14} />
-                </Link>
-              </Button>
-            </div>
+            <Button variant="secondary" full asChild>
+              <Link to={`/${treeId}/member/${selected.address}`}>
+                詳細ページへ
+                <Icon name="chevron-right" size={16} />
+              </Link>
+            </Button>
           </Card>
         ) : (
           <Card className="py-16 text-center">

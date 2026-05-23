@@ -3,12 +3,19 @@ import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
 import { useGetMintThanksTokens, useThanksToken } from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
-import { type FC, type ReactNode, useMemo, useState } from "react";
+import {
+  type FC,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { LuCheck } from "react-icons/lu";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { ipfs2https } from "utils/ipfs";
-import { abbreviateAddress } from "utils/wallet";
+import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import { type Address, formatEther, parseEther, stringToHex } from "viem";
 import { Chip } from "~/components/composite/chip";
 import { Divider } from "~/components/composite/divider";
@@ -85,6 +92,34 @@ const ThanksTokenSend: FC = () => {
   const [recipients, setRecipients] = useState<NameData[]>([]);
   const [amount, setAmount] = useState<number>(0);
   const [message, setMessage] = useState<string>("");
+
+  // Preselect a recipient from a `?to=0x…` query param — used by the member
+  // detail "サンクスを送る" CTA. Applied once, after the address resolves.
+  const [searchParams] = useSearchParams();
+  const preselectTo = searchParams.get("to");
+  const { names: preselectNames } = useNamesByAddresses(
+    preselectTo && isValidEthAddress(preselectTo) ? [preselectTo] : undefined,
+  );
+  const didPreselect = useRef(false);
+  useEffect(() => {
+    if (didPreselect.current) return;
+    if (!preselectTo || !isValidEthAddress(preselectTo)) {
+      didPreselect.current = true;
+      return;
+    }
+    // You can't send thanks to yourself — ignore a self-referential param.
+    if (meAddrLower && preselectTo.toLowerCase() === meAddrLower) {
+      didPreselect.current = true;
+      return;
+    }
+    const entry = preselectNames?.[0]?.[0];
+    if (entry?.address) {
+      setRecipients([entry]);
+      // Skip the recipient picker — the member detail CTA already named them.
+      setStep("compose");
+      didPreselect.current = true;
+    }
+  }, [preselectTo, preselectNames, meAddrLower]);
 
   // ── Derived: sendable amount ───────────────────────────────
   const sendable = useMemo(

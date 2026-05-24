@@ -8,7 +8,6 @@ import {
 import { useNamesByAddresses } from "hooks/useENS";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AuthHero } from "~/components/composite/auth-hero";
 import { AuthLayout } from "~/components/layout/AuthLayout";
@@ -22,7 +21,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_LENGTH = 6;
 
 const Login: FC = () => {
-  const navigate = useNavigate();
   const { logout } = usePrivy();
   const { wallets } = useWallets();
   const { wallet, isSmartWallet } = useActiveWallet();
@@ -72,11 +70,14 @@ const Login: FC = () => {
     let navigated = false;
 
     // Single navigation guard so the timeout, the resolved lookup, and the
-    // catch branch can't race each other into a second `navigate` call.
+    // catch branch can't race each other into a second navigate. Use a
+    // full-page redirect (matches `SignupForm.tsx`'s post-auth pattern) so
+    // we sidestep React Router's `/__manifest` round-trip, which has been
+    // observed to hang and leave the user on the login card forever.
     const safeNavigate = (to: string) => {
       if (cancelled || navigated) return;
       navigated = true;
-      navigate(to);
+      window.location.href = to;
     };
 
     // Independent timer so a hanging /api/namestone/resolve-names request
@@ -112,7 +113,7 @@ const Login: FC = () => {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [wallet, wallets, navigate, fetchNames]);
+  }, [wallet, wallets, fetchNames]);
 
   const isAuthenticated = wallets.length > 0;
   const isEmailValid = EMAIL_PATTERN.test(email);

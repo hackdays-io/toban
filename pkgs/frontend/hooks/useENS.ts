@@ -89,14 +89,18 @@ export const useActiveWalletIdentity = () => {
     if (!wallet) return [];
     return [wallet.account.address];
   }, [wallet]);
-  const { names } = useNamesByAddresses(address);
+  const { names, isLoading: isNamesLoading } = useNamesByAddresses(address);
 
   const identity = useMemo(() => {
     if (!wallet || !names || names.length === 0) return;
     return names[0][0];
   }, [names, wallet]);
 
-  return { identity };
+  // Surface the loading flag so callers can distinguish "still resolving"
+  // from "resolved with no profile". Treat the pre-wallet state as
+  // loading too — without that, the namestone query is disabled and
+  // `isNamesLoading` reads false even though we haven't started.
+  return { identity, isLoading: !wallet || isNamesLoading };
 };
 
 export const useIdentity = (address?: string) => {

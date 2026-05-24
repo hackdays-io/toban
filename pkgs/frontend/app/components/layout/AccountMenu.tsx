@@ -37,10 +37,15 @@ interface AccountMenuProps {
 function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
   const navigate = useNavigate();
   const { treeId } = useParams();
-  const { isSmartWallet } = useActiveWallet();
+  const { isConnectingEmbeddedWallet, isSmartWallet } = useActiveWallet();
   const { logout } = usePrivy();
   const { wallets } = useWallets();
   const { identity } = useActiveWalletIdentity();
+
+  // The smart wallet client is still being provisioned for an embedded
+  // wallet. Show an inline spinner here (top-left on desktop / account
+  // icon slot on mobile) instead of blocking the whole AppShell.
+  const isPreparingSmartWallet = isConnectingEmbeddedWallet && !isSmartWallet;
 
   const userImageUrl = useMemo(() => {
     const avatar = identity?.text_records?.avatar;
@@ -113,6 +118,46 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
       }
     }
   }, [isSmartWallet, logout, wallets]);
+
+  // Render an inline spinner while the smart wallet is still provisioning.
+  // Sits in the AccountMenu slot so the rest of the app stays interactive
+  // instead of being hidden behind a full-screen overlay.
+  if (isPreparingSmartWallet) {
+    const spinner = (
+      <span
+        className="size-5 animate-spin rounded-full border-2 border-border border-t-primary"
+        aria-hidden="true"
+      />
+    );
+    if (variant === "inline") {
+      return (
+        <output
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-sm px-1.5 py-1",
+            className,
+          )}
+          aria-live="polite"
+        >
+          {spinner}
+          <Typography as="span" variant="bodySm" tone="secondary" truncate>
+            ウォレットを準備しています…
+          </Typography>
+        </output>
+      );
+    }
+    return (
+      <output
+        className={cn(
+          "inline-flex size-10 items-center justify-center rounded-full",
+          className,
+        )}
+        aria-label="ウォレットを準備しています"
+        aria-live="polite"
+      >
+        {spinner}
+      </output>
+    );
+  }
 
   // Render Login button if not authenticated.
   if (!identity) {

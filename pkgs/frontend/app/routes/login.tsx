@@ -46,23 +46,20 @@ const Login: FC = () => {
   // Post-auth navigation. Routes returning users to /workspace and
   // brand-new accounts (no ENS name yet) to /signup. Fixes issue #504:
   //
-  // 1. The previous flow awaited the namestone lookup with no error
-  //    handling AND no timeout, so a slow/failed
-  //    `/api/namestone/resolve-names` call silently aborted the navigate
-  //    step and stuck the user on the "ウォレットに接続しています" card.
-  //    We now race the lookup against a short timeout and treat any
-  //    failure as "no profile yet" → /signup.
-  //
-  // 2. Previously the effect waited for `useActiveWallet`'s composite
-  //    wallet (smart wallet client or the viem walletClient). When
-  //    `useAccountClient` stalled on `getEthereumProvider`, that wallet
-  //    never resolved and the user was stuck. For embedded wallets the
-  //    `PrivyAppRoot` SmartWalletLoading gate already keeps this code
-  //    path off until the smart wallet is ready, so falling back to
-  //    `wallets[0].address` only kicks in for external wallets — where
-  //    that address is the right one to look up anyway.
+  // 1. Lookup races a 5 s timeout so a slow `/api/namestone/resolve-names`
+  //    can't leave the user stranded on the connecting card.
+  // 2. For embedded wallets we must wait for the smart-wallet client
+  //    because the user's profile is keyed by its address — falling back
+  //    to the embedded EOA would misroute returning users to /signup.
+  //    For external wallets, `wallets[0].address` IS the profile address,
+  //    so we can use it as a fallback when `useAccountClient` stalls.
   useEffect(() => {
-    const address = wallet?.account?.address ?? wallets[0]?.address;
+    const hasEmbeddedWallet = wallets.some(
+      (w) => w.connectorType === "embedded",
+    );
+    const address = hasEmbeddedWallet
+      ? wallet?.account?.address
+      : (wallet?.account?.address ?? wallets[0]?.address);
     if (!address) return;
 
     const NAMESTONE_TIMEOUT_MS = 5000;

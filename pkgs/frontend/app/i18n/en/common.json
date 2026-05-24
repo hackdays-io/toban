@@ -10,5 +10,29 @@
     "logout": "Logout",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "errors": {
+    "devDetails": "Details (dev only)",
+    "devStack": "Stack trace (dev only)",
+    "notFound": {
+      "title": "Page not found",
+      "body": "The page you are looking for doesn't exist or may have moved.",
+      "home": "Back to home",
+      "back": "Go back"
+    },
+    "routeError": {
+      "title": "Something went wrong",
+      "reload": "Reload",
+      "home": "Home"
+    },
+    "unhandled": {
+      "title": "Something went wrong",
+      "body": "An unexpected error occurred. Please try reloading the page."
+    },
+    "offline": {
+      "title": "Check your network connection",
+      "body": "You're offline, so the page couldn't be loaded.",
+      "retry": "Retry"
+    }
   }
 }

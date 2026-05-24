@@ -38,14 +38,17 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
   const navigate = useNavigate();
   const { treeId } = useParams();
   const { isConnectingEmbeddedWallet, isSmartWallet } = useActiveWallet();
-  const { logout } = usePrivy();
+  const { logout, ready, authenticated } = usePrivy();
   const { wallets } = useWallets();
   const { identity } = useActiveWalletIdentity();
 
-  // The smart wallet client is still being provisioned for an embedded
-  // wallet. Show an inline spinner here (top-left on desktop / account
-  // icon slot on mobile) instead of blocking the whole AppShell.
+  // Start in a loading state until Privy reports ready AND, when
+  // authenticated, the smart wallet + identity lookup have settled.
+  // Without this gate the trigger flashed "Login → spinner → account info"
+  // on every page mount because Privy `ready` lags first paint.
   const isPreparingSmartWallet = isConnectingEmbeddedWallet && !isSmartWallet;
+  const isLoading =
+    !ready || (authenticated && (isPreparingSmartWallet || !identity));
 
   const userImageUrl = useMemo(() => {
     const avatar = identity?.text_records?.avatar;
@@ -119,16 +122,20 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
     }
   }, [isSmartWallet, logout, wallets]);
 
-  // Render an inline spinner while the smart wallet is still provisioning.
-  // Sits in the AccountMenu slot so the rest of the app stays interactive
-  // instead of being hidden behind a full-screen overlay.
-  if (isPreparingSmartWallet) {
+  // Default loading state — covers Privy hydration, smart-wallet
+  // provisioning, and the identity lookup. Sits in the AccountMenu slot
+  // (top-left sidebar on desktop, account icon slot on mobile) so the
+  // rest of the app stays interactive.
+  if (isLoading) {
     const spinner = (
       <span
         className="size-5 animate-spin rounded-full border-2 border-border border-t-primary"
         aria-hidden="true"
       />
     );
+    const caption = isPreparingSmartWallet
+      ? "ウォレットを準備しています…"
+      : "読み込み中…";
     if (variant === "inline") {
       return (
         <output
@@ -140,7 +147,7 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
         >
           {spinner}
           <Typography as="span" variant="bodySm" tone="secondary" truncate>
-            ウォレットを準備しています…
+            {caption}
           </Typography>
         </output>
       );
@@ -151,7 +158,7 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
           "inline-flex size-10 items-center justify-center rounded-full",
           className,
         )}
-        aria-label="ウォレットを準備しています"
+        aria-label={caption}
         aria-live="polite"
       >
         {spinner}
@@ -159,8 +166,8 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
     );
   }
 
-  // Render Login button if not authenticated.
-  if (!identity) {
+  // Privy is ready but the user is not authenticated.
+  if (!authenticated) {
     return (
       <Button
         variant="primary"
@@ -171,6 +178,12 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
         Login
       </Button>
     );
+  }
+
+  // Authenticated but no profile yet — fall through to the loading state
+  // above keeps us here only if identity already resolved.
+  if (!identity) {
+    return null;
   }
 
   const trigger =

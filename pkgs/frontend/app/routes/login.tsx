@@ -69,33 +69,48 @@ const Login: FC = () => {
 
     const NAMESTONE_TIMEOUT_MS = 5000;
     let cancelled = false;
+    let navigated = false;
 
-    const run = async () => {
-      try {
-        const names = await Promise.race([
-          fetchNames([address]),
-          new Promise<never>((_, reject) =>
-            setTimeout(
-              () => reject(new Error("namestone-timeout")),
-              NAMESTONE_TIMEOUT_MS,
-            ),
-          ),
-        ]);
-        if (cancelled) return;
-        if (names?.[0]?.length === 0) {
-          navigate("/signup");
-        } else {
-          navigate("/workspace");
-        }
-      } catch (error) {
-        console.error("Failed to resolve names; routing to /signup", error);
-        if (!cancelled) navigate("/signup");
-      }
+    // Single navigation guard so the timeout, the resolved lookup, and the
+    // catch branch can't race each other into a second `navigate` call.
+    const safeNavigate = (to: string) => {
+      if (cancelled || navigated) return;
+      navigated = true;
+      navigate(to);
     };
 
-    run();
+    // Independent timer so a hanging /api/namestone/resolve-names request
+    // never blocks navigation — we just default to /signup after 5 s.
+    const timeoutId = setTimeout(() => {
+      console.warn("namestone lookup timed out; routing to /signup");
+      safeNavigate("/signup");
+    }, NAMESTONE_TIMEOUT_MS);
+
+    fetchNames([address])
+      .then((names) => {
+        clearTimeout(timeoutId);
+        if (names?.[0]?.length === 0) {
+          safeNavigate("/signup");
+        } else {
+          safeNavigate("/workspace");
+        }
+      })
+      .catch((error: unknown) => {
+        clearTimeout(timeoutId);
+        // React Query aborts the in-flight query on teardown — that's
+        // expected during normal navigation, not a routing failure.
+        const isAbort =
+          error instanceof Error &&
+          (error.name === "AbortError" || error.name === "CanceledError");
+        if (!isAbort) {
+          console.error("Failed to resolve names; routing to /signup", error);
+        }
+        safeNavigate("/signup");
+      });
+
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [wallet, wallets, navigate, fetchNames]);
 

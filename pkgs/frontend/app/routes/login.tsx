@@ -6,6 +6,7 @@ import {
   useWallets,
 } from "@privy-io/react-auth";
 import { useNamesByAddresses } from "hooks/useENS";
+import { useLogoutWallet } from "hooks/useLogoutWallet";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -15,16 +16,18 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
+import { Spinner } from "~/components/ui/spinner";
 import { Typography } from "~/components/ui/typography";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_LENGTH = 6;
 
 const Login: FC = () => {
-  const { logout } = usePrivy();
+  const { authenticated } = usePrivy();
   const { wallets } = useWallets();
-  const { wallet, isSmartWallet } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { fetchNames } = useNamesByAddresses();
+  const handleLogout = useLogoutWallet();
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -33,15 +36,6 @@ const Login: FC = () => {
   const { sendCode, loginWithCode, state: emailState } = useLoginWithEmail();
   const { initOAuth, state: oauthState } = useLoginWithOAuth();
   const { connectWallet } = useConnectWallet();
-
-  const disconnectWallets = useCallback(async () => {
-    if (wallets.length === 0) return;
-    if (isSmartWallet) {
-      logout();
-    } else {
-      Promise.all(wallets.map((w) => w.disconnect()));
-    }
-  }, [wallets, isSmartWallet, logout]);
 
   // Post-auth navigation. Routes returning users to /workspace and
   // brand-new accounts (no ENS name yet) to /signup. Fixes issue #504:
@@ -112,7 +106,7 @@ const Login: FC = () => {
     };
   }, [wallet, wallets, fetchNames]);
 
-  const isAuthenticated = wallets.length > 0;
+  const isAuthenticated = authenticated;
   const isEmailValid = EMAIL_PATTERN.test(email);
   const isSendingCode = emailState.status === "sending-code";
   const isSubmittingCode = emailState.status === "submitting-code";
@@ -304,10 +298,7 @@ const Login: FC = () => {
                 className="flex flex-col items-center gap-3 py-2"
                 aria-live="polite"
               >
-                <span
-                  className="size-10 animate-spin rounded-full border-[3px] border-border border-t-primary"
-                  aria-hidden="true"
-                />
+                <Spinner size="lg" />
                 <Typography
                   variant="bodySm"
                   weight="bold"
@@ -323,12 +314,7 @@ const Login: FC = () => {
                   自動で移動します。問題が起きた場合はサインアウトしてやり直してください。
                 </Typography>
               </output>
-              <Button
-                variant="secondary"
-                size="lg"
-                full
-                onClick={isSmartWallet ? logout : disconnectWallets}
-              >
+              <Button variant="secondary" size="lg" full onClick={handleLogout}>
                 <Icon name="logout" size={18} />
                 サインアウト
               </Button>

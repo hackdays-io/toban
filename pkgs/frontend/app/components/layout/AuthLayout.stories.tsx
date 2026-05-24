@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
+import { Spinner } from "~/components/ui/spinner";
 import { Typography } from "~/components/ui/typography";
 import { AuthLayout } from "./AuthLayout";
 
@@ -73,10 +74,7 @@ export const LoginConnecting: Story = () => (
           className="flex flex-col items-center gap-3 py-2"
           aria-live="polite"
         >
-          <span
-            className="size-10 animate-spin rounded-full border-[3px] border-border border-t-primary"
-            aria-hidden="true"
-          />
+          <Spinner size="lg" />
           <Typography variant="bodySm" weight="bold" className="text-center">
             ワークスペースを準備しています…
           </Typography>

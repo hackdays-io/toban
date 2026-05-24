@@ -63,7 +63,21 @@ export const useActiveWallet = () => {
     return smartWalletClient ? smartWalletClient : walletClient;
   }, [walletClient, smartWalletClient, isConnectingEmbeddedWallet]);
 
-  return { wallet, connectedWallet, isSmartWallet, isConnectingEmbeddedWallet };
+  // True while an embedded wallet is connected but its smart wallet client
+  // hasn't been provisioned yet. Centralising the derivation here so
+  // AccountMenu / login.tsx don't each re-derive it.
+  const isPreparingSmartWallet = useMemo(
+    () => isConnectingEmbeddedWallet && !smartWalletClient,
+    [isConnectingEmbeddedWallet, smartWalletClient],
+  );
+
+  return {
+    wallet,
+    connectedWallet,
+    isSmartWallet,
+    isConnectingEmbeddedWallet,
+    isPreparingSmartWallet,
+  };
 };
 
 export type WalletType =

@@ -303,20 +303,29 @@ const Login: FC = () => {
 
           {isAuthenticated && (
             <>
-              <Typography
-                variant="bodySm"
-                weight="bold"
-                className="text-center"
+              <output
+                className="flex flex-col items-center gap-3 py-2"
+                aria-live="polite"
               >
-                ウォレットに接続しています
-              </Typography>
-              <Typography
-                variant="caption"
-                tone="secondary"
-                className="text-center"
-              >
-                自動でワークスペースに移動します。問題が起きた場合はサインアウトしてやり直してください。
-              </Typography>
+                <span
+                  className="size-10 animate-spin rounded-full border-[3px] border-border border-t-primary"
+                  aria-hidden="true"
+                />
+                <Typography
+                  variant="bodySm"
+                  weight="bold"
+                  className="text-center"
+                >
+                  ワークスペースを準備しています…
+                </Typography>
+                <Typography
+                  variant="caption"
+                  tone="secondary"
+                  className="text-center"
+                >
+                  自動で移動します。問題が起きた場合はサインアウトしてやり直してください。
+                </Typography>
+              </output>
               <Button
                 variant="secondary"
                 size="lg"

@@ -65,6 +65,38 @@ export const LoginCTA: Story = () => (
   </AuthLayout>
 );
 
+export const LoginConnecting: Story = () => (
+  <AuthLayout hero={Hero}>
+    <Card className="w-full max-w-sm">
+      <CardContent className="flex flex-col gap-3">
+        <output
+          className="flex flex-col items-center gap-3 py-2"
+          aria-live="polite"
+        >
+          <span
+            className="size-10 animate-spin rounded-full border-[3px] border-border border-t-primary"
+            aria-hidden="true"
+          />
+          <Typography variant="bodySm" weight="bold" className="text-center">
+            ワークスペースを準備しています…
+          </Typography>
+          <Typography
+            variant="caption"
+            tone="secondary"
+            className="text-center"
+          >
+            自動で移動します。問題が起きた場合はサインアウトしてやり直してください。
+          </Typography>
+        </output>
+        <Button variant="secondary" size="lg" full>
+          <Icon name="logout" size={18} />
+          サインアウト
+        </Button>
+      </CardContent>
+    </Card>
+  </AuthLayout>
+);
+
 export const LoginOtpStep: Story = () => (
   <AuthLayout hero={Hero}>
     <Card className="w-full max-w-sm">

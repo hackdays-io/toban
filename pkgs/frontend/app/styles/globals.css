@@ -144,19 +144,3 @@
     min-height: 100vh;
   }
 }
-
-/* Used by the Chakra-shim Spinner / Skeleton primitives. */
-@keyframes chakra-shim-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes chakra-shim-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}

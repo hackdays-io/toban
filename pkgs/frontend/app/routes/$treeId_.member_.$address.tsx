@@ -11,20 +11,49 @@ import { type FC, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { abbreviateAddress } from "utils/wallet";
 import { UserAssistCreditHistory } from "~/components/assistcredit/History";
-import { Box, Flex, Text } from "~/components/chakra-shim";
 import { Breadcrumb } from "~/components/composite/breadcrumb";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { MemberDetailContent } from "~/components/members/MemberDetailContent";
 import { UserThanksHistory } from "~/components/thankstoken/History";
+import { cn } from "~/lib/utils";
 
 interface UserHistoryComponentProps {
   treeId: string | undefined;
   address: string | undefined;
 }
 
+interface TabButtonProps {
+  isActive: boolean;
+  onClick: () => void;
+  label: string;
+  isLeftTab?: boolean;
+}
+
+const TabButton: FC<TabButtonProps> = ({
+  isActive,
+  onClick,
+  label,
+  isLeftTab = false,
+}) => (
+  <button
+    type="button"
+    role="tab"
+    aria-selected={isActive}
+    onClick={onClick}
+    className={cn(
+      "cursor-pointer px-4 py-2 transition-colors",
+      isLeftTab ? "rounded-l-md border-r border-white" : "rounded-r-md",
+      isActive
+        ? "bg-blue-100 font-bold text-blue-600"
+        : "bg-gray-100 font-medium text-gray-600 hover:bg-gray-200",
+    )}
+  >
+    {label}
+  </button>
+);
+
 // Assist-credit + thanks transaction history. Carried over from the previous
-// member profile page — its assist-credit / thanks sub-components still use the
-// chakra-shim primitives; restyling that tree is out of scope for #439.
+// member profile page.
 export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
   treeId,
   address,
@@ -84,46 +113,16 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
     first: TX_HISTORY_LIMIT,
   });
 
-  // タブボタンコンポーネント
-  const TabButton: FC<{
-    isActive: boolean;
-    onClick: () => void;
-    label: string;
-    isLeftTab?: boolean;
-  }> = ({ isActive, onClick, label, isLeftTab = false }) => (
-    <Box
-      as="button"
-      px={4}
-      py={2}
-      cursor={"pointer"}
-      borderLeftRadius={isLeftTab ? "md" : "0"}
-      borderRightRadius={isLeftTab ? "0" : "md"}
-      fontWeight={isActive ? "bold" : "medium"}
-      bg={isActive ? "blue.100" : "gray.100"}
-      color={isActive ? "blue.600" : "gray.600"}
-      onClick={onClick}
-      borderRight={isLeftTab ? "1px solid white" : undefined}
-      transition="all 0.2s"
-      _hover={{
-        bg: isActive ? "blue.100" : "gray.200",
-      }}
-      role="tab"
-      aria-selected={isActive}
-    >
-      {label}
-    </Box>
-  );
-
   return (
-    <Box mt={10} mb={12}>
-      <Flex justifyContent="space-between" alignItems="center" mb={4}>
-        <Text fontSize="md" fontWeight="medium" color="gray.600">
+    <div className="mt-10 mb-12">
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-base font-medium text-gray-600">
           {["144", "175", "780"].includes(treeId || "")
             ? "ケアポイント"
             : "ロールシェア"}
           履歴
-        </Text>
-        <Flex>
+        </p>
+        <div className="flex">
           <TabButton
             isActive={assistCreditActiveTab === "received"}
             onClick={() => setAssistCreditActiveTab("received")}
@@ -135,11 +134,11 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
             onClick={() => setAssistCreditActiveTab("sent")}
             label="送信"
           />
-        </Flex>
-      </Flex>
+        </div>
+      </div>
 
       {treeId && address && (
-        <Box mt={4}>
+        <div className="mt-4">
           <UserAssistCreditHistory
             data={
               assistCreditActiveTab === "received"
@@ -151,14 +150,14 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
             limit={TX_HISTORY_LIMIT}
             txType={assistCreditActiveTab}
           />
-        </Box>
+        </div>
       )}
 
-      <Flex justifyContent="space-between" alignItems="center" mb={4} mt={4}>
-        <Text fontSize="md" fontWeight="medium" color="gray.600">
+      <div className="mt-4 mb-4 flex items-center justify-between">
+        <p className="text-base font-medium text-gray-600">
           サンクストークン履歴
-        </Text>
-        <Flex>
+        </p>
+        <div className="flex">
           <TabButton
             isActive={thanksTokenActiveTab === "received"}
             onClick={() => setThanksTokenActiveTab("received")}
@@ -170,11 +169,11 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
             onClick={() => setThanksTokenActiveTab("sent")}
             label="送信"
           />
-        </Flex>
-      </Flex>
+        </div>
+      </div>
 
       {treeId && address && (
-        <Box mt={4}>
+        <div className="mt-4">
           <UserThanksHistory
             data={
               thanksTokenActiveTab === "received"
@@ -186,9 +185,9 @@ export const UserHistoryComponent: FC<UserHistoryComponentProps> = ({
             limit={TX_HISTORY_LIMIT}
             txType={thanksTokenActiveTab}
           />
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

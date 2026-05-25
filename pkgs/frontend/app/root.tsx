@@ -1,8 +1,22 @@
 import { ApolloProvider } from "@apollo/client/react";
+import { useOnlineStatus } from "hooks/useOnlineStatus";
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
+import {
+  Links,
+  Meta,
+  Scripts,
+  ScrollRestoration,
+  isRouteErrorResponse,
+  useRouteError,
+} from "react-router";
 import swiperStyles from "swiper/css?url";
 import { goldskyClient } from "utils/apollo";
+import {
+  NotFoundScreen,
+  OfflineScreen,
+  RouteErrorScreen,
+  UnhandledErrorScreen,
+} from "./components/error/error-screens";
 // Self-host the brand fonts (Issue #426). Inter carries Latin numerals/labels
 // and Noto Sans JP covers Japanese copy — both are referenced by --font-sans.
 import "@fontsource/inter/400.css";
@@ -73,6 +87,40 @@ export const links = () => [
   { rel: "apple-touch-icon", href: "/images/apple-touch-icon.png" },
   { rel: "stylesheet", href: swiperStyles },
 ];
+
+// React Router v7's recommended fallback. Lives at the root so loader / action
+// errors anywhere in the tree, runtime exceptions, and unmatched URLs all land
+// on a designed screen instead of the framework's default. The `Layout` export
+// above wraps the rendered tree, so the <html>/<body>/<Meta>/<Links> chrome
+// stays intact when this fires (see React Router docs: route-module/errorboundary).
+//
+// Notes on isolation:
+//  - These screens deliberately do NOT depend on the lazy `PrivyAppRoot` tree
+//    (wallet / Apollo / smart wallet). The default `App` mounts that tree
+//    after hydration, but on error we replace it entirely — the fallback
+//    must therefore stand on its own.
+//  - Offline takes priority over the actual error. If the user lost
+//    connectivity mid-navigation the error is almost always downstream of
+//    that, and the offline screen tells them what to do about it.
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const online = useOnlineStatus();
+
+  if (!online) return <OfflineScreen />;
+
+  if (isRouteErrorResponse(error)) {
+    if (error.status === 404) return <NotFoundScreen />;
+    return (
+      <RouteErrorScreen
+        status={error.status}
+        statusText={error.statusText}
+        data={error.data}
+      />
+    );
+  }
+
+  return <UnhandledErrorScreen error={error} />;
+}
 
 export default function App() {
   // Wait until after hydration to mount the lazy boundary. Mounting it during

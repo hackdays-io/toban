@@ -74,7 +74,7 @@ const useSplitWeights = (
     queryKey: ["split-weights", splitsCreatorAddress, split?.address],
     enabled: !!splitsCreatorAddress && !!split,
     staleTime: Number.POSITIVE_INFINITY,
-    retry: 3,
+    retry: 1,
     retryDelay: (attempt) => Math.min(2000, 300 * 2 ** attempt),
     queryFn: async (): Promise<WeightInfo | null> => {
       if (!splitsCreatorAddress || !split) return null;

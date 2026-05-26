@@ -50,6 +50,7 @@ function deriveActiveKey(pathname: string): string {
   const section = segments[1];
   if (!section) return "home";
   if (section === "splits") return "splits";
+  if (section === "scheduled") return "splits";
   if (section === "member" || section === "members") return "members";
   if (section === "thankstoken") return "activity";
   if (section === "history") return "activity";

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Address } from "viem";
 import { Input } from "~/components/ui/input";
 import { Typography } from "~/components/ui/typography";
@@ -41,9 +41,21 @@ function TokenSelector({
     [excludeAddresses],
   );
 
+  // Whether the user explicitly picked "その他". We need local state because
+  // selecting "Other" clears `value` to "", which would otherwise look
+  // indistinguishable from the unselected default. Seed from props so the
+  // input survives remounts when an unmatched address is already set.
+  const [pickedOther, setPickedOther] = useState<boolean>(
+    () => !!value && !matched,
+  );
+  useEffect(() => {
+    if (matched) setPickedOther(false);
+    else if (value) setPickedOther(true);
+  }, [matched, value]);
+
   const selectValue = matched
     ? matched.address.toLowerCase()
-    : value
+    : pickedOther
       ? OTHER
       : "";
 
@@ -54,14 +66,17 @@ function TokenSelector({
         onChange={(e) => {
           const v = e.target.value;
           if (v === OTHER) {
+            setPickedOther(true);
             // Clear the address so the user types one in.
             onChange({ address: "" });
             return;
           }
           if (v === "") {
+            setPickedOther(false);
             onChange({ address: "" });
             return;
           }
+          setPickedOther(false);
           const preset = presets.find((p) => p.address.toLowerCase() === v);
           onChange({ address: v as Address, preset });
         }}

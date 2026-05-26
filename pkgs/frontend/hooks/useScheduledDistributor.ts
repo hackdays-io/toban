@@ -15,7 +15,7 @@ import { useActiveWallet } from "./useWallet";
 
 const SCHEDULED_DISTRIBUTORS_BY_WORKSPACE = gql(`
   query GetScheduledDistributorsByWorkspace($workspaceId: ID!) {
-    scheduledDistributors(where: { workspaceId: $workspaceId }, orderBy: scheduledDate, orderDirection: asc) {
+    scheduledDistributors(where: { workspaceId: $workspaceId }, orderBy: scheduledDate, orderDirection: desc) {
       id
       scheduler
       splitsCreator
@@ -163,114 +163,126 @@ export type ScheduledDistributorRule = {
   tokenBalances: bigint[];
 };
 
+/** Standalone reader for a ScheduledDistributor clone — usable outside a
+ *  React hook (e.g. inside a useQueries `queryFn`). */
+export const readScheduledDistributorRule = async (
+  distributor: Address,
+): Promise<ScheduledDistributorRule> => {
+  const base = {
+    address: distributor,
+    abi: SCHEDULED_DISTRIBUTOR_ABI,
+  } as const;
+  const [
+    scheduler,
+    splitsCreator,
+    tokens,
+    depositor,
+    backupWallet,
+    scheduledDate,
+    hatIds,
+    multiplierTops,
+    multiplierBottoms,
+    weightsRaw,
+    confirmedWearers,
+    executed,
+    reclaimed,
+    split,
+  ] = await Promise.all([
+    publicClient.readContract({ ...base, functionName: "scheduler" }),
+    publicClient.readContract({ ...base, functionName: "splitsCreator" }),
+    publicClient.readContract({ ...base, functionName: "getTokens" }),
+    publicClient.readContract({ ...base, functionName: "depositor" }),
+    publicClient.readContract({ ...base, functionName: "backupWallet" }),
+    publicClient.readContract({ ...base, functionName: "scheduledDate" }),
+    publicClient.readContract({ ...base, functionName: "getHatIds" }),
+    publicClient.readContract({ ...base, functionName: "getMultiplierTops" }),
+    publicClient.readContract({
+      ...base,
+      functionName: "getMultiplierBottoms",
+    }),
+    publicClient.readContract({ ...base, functionName: "weights" }),
+    publicClient.readContract({
+      ...base,
+      functionName: "getAllConfirmedWearers",
+    }),
+    publicClient.readContract({ ...base, functionName: "executed" }),
+    publicClient.readContract({ ...base, functionName: "reclaimed" }),
+    publicClient.readContract({ ...base, functionName: "split" }),
+  ]);
+
+  const tokenList = tokens as readonly Address[];
+  const tokenBalances = await Promise.all(
+    tokenList.map((t) =>
+      publicClient.readContract({
+        address: t,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [distributor],
+      }),
+    ),
+  );
+
+  return {
+    scheduler: scheduler as Address,
+    splitsCreator: splitsCreator as Address,
+    tokens: [...tokenList] as Address[],
+    depositor: depositor as Address,
+    backupWallet: backupWallet as Address,
+    scheduledDate: scheduledDate as bigint,
+    hatIds: hatIds as bigint[],
+    multiplierTops: multiplierTops as bigint[],
+    multiplierBottoms: multiplierBottoms as bigint[],
+    weights: {
+      roleWeight: (weightsRaw as readonly bigint[])[0],
+      thanksTokenWeight: (weightsRaw as readonly bigint[])[1],
+      thanksTokenReceivedWeight: (weightsRaw as readonly bigint[])[2],
+      thanksTokenSentWeight: (weightsRaw as readonly bigint[])[3],
+    },
+    confirmedWearers: confirmedWearers as Address[][],
+    executed: executed as boolean,
+    reclaimed: reclaimed as boolean,
+    split: split as Address,
+    tokenBalances: tokenBalances as bigint[],
+  };
+};
+
+/** Standalone SplitsCreator.preview() invocation against a rule. */
+export const previewScheduledDistributorRule = async (
+  rule: ScheduledDistributorRule,
+  wearersByHat: Address[][],
+) => {
+  const splitsInfo = rule.hatIds.map((hatId, i) => ({
+    hatId,
+    multiplierBottom: rule.multiplierBottoms[i],
+    multiplierTop: rule.multiplierTops[i],
+    wearers: wearersByHat[i],
+  }));
+  const args = [splitsInfo, rule.weights] as AbiItemArgs<
+    typeof SPLITS_CREATOR_ABI,
+    "preview"
+  >;
+  return await publicClient.readContract({
+    address: rule.splitsCreator,
+    abi: SPLITS_CREATOR_ABI,
+    functionName: "preview",
+    args,
+  });
+};
+
 /** Read-side: pull the rule + status from a ScheduledDistributor clone. */
 export const useScheduledDistributor = (distributor?: Address) => {
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
 
-  const readRule =
-    useCallback(async (): Promise<ScheduledDistributorRule | null> => {
-      if (!distributor) return null;
-      const base = {
-        address: distributor,
-        abi: SCHEDULED_DISTRIBUTOR_ABI,
-      } as const;
-      const [
-        scheduler,
-        splitsCreator,
-        tokens,
-        depositor,
-        backupWallet,
-        scheduledDate,
-        hatIds,
-        multiplierTops,
-        multiplierBottoms,
-        weightsRaw,
-        confirmedWearers,
-        executed,
-        reclaimed,
-        split,
-      ] = await Promise.all([
-        publicClient.readContract({ ...base, functionName: "scheduler" }),
-        publicClient.readContract({ ...base, functionName: "splitsCreator" }),
-        publicClient.readContract({ ...base, functionName: "getTokens" }),
-        publicClient.readContract({ ...base, functionName: "depositor" }),
-        publicClient.readContract({ ...base, functionName: "backupWallet" }),
-        publicClient.readContract({ ...base, functionName: "scheduledDate" }),
-        publicClient.readContract({ ...base, functionName: "getHatIds" }),
-        publicClient.readContract({
-          ...base,
-          functionName: "getMultiplierTops",
-        }),
-        publicClient.readContract({
-          ...base,
-          functionName: "getMultiplierBottoms",
-        }),
-        publicClient.readContract({ ...base, functionName: "weights" }),
-        publicClient.readContract({
-          ...base,
-          functionName: "getAllConfirmedWearers",
-        }),
-        publicClient.readContract({ ...base, functionName: "executed" }),
-        publicClient.readContract({ ...base, functionName: "reclaimed" }),
-        publicClient.readContract({ ...base, functionName: "split" }),
-      ]);
-
-      const tokenList = tokens as readonly Address[];
-      const tokenBalances = await Promise.all(
-        tokenList.map((t) =>
-          publicClient.readContract({
-            address: t,
-            abi: ERC20_ABI,
-            functionName: "balanceOf",
-            args: [distributor],
-          }),
-        ),
-      );
-
-      return {
-        scheduler: scheduler as Address,
-        splitsCreator: splitsCreator as Address,
-        tokens: [...tokenList] as Address[],
-        depositor: depositor as Address,
-        backupWallet: backupWallet as Address,
-        scheduledDate: scheduledDate as bigint,
-        hatIds: hatIds as bigint[],
-        multiplierTops: multiplierTops as bigint[],
-        multiplierBottoms: multiplierBottoms as bigint[],
-        weights: {
-          roleWeight: (weightsRaw as readonly bigint[])[0],
-          thanksTokenWeight: (weightsRaw as readonly bigint[])[1],
-          thanksTokenReceivedWeight: (weightsRaw as readonly bigint[])[2],
-          thanksTokenSentWeight: (weightsRaw as readonly bigint[])[3],
-        },
-        confirmedWearers: confirmedWearers as Address[][],
-        executed: executed as boolean,
-        reclaimed: reclaimed as boolean,
-        split: split as Address,
-        tokenBalances: tokenBalances as bigint[],
-      };
-    }, [distributor]);
+  const readRule = useCallback(
+    async (): Promise<ScheduledDistributorRule | null> =>
+      distributor ? readScheduledDistributorRule(distributor) : null,
+    [distributor],
+  );
 
   const previewWithRule = useCallback(
-    async (rule: ScheduledDistributorRule, wearersByHat: Address[][]) => {
-      const splitsInfo = rule.hatIds.map((hatId, i) => ({
-        hatId,
-        multiplierBottom: rule.multiplierBottoms[i],
-        multiplierTop: rule.multiplierTops[i],
-        wearers: wearersByHat[i],
-      }));
-      const args = [splitsInfo, rule.weights] as AbiItemArgs<
-        typeof SPLITS_CREATOR_ABI,
-        "preview"
-      >;
-      return await publicClient.readContract({
-        address: rule.splitsCreator,
-        abi: SPLITS_CREATOR_ABI,
-        functionName: "preview",
-        args,
-      });
-    },
+    (rule: ScheduledDistributorRule, wearersByHat: Address[][]) =>
+      previewScheduledDistributorRule(rule, wearersByHat),
     [],
   );
 
@@ -445,6 +457,18 @@ export const useScheduledDistributorFactory = () => {
           toast.success("Distribution scheduled");
           return created.args.distributor as Address;
         }
+        // The tx succeeded but we couldn't parse the
+        // `ScheduledDistributorCreated` event — usually an ABI/factory
+        // mismatch. Surface this so the user knows funds-at-rest exist
+        // on-chain and the wizard can't auto-recover; the tx hash lets them
+        // dig further via a block explorer.
+        console.error("Missing ScheduledDistributorCreated event", {
+          txHash: tx,
+          logs: receipt.logs,
+        });
+        toast.error(
+          `作成トランザクションは成功しましたが、デプロイ済みアドレスを取得できませんでした (tx: ${tx})。詳細は予約一覧から確認してください。`,
+        );
       } catch (e) {
         console.error(e);
         toast.error("Failed to schedule distribution");

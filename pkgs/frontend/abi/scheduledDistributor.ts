@@ -1,0 +1,1042 @@
+export const SCHEDULED_DISTRIBUTOR_ABI = [
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+    ],
+    name: "SafeERC20FailedOperation",
+    type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "Deposited",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "caller",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "split",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "Executed",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "Reclaimed",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "scheduler",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "splitsCreator",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address[]",
+        name: "tokens",
+        type: "address[]",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "depositor",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "backupWallet",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "scheduledDate",
+        type: "uint256",
+      },
+    ],
+    name: "RuleCreated",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "RECLAIM_DELAY",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "backupWallet",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address[][]",
+        name: "wearersByHat",
+        type: "address[][]",
+      },
+    ],
+    name: "buildSplitsInfo",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "hatId",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "multiplierBottom",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "multiplierTop",
+            type: "uint256",
+          },
+          {
+            internalType: "address[]",
+            name: "wearers",
+            type: "address[]",
+          },
+        ],
+        internalType: "struct ISplitsCreator.SplitsInfo[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "deposit",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "depositor",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address[][]",
+        name: "wearersByHat",
+        type: "address[][]",
+      },
+    ],
+    name: "execute",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "executed",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getAllConfirmedWearers",
+    outputs: [
+      {
+        internalType: "address[][]",
+        name: "result",
+        type: "address[][]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "index",
+        type: "uint256",
+      },
+    ],
+    name: "getConfirmedWearers",
+    outputs: [
+      {
+        internalType: "address[]",
+        name: "",
+        type: "address[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getHatIds",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getMultiplierBottoms",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getMultiplierTops",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getTokens",
+    outputs: [
+      {
+        internalType: "address[]",
+        name: "",
+        type: "address[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "hats",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: "address",
+            name: "hats",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "splitsCreator",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "scheduler",
+            type: "address",
+          },
+          {
+            internalType: "address[]",
+            name: "tokens",
+            type: "address[]",
+          },
+          {
+            internalType: "address",
+            name: "depositor",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "backupWallet",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "scheduledDate",
+            type: "uint256",
+          },
+          {
+            components: [
+              {
+                internalType: "uint256",
+                name: "roleWeight",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "thanksTokenWeight",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "thanksTokenReceivedWeight",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "thanksTokenSentWeight",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct ISplitsCreator.WeightsInfo",
+            name: "weights",
+            type: "tuple",
+          },
+          {
+            internalType: "uint256[]",
+            name: "hatIds",
+            type: "uint256[]",
+          },
+          {
+            internalType: "uint256[]",
+            name: "multiplierTops",
+            type: "uint256[]",
+          },
+          {
+            internalType: "uint256[]",
+            name: "multiplierBottoms",
+            type: "uint256[]",
+          },
+          {
+            internalType: "address[][]",
+            name: "confirmedWearers",
+            type: "address[][]",
+          },
+        ],
+        internalType: "struct IScheduledDistributor.InitParams",
+        name: "params",
+        type: "tuple",
+      },
+    ],
+    name: "initialize",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "initialized",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "t",
+        type: "address",
+      },
+    ],
+    name: "isToken",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "reclaim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "reclaimed",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "scheduledDate",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "scheduler",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "split",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "splitsCreator",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "weights",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "roleWeight",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "thanksTokenWeight",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "thanksTokenReceivedWeight",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "thanksTokenSentWeight",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
+
+export const SCHEDULED_DISTRIBUTOR_FACTORY_ABI = [
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "target",
+        type: "address",
+      },
+    ],
+    name: "AddressEmptyCode",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "implementation",
+        type: "address",
+      },
+    ],
+    name: "ERC1967InvalidImplementation",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "ERC1967NonPayable",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "FailedCall",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "InvalidInitialization",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotInitializing",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+    ],
+    name: "OwnableInvalidOwner",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "OwnableUnauthorizedAccount",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "UUPSUnauthorizedCallContext",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes32",
+        name: "slot",
+        type: "bytes32",
+      },
+    ],
+    name: "UUPSUnsupportedProxiableUUID",
+    type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint64",
+        name: "version",
+        type: "uint64",
+      },
+    ],
+    name: "Initialized",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferred",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "distributor",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "scheduler",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "splitsCreator",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address[]",
+        name: "tokens",
+        type: "address[]",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "scheduledDate",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "salt",
+        type: "bytes32",
+      },
+    ],
+    name: "ScheduledDistributorCreated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "implementation",
+        type: "address",
+      },
+    ],
+    name: "Upgraded",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "HATS",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "IMPLEMENTATION",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "UPGRADE_INTERFACE_VERSION",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: "address",
+            name: "hats",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "splitsCreator",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "scheduler",
+            type: "address",
+          },
+          {
+            internalType: "address[]",
+            name: "tokens",
+            type: "address[]",
+          },
+          {
+            internalType: "address",
+            name: "depositor",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "backupWallet",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "scheduledDate",
+            type: "uint256",
+          },
+          {
+            components: [
+              {
+                internalType: "uint256",
+                name: "roleWeight",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "thanksTokenWeight",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "thanksTokenReceivedWeight",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "thanksTokenSentWeight",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct ISplitsCreator.WeightsInfo",
+            name: "weights",
+            type: "tuple",
+          },
+          {
+            internalType: "uint256[]",
+            name: "hatIds",
+            type: "uint256[]",
+          },
+          {
+            internalType: "uint256[]",
+            name: "multiplierTops",
+            type: "uint256[]",
+          },
+          {
+            internalType: "uint256[]",
+            name: "multiplierBottoms",
+            type: "uint256[]",
+          },
+          {
+            internalType: "address[][]",
+            name: "confirmedWearers",
+            type: "address[][]",
+          },
+        ],
+        internalType: "struct IScheduledDistributor.InitParams",
+        name: "params",
+        type: "tuple",
+      },
+      {
+        internalType: "bytes32",
+        name: "salt",
+        type: "bytes32",
+      },
+    ],
+    name: "createScheduledDistributor",
+    outputs: [
+      {
+        internalType: "address",
+        name: "distributor",
+        type: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_initialOwner",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_implementation",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_hatsAddress",
+        type: "address",
+      },
+    ],
+    name: "initialize",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "scheduler",
+        type: "address",
+      },
+      {
+        internalType: "bytes32",
+        name: "salt",
+        type: "bytes32",
+      },
+    ],
+    name: "predictScheduledDistributorAddress",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "proxiableUUID",
+    outputs: [
+      {
+        internalType: "bytes32",
+        name: "",
+        type: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_hatsAddress",
+        type: "address",
+      },
+    ],
+    name: "setHats",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_implementation",
+        type: "address",
+      },
+    ],
+    name: "setImplementation",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "newImplementation",
+        type: "address",
+      },
+      {
+        internalType: "bytes",
+        name: "data",
+        type: "bytes",
+      },
+    ],
+    name: "upgradeToAndCall",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+] as const;

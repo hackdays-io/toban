@@ -193,3 +193,58 @@ type EscrowedRoleShare @entity {
   amount: BigInt!
   updatedAt: BigInt!
 }
+
+enum ScheduledDistributorStatus {
+  Pending
+  Executed
+  Reclaimed
+}
+
+type SplitsCreatorWorkspace @entity {
+  id: ID! # splitsCreator address (lowercased)
+  workspaceId: ID!
+}
+
+type ScheduledDistributor @entity {
+  id: ID! # distributor clone address (lowercased)
+  scheduler: String!
+  splitsCreator: String!
+  workspaceId: ID
+  tokens: [String!]!
+  depositor: String!
+  backupWallet: String!
+  scheduledDate: BigInt!
+  status: ScheduledDistributorStatus!
+  split: String
+  executedAt: BigInt
+  reclaimedAt: BigInt
+  createdAt: BigInt!
+  createdBlock: BigInt!
+  tokenBalances: [ScheduledDistributorTokenBalance!]!
+    @derivedFrom(field: "scheduledDistributor")
+  deposits: [ScheduledDistributorDeposit!]!
+    @derivedFrom(field: "scheduledDistributor")
+}
+
+# Per-(distributor, token) aggregate: how much was deposited, how much
+# distributed at execute-time, how much returned at reclaim-time.
+type ScheduledDistributorTokenBalance @entity {
+  id: ID! # `${distributorId}-${tokenAddress}` (both lowercased)
+  scheduledDistributor: ScheduledDistributor!
+  token: String!
+  totalDeposited: BigInt!
+  executedAmount: BigInt
+  reclaimedAmount: BigInt
+  updatedAt: BigInt!
+}
+
+type ScheduledDistributorDeposit @entity {
+  id: ID!
+  scheduledDistributor: ScheduledDistributor!
+  token: String!
+  from: String!
+  amount: BigInt!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+  txHash: Bytes!
+}

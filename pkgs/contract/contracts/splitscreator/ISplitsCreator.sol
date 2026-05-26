@@ -25,4 +25,19 @@ interface ISplitsCreator {
 	);
 
 	function create(SplitsInfo[] memory _splitInfos, WeightsInfo memory _weightsInfo) external returns (address);
+
+	function createWithSalt(
+		SplitsInfo[] memory _splitInfos,
+		WeightsInfo memory _weightsInfo,
+		bytes32 _salt
+	) external returns (address);
+
+	function preview(
+		SplitsInfo[] memory _splitsInfo,
+		WeightsInfo memory _weightsInfo
+	) external view returns (
+		address[] memory shareHolders,
+		uint256[] memory allocations,
+		uint256 totalAllocation
+	);
 }

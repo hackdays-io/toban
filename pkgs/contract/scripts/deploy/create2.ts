@@ -9,6 +9,10 @@ import {
   deployHatsTimeFrameModule,
 } from "../../helpers/deploy/Hats";
 import {
+  deployScheduledDistributor,
+  deployScheduledDistributorFactory,
+} from "../../helpers/deploy/ScheduledDistributor";
+import {
   deploySplitsCreator,
   deploySplitsCreatorFactory,
 } from "../../helpers/deploy/Splits";
@@ -70,6 +74,27 @@ const deploy = async () => {
     SplitsCreatorFactoryInitData,
   } = await deploySplitsCreatorFactory(splitsCreatorAddress);
   const splitsCreatorFactoryAddress = SplitsCreatorFactory.address;
+
+  // Deploy ScheduledDistributor implementation (Clone target) and its factory.
+  // Not wired through BigBang — workspaces opt in by calling the factory
+  // directly when they want to schedule a distribution.
+  console.log("Deploying ScheduledDistributor...");
+  const { ScheduledDistributor, ScheduledDistributorImplAddress } =
+    await deployScheduledDistributor();
+  const scheduledDistributorAddress = ScheduledDistributor.address;
+
+  console.log("Deploying ScheduledDistributorFactory...");
+  const {
+    ScheduledDistributorFactory,
+    ScheduledDistributorFactoryImplAddress,
+    ScheduledDistributorFactoryInitData,
+  } = await deployScheduledDistributorFactory({
+    initialOwner: deployerAddress as Address,
+    implementation: scheduledDistributorAddress,
+    hatsAddress: process.env.HATS_ADDRESS as Address,
+  });
+  const scheduledDistributorFactoryAddress =
+    ScheduledDistributorFactory.address;
 
   // Deploy BigBang implementation and proxy
   console.log("Deploying BigBang...");
@@ -140,6 +165,15 @@ const deploy = async () => {
     `pnpm contract hardhat verify ${splitsCreatorFactoryAddress} ${SplitsCreatorFactoryImplAddress} ${SplitsCreatorFactoryInitData} --network ${network.name}\n`,
   );
   console.log(
+    "ScheduledDistributor:\n",
+    `pnpm contract hardhat verify ${scheduledDistributorAddress} --network ${network.name}\n`,
+  );
+  console.log(
+    "ScheduledDistributorFactory:\n",
+    `pnpm contract hardhat verify ${ScheduledDistributorFactoryImplAddress} --network ${network.name} &&`,
+    `pnpm contract hardhat verify ${scheduledDistributorFactoryAddress} ${ScheduledDistributorFactoryImplAddress} ${ScheduledDistributorFactoryInitData} --network ${network.name}\n`,
+  );
+  console.log(
     "BigBang:\n",
     `pnpm contract hardhat verify ${BigBangImplAddress} --network ${network.name} &&`,
     `pnpm contract hardhat verify ${bigBangAddress} ${BigBangImplAddress} ${BigBangInitData} --network ${network.name}`,
@@ -164,12 +198,24 @@ const deploy = async () => {
     value: splitsCreatorAddress,
     network: network.name,
   });
+  writeContractAddress({
+    group: "contracts",
+    name: "ScheduledDistributor",
+    value: scheduledDistributorAddress,
+    network: network.name,
+  });
 
   // Save upgradeable contracts implementations
   writeContractAddress({
     group: "implementations",
     name: "SplitsCreatorFactory_Implementation",
     value: SplitsCreatorFactoryImplAddress,
+    network: network.name,
+  });
+  writeContractAddress({
+    group: "implementations",
+    name: "ScheduledDistributorFactory_Implementation",
+    value: ScheduledDistributorFactoryImplAddress,
     network: network.name,
   });
   writeContractAddress({
@@ -196,6 +242,12 @@ const deploy = async () => {
     group: "contracts",
     name: "SplitsCreatorFactory",
     value: splitsCreatorFactoryAddress,
+    network: network.name,
+  });
+  writeContractAddress({
+    group: "contracts",
+    name: "ScheduledDistributorFactory",
+    value: scheduledDistributorFactoryAddress,
     network: network.name,
   });
   writeContractAddress({

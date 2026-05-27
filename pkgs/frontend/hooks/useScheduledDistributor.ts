@@ -21,7 +21,6 @@ const SCHEDULED_DISTRIBUTORS_BY_WORKSPACE = gql(`
       splitsCreator
       workspaceId
       tokens
-      depositor
       backupWallet
       scheduledDate
       status
@@ -50,7 +49,6 @@ const SCHEDULED_DISTRIBUTOR_DETAIL = gql(`
       splitsCreator
       workspaceId
       tokens
-      depositor
       backupWallet
       scheduledDate
       status
@@ -94,7 +92,6 @@ export type ScheduledDistributorRow = {
   splitsCreator: string;
   workspaceId?: string | null;
   tokens: string[];
-  depositor: string;
   backupWallet: string;
   scheduledDate: string;
   status: "Pending" | "Executed" | "Reclaimed";
@@ -143,7 +140,6 @@ export type ScheduledDistributorRule = {
   scheduler: Address;
   splitsCreator: Address;
   tokens: Address[];
-  depositor: Address;
   backupWallet: Address;
   scheduledDate: bigint;
   hatIds: bigint[];
@@ -176,7 +172,6 @@ export const readScheduledDistributorRule = async (
     scheduler,
     splitsCreator,
     tokens,
-    depositor,
     backupWallet,
     scheduledDate,
     hatIds,
@@ -191,7 +186,6 @@ export const readScheduledDistributorRule = async (
     publicClient.readContract({ ...base, functionName: "scheduler" }),
     publicClient.readContract({ ...base, functionName: "splitsCreator" }),
     publicClient.readContract({ ...base, functionName: "getTokens" }),
-    publicClient.readContract({ ...base, functionName: "depositor" }),
     publicClient.readContract({ ...base, functionName: "backupWallet" }),
     publicClient.readContract({ ...base, functionName: "scheduledDate" }),
     publicClient.readContract({ ...base, functionName: "getHatIds" }),
@@ -226,7 +220,6 @@ export const readScheduledDistributorRule = async (
     scheduler: scheduler as Address,
     splitsCreator: splitsCreator as Address,
     tokens: [...tokenList] as Address[],
-    depositor: depositor as Address,
     backupWallet: backupWallet as Address,
     scheduledDate: scheduledDate as bigint,
     hatIds: hatIds as bigint[],
@@ -382,7 +375,6 @@ export const useScheduledDistributor = (distributor?: Address) => {
 export type CreateScheduledDistributorParams = {
   splitsCreator: Address;
   tokens: Address[];
-  depositor: Address;
   backupWallet: Address;
   scheduledDate: bigint;
   weights: {
@@ -428,7 +420,6 @@ export const useScheduledDistributorFactory = () => {
           splitsCreator: params.splitsCreator,
           scheduler: "0x0000000000000000000000000000000000000000" as Address,
           tokens: params.tokens,
-          depositor: params.depositor,
           backupWallet: params.backupWallet,
           scheduledDate: params.scheduledDate,
           weights: params.weights,

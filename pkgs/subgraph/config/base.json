@@ -21,7 +21,7 @@
       "entities": [{ "name": "ScheduledDistributor" }],
       "handlers": [
         {
-          "event": "ScheduledDistributorCreated(indexed address,indexed address,address,address[],uint256,bytes32)",
+          "event": "ScheduledDistributorCreated(indexed address,indexed address,address,address[],address,uint256,bytes32)",
           "handler": "handleScheduledDistributorCreated"
         }
       ]
@@ -68,7 +68,7 @@
       ],
       "handlers": [
         {
-          "event": "RuleCreated(indexed address,address,address[],address,address,uint256)",
+          "event": "RuleCreated(indexed address,address,address[],address,uint256)",
           "handler": "handleRuleCreated"
         },
         {

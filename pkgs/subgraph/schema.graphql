@@ -211,7 +211,6 @@ type ScheduledDistributor @entity {
   splitsCreator: String!
   workspaceId: ID
   tokens: [String!]!
-  depositor: String!
   backupWallet: String!
   scheduledDate: BigInt!
   status: ScheduledDistributorStatus!

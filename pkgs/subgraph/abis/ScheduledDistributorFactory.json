@@ -100,6 +100,12 @@
       },
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "backupWallet",
+        "type": "address"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "scheduledDate",
         "type": "uint256"
@@ -164,7 +170,6 @@
             "name": "tokens",
             "type": "address[]"
           },
-          { "internalType": "address", "name": "depositor", "type": "address" },
           {
             "internalType": "address",
             "name": "backupWallet",

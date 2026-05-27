@@ -67,7 +67,17 @@ contract SplitsCreator is ISplitsCreator, Clone {
         WeightsInfo memory _weightsInfo,
         bytes32 _salt
     ) external returns (address) {
-        return _create(_splitsInfo, _weightsInfo, _salt);
+        // Mix msg.sender into the salt so a griefer can't pre-deploy at the
+        // same deterministic address that the legitimate caller will later
+        // hit. PullSplitFactory's CREATE2 keys on (this, salt) but `this`
+        // is the SplitsCreator clone for both honest and attacker paths, so
+        // we need to disambiguate by caller here.
+        return
+            _create(
+                _splitsInfo,
+                _weightsInfo,
+                keccak256(abi.encode(msg.sender, _salt))
+            );
     }
 
     function _create(

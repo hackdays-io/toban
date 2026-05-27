@@ -35,6 +35,12 @@ contract ScheduledDistributor is IScheduledDistributor {
 
 	uint256 public constant RECLAIM_DELAY = 72 hours;
 
+	// Bounds the cost of _validateWearers (which is O(W^2) per hat for
+	// dedup + O(C*W) for the confirmed-wearer scan). 256 is comfortably
+	// larger than any realistic Toban role and small enough that even the
+	// worst-case nested loop fits in a normal block.
+	uint256 public constant MAX_WEARERS_PER_HAT = 256;
+
 	bool public initialized;
 	bool public executed;
 	bool public reclaimed;
@@ -42,7 +48,6 @@ contract ScheduledDistributor is IScheduledDistributor {
 	address public hats;
 	address public splitsCreator;
 	address public scheduler;
-	address public depositor;
 	address public backupWallet;
 	uint256 public scheduledDate;
 
@@ -57,6 +62,13 @@ contract ScheduledDistributor is IScheduledDistributor {
 	address[][] private _confirmedWearers;
 
 	address public split;
+
+	/// @dev Lock the implementation contract behind the clones so it can't
+	///      be initialised directly. Each clone is a fresh deployment with
+	///      its own storage, so `initialized` is false on every clone.
+	constructor() {
+		initialized = true;
+	}
 
 	function initialize(InitParams calldata params) external override {
 		require(!initialized, "ScheduledDistributor: already initialized");
@@ -103,6 +115,10 @@ contract ScheduledDistributor is IScheduledDistributor {
 				params.multiplierBottoms[i] > 0,
 				"ScheduledDistributor: multiplierBottom must be > 0"
 			);
+			require(
+				params.confirmedWearers[i].length <= MAX_WEARERS_PER_HAT,
+				"ScheduledDistributor: too many confirmed wearers"
+			);
 			totalConfirmed += params.confirmedWearers[i].length;
 		}
 		require(
@@ -114,7 +130,6 @@ contract ScheduledDistributor is IScheduledDistributor {
 		hats = params.hats;
 		splitsCreator = params.splitsCreator;
 		scheduler = params.scheduler;
-		depositor = params.depositor;
 		backupWallet = params.backupWallet;
 		scheduledDate = params.scheduledDate;
 		weights = params.weights;
@@ -130,7 +145,6 @@ contract ScheduledDistributor is IScheduledDistributor {
 			params.scheduler,
 			params.splitsCreator,
 			params.tokens,
-			params.depositor,
 			params.backupWallet,
 			params.scheduledDate
 		);
@@ -142,8 +156,14 @@ contract ScheduledDistributor is IScheduledDistributor {
 		require(!reclaimed, "ScheduledDistributor: reclaimed");
 		require(amount > 0, "ScheduledDistributor: amount must be > 0");
 		require(_isToken[token], "ScheduledDistributor: token not allowed");
+		// Measure the actual balance delta so fee-on-transfer / rebasing
+		// tokens don't overstate Deposited.amount (and the subgraph's
+		// totalDeposited that derives from it).
+		uint256 balanceBefore = IERC20(token).balanceOf(address(this));
 		IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-		emit Deposited(msg.sender, token, amount);
+		uint256 received = IERC20(token).balanceOf(address(this)) -
+			balanceBefore;
+		emit Deposited(msg.sender, token, received);
 	}
 
 	function execute(address[][] calldata wearersByHat) external override {
@@ -290,6 +310,11 @@ contract ScheduledDistributor is IScheduledDistributor {
 		for (uint256 i = 0; i < hatsLen; i++) {
 			address[] calldata w = wearersByHat[i];
 			uint256 hatId = _hatIds[i];
+
+			require(
+				w.length <= MAX_WEARERS_PER_HAT,
+				"ScheduledDistributor: too many wearers"
+			);
 
 			// 1. Each input address is a current wearer.
 			// 2. No duplicates.

@@ -9,7 +9,6 @@ interface IScheduledDistributor {
 		address splitsCreator;
 		address scheduler;
 		address[] tokens;
-		address depositor;
 		address backupWallet;
 		uint256 scheduledDate;
 		ISplitsCreator.WeightsInfo weights;
@@ -23,7 +22,6 @@ interface IScheduledDistributor {
 		address indexed scheduler,
 		address splitsCreator,
 		address[] tokens,
-		address depositor,
 		address backupWallet,
 		uint256 scheduledDate
 	);

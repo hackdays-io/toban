@@ -115,12 +115,6 @@ export const SCHEDULED_DISTRIBUTOR_ABI = [
       {
         indexed: false,
         internalType: "address",
-        name: "depositor",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "address",
         name: "backupWallet",
         type: "address",
       },
@@ -217,19 +211,6 @@ export const SCHEDULED_DISTRIBUTOR_ABI = [
     name: "deposit",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "depositor",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
     type: "function",
   },
   {
@@ -378,11 +359,6 @@ export const SCHEDULED_DISTRIBUTOR_ABI = [
             internalType: "address[]",
             name: "tokens",
             type: "address[]",
-          },
-          {
-            internalType: "address",
-            name: "depositor",
-            type: "address",
           },
           {
             internalType: "address",
@@ -817,11 +793,6 @@ export const SCHEDULED_DISTRIBUTOR_FACTORY_ABI = [
             internalType: "address[]",
             name: "tokens",
             type: "address[]",
-          },
-          {
-            internalType: "address",
-            name: "depositor",
-            type: "address",
           },
           {
             internalType: "address",

@@ -262,8 +262,8 @@ const ScheduledNew: FC = () => {
     );
   };
 
-  // The address that will be stored on-chain as both depositor and
-  // backupWallet. Resolved late so the radio + input stay independent.
+  // The address stored on-chain as `backupWallet`. Resolved late so the
+  // radio + manual-input fields stay independent.
   const effectiveBackupAddress = useMemo<string>(() => {
     if (backupMode === "self") return ownAddress ?? "";
     return backupOtherInput.trim();
@@ -368,7 +368,6 @@ const ScheduledNew: FC = () => {
     const distributor = await createScheduledDistributor({
       splitsCreator,
       tokens,
-      depositor: effectiveBackupAddress as Address,
       backupWallet: effectiveBackupAddress as Address,
       scheduledDate,
       weights: {

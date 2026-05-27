@@ -55,8 +55,11 @@ export function handleScheduledDistributorCreated(
   dist.splitsCreator = ev.params.splitsCreator.toHex();
   const tokens = tokensToStrings(ev.params.tokens);
   dist.tokens = tokens;
-  dist.depositor = ev.params.scheduler.toHex();
-  dist.backupWallet = ev.params.scheduler.toHex();
+  // backupWallet comes straight from the factory event because the
+  // RuleCreated log fires BEFORE we register the dynamic template here
+  // (handleRuleCreated never runs for the first deployment and would leave
+  // the field stuck on a placeholder).
+  dist.backupWallet = ev.params.backupWallet.toHex();
   dist.scheduledDate = ev.params.scheduledDate;
   dist.status = "Pending";
   dist.createdAt = ev.block.timestamp;
@@ -93,7 +96,6 @@ export function handleRuleCreated(ev: RuleCreated): void {
   dist.splitsCreator = ev.params.splitsCreator.toHex();
   const tokens = tokensToStrings(ev.params.tokens);
   dist.tokens = tokens;
-  dist.depositor = ev.params.depositor.toHex();
   dist.backupWallet = ev.params.backupWallet.toHex();
   dist.scheduledDate = ev.params.scheduledDate;
   if (dist.workspaceId === null) {
@@ -138,10 +140,15 @@ export function handleExecuted(ev: DistributorExecuted): void {
   const id = ev.address.toHex();
   const dist = ScheduledDistributor.load(id);
   if (dist === null) return;
-  dist.status = "Executed";
-  dist.split = ev.params.split.toHex();
-  dist.executedAt = ev.block.timestamp;
-  dist.save();
+  // A single execute() emits one Executed log per token. Only the first one
+  // needs to mutate the parent row — gate the write so we don't pay for N-1
+  // redundant `dist.save()`s per call.
+  if (dist.status != "Executed") {
+    dist.status = "Executed";
+    dist.split = ev.params.split.toHex();
+    dist.executedAt = ev.block.timestamp;
+    dist.save();
+  }
 
   const token = ev.params.token.toHex();
   const bal = ensureBalance(id, token, ev.block.timestamp);

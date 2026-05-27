@@ -54,6 +54,7 @@ contract ScheduledDistributorFactory is
 			msg.sender,
 			rule.splitsCreator,
 			rule.tokens,
+			rule.backupWallet,
 			rule.scheduledDate,
 			salt
 		);

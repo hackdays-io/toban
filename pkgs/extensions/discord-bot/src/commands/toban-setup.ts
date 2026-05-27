@@ -44,10 +44,12 @@ export async function handleTobanSetup(
     }
   }
 
+  // verifier_token rides in the URL *fragment* (`#token=…`) so it does
+  // not leak via browser history, Referer headers, or server logs.
+  // treeId stays in the query string — it's not a secret.
   const base = env.TOBAN_FRONTEND_URL.replace(/\/$/, "");
-  const url = `${base}/connect/discord?token=${encodeURIComponent(token)}${
-    treeId ? `&treeId=${encodeURIComponent(treeId)}` : ""
-  }`;
+  const treeQuery = treeId ? `?treeId=${encodeURIComponent(treeId)}` : "";
+  const url = `${base}/connect/discord${treeQuery}#token=${encodeURIComponent(token)}`;
   return ephemeral(
     [
       "Open this link in your browser within 15 minutes to connect your wallet:",

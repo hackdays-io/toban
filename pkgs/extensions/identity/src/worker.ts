@@ -13,6 +13,7 @@
  */
 import { drizzle } from "drizzle-orm/d1";
 import { handleConnect } from "./handlers/connect.js";
+import { handleInstallStateClaim } from "./handlers/install-state.js";
 import { handleLookup } from "./handlers/lookup.js";
 import { handlePlatformLink } from "./handlers/platform-link.js";
 import type { IdentityEnv } from "./providers/types.js";
@@ -30,7 +31,8 @@ function corsHeaders(origin: string | null): HeadersInit {
   return {
     "access-control-allow-origin": origin ?? "*",
     "access-control-allow-methods": "GET, POST, OPTIONS",
-    "access-control-allow-headers": "content-type",
+    "access-control-allow-headers":
+      "content-type, authorization, x-toban-lookup-secret",
     "access-control-max-age": "86400",
   };
 }
@@ -65,10 +67,19 @@ export default {
           response = await handleConnect(request, { db, env });
           break;
         case "/api/lookup":
-          response = await handleLookup(request, { db });
+          response = await handleLookup(request, { db, env });
           break;
         case "/api/platform-link":
-          response = await handlePlatformLink(request, { db });
+          response = await handlePlatformLink(request, {
+            db,
+            writeSecret: env.PLATFORM_LINK_WRITE_SECRET,
+          });
+          break;
+        case "/api/install-state/claim-jti":
+          response = await handleInstallStateClaim(request, {
+            db,
+            writeSecret: env.PLATFORM_LINK_WRITE_SECRET,
+          });
           break;
         case "/health":
           response = new Response(JSON.stringify({ ok: true }), {

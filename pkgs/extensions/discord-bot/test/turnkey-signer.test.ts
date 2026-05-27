@@ -43,6 +43,8 @@ function makeEnv(address: string) {
     TURNKEY_API_PRIVATE_KEY: "",
     VERIFIER_PRIVATE_KEY: "",
     INSTALL_STATE_SECRET: "",
+    PLATFORM_LINK_WRITE_SECRET: "",
+    LOOKUP_READ_SECRET: "",
   };
 }
 

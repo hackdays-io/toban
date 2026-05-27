@@ -172,6 +172,60 @@ function treeIdToHatsHex(treeId: string): string {
 }
 
 /**
+ * Returns true iff `wallet` wears any hat in the workspace tree
+ * identified by `treeId`. Used by `/toban-link` to gate bindings to
+ * members of the workspace (not strictly admins — see issue #509
+ * decision: any member-Hat is sufficient).
+ *
+ * Hits the Hats subgraph directly so we don't have to deploy and
+ * indexer-pin a separate query for this.
+ */
+export async function wearsAnyHatInTree(
+  env: Env,
+  wallet: Address,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
+  if (!env.HATS_GRAPHQL_ENDPOINT) {
+    throw new Error("HATS_GRAPHQL_ENDPOINT is not configured");
+  }
+  const wearerId = wallet.toLowerCase();
+  const expectedTreeHex = treeIdToHatsHex(treeId);
+  const res = await fetchImpl(env.HATS_GRAPHQL_ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query:
+        "query($wearer: ID!) {" +
+        " wearer(id: $wearer) { currentHats { id tree { id } } } }",
+      variables: { wearer: wearerId },
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Hats subgraph wearer lookup failed: ${res.status} ${res.statusText}`,
+    );
+  }
+  const body = (await res.json()) as {
+    data?: {
+      wearer?: {
+        currentHats?: Array<{ id: string; tree?: { id: string } | null }>;
+      } | null;
+    };
+    errors?: Array<{ message: string }>;
+  };
+  if (body.errors?.length) {
+    throw new Error(
+      `Hats subgraph errored: ${body.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  const currentHats = body.data?.wearer?.currentHats ?? [];
+  return currentHats.some(
+    (h) => (h.tree?.id ?? "").toLowerCase() === expectedTreeHex,
+  );
+}
+
+/**
  * Resolve the role-context array required by ThanksToken's
  * `mintableAmount` / `mintFrom`. The contract sums up
  * `(wearingTime/10min) * shareBalance / shareTotalSupply` across each

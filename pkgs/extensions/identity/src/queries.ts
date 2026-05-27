@@ -2,7 +2,12 @@ import { and, eq } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { toBytes } from "viem";
 import type { Hex } from "viem";
-import { identities, platformLinks, usedBindingNonces } from "./schema.js";
+import {
+  identities,
+  platformLinks,
+  usedBindingNonces,
+  usedInstallStateJtis,
+} from "./schema.js";
 import type {
   Identity,
   NewIdentity,
@@ -133,4 +138,25 @@ export async function markNonceUsed(
 ): Promise<void> {
   const buf = Buffer.from(toBytes(nonce));
   await db.insert(usedBindingNonces).values({ nonce: buf, usedAt });
+}
+
+/**
+ * Claim an OAuth-install state-JWT `jti` for single-use semantics.
+ *
+ * On first call for a given `jti`, inserts the row and resolves. On any
+ * subsequent call with the same `jti`, the PRIMARY KEY constraint
+ * causes the insert to throw — the caller MUST treat the throw as
+ * "jti already used" and reject the install attempt without side
+ * effects.
+ *
+ * Caller is responsible for inspecting the error to distinguish PK
+ * violations from transient D1 errors (see the connect handler's
+ * `markNonceUsed` flow for the analogous treatment).
+ */
+export async function claimInstallStateJti(
+  db: IdentityDb,
+  jti: string,
+  usedAt: number,
+): Promise<void> {
+  await db.insert(usedInstallStateJtis).values({ jti, usedAt });
 }

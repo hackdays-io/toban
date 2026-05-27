@@ -10,6 +10,27 @@ export type IdentityEnv = {
    */
   DISCORD_BOT_VERIFIER_PUBLIC_KEY?: string;
   /**
+   * Shared secret required on `POST /api/platform-link`. Set in both the
+   * identity Worker and the discord-bot Worker (the only legitimate
+   * caller). Absence here means the endpoint is closed entirely — we do
+   * not silently fall back to "no auth" because the public CORS surface
+   * makes that a write-to-anything endpoint.
+   */
+  PLATFORM_LINK_WRITE_SECRET?: string;
+  /**
+   * Comma-separated allowlist of EVM chainIds the worker will accept
+   * `IdentityBinding.typedData.domain.chainId` for. Submitting a chainId
+   * outside this list yields `domain_mismatch`. Unset means "no
+   * restriction" — only acceptable for dev environments.
+   */
+  ACCEPTED_CHAIN_IDS?: string;
+  /**
+   * Shared secret required on `GET /api/lookup`. Set in both the identity
+   * Worker and consumers (discord-bot, future extensions). Unset means
+   * "no auth" — only acceptable for legacy dev configs.
+   */
+  LOOKUP_READ_SECRET?: string;
+  /**
    * RPC endpoint used for EIP-1271 / ERC-6492 signature verification.
    *
    * Privy and other smart-wallet stacks sign typed data with the embedded

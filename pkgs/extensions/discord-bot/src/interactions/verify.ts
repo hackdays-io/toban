@@ -30,20 +30,42 @@ function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
 }
 
 /**
+ * Maximum tolerated skew between `X-Signature-Timestamp` and our clock,
+ * in seconds. Discord's docs require 5 minutes — any wider window
+ * leaves a replay surface for captured interaction POSTs (proxy logs,
+ * webhook relay, etc.).
+ */
+export const DISCORD_INTERACTION_MAX_SKEW_SECONDS = 300;
+
+/**
  * Verify a Discord interaction request.
  *
  * @param publicKeyHex Hex-encoded Ed25519 public key (Discord "Public Key").
  * @param signatureHex Hex-encoded signature from `X-Signature-Ed25519`.
  * @param timestamp    Value of `X-Signature-Timestamp` header.
  * @param rawBody      The exact, untouched request body (string).
+ * @param opts.now     Unix-seconds source (injectable for tests).
+ *                     Defaults to `Math.floor(Date.now()/1000)`.
  */
 export async function verifyDiscordInteraction(
   publicKeyHex: string,
   signatureHex: string,
   timestamp: string,
   rawBody: string,
+  opts: { now?: () => number } = {},
 ): Promise<boolean> {
   if (!publicKeyHex || !signatureHex || !timestamp) return false;
+
+  // Freshness window: reject signatures whose declared timestamp is more
+  // than DISCORD_INTERACTION_MAX_SKEW_SECONDS away from our clock.
+  // Without this, a captured signed POST replays forever within the
+  // signing key's lifetime.
+  const tsSeconds = Number(timestamp);
+  if (!Number.isFinite(tsSeconds)) return false;
+  const now = (opts.now ?? (() => Math.floor(Date.now() / 1000)))();
+  if (Math.abs(now - tsSeconds) > DISCORD_INTERACTION_MAX_SKEW_SECONDS) {
+    return false;
+  }
 
   let key: CryptoKey;
   try {

@@ -2,7 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useMemo, useState } from "react";
+import { type FC, useEffect, useMemo, useState } from "react";
 import { SiDiscord } from "react-icons/si";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
+import { withBigIntJSON } from "~/lib/bigint-json";
 
 const IDENTITY_BINDING_TYPES = {
   IdentityBinding: [
@@ -69,9 +70,49 @@ const ERROR_MESSAGES: Record<string, string> = {
   nonce_reused: "同じ署名が既に使用されています。再度お試しください。",
 };
 
+// `meta` runs server-side too — the no-referrer policy is rendered into
+// the initial HTML so the browser doesn't even produce a Referer for the
+// first navigation off this page (e.g. while it's still showing the
+// fragment).
+export const meta = () => [{ name: "referrer", content: "no-referrer" }];
+
+/**
+ * Read the verifier_token from the URL fragment (`#token=<jwt>`) on the
+ * client. The fragment is never sent to any server and is not retained
+ * by Referer headers, which makes it the right transport for a bearer
+ * credential. After the first read we strip the fragment from the
+ * address bar so screenshots / shoulder-surfing don't expose it either.
+ *
+ * SSR has no `window`, so we return null on the first render and let
+ * the effect populate it. The page already gates render behind `token`
+ * and `claims` checks so a single-render delay is harmless.
+ */
+function useVerifierTokenFromHash(): string | null {
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash) return;
+    const m = hash.replace(/^#/, "").match(/(?:^|&)token=([^&]+)/);
+    if (!m) return;
+    setToken(decodeURIComponent(m[1]));
+    // Strip the fragment from the address bar; keeps the path + query.
+    const url = `${window.location.pathname}${window.location.search}`;
+    window.history.replaceState(null, "", url);
+  }, []);
+  return token;
+}
+
 const ConnectDiscord: FC = () => {
   const [params] = useSearchParams();
-  const token = params.get("token");
+  // Token now rides in the URL fragment to avoid browser-history /
+  // Referer / server-log leakage. `?token=` is still parsed as a
+  // soft-deprecated fallback so existing in-flight DMs keep working;
+  // remove once /toban-setup's previous link format is no longer in
+  // the wild.
+  const tokenFromHash = useVerifierTokenFromHash();
+  const tokenFromQuery = params.get("token");
+  const token = tokenFromHash ?? tokenFromQuery;
   const treeId = params.get("treeId");
 
   const claims = useMemo(
@@ -105,14 +146,24 @@ const ConnectDiscord: FC = () => {
       "discord",
       claims?.accountId,
       identityWorkerUrl,
+      // include token so changing it re-runs the query — the lookup
+      // requires the verifier_token bearer.
+      token,
     ],
-    enabled: !!claims?.accountId && !!identityWorkerUrl,
+    enabled: !!claims?.accountId && !!identityWorkerUrl && !!token,
     queryFn: async (): Promise<{ wallet: Address } | null> => {
-      if (!claims?.accountId || !identityWorkerUrl) return null;
+      if (!claims?.accountId || !identityWorkerUrl || !token) return null;
       const url = `${identityWorkerUrl.replace(/\/$/, "")}/api/lookup?provider=discord&account_id=${encodeURIComponent(
         claims.accountId,
       )}`;
-      const res = await fetch(url);
+      // The identity worker requires either the server-only shared
+      // secret or a verifier_token bearer whose accountId matches the
+      // lookup. From the browser we use the latter: the same JWT the
+      // user opened the page with proves they own this snowflake, so
+      // looking up its bound wallet is a no-op disclosure.
+      const res = await fetch(url, {
+        headers: { authorization: `Bearer ${token}` },
+      });
       if (res.status === 404) return null;
       if (!res.ok) {
         throw new Error(`identity lookup failed: ${res.status}`);
@@ -155,13 +206,15 @@ const ConnectDiscord: FC = () => {
         chainId: currentChain.id,
       } as const;
 
-      const signature = (await wallet.signTypedData({
-        account: walletAddress,
-        domain,
-        types: IDENTITY_BINDING_TYPES,
-        primaryType: "IdentityBinding",
-        message,
-      })) as Hex;
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain,
+          types: IDENTITY_BINDING_TYPES,
+          primaryType: "IdentityBinding",
+          message,
+        }),
+      )) as Hex;
 
       const identityUrl = import.meta.env.VITE_IDENTITY_WORKER_URL as
         | string

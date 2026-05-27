@@ -16,6 +16,20 @@
   "condition": "and(allOf)",
   "rules": [
     {
+      "id": "activity-must-be-sign-transaction",
+      "_comment": [
+        "Hard gate: every other rule below inspects `eth.tx.*`, which is",
+        "only populated for ACTIVITY_TYPE_SIGN_TRANSACTION_V2. A future",
+        "code path (or a stamper-key compromise) that calls",
+        "ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2 — i.e. `sign_raw_payload` for",
+        "signMessage / signTypedData — would bypass every eth.tx.* rule",
+        "because none of them reference the raw-hash surface. Pin the",
+        "policy to signTransaction so any future raw-payload signing",
+        "requires an explicit, PR-reviewed policy expansion."
+      ],
+      "expression": "activity.type == 'ACTIVITY_TYPE_SIGN_TRANSACTION_V2'"
+    },
+    {
       "id": "to-must-be-registered-thanks-token",
       "_comment": [
         "Only allow txs whose `to` is a Toban-registered ThanksToken",

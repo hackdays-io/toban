@@ -64,8 +64,19 @@ export const usedBindingNonces = sqliteTable("used_binding_nonces", {
   usedAt: integer("used_at").notNull(),
 });
 
+/**
+ * Consumed OAuth-install state-JWT `jti`s — single-use replay protection
+ * for the Discord bot install flow (see #4 review finding). A state JWT
+ * with a previously-seen `jti` is rejected before any side effect.
+ */
+export const usedInstallStateJtis = sqliteTable("used_install_state_jtis", {
+  jti: text("jti").primaryKey(),
+  usedAt: integer("used_at").notNull(),
+});
+
 export type Identity = typeof identities.$inferSelect;
 export type NewIdentity = typeof identities.$inferInsert;
 export type PlatformLink = typeof platformLinks.$inferSelect;
 export type NewPlatformLink = typeof platformLinks.$inferInsert;
 export type UsedBindingNonce = typeof usedBindingNonces.$inferSelect;
+export type UsedInstallStateJti = typeof usedInstallStateJtis.$inferSelect;

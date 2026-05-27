@@ -7,6 +7,14 @@ import type { NewPlatformLink, PlatformLink } from "../schema.js";
 
 export type PlatformLinkHandlerDeps = {
   db: IdentityDb;
+  /**
+   * Shared secret that `POST /api/platform-link` callers must echo in
+   * the `x-toban-platform-link-secret` header. Must come from the
+   * consumer Worker's env. Absent secret → POST is closed (401) — we
+   * never serve an unauthenticated write path because the route is
+   * exposed via the same workers.dev URL the frontend hits.
+   */
+  writeSecret?: string;
   now?: () => number;
 };
 
@@ -70,6 +78,17 @@ export async function handlePlatformLink(
   }
 
   if (request.method === "POST") {
+    if (!deps.writeSecret) {
+      return json(401, {
+        error: "unauthorized",
+        details: "platform-link write secret is not configured",
+      });
+    }
+    const supplied = request.headers.get("x-toban-platform-link-secret");
+    if (supplied !== deps.writeSecret) {
+      return json(401, { error: "unauthorized" });
+    }
+
     let raw: unknown;
     try {
       raw = await request.json();

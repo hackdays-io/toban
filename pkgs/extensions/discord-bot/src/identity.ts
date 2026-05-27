@@ -51,6 +51,15 @@ export interface IdentityClient {
    * OAuth callback after the admin Hat check passes.
    */
   upsertPlatformLink(link: PlatformLink): Promise<void>;
+
+  /**
+   * Single-use claim for an OAuth-install state-JWT `jti`. Resolves
+   * `{ ok: true }` on first claim, `{ ok: false, reason: 'already_used' }`
+   * on replay. Any other failure (transient D1, auth, network) throws.
+   */
+  claimInstallStateJti(
+    jti: string,
+  ): Promise<{ ok: true } | { ok: false; reason: "already_used" }>;
 }
 
 /**
@@ -66,7 +75,13 @@ export interface IdentityClient {
  * sees a proper Request object with path + query.
  */
 class IdentityFetchClient implements IdentityClient {
-  constructor(private readonly fetcher: Fetcher | typeof fetch) {}
+  constructor(
+    private readonly fetcher: Fetcher | typeof fetch,
+    private readonly secrets: {
+      writeSecret: string;
+      lookupSecret: string;
+    },
+  ) {}
 
   private async go(path: string, init?: RequestInit): Promise<Response> {
     // Use a synthetic host since service bindings ignore it.
@@ -82,7 +97,9 @@ class IdentityFetchClient implements IdentityClient {
     accountId: string,
   ): Promise<IdentityRecord | null> {
     const path = `/api/lookup?provider=${encodeURIComponent(provider)}&account_id=${encodeURIComponent(accountId)}`;
-    const res = await this.go(path);
+    const res = await this.go(path, {
+      headers: { "x-toban-lookup-secret": this.secrets.lookupSecret },
+    });
     if (res.status === 404) return null;
     if (!res.ok) {
       throw new Error(
@@ -110,7 +127,10 @@ class IdentityFetchClient implements IdentityClient {
   async upsertPlatformLink(link: PlatformLink): Promise<void> {
     const res = await this.go("/api/platform-link", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-toban-platform-link-secret": this.secrets.writeSecret,
+      },
       body: JSON.stringify(link),
     });
     if (!res.ok) {
@@ -119,8 +139,31 @@ class IdentityFetchClient implements IdentityClient {
       );
     }
   }
+
+  async claimInstallStateJti(
+    jti: string,
+  ): Promise<{ ok: true } | { ok: false; reason: "already_used" }> {
+    const res = await this.go("/api/install-state/claim-jti", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-toban-platform-link-secret": this.secrets.writeSecret,
+      },
+      body: JSON.stringify({ jti }),
+    });
+    if (res.status === 409) return { ok: false, reason: "already_used" };
+    if (!res.ok) {
+      throw new Error(
+        `install-state claim failed: ${res.status} ${await res.text()}`,
+      );
+    }
+    return { ok: true };
+  }
 }
 
 export function createIdentityClient(env: Env): IdentityClient {
-  return new IdentityFetchClient(env.IDENTITY);
+  return new IdentityFetchClient(env.IDENTITY, {
+    writeSecret: env.PLATFORM_LINK_WRITE_SECRET,
+    lookupSecret: env.LOOKUP_READ_SECRET,
+  });
 }

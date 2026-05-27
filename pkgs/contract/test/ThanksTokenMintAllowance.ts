@@ -557,6 +557,25 @@ describe("ThanksToken mint allowance", () => {
         expect(e.message).to.include("Cannot mint to yourself");
       }
     });
+
+    it("reverts when spender mints to spender (compromised-spender defence)", async () => {
+      // Even when from != to, the spender can never be the recipient.
+      // Defends against a compromised allowance holder draining `from`'s
+      // allowance to itself.
+      const relatedRoles = [{ hatId, wearer: ownerAddr }];
+      await DeployedThanksToken.write.approveMint([spenderAddr, 10n ** 24n], {
+        account: owner.account,
+      });
+      try {
+        await DeployedThanksToken.write.mintFrom(
+          [ownerAddr, spenderAddr, 1n, relatedRoles, "0x"],
+          { account: spender.account },
+        );
+        expect.fail("should have reverted");
+      } catch (e: any) {
+        expect(e.message).to.include("Cannot mint to spender");
+      }
+    });
   });
 
   describe("permitMint", () => {
@@ -678,6 +697,33 @@ describe("ThanksToken mint allowance", () => {
         expect.fail("expired permit should revert");
       } catch (e: any) {
         expect(e.message).to.include("permit expired");
+      }
+    });
+
+    it("reverts when a non-spender submits the permit", async () => {
+      // Unlike ERC-2612, permitMint is *not* permissionless — only the
+      // intended spender may submit. Defends against grief attacks that
+      // consume the nonce / lower allowance via a stale-but-still-valid
+      // permit captured from the mempool or logs.
+      const nonce = await DeployedThanksToken.read.mintNonces([ownerAddr]);
+      const deadline = BigInt(await time.latest()) + ONE_HOUR;
+      const value = 11n;
+      const { r, s, v } = await signPermit(owner, DeployedThanksToken.address, {
+        owner: ownerAddr,
+        spender: spenderAddr,
+        value,
+        nonce,
+        deadline,
+      });
+      try {
+        await DeployedThanksToken.write.permitMint(
+          [ownerAddr, spenderAddr, value, deadline, v, r, s],
+          // Submit from a third party, not the intended spender.
+          { account: owner.account },
+        );
+        expect.fail("non-spender submission should revert");
+      } catch (e: any) {
+        expect(e.message).to.include("caller must be spender");
       }
     });
 

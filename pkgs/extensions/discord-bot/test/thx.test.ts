@@ -44,6 +44,8 @@ function fakeEnv(): Env {
     TURNKEY_API_PRIVATE_KEY: "",
     VERIFIER_PRIVATE_KEY: "",
     INSTALL_STATE_SECRET: "",
+    PLATFORM_LINK_WRITE_SECRET: "",
+    LOOKUP_READ_SECRET: "",
   };
 }
 
@@ -103,6 +105,9 @@ class StubIdentity implements IdentityClient {
   }
   async upsertPlatformLink() {
     /* no-op */
+  }
+  async claimInstallStateJti() {
+    return { ok: true } as const;
   }
 }
 

@@ -155,9 +155,16 @@ function parseConnectRequest(raw: unknown): ConnectRequest | null {
     return null;
   }
   // Normalise `expires` to bigint — JSON has no native bigint, so we accept
-  // string|number|bigint and coerce.
-  const expires =
-    typeof msg.expires === "bigint" ? msg.expires : BigInt(msg.expires);
+  // string|number|bigint and coerce. `BigInt(…)` throws synchronously on
+  // junk input ("abc", "1.5", "0xqq"), so we wrap it: a malformed
+  // `expires` is a client shape error, not a 500.
+  let expires: bigint;
+  try {
+    expires =
+      typeof msg.expires === "bigint" ? msg.expires : BigInt(msg.expires);
+  } catch {
+    return null;
+  }
   return {
     provider: r.provider,
     verifier_token: r.verifier_token,
@@ -233,6 +240,24 @@ export async function handleConnect(
       "domain_mismatch",
       "EIP-712 domain name/version/chainId invalid",
     );
+  }
+  // Reject chainIds outside the env-configured allowlist. Without this,
+  // a client can sign for chainId=1 (mainnet smart wallet) and have it
+  // verified against this worker's testnet RPC — `isValidSignature` may
+  // be queried on the wrong chain's contract and either short-circuit
+  // to false (confusing) or, worse, return a magic value against an
+  // unrelated contract at the same address.
+  if (deps.env.ACCEPTED_CHAIN_IDS) {
+    const allowed = deps.env.ACCEPTED_CHAIN_IDS.split(",")
+      .map((s) => Number.parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n));
+    if (allowed.length > 0 && !allowed.includes(td.domain.chainId)) {
+      return errorResponse(
+        400,
+        "domain_mismatch",
+        `chainId ${td.domain.chainId} is not in the accepted set`,
+      );
+    }
   }
   if (td.message.provider !== parsed.provider) {
     return errorResponse(
@@ -341,20 +366,14 @@ export async function handleConnect(
     );
   }
 
-  try {
-    await markNonceUsed(deps.db, td.message.nonce, now);
-  } catch (err) {
-    // Race: another concurrent request consumed the same nonce between our
-    // check and insert. Surface as nonce_reused.
-    return errorResponse(
-      400,
-      "nonce_reused",
-      "IdentityBinding nonce already consumed (race)",
-    );
-  }
-
-  // Persist the binding. Wallet is stored in checksum form so downstream
-  // consumers don't have to re-checksum every read.
+  // Persist the binding *before* claiming the nonce. D1 doesn't yet
+  // support transactions on Workers (#10 review finding), so a partial
+  // failure between the two writes is unavoidable; we minimise harm by
+  // ordering them so the survivable failure mode is "identity upsert
+  // succeeded but nonce wasn't burned" — the same signature can simply
+  // be retried (the upsert is idempotent for an identical wallet) —
+  // rather than "nonce burned but identity never recorded" which would
+  // strand the user forever.
   const checksumWallet = getAddress(td.message.wallet);
   await upsertIdentity(deps.db, {
     provider: parsed.provider,
@@ -364,6 +383,26 @@ export async function handleConnect(
     createdAt: now,
     updatedAt: now,
   });
+
+  try {
+    await markNonceUsed(deps.db, td.message.nonce, now);
+  } catch (err) {
+    // Distinguish "nonce already consumed by a concurrent request"
+    // (PRIMARY KEY violation) from a transient D1 failure. Both D1
+    // and better-sqlite3 surface PK violations with a message that
+    // contains "UNIQUE constraint failed"; anything else is treated as
+    // a 500 so callers don't get a misleading nonce_reused code that
+    // makes them rotate the nonce for no reason.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/UNIQUE constraint failed/i.test(msg)) {
+      return errorResponse(
+        400,
+        "nonce_reused",
+        "IdentityBinding nonce already consumed (race)",
+      );
+    }
+    return errorResponse(500, "internal_error", `mark nonce failed: ${msg}`);
+  }
 
   return jsonResponse(200, { ok: true });
 }

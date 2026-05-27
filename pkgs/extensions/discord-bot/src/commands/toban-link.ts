@@ -1,45 +1,70 @@
 /**
  * /toban-link <workspace_url>
  *
- * Admin-flow entry point in Discord. Resolves the workspace tree id from
- * the URL, looks up the caller's wallet via identity, and upserts the
- * (provider=discord, platform_id=guild_id) → tree_id binding in the
- * shared D1 (via identity worker HTTP API).
+ * Discord-initiated workspace binding. Resolves the workspace tree id
+ * from the URL, looks up the caller's wallet via identity, confirms the
+ * caller wears any Hat in the workspace tree (member-level gate, not
+ * admin-only — issue #509 decision: admin-only is too friction-heavy
+ * for the MVP flow), then upserts the
+ * (provider=discord, platform_id=guild_id) → tree_id binding via the
+ * identity Worker.
  *
- * The original #508 spec routed admins through a Discord OAuth install
- * flow that ran on /api/install/callback. That makes sense when the
- * admin starts from the frontend (`/<treeId>` → "Discord 連携" button →
- * OAuth → callback binds), but reduces to extra hops when the admin
- * already has the bot in their guild. The OAuth callback handler still
- * exists for the frontend-initiated path; this slash command is the
- * Discord-initiated shortcut.
+ * The OAuth callback handler (`api/install/callback.ts`) is the
+ * frontend-initiated equivalent and shares the same identity boundary.
  *
- * Admin Hat on-chain verification is TODO — for MVP we trust the
- * URL-bearer to actually be the workspace admin.
+ * Hardening relative to the initial spec:
+ *   - URL host must match `TOBAN_FRONTEND_URL` (no open-host parsing).
+ *   - Caller's identity-bound wallet must wear ≥1 hat in the target tree.
+ *     Looked up via the Hats subgraph (see `wearsAnyHatInTree`).
  */
 import type {
   APIChatInputApplicationCommandInteraction,
   APIInteractionResponse,
 } from "discord-api-types/v10";
+import type { Address } from "viem";
+import { wearsAnyHatInTree } from "../chain";
 import type { Env } from "../env";
 import { type IdentityClient, createIdentityClient } from "../identity";
 import { ephemeral } from "./responses";
 
-function extractTreeId(workspaceUrl: string): string | null {
+function normalizeHost(rawUrl: string): string | null {
   try {
-    const u = new URL(workspaceUrl);
-    const parts = u.pathname.split("/").filter(Boolean);
-    if (parts.length === 0) return null;
-    const treeId = parts[0];
-    if (!/^[0-9a-fA-Fx]+$/.test(treeId)) return null;
-    return treeId;
+    return new URL(rawUrl).host.toLowerCase();
   } catch {
     return null;
   }
 }
 
+/**
+ * Parse a workspace URL into its tree id, enforcing that the host
+ * matches one of `allowedHosts`. Returns `null` for any shape that does
+ * not look like `https://<allowed-host>/<treeId>[/...]`.
+ */
+function extractTreeId(
+  workspaceUrl: string,
+  allowedHosts: ReadonlySet<string>,
+): string | null {
+  let u: URL;
+  try {
+    u = new URL(workspaceUrl);
+  } catch {
+    return null;
+  }
+  if (!allowedHosts.has(u.host.toLowerCase())) return null;
+  const parts = u.pathname.split("/").filter(Boolean);
+  if (parts.length === 0) return null;
+  const treeId = parts[0];
+  if (!/^[0-9a-fA-Fx]+$/.test(treeId)) return null;
+  return treeId;
+}
+
 export interface TobanLinkDeps {
   identity?: IdentityClient;
+  /**
+   * Verify the caller's wallet is a member of the target workspace
+   * tree. Defaults to a Hats subgraph fetch — tests stub.
+   */
+  wearsHatInTree?: (wallet: Address, treeId: string) => Promise<boolean>;
 }
 
 export async function handleTobanLink(
@@ -60,10 +85,17 @@ export async function handleTobanLink(
       workspaceUrl = o.value;
     }
   }
-  const treeId = extractTreeId(workspaceUrl);
+  const frontendHost = normalizeHost(env.TOBAN_FRONTEND_URL);
+  if (!frontendHost) {
+    return ephemeral(
+      "The bot is misconfigured: TOBAN_FRONTEND_URL is not a valid URL. Please contact an operator.",
+    );
+  }
+  const allowedHosts = new Set<string>([frontendHost]);
+  const treeId = extractTreeId(workspaceUrl, allowedHosts);
   if (!treeId) {
     return ephemeral(
-      "Could not parse a Toban workspace URL. Expected something like https://toban.xyz/<treeId>",
+      `Workspace URL must start with ${env.TOBAN_FRONTEND_URL} and include a tree id, e.g. ${env.TOBAN_FRONTEND_URL.replace(/\/$/, "")}/<treeId>`,
     );
   }
 
@@ -80,8 +112,22 @@ export async function handleTobanLink(
     );
   }
 
-  // TODO(#509-followup): verify caller.wallet holds the workspace admin Hat
-  // on-chain via the Hats contract. For MVP we trust the URL-bearer.
+  const wearsHat =
+    deps.wearsHatInTree ??
+    ((wallet: Address, t: string) => wearsAnyHatInTree(env, wallet, t));
+  let isMember: boolean;
+  try {
+    isMember = await wearsHat(caller.wallet as Address, treeId);
+  } catch (err) {
+    return ephemeral(
+      `Could not verify workspace membership right now (${(err as Error).message}). Try again in a moment.`,
+    );
+  }
+  if (!isMember) {
+    return ephemeral(
+      "Your linked wallet doesn't wear any hat in this workspace. Only members of the workspace can link a Discord server to it.",
+    );
+  }
 
   await identity.upsertPlatformLink({
     provider: "discord",

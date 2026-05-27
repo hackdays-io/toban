@@ -87,4 +87,18 @@ export interface Env {
   VERIFIER_PRIVATE_KEY: string;
   /** HMAC secret for the short-lived OAuth install state JWT. */
   INSTALL_STATE_SECRET: string;
+  /**
+   * Shared secret sent to the identity Worker on every `POST /api/platform-link`
+   * call (header `x-toban-platform-link-secret`). The identity Worker
+   * rejects unauthenticated writes — leaving this unset will break
+   * `/toban-link` and the OAuth install callback.
+   */
+  PLATFORM_LINK_WRITE_SECRET: string;
+  /**
+   * Shared secret sent to the identity Worker on every `GET /api/lookup`
+   * call (header `x-toban-lookup-secret`). The identity Worker rejects
+   * unauthenticated lookups — leaving this unset breaks identity
+   * resolution for `/thx` and `/balance`.
+   */
+  LOOKUP_READ_SECRET: string;
 }

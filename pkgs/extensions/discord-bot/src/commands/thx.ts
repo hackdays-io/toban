@@ -166,6 +166,12 @@ async function resolveRecipientWallet(
 /**
  * Execute /thx end-to-end. Returns nothing — observable side effects
  * are (a) chain state changes and (b) Discord followup messages.
+ *
+ * Wrapped in a top-level try/catch because we run inside
+ * `ctx.waitUntil(...)`: any unhandled throw silently rejects the
+ * promise and leaves the deferred Discord interaction stuck in
+ * "thinking…" forever. Every observable failure path *must* end with a
+ * followup message, even if it's just an apology.
  */
 export async function executeThx(
   env: Env,
@@ -173,6 +179,28 @@ export async function executeThx(
   deps: ThxDeps = {},
 ): Promise<void> {
   const followup = deps.followup ?? sendFollowup;
+  try {
+    await executeThxInner(env, interaction, deps, followup);
+  } catch (err) {
+    console.error("executeThx unhandled:", err);
+    try {
+      await followup(
+        env.DISCORD_APP_ID,
+        interaction.token,
+        "Something went wrong while processing /thx. The operators have been notified — please try again in a moment.",
+      );
+    } catch (followupErr) {
+      console.error("executeThx followup-after-error failed:", followupErr);
+    }
+  }
+}
+
+async function executeThxInner(
+  env: Env,
+  interaction: APIChatInputApplicationCommandInteraction,
+  deps: ThxDeps,
+  followup: NonNullable<ThxDeps["followup"]>,
+): Promise<void> {
   const senderSf = interaction.member?.user.id ?? interaction.user?.id ?? "";
   const parsed = parseThxArgs(interaction);
   if ("error" in parsed) {

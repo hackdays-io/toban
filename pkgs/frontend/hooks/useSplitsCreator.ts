@@ -138,6 +138,10 @@ export const useSplit = (contractAddress: Address | undefined) => {
       }
     },
     staleTime: 1000 * 60 * 5,
+    // The SDK already retries internally with exponential backoff; one
+    // additional React Query retry covers a genuine transient blip without
+    // turning an Alchemy rate-limit into a request storm.
+    retry: 1,
   });
 
   const [isDistributing, setIsDistributing] = useState(false);
@@ -182,6 +186,9 @@ export const useUserEarnings = () => {
       }
     },
     enabled: !!wallet && !!splitsDataClient,
+    // The SDK already retries internally; one extra React Query retry covers
+    // a genuine transient blip without turning a rate-limit into a storm.
+    retry: 1,
   });
 
   const [isWithdrawing, setIsWithdrawing] = useState(false);

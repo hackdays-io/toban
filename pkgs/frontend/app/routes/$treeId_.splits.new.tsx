@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { type DutyOption, useDutyDetails } from "hooks/useDutyDetails";
 import {
   useAddressesByNames,
   useNamesByAddresses,
@@ -17,7 +16,6 @@ import {
 } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
@@ -26,6 +24,10 @@ import {
   type DonutSlice,
 } from "~/components/composite/donut-chart";
 import { FieldLabel } from "~/components/composite/field-label";
+import {
+  PercentSlider,
+  WeightLabels,
+} from "~/components/composite/percent-weight-slider";
 import { SectionLabel } from "~/components/composite/section-label";
 import { StepBar } from "~/components/composite/step-bar";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
@@ -54,59 +56,6 @@ const STEP_INDEX: Record<Step, number> = {
   form: 0,
   preview: 1,
   done: 2,
-};
-
-interface DutyOption {
-  hatId: Address;
-  detailsUri?: string;
-  imageUri?: string;
-  wearers: Address[];
-}
-
-interface DutyDetail {
-  hatId: Address;
-  name: string;
-  description?: string;
-  imageUrl?: string;
-}
-
-const useDutyDetails = (options: DutyOption[]): DutyDetail[] => {
-  const queries = options.map((o) => o.detailsUri);
-  // One detail blob per duty — small enough to fan out, large enough we want
-  // React Query's cache so the preview→form round-trip doesn't re-fetch.
-  const detailResults = useQuery({
-    queryKey: ["duty-details-batch", queries.join("|")],
-    enabled: options.length > 0,
-    staleTime: 1000 * 60 * 60,
-    queryFn: async () => {
-      const fetched = await Promise.all(
-        options.map(async (o) => {
-          if (!o.detailsUri) return undefined;
-          const url = ipfs2https(o.detailsUri);
-          if (!url) return undefined;
-          try {
-            const { data } = await axios.get<HatsDetailSchama>(url);
-            return data;
-          } catch (error) {
-            console.error("Failed to fetch duty details:", error);
-            return undefined;
-          }
-        }),
-      );
-      return fetched;
-    },
-  });
-  return useMemo(() => {
-    return options.map((o, i): DutyDetail => {
-      const data = detailResults.data?.[i];
-      return {
-        hatId: o.hatId,
-        name: data?.data?.name ?? "当番",
-        description: data?.data?.description,
-        imageUrl: ipfs2https(o.imageUri),
-      };
-    });
-  }, [options, detailResults.data]);
 };
 
 interface RoleInput {
@@ -874,106 +823,3 @@ const SplitterNew: FC = () => {
 };
 
 export default SplitterNew;
-
-// ─── WeightLabels ──────────────────────────────────────────────────────────
-
-interface WeightLabelsProps {
-  leftLabel: string;
-  leftValue: number;
-  leftColor: string;
-  rightLabel: string;
-  rightValue: number;
-  rightColor: string;
-}
-
-// One opposing-ends row above the slider: left side hugs the start of the
-// track, right side hugs the end. Each side stacks its percentage above the
-// label so the colour-coded value sits visually closer to the slider.
-const WeightLabels: FC<WeightLabelsProps> = ({
-  leftLabel,
-  leftValue,
-  leftColor,
-  rightLabel,
-  rightValue,
-  rightColor,
-}) => (
-  <div className="flex items-end justify-between gap-2 text-[13px]">
-    <div className="flex flex-col items-start">
-      <Typography
-        as="span"
-        variant="bodySm"
-        weight="bold"
-        className="tabular-nums leading-none"
-        style={{ color: leftColor }}
-      >
-        {leftValue}%
-      </Typography>
-      <Typography
-        as="span"
-        variant="caption"
-        weight="semibold"
-        className="mt-0.5"
-      >
-        {leftLabel}
-      </Typography>
-    </div>
-    <div className="flex flex-col items-end">
-      <Typography
-        as="span"
-        variant="bodySm"
-        weight="bold"
-        className="tabular-nums leading-none"
-        style={{ color: rightColor }}
-      >
-        {rightValue}%
-      </Typography>
-      <Typography
-        as="span"
-        variant="caption"
-        weight="semibold"
-        className="mt-0.5"
-      >
-        {rightLabel}
-      </Typography>
-    </div>
-  </div>
-);
-
-// ─── PercentSlider ─────────────────────────────────────────────────────────
-
-interface PercentSliderProps {
-  value: number;
-  onChange: (next: number) => void;
-  ariaLabel: string;
-  /** Colour of the track left of the thumb (the "left label" side). */
-  leftColor: string;
-  /** Colour of the track right of the thumb (the "right label" side). */
-  rightColor: string;
-}
-
-// Native range whose track is painted via a linear-gradient — splitting at the
-// current value — so each side carries its label's brand colour. The thumb is
-// solid white with a dark border so it stays visible against either side of
-// the track. (Native `::-webkit-slider-runnable-track` styling is unreliable
-// across browsers; a gradient background sidesteps the inconsistency.)
-const PercentSlider: FC<PercentSliderProps> = ({
-  value,
-  onChange,
-  ariaLabel,
-  leftColor,
-  rightColor,
-}) => (
-  <input
-    type="range"
-    min={0}
-    max={100}
-    step={1}
-    value={value}
-    onChange={(e) => onChange(Number(e.target.value))}
-    aria-label={ariaLabel}
-    className="h-2 w-full cursor-pointer appearance-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-text-secondary/40 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-2 [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-text-secondary/40 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-2"
-    style={{
-      background: `linear-gradient(to right, ${leftColor} 0%, ${leftColor} ${value}%, ${rightColor} ${value}%, ${rightColor} 100%)`,
-    }}
-  />
-);

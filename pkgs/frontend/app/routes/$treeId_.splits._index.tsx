@@ -23,6 +23,7 @@ import {
 } from "~/components/composite/donut-chart";
 import { EmptyState } from "~/components/composite/empty-state";
 import { SectionLabel } from "~/components/composite/section-label";
+import { Segmented } from "~/components/composite/segmented";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -190,6 +191,15 @@ const SplitsIndex: FC = () => {
         items={[{ label: "ホーム", to: `/${treeId}` }, { label: "分配ルール" }]}
       />
 
+      {activeBalances.length > 0 && (
+        <UnclaimedRewardsCard
+          balances={activeBalances}
+          onWithdraw={(addr) => userEarnings.withdraw(addr as Address)}
+          isWithdrawing={userEarnings.isWithdrawing}
+          className="mx-1 mb-4"
+        />
+      )}
+
       {/* Mobile single-column. */}
       <div className="md:hidden">
         <WorkspaceHeader
@@ -200,14 +210,15 @@ const SplitsIndex: FC = () => {
           showCta
         />
 
-        {activeBalances.length > 0 && (
-          <UnclaimedRewardsCard
-            balances={activeBalances}
-            onWithdraw={(addr) => userEarnings.withdraw(addr as Address)}
-            isWithdrawing={userEarnings.isWithdrawing}
-            className="mx-1 mt-4 mb-4"
-          />
-        )}
+        <Segmented
+          className="mt-3 mb-1 flex w-full"
+          value="splits"
+          onChange={(v) => navigate(`/${treeId}/${v}`)}
+          options={[
+            { value: "splits", label: "分配ルール" },
+            { value: "scheduled", label: "予約分配" },
+          ]}
+        />
 
         <SectionLabel className="mt-4 px-1">分配ルール</SectionLabel>
 
@@ -258,6 +269,15 @@ const SplitsIndex: FC = () => {
               ctaTo={`/${treeId}/splits/new`}
               showCta
             />
+            <Segmented
+              className="flex w-full"
+              value="splits"
+              onChange={(v) => navigate(`/${treeId}/${v}`)}
+              options={[
+                { value: "splits", label: "分配ルール" },
+                { value: "scheduled", label: "予約分配" },
+              ]}
+            />
             {isLoading && items.length === 0 ? (
               <Card className="py-6 text-center">
                 <Typography variant="bodySm" tone="secondary">
@@ -288,13 +308,6 @@ const SplitsIndex: FC = () => {
             )}
           </aside>
           <section className="flex flex-col gap-5">
-            {activeBalances.length > 0 && (
-              <UnclaimedRewardsCard
-                balances={activeBalances}
-                onWithdraw={(addr) => userEarnings.withdraw(addr as Address)}
-                isWithdrawing={userEarnings.isWithdrawing}
-              />
-            )}
             {selectedItem ? (
               <DesktopDetailPreview
                 item={selectedItem}

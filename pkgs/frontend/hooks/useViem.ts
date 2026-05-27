@@ -29,14 +29,42 @@ const alchemyRpcUrl =
           ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`
           : `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`;
 
-export const currentChainRPCBaseURL = [http(alchemyRpcUrl)];
+// Public-node RPC per chain. Adds a free, keyless fallback layer between
+// viem's built-in default (chain.rpcUrls.default) and Alchemy, so a single
+// provider hitting a rate limit / outage doesn't bring writes down.
+const publicNodeRpcUrl =
+  chainId === 1
+    ? "https://ethereum-rpc.publicnode.com"
+    : chainId === 11155111
+      ? "https://ethereum-sepolia-rpc.publicnode.com"
+      : chainId === 10
+        ? "https://optimism-rpc.publicnode.com"
+        : chainId === 8453
+          ? "https://base-rpc.publicnode.com"
+          : "https://ethereum-sepolia-rpc.publicnode.com";
+
+// viem's default is `retryCount: 3` with exponential backoff. On a rate-limit
+// or outage that wastes the next-tier fallback's headroom (and Alchemy's
+// monthly CU when the storm happens to land there). One retry is enough for a
+// genuine transient blip; anything worse, fall through to the next transport.
+const HTTP_RETRY = { retryCount: 1 } as const;
+
+export const currentChainRPCBaseURL = [http(alchemyRpcUrl, HTTP_RETRY)];
 
 /**
- * Public client for fetching data from the blockchain
+ * Public client for fetching data from the blockchain.
+ *
+ * Fallback order: viem default public RPC → publicnode → Alchemy. We lead with
+ * keyless public endpoints so we don't burn the Alchemy monthly cap on every
+ * read; Alchemy stays as the last-resort backup.
  */
 export const publicClient = createPublicClient({
   chain: currentChain,
-  transport: fallback([http(), ...currentChainRPCBaseURL]),
+  transport: fallback([
+    http(undefined, HTTP_RETRY),
+    http(publicNodeRpcUrl, HTTP_RETRY),
+    http(alchemyRpcUrl, HTTP_RETRY),
+  ]),
 });
 
 // The Splits SDK auto-discovers ERC20s deposited to a Split via `getLogs` when
@@ -50,5 +78,5 @@ export const publicClient = createPublicClient({
 // SDK; everything else should keep using `publicClient` for fallback redundancy.
 export const alchemyPublicClient = createPublicClient({
   chain: currentChain,
-  transport: http(alchemyRpcUrl),
+  transport: http(alchemyRpcUrl, HTTP_RETRY),
 });

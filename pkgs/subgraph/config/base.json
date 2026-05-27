@@ -13,6 +13,18 @@
           "handler": "handleExecuted"
         }
       ]
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000000",
+      "file": "ScheduledDistributorFactory",
+      "mappingFile": "scheduledDistributorMapping",
+      "entities": [{ "name": "ScheduledDistributor" }],
+      "handlers": [
+        {
+          "event": "ScheduledDistributorCreated(indexed address,indexed address,address,address[],address,uint256,bytes32)",
+          "handler": "handleScheduledDistributorCreated"
+        }
+      ]
     }
   ],
   "templatesContracts": [
@@ -43,6 +55,33 @@
         {
           "event": "Transfer(indexed address,indexed address,uint256)",
           "handler": "handleTransfer"
+        }
+      ]
+    },
+    {
+      "file": "ScheduledDistributor",
+      "mappingFile": "scheduledDistributorMapping",
+      "entities": [
+        { "name": "ScheduledDistributor" },
+        { "name": "ScheduledDistributorDeposit" },
+        { "name": "ScheduledDistributorTokenBalance" }
+      ],
+      "handlers": [
+        {
+          "event": "RuleCreated(indexed address,address,address[],address,uint256)",
+          "handler": "handleRuleCreated"
+        },
+        {
+          "event": "Deposited(indexed address,indexed address,uint256)",
+          "handler": "handleDeposited"
+        },
+        {
+          "event": "Executed(indexed address,indexed address,indexed address,uint256)",
+          "handler": "handleExecuted"
+        },
+        {
+          "event": "Reclaimed(indexed address,indexed address,uint256)",
+          "handler": "handleReclaimed"
         }
       ]
     },

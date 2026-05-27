@@ -5,6 +5,7 @@ import { Divider } from "~/components/composite/divider";
 import { DONUT_PALETTE } from "~/components/composite/donut-chart";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card } from "~/components/ui/card";
+import { Heading } from "~/components/ui/heading";
 import { Typography } from "~/components/ui/typography";
 
 export interface BreakdownRecipient {
@@ -25,6 +26,8 @@ export interface SplitBreakdownCardProps {
   nameByAddress: Map<string, BreakdownNameInfo>;
   /** Message shown when there are no recipients to render. */
   emptyLabel?: string;
+  /** Optional title rendered inside the card, above the rows. */
+  title?: string;
 }
 
 // Toban split "分配の内訳" card — rank + avatar + name + colour bar + %.
@@ -39,10 +42,22 @@ export const SplitBreakdownCard: FC<SplitBreakdownCardProps> = ({
   recipients,
   nameByAddress,
   emptyLabel = "分配先がありません",
+  title,
 }) => {
-  if (recipients.length === 0) {
-    return (
-      <Card className="gap-0 p-0">
+  const empty = recipients.length === 0;
+  return (
+    <Card className="gap-0 p-0">
+      {title && (
+        <>
+          <div className="px-4 pt-4 pb-3">
+            <Heading variant="h5" level={3}>
+              {title}
+            </Heading>
+          </div>
+          {!empty && <Divider inset={16} />}
+        </>
+      )}
+      {empty ? (
         <Typography
           variant="bodySm"
           tone="secondary"
@@ -50,66 +65,62 @@ export const SplitBreakdownCard: FC<SplitBreakdownCardProps> = ({
         >
           {emptyLabel}
         </Typography>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="gap-0 p-0">
-      {recipients.map((r, i) => {
-        const entry = nameByAddress.get(r.address.toLowerCase());
-        const name =
-          entry?.name ?? abbreviateAddress(r.address as `0x${string}`);
-        const color = DONUT_PALETTE[i % DONUT_PALETTE.length];
-        return (
-          <div key={r.address}>
-            <div className="flex items-center gap-3 px-4 py-3">
-              <Typography
-                as="span"
-                variant="caption"
-                weight="bold"
-                tone="secondary"
-                className="w-6 shrink-0"
-              >
-                {i + 1}
-              </Typography>
-              <Avatar size="default" className="size-8">
-                {entry?.avatarUrl && (
-                  <AvatarImage src={entry.avatarUrl} alt="" />
-                )}
-                <AvatarFallback seed={name} />
-              </Avatar>
-              <Typography
-                as="div"
-                variant="bodySm"
-                weight="semibold"
-                truncate
-                className="min-w-0 flex-1"
-              >
-                {name}
-              </Typography>
-              <div className="hidden h-1.5 w-20 overflow-hidden rounded-xs bg-[#F0EBE0] sm:block">
-                <div
-                  className="h-full"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, r.pct))}%`,
-                    backgroundColor: color,
-                  }}
-                />
+      ) : (
+        recipients.map((r, i) => {
+          const entry = nameByAddress.get(r.address.toLowerCase());
+          const name =
+            entry?.name ?? abbreviateAddress(r.address as `0x${string}`);
+          const color = DONUT_PALETTE[i % DONUT_PALETTE.length];
+          return (
+            <div key={r.address}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <Typography
+                  as="span"
+                  variant="caption"
+                  weight="bold"
+                  tone="secondary"
+                  className="w-6 shrink-0"
+                >
+                  {i + 1}
+                </Typography>
+                <Avatar size="default" className="size-8">
+                  {entry?.avatarUrl && (
+                    <AvatarImage src={entry.avatarUrl} alt="" />
+                  )}
+                  <AvatarFallback seed={name} />
+                </Avatar>
+                <Typography
+                  as="div"
+                  variant="bodySm"
+                  weight="semibold"
+                  truncate
+                  className="min-w-0 flex-1"
+                >
+                  {name}
+                </Typography>
+                <div className="hidden h-1.5 w-20 overflow-hidden rounded-xs bg-[#F0EBE0] sm:block">
+                  <div
+                    className="h-full"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, r.pct))}%`,
+                      backgroundColor: color,
+                    }}
+                  />
+                </div>
+                <Typography
+                  as="span"
+                  variant="bodySm"
+                  weight="bold"
+                  className="w-14 shrink-0 text-right tabular-nums"
+                >
+                  {r.pct.toFixed(2)}%
+                </Typography>
               </div>
-              <Typography
-                as="span"
-                variant="bodySm"
-                weight="bold"
-                className="w-14 shrink-0 text-right tabular-nums"
-              >
-                {r.pct.toFixed(2)}%
-              </Typography>
+              {i < recipients.length - 1 && <Divider inset={16} />}
             </div>
-            {i < recipients.length - 1 && <Divider inset={16} />}
-          </div>
-        );
-      })}
+          );
+        })
+      )}
     </Card>
   );
 };

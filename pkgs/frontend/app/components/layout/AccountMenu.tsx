@@ -1,4 +1,4 @@
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useActiveWalletIdentity } from "hooks/useENS";
 import { useLogoutWallet } from "hooks/useLogoutWallet";
 import { useActiveWallet } from "hooks/useWallet";
@@ -39,15 +39,24 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
   const { treeId } = useParams();
   const { isPreparingSmartWallet } = useActiveWallet();
   const { ready, authenticated } = usePrivy();
+  const { wallets } = useWallets();
   const { identity, isLoading: isIdentityLoading } = useActiveWalletIdentity();
   const handleLogout = useLogoutWallet();
 
-  // Start in a loading state until Privy reports ready AND, when
-  // authenticated, the smart wallet + identity lookup have settled.
-  // Without this gate the trigger flashed "Login → spinner → account info"
-  // on every page mount because Privy `ready` lags first paint.
+  // `authenticated` alone misses external-wallet users who connected via
+  // `useConnectWallet` without completing Privy's SIWE flow — they show up
+  // in `wallets[]` with `authenticated === false`, so gating only on Privy
+  // auth flashed a stray Login button at every EOA-connected user. Any
+  // connected wallet is enough to render the account UI.
+  const hasConnectedWallet = wallets.length > 0;
+  const isLoggedIn = authenticated || hasConnectedWallet;
+
+  // Start in a loading state until Privy reports ready AND, when logged in,
+  // the smart wallet + identity lookup have settled. Without this gate the
+  // trigger flashed "Login → spinner → account info" on every page mount
+  // because Privy `ready` lags first paint.
   const isLoading =
-    !ready || (authenticated && (isPreparingSmartWallet || isIdentityLoading));
+    !ready || (isLoggedIn && (isPreparingSmartWallet || isIdentityLoading));
 
   const userImageUrl = useMemo(() => {
     const avatar = identity?.text_records?.avatar;
@@ -103,8 +112,8 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
     );
   }
 
-  // Privy is ready but the user is not authenticated.
-  if (!authenticated) {
+  // Privy is ready and no wallet is connected — show the login entry point.
+  if (!isLoggedIn) {
     return (
       <Button
         variant="primary"
@@ -117,8 +126,8 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
     );
   }
 
-  // Authenticated but no profile yet — fall through to the loading state
-  // above keeps us here only if identity already resolved.
+  // Logged in but no namestone profile yet — fall through to the loading
+  // state above keeps us here only if identity already resolved.
   if (!identity) {
     return null;
   }

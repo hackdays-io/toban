@@ -17,6 +17,11 @@
   },
   {
     "inputs": [],
+    "name": "BatchReceiveUnsupported",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "CannotApproveOwnSubmission",
     "type": "error"
   },
@@ -73,6 +78,11 @@
   {
     "inputs": [],
     "name": "QuestNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnauthorizedReceiver",
     "type": "error"
   },
   {

@@ -576,6 +576,45 @@ describe("ThanksToken mint allowance", () => {
         expect(e.message).to.include("Cannot mint to spender");
       }
     });
+
+    it("deduplicates relatedRoles so a spender cannot inflate the cap", async () => {
+      // Without dedup, a compromised spender could pass the same (wearer,hatId)
+      // N times to multiply the role-derived cap by N. The mintableAmount cap
+      // is the second defensive boundary that backs the allowance, so dedup
+      // is required for `mintFrom`'s security guarantee.
+      const unique = [{ hatId, wearer: ownerAddr }];
+      const duplicated = [
+        { hatId, wearer: ownerAddr },
+        { hatId, wearer: ownerAddr },
+        { hatId, wearer: ownerAddr },
+      ];
+
+      const capUnique = await DeployedThanksToken.read.mintableAmount([
+        ownerAddr,
+        unique,
+      ]);
+      const capDup = await DeployedThanksToken.read.mintableAmount([
+        ownerAddr,
+        duplicated,
+      ]);
+      expect(capDup).to.equal(capUnique);
+
+      // End-to-end: granting allowance > capUnique and passing duplicates must
+      // not let the spender mint above capUnique.
+      await DeployedThanksToken.write.approveMint(
+        [spenderAddr, capUnique * 10n],
+        { account: owner.account },
+      );
+      try {
+        await DeployedThanksToken.write.mintFrom(
+          [ownerAddr, recipientAddr, capUnique + 1n, duplicated, "0x"],
+          { account: spender.account },
+        );
+        expect.fail("should have reverted on inflated cap attempt");
+      } catch (e: any) {
+        expect(e.message).to.include("Amount exceeds mintable amount");
+      }
+    });
   });
 
   describe("permitMint", () => {
@@ -700,11 +739,11 @@ describe("ThanksToken mint allowance", () => {
       }
     });
 
-    it("reverts when a non-spender submits the permit", async () => {
-      // Unlike ERC-2612, permitMint is *not* permissionless — only the
-      // intended spender may submit. Defends against grief attacks that
-      // consume the nonce / lower allowance via a stale-but-still-valid
-      // permit captured from the mempool or logs.
+    it("allows a non-spender to submit the permit (EIP-2612-style relayed)", async () => {
+      // permitMint is permissionless: anyone holding a valid signature
+      // may submit. This lets `owner` revoke via an arbitrary relayer
+      // even when `spender` is compromised. Replay protection is provided
+      // by the per-owner nonce + deadline.
       const nonce = await DeployedThanksToken.read.mintNonces([ownerAddr]);
       const deadline = BigInt(await time.latest()) + ONE_HOUR;
       const value = 11n;
@@ -715,16 +754,23 @@ describe("ThanksToken mint allowance", () => {
         nonce,
         deadline,
       });
-      try {
-        await DeployedThanksToken.write.permitMint(
-          [ownerAddr, spenderAddr, value, deadline, v, r, s],
-          // Submit from a third party, not the intended spender.
-          { account: owner.account },
-        );
-        expect.fail("non-spender submission should revert");
-      } catch (e: any) {
-        expect(e.message).to.include("caller must be spender");
-      }
+
+      // Submit from a third party (the owner itself acting as relayer).
+      await DeployedThanksToken.write.permitMint(
+        [ownerAddr, spenderAddr, value, deadline, v, r, s],
+        { account: owner.account },
+      );
+
+      const allowance = await DeployedThanksToken.read.mintAllowance([
+        ownerAddr,
+        spenderAddr,
+      ]);
+      expect(allowance).to.equal(value);
+
+      const advancedNonce = await DeployedThanksToken.read.mintNonces([
+        ownerAddr,
+      ]);
+      expect(advancedNonce).to.equal(nonce + 1n);
     });
 
     it("reverts when value is tampered after signing", async () => {

@@ -208,6 +208,24 @@ contract ThanksToken is
         for (uint256 i = 0; i < relatedRoles.length; i++) {
             RelatedRole memory role = relatedRoles[i];
 
+            // Skip duplicate (wearer, hatId) pairs. `mintFrom` lets a spender
+            // supply `relatedRoles`, so without dedup the same role passed N
+            // times would multiply the role-derived cap by N and defeat the
+            // mintableAmount defensive boundary that backs the allowance.
+            bool seenBefore = false;
+            for (uint256 j = 0; j < i; j++) {
+                if (
+                    relatedRoles[j].wearer == role.wearer &&
+                    relatedRoles[j].hatId == role.hatId
+                ) {
+                    seenBefore = true;
+                    break;
+                }
+            }
+            if (seenBefore) {
+                continue;
+            }
+
             uint256 shareBalance = FRACTION_TOKEN().balanceOf(
                 owner,
                 role.wearer,
@@ -323,15 +341,11 @@ contract ThanksToken is
         bytes32 s
     ) public override {
         require(owner != address(0), "ThanksToken: invalid owner");
-        // Unlike ERC-2612, the spender is the *only* party with a benign
-        // reason to submit (the bot/relayer is also the only entity that
-        // can call mintFrom). Restricting submission removes the
-        // mempool-replay grief vector where an attacker submits an
-        // older still-valid permit to lower allowance / consume nonce.
-        require(
-            msg.sender == spender,
-            "ThanksToken: caller must be spender"
-        );
+        // EIP-2612-style relay-friendly: anyone holding a valid signature
+        // may submit. This lets `owner` revoke (value=0) via an arbitrary
+        // relayer even when `spender` is compromised. Replay protection is
+        // provided by the per-owner nonce; deadline bounds the validity
+        // window.
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= deadline, "ThanksToken: permit expired");
 

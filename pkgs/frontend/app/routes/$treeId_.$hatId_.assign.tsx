@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useNamesByAddresses } from "hooks/useENS";
+import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -174,18 +174,59 @@ const AssignDuty: FC = () => {
     [memberNames],
   );
 
-  // Client-side substring filter — matches the thankstoken send picker.
+  // Namestone forward lookup so a name typed in the search box can resolve to
+  // addresses that are NOT yet in the workspace directory (`useNamesByAddresses`
+  // above only resolves names for addresses we already know). Skip when the
+  // input parses as a raw address — that path has its own dedicated branch.
+  const namestoneQuery = useMemo(
+    () => (trimmed && !isAddressInput ? [trimmed] : undefined),
+    [trimmed, isAddressInput],
+  );
+  const { addresses: namestoneHits, isLoading: isNamestoneLoading } =
+    useAddressesByNames(namestoneQuery);
+
+  // Flatten namestone hits into SelectedMember candidates, excluding anyone
+  // already assigned to this duty and anyone we already have in `allMembers`.
+  const namestoneMembers = useMemo<SelectedMember[]>(() => {
+    if (!trimmed || isAddressInput) return [];
+    const seen = new Set(allMembers.map((m) => m.address.toLowerCase()));
+    const out: SelectedMember[] = [];
+    for (const group of namestoneHits) {
+      for (const u of group) {
+        if (!u || !u.address) continue;
+        const addr = u.address.toLowerCase();
+        if (assignedAddresses.has(addr)) continue;
+        if (seen.has(addr)) continue;
+        seen.add(addr);
+        out.push({
+          address: u.address as Address,
+          name: u.name || undefined,
+          avatarUrl: ipfs2https(u.text_records?.avatar),
+        });
+      }
+    }
+    return out;
+  }, [namestoneHits, allMembers, assignedAddresses, isAddressInput, trimmed]);
+
+  // Client-side substring filter on existing members + namestone candidates.
   const visibleMembers = useMemo<SelectedMember[]>(() => {
     const q = trimmed.toLowerCase();
     if (!q) return allMembers;
-    return allMembers.filter(
+    const localMatches = allMembers.filter(
       (m) =>
         m.name?.toLowerCase().includes(q) ||
         m.address.toLowerCase().includes(q),
     );
-  }, [allMembers, trimmed]);
+    return [...localMatches, ...namestoneMembers];
+  }, [allMembers, trimmed, namestoneMembers]);
 
-  const directoryLoading = !tree || isMembersLoading;
+  // Keep the in-workspace skeleton on first paint, then let namestone results
+  // stream in below. We deliberately don't gate the whole list on
+  // `isNamestoneLoading` so local-only matches stay visible while the
+  // namestone request is in flight.
+  const directoryLoading =
+    !tree || (isMembersLoading && allMembers.length === 0);
+  const searchingNamestone = isNamestoneLoading && !!trimmed && !isAddressInput;
 
   // When the user pastes a raw address, resolve it against the directory so a
   // known member still shows their name, while a non-member can be onboarded
@@ -355,40 +396,60 @@ const AssignDuty: FC = () => {
                 {directoryLoading ? (
                   <MemberListSkeleton />
                 ) : visibleMembers.length === 0 ? (
-                  <EmptyState
-                    icon={<Icon name="search" size={22} />}
-                    title={
-                      trimmed
-                        ? "見つかりませんでした"
-                        : "追加できるメンバーがいません"
-                    }
-                    body={
-                      trimmed
-                        ? "別のキーワードで検索するか、ウォレットアドレスを直接入力してください"
-                        : "この当番に追加できるメンバーがいません。ウォレットアドレスを入力すれば直接追加できます。"
-                    }
-                  />
+                  searchingNamestone ? (
+                    <Card className="gap-0 p-4">
+                      <Typography variant="bodySm" tone="secondary">
+                        検索中...
+                      </Typography>
+                    </Card>
+                  ) : (
+                    <EmptyState
+                      icon={<Icon name="search" size={22} />}
+                      title={
+                        trimmed
+                          ? "見つかりませんでした"
+                          : "追加できるメンバーがいません"
+                      }
+                      body={
+                        trimmed
+                          ? "別のキーワードで検索するか、ウォレットアドレスを直接入力してください"
+                          : "この当番に追加できるメンバーがいません。ウォレットアドレスを入力すれば直接追加できます。"
+                      }
+                    />
+                  )
                 ) : (
-                  <Card className="gap-0 overflow-hidden p-0">
-                    {visibleMembers.map((m, i) => (
-                      <div key={m.address}>
-                        {i > 0 && <Divider inset={64} />}
-                        <Row
-                          left={<MemberAvatar member={m} />}
-                          title={m.name ?? abbreviateAddress(m.address)}
-                          subtitle={abbreviateAddress(m.address)}
-                          right={
-                            <Icon
-                              name="chevron-right"
-                              size={16}
-                              className="text-text-secondary"
-                            />
-                          }
-                          onClick={() => chooseMember(m)}
-                        />
-                      </div>
-                    ))}
-                  </Card>
+                  <>
+                    <Card className="gap-0 overflow-hidden p-0">
+                      {visibleMembers.map((m, i) => (
+                        <div key={m.address}>
+                          {i > 0 && <Divider inset={64} />}
+                          <Row
+                            left={<MemberAvatar member={m} />}
+                            title={m.name ?? abbreviateAddress(m.address)}
+                            subtitle={abbreviateAddress(m.address)}
+                            right={
+                              <Icon
+                                name="chevron-right"
+                                size={16}
+                                className="text-text-secondary"
+                              />
+                            }
+                            onClick={() => chooseMember(m)}
+                          />
+                        </div>
+                      ))}
+                    </Card>
+                    {searchingNamestone && (
+                      <Typography
+                        as="div"
+                        variant="caption"
+                        tone="secondary"
+                        className="mt-2 text-center"
+                      >
+                        他の候補を検索中...
+                      </Typography>
+                    )}
+                  </>
                 )}
               </section>
             )}

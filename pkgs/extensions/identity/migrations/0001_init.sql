@@ -27,3 +27,8 @@ CREATE TABLE used_binding_nonces (
   nonce              BLOB PRIMARY KEY,
   used_at            INTEGER NOT NULL
 );
+
+CREATE TABLE used_install_state_jtis (
+  jti                TEXT PRIMARY KEY,
+  used_at            INTEGER NOT NULL
+);

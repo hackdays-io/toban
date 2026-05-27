@@ -14,7 +14,7 @@ import {
 import { useQuery as useTanstackQuery } from "@tanstack/react-query";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { hatsApolloClient } from "utils/apollo";
+import { hatsApolloClient, resolveHatsEndpoint } from "utils/apollo";
 import { type Address, encodeFunctionData, parseEventLogs } from "viem";
 import { HATS_ADDRESS } from "./useContracts";
 import { currentChain, publicClient } from "./useViem";
@@ -24,10 +24,15 @@ import { useActiveWallet } from "./useWallet";
 // Read with subgraph
 // ###############################################################
 
-const hatsSubgraphEndpoint = import.meta.env.VITE_HATS_GRAPHQL_ENDPOINT;
+// Share the chain switch with `hatsApolloClient` so the SDK-driven reads
+// (getTree / getWearer / etc.) and the raw Apollo queries hit the same
+// indexer. Base uses Hats Protocol's official subgraph on The Graph's
+// decentralised Gateway; Sepolia has no official deployment, so we fall
+// back to the self-hosted Goldsky endpoint configured via env.
+const hatsSubgraphEndpoint = resolveHatsEndpoint();
 if (!hatsSubgraphEndpoint) {
   throw new Error(
-    "VITE_HATS_GRAPHQL_ENDPOINT is not set. Point it at a Hats Protocol subgraph for the active chain (Sepolia uses a self-hosted Goldsky deployment; Hats' Studio endpoints were retired).",
+    "Hats Protocol subgraph endpoint is not set. For Base mainnet set VITE_THEGRAPH_API_KEY; for Sepolia set VITE_HATS_GRAPHQL_ENDPOINT to your self-hosted Goldsky deployment.",
   );
 }
 

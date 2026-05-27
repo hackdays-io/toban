@@ -2,6 +2,7 @@ import { Executed } from "../generated/BigBang/BigBang";
 import {
   HatsFractionTokenModule,
   HatsQuestModule,
+  SplitsCreatorWorkspace,
   ThanksToken,
   Workspace,
 } from "../generated/schema";
@@ -58,4 +59,12 @@ export function handleExecuted(ev: Executed): void {
   newHatsQuestModule.save();
 
   HatsQuestModuleTemplate.create(ev.params.hatsQuestModule);
+
+  // Lookup so ScheduledDistributors created against this workspace's
+  // SplitsCreator can resolve back to the workspace ID.
+  const splitCreatorLookup = new SplitsCreatorWorkspace(
+    ev.params.splitCreator.toHex(),
+  );
+  splitCreatorLookup.workspaceId = treeId;
+  splitCreatorLookup.save();
 }

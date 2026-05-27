@@ -15,7 +15,7 @@ import { useQuery as useTanstackQuery } from "@tanstack/react-query";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { hatsApolloClient } from "utils/apollo";
-import { type Address, parseEventLogs } from "viem";
+import { type Address, encodeFunctionData, parseEventLogs } from "viem";
 import { HATS_ADDRESS } from "./useContracts";
 import { currentChain, publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
@@ -37,28 +37,22 @@ export const hatsSubgraphClient = new HatsSubgraphClient({
   },
 });
 
-export const useTreeInfo = (treeId: number) => {
-  const [treeInfo, setTreeInfo] = useState<Tree>();
+export const treeInfoQueryKey = (treeId: number) =>
+  ["treeInfo", treeId] as const;
 
+export const useTreeInfo = (treeId: number) => {
   const { getTreeInfo } = useHats();
 
-  useEffect(() => {
-    const fetch = async () => {
-      setTreeInfo(undefined);
-      if (!treeId) return;
+  const { data } = useTanstackQuery({
+    queryKey: treeInfoQueryKey(treeId),
+    queryFn: async () => {
+      const tree = await getTreeInfo({ treeId });
+      return tree ?? null;
+    },
+    enabled: Boolean(treeId),
+  });
 
-      const tree = await getTreeInfo({
-        treeId: treeId,
-      });
-      if (!tree) return;
-
-      setTreeInfo(tree);
-    };
-
-    fetch();
-  }, [treeId, getTreeInfo]);
-
-  return treeInfo;
+  return data ?? undefined;
 };
 
 /**
@@ -558,6 +552,100 @@ export const useHats = () => {
     [wallet],
   );
 
+  // Admin-side authority revoke for hats whose eligibility module is the
+  // Hats Protocol "always eligible" sentinel (the default in Toban). The
+  // only path that works is to `transferHat` the hat from the target to the
+  // admin and then immediately `renounceHat` so the admin doesn't end up
+  // wearing it. On the smart-wallet path we bundle both calls into a single
+  // user operation so it's one signature and one paymaster billing.
+  const adminRevokeAuthorityHat = useCallback(
+    async (params: { hatId: bigint; from: Address; admin: Address }) => {
+      if (!wallet) return;
+      setIsLoading(true);
+      try {
+        const transferData = encodeFunctionData({
+          abi: HATS_ABI,
+          functionName: "transferHat",
+          args: [params.hatId, params.from, params.admin],
+        });
+        const renounceData = encodeFunctionData({
+          abi: HATS_ABI,
+          functionName: "renounceHat",
+          args: [params.hatId],
+        });
+
+        // Privy's smart-wallet client exposes `sendTransaction({ calls: [] })`
+        // (ERC-4337 batch). viem's plain WalletClient does not — detect via
+        // `sendUserOperation` and fall back to sequential txs for EOA.
+        if ("sendUserOperation" in wallet) {
+          const txHash = await wallet.sendTransaction({
+            calls: [
+              { to: HATS_ADDRESS as Address, data: transferData },
+              { to: HATS_ADDRESS as Address, data: renounceData },
+            ],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
+          return txHash;
+        }
+
+        const transferHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "transferHat",
+          args: [params.hatId, params.from, params.admin],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: transferHash });
+        const renounceHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "renounceHat",
+          args: [params.hatId],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: renounceHash });
+        return renounceHash;
+      } catch (error) {
+        console.error("Error occurred when revoking authority hat:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet],
+  );
+
+  // Wraps Hats.setHatWearerStatus — admin-callable revocation. Marking a
+  // wearer ineligible burns the hat for them (Hats Protocol does the burn
+  // internally), which we use to "revoke" authority hats from the settings
+  // page.
+  const setHatWearerStatus = useCallback(
+    async (params: {
+      hatId: bigint;
+      wearer: Address;
+      eligible: boolean;
+      standing: boolean;
+    }) => {
+      if (!wallet) return;
+
+      setIsLoading(true);
+      try {
+        const txHash = await wallet.writeContract({
+          abi: HATS_ABI,
+          address: HATS_ADDRESS,
+          functionName: "setHatWearerStatus",
+          args: [params.hatId, params.wearer, params.eligible, params.standing],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        return txHash;
+      } catch (error) {
+        console.error("Error occurred when setting hat wearer status:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet],
+  );
+
   return {
     isLoading,
     isSuccess,
@@ -574,6 +662,8 @@ export const useHats = () => {
     changeHatMaxSupply,
     renounceHat,
     transferHat,
+    setHatWearerStatus,
+    adminRevokeAuthorityHat,
   };
 };
 

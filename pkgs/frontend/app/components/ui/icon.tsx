@@ -3,6 +3,7 @@ import type { IconType } from "react-icons";
 import {
   LuArrowRight,
   LuBell,
+  LuCalendarClock,
   LuChartPie,
   LuCheck,
   LuChevronDown,
@@ -11,6 +12,7 @@ import {
   LuCopy,
   LuHeart,
   LuHouse,
+  LuListChecks,
   LuLogOut,
   LuMail,
   LuPencil,
@@ -42,6 +44,7 @@ import { cn } from "~/lib/utils";
 const iconRegistry = {
   home: LuHouse,
   duty: LuUserCog,
+  quest: LuListChecks,
   split: LuChartPie,
   members: LuUsers,
   wallet: LuWallet,
@@ -67,6 +70,7 @@ const iconRegistry = {
   logout: LuLogOut,
   qr: LuQrCode,
   pie: LuChartPie,
+  "calendar-clock": LuCalendarClock,
 } as const satisfies Record<string, IconType>;
 
 type IconName = keyof typeof iconRegistry;

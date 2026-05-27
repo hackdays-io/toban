@@ -3,7 +3,7 @@
   "startBlock": 10838000,
   "contracts": [
     {
-      "address": "0x07795816fFBFF7A4db5f627b6CaE6Fd1eB881093",
+      "address": "0x010329e42cAc221D799C105516830D84901Dc2Ac",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
@@ -11,6 +11,18 @@
         {
           "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address,address)",
           "handler": "handleExecuted"
+        }
+      ]
+    },
+    {
+      "address": "0x9eE2641Ba7017C63161C5682F077ab95E6C3eC0D",
+      "file": "ScheduledDistributorFactory",
+      "mappingFile": "scheduledDistributorMapping",
+      "entities": [{ "name": "ScheduledDistributor" }],
+      "handlers": [
+        {
+          "event": "ScheduledDistributorCreated(indexed address,indexed address,address,address[],address,uint256,bytes32)",
+          "handler": "handleScheduledDistributorCreated"
         }
       ]
     }
@@ -43,6 +55,33 @@
         {
           "event": "Transfer(indexed address,indexed address,uint256)",
           "handler": "handleTransfer"
+        }
+      ]
+    },
+    {
+      "file": "ScheduledDistributor",
+      "mappingFile": "scheduledDistributorMapping",
+      "entities": [
+        { "name": "ScheduledDistributor" },
+        { "name": "ScheduledDistributorDeposit" },
+        { "name": "ScheduledDistributorTokenBalance" }
+      ],
+      "handlers": [
+        {
+          "event": "RuleCreated(indexed address,address,address[],address,uint256)",
+          "handler": "handleRuleCreated"
+        },
+        {
+          "event": "Deposited(indexed address,indexed address,uint256)",
+          "handler": "handleDeposited"
+        },
+        {
+          "event": "Executed(indexed address,indexed address,indexed address,uint256)",
+          "handler": "handleExecuted"
+        },
+        {
+          "event": "Reclaimed(indexed address,indexed address,uint256)",
+          "handler": "handleReclaimed"
         }
       ]
     },

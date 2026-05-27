@@ -1,24 +1,13 @@
-import type { FC } from "react";
-import { useParams } from "react-router";
-import { PageHeader } from "~/components/PageHeader";
-import { Box, Grid } from "~/components/chakra-shim";
-import { ThanksTokenHistory } from "~/components/thankstoken/History";
+import { type LoaderFunctionArgs, redirect } from "react-router";
 
-const ThanksTokenHistoryPage: FC = () => {
-  const { treeId } = useParams();
-
-  if (!treeId) {
-    return <div>Workspace not found</div>;
-  }
-
-  return (
-    <Grid gridTemplateRows="auto 1fr" minH="calc(100vh - 100px)">
-      <PageHeader title="サンクストークン履歴" />
-      <Box my={6}>
-        <ThanksTokenHistory treeId={treeId} limit={50} />
-      </Box>
-    </Grid>
-  );
+// The thanks data screen lives at `/{treeId}/history`. This older URL
+// stays alive as a 308 redirect so external links keep working.
+export const loader = ({ params }: LoaderFunctionArgs) => {
+  const treeId = params.treeId;
+  if (!treeId) return redirect("/");
+  return redirect(`/${treeId}/history`, 308);
 };
 
-export default ThanksTokenHistoryPage;
+export default function ThanksTokenHistoryRedirect() {
+  return null;
+}

@@ -1,7 +1,8 @@
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useActiveWalletIdentity } from "hooks/useENS";
+import { useLogoutWallet } from "hooks/useLogoutWallet";
 import { useActiveWallet } from "hooks/useWallet";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -16,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Icon } from "~/components/ui/icon";
+import { Spinner } from "~/components/ui/spinner";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
@@ -31,16 +33,21 @@ interface AccountMenuProps {
 // used to live inside `app/components/Header.tsx` (legacy chakra-shim header).
 // Surfaced from both the mobile `AppHeader` `right` slot and the desktop
 // `Sidebar` user footer so logout / profile / send behaviour stays identical
-// across breakpoints. Encapsulates the smart-wallet vs. external-wallet
-// (`wallet_revokePermissions` for injected MetaMask) logout fork verbatim
-// from the legacy header so the Privy auth flow keeps working unchanged.
+// across breakpoints.
 function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
   const navigate = useNavigate();
   const { treeId } = useParams();
-  const { isSmartWallet } = useActiveWallet();
-  const { logout } = usePrivy();
-  const { wallets } = useWallets();
-  const { identity } = useActiveWalletIdentity();
+  const { isPreparingSmartWallet } = useActiveWallet();
+  const { ready, authenticated } = usePrivy();
+  const { identity, isLoading: isIdentityLoading } = useActiveWalletIdentity();
+  const handleLogout = useLogoutWallet();
+
+  // Start in a loading state until Privy reports ready AND, when
+  // authenticated, the smart wallet + identity lookup have settled.
+  // Without this gate the trigger flashed "Login → spinner → account info"
+  // on every page mount because Privy `ready` lags first paint.
+  const isLoading =
+    !ready || (authenticated && (isPreparingSmartWallet || isIdentityLoading));
 
   const userImageUrl = useMemo(() => {
     const avatar = identity?.text_records?.avatar;
@@ -58,64 +65,46 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
     return undefined;
   }, [identity]);
 
-  // Verbatim port of the legacy logout fork — keep the smart-wallet vs.
-  // external-wallet behaviour aligned with `app/components/Header.tsx` so
-  // we don't regress the Privy session cleanup.
-  const handleLogout = useCallback(async () => {
-    try {
-      if (isSmartWallet) {
-        // スマートウォレットの場合、Privy の logout をそのまま使う
-        await logout();
-      } else {
-        // 外部ウォレット（MetaMask など）
-        const hasInjectedWallet = wallets.some(
-          (w) => w.connectorType === "injected",
-        );
-
-        if (hasInjectedWallet) {
-          // MetaMask の権限を無効化
-          try {
-            if (typeof window !== "undefined" && window.ethereum) {
-              await window.ethereum.request({
-                method: "wallet_revokePermissions",
-                params: [{ eth_accounts: {} }],
-              });
-            }
-          } catch (revokeError) {
-            console.warn("Failed to revoke MetaMask permissions:", revokeError);
-          }
-        } else {
-          // その他の外部ウォレット
-          await logout();
-
-          for (const wallet of wallets) {
-            if (wallet.connectorType !== "injected") {
-              try {
-                wallet.disconnect();
-              } catch (error) {
-                console.warn(
-                  "Failed to disconnect wallet:",
-                  wallet.address,
-                  error,
-                );
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // フォールバック
-      try {
-        await logout();
-      } catch (logoutError) {
-        console.error("Fallback logout also failed:", logoutError);
-      }
+  // Default loading state — covers Privy hydration, smart-wallet
+  // provisioning, and the identity lookup. Sits in the AccountMenu slot
+  // (top-left sidebar on desktop, account icon slot on mobile) so the
+  // rest of the app stays interactive.
+  if (isLoading) {
+    const caption = isPreparingSmartWallet
+      ? "ウォレットを準備しています…"
+      : "読み込み中…";
+    if (variant === "inline") {
+      return (
+        <output
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-sm px-1.5 py-1",
+            className,
+          )}
+          aria-live="polite"
+        >
+          <Spinner size="sm" />
+          <Typography as="span" variant="bodySm" tone="secondary" truncate>
+            {caption}
+          </Typography>
+        </output>
+      );
     }
-  }, [isSmartWallet, logout, wallets]);
+    return (
+      <output
+        className={cn(
+          "inline-flex size-10 items-center justify-center rounded-full",
+          className,
+        )}
+        aria-label={caption}
+        aria-live="polite"
+      >
+        <Spinner size="sm" />
+      </output>
+    );
+  }
 
-  // Render Login button if not authenticated.
-  if (!identity) {
+  // Privy is ready but the user is not authenticated.
+  if (!authenticated) {
     return (
       <Button
         variant="primary"
@@ -126,6 +115,12 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
         Login
       </Button>
     );
+  }
+
+  // Authenticated but no profile yet — fall through to the loading state
+  // above keeps us here only if identity already resolved.
+  if (!identity) {
+    return null;
   }
 
   const trigger =

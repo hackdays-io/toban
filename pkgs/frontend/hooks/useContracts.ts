@@ -12,6 +12,8 @@ export const FRACTION_TOKEN_ADDRESS = import.meta.env
   .VITE_FRACTION_TOKEN_ADDRESS;
 export const SPLITS_CREATOR_ADDRESS = import.meta.env
   .VITE_SPLITS_CREATOR_ADDRESS;
+export const SCHEDULED_DISTRIBUTOR_FACTORY_ADDRESS = import.meta.env
+  .VITE_SCHEDULED_DISTRIBUTOR_FACTORY_ADDRESS;
 
 export const hatsContractBaseConfig = {
   address: HATS_ADDRESS as Address,

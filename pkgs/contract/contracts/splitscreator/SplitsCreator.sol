@@ -53,6 +53,38 @@ contract SplitsCreator is ISplitsCreator, Clone {
         SplitsInfo[] memory _splitsInfo,
         WeightsInfo memory _weightsInfo
     ) external returns (address) {
+        return _create(_splitsInfo, _weightsInfo, _generateSalt(_splitsInfo));
+    }
+
+    /**
+     * @notice Creates a new split contract using a caller-supplied salt.
+     * @dev Used by upstream modules (e.g. ScheduledDistributor) that need to
+     *      derive the resulting Split address deterministically from off-chain
+     *      data instead of from the SplitsInfo payload.
+     */
+    function createWithSalt(
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo,
+        bytes32 _salt
+    ) external returns (address) {
+        // Mix msg.sender into the salt so a griefer can't pre-deploy at the
+        // same deterministic address that the legitimate caller will later
+        // hit. PullSplitFactory's CREATE2 keys on (this, salt) but `this`
+        // is the SplitsCreator clone for both honest and attacker paths, so
+        // we need to disambiguate by caller here.
+        return
+            _create(
+                _splitsInfo,
+                _weightsInfo,
+                keccak256(abi.encode(msg.sender, _salt))
+            );
+    }
+
+    function _create(
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo,
+        bytes32 _salt
+    ) internal returns (address) {
         (
             address[] memory shareHolders,
             uint256[] memory allocations,
@@ -75,7 +107,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
             _splitParams,
             address(this),
             msg.sender,
-            _generateSalt(_splitsInfo)
+            _salt
         );
 
         emit SplitsCreated(split, shareHolders, allocations, totalAllocation);

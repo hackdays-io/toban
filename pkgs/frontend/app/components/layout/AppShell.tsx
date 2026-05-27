@@ -11,7 +11,7 @@ interface AppShellProps extends React.ComponentProps<"div"> {
     name: string;
     imageUrl?: string;
   };
-  /** Active nav key — e.g. "home" / "duties" / "splits" / "members" / "wallet". */
+  /** Active nav key — e.g. "home" / "duties" / "splits" / "members" / "activity". */
   active: string;
   /** Called from BottomNav (mobile) and Sidebar (desktop). */
   onNavigate: (key: string) => void;
@@ -19,6 +19,10 @@ interface AppShellProps extends React.ComponentProps<"div"> {
   onWorkspacePress?: () => void;
   /** Trailing slot for the AppHeader (e.g. the legacy account dropdown). */
   appHeaderRight?: AppHeaderProps["right"];
+  /** Mobile-only bell shortcut to the activity screen. */
+  onNotificationsPress?: AppHeaderProps["onNotificationsPress"];
+  /** Highlight the mobile bell when on the activity surface. */
+  notificationsActive?: AppHeaderProps["notificationsActive"];
   /** Optional override of the BottomNav items list. */
   navItems?: BottomNavProps["items"];
 }
@@ -33,6 +37,8 @@ function AppShell({
   onNavigate,
   onWorkspacePress,
   appHeaderRight,
+  onNotificationsPress,
+  notificationsActive,
   navItems,
   className,
   children,
@@ -64,6 +70,8 @@ function AppShell({
             workspaceName={workspace.name}
             workspaceImageUrl={workspace.imageUrl}
             onWorkspacePress={onWorkspacePress}
+            onNotificationsPress={onNotificationsPress}
+            notificationsActive={notificationsActive}
             right={appHeaderRight}
           />
         </div>

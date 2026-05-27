@@ -12,6 +12,12 @@ interface AppHeaderProps extends React.ComponentProps<"header"> {
   workspaceImageUrl?: string;
   /** Called when the user taps the workspace pill (open the switcher Sheet). */
   onWorkspacePress?: () => void;
+  /** Bell-icon shortcut to the activity screen. Shown when a handler is
+   *  supplied; hidden otherwise. Replaces the BottomNav `activity` tab on
+   *  mobile where the 5-slot bar is already saturated. */
+  onNotificationsPress?: () => void;
+  /** Highlight the bell when the activity surface is currently active. */
+  notificationsActive?: boolean;
   /** Optional trailing slot (extra icon buttons / user avatar dropdown). */
   right?: React.ReactNode;
 }
@@ -22,6 +28,8 @@ function AppHeader({
   workspaceName,
   workspaceImageUrl,
   onWorkspacePress,
+  onNotificationsPress,
+  notificationsActive = false,
   right,
   className,
   ...rest
@@ -54,6 +62,22 @@ function AppHeader({
         </Typography>
         <Icon name="chevron-down" size={16} className="text-text-secondary" />
       </button>
+      {onNotificationsPress && (
+        <button
+          type="button"
+          onClick={onNotificationsPress}
+          aria-label="アクティビティ"
+          data-active={notificationsActive ? "" : undefined}
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
+            notificationsActive
+              ? "bg-primary-soft text-[#A07310]"
+              : "border border-border bg-surface text-text-secondary hover:bg-bg",
+          )}
+        >
+          <Icon name="bell" size={18} />
+        </button>
+      )}
       {right}
     </header>
   );

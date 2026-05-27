@@ -1,9 +1,8 @@
-import { type FC, useId, useState } from "react";
+import { type FC, useId } from "react";
 import type { HatsDetailsAttributes } from "types/hats";
-import { Chip } from "~/components/composite/chip";
 import { FieldLabel } from "~/components/composite/field-label";
+import { RoleAttributesEditor } from "~/components/roles/RoleAttributesEditor";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
 import { Icon, type IconName } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -54,40 +53,12 @@ export const DutyForm: FC<DutyFormProps> = ({
 }) => {
   const nameInputId = useId();
   const descriptionInputId = useId();
-  const [draftResponsibility, setDraftResponsibility] = useState("");
-  const [draftAuthority, setDraftAuthority] = useState("");
 
   const update = <K extends keyof DutyFormValues>(
     key: K,
     next: DutyFormValues[K],
   ) => {
     onChange({ ...value, [key]: next });
-  };
-
-  const addResponsibility = () => {
-    const label = draftResponsibility.trim();
-    if (!label) return;
-    update("responsibilities", [...value.responsibilities, { label }]);
-    setDraftResponsibility("");
-  };
-  const removeResponsibility = (index: number) => {
-    update(
-      "responsibilities",
-      value.responsibilities.filter((_, i) => i !== index),
-    );
-  };
-
-  const addAuthority = () => {
-    const label = draftAuthority.trim();
-    if (!label) return;
-    update("authorities", [...value.authorities, { label }]);
-    setDraftAuthority("");
-  };
-  const removeAuthority = (index: number) => {
-    update(
-      "authorities",
-      value.authorities.filter((_, i) => i !== index),
-    );
   };
 
   const fallbackIconName = FALLBACK_PREVIEW_ICON[fallbackIcon];
@@ -175,86 +146,26 @@ export const DutyForm: FC<DutyFormProps> = ({
       </div>
 
       {/* Responsibilities */}
-      <div className="px-5">
-        <FieldLabel>責任</FieldLabel>
-        {value.responsibilities.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {value.responsibilities.map((item, index) => (
-              <Chip
-                key={`${item.label}-${index}`}
-                onClick={() => removeResponsibility(index)}
-                aria-label={`${item.label} を削除`}
-              >
-                {item.label}
-                <Icon name="close" size={12} />
-              </Chip>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <Input
-            value={draftResponsibility}
-            onChange={(e) => setDraftResponsibility(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                addResponsibility();
-              }
-            }}
-            placeholder="例：当番表をまとめる"
-            data-testid="responsibility-input"
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={addResponsibility}
-            disabled={!draftResponsibility.trim()}
-          >
-            追加
-          </Button>
-        </div>
-      </div>
+      <RoleAttributesEditor
+        noun="責任"
+        items={value.responsibilities}
+        onChange={(next) => update("responsibilities", next)}
+        disabled={disabled}
+        labelPlaceholder="例：当番表をまとめる"
+        descriptionPlaceholder="この責任の進め方や範囲を入力"
+        testIdPrefix="responsibility"
+      />
 
       {/* Authorities */}
-      <div className="px-5">
-        <FieldLabel>権限</FieldLabel>
-        {value.authorities.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {value.authorities.map((item, index) => (
-              <Chip
-                key={`${item.label}-${index}`}
-                onClick={() => removeAuthority(index)}
-                aria-label={`${item.label} を削除`}
-              >
-                {item.label}
-                <Icon name="close" size={12} />
-              </Chip>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <Input
-            value={draftAuthority}
-            onChange={(e) => setDraftAuthority(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                addAuthority();
-              }
-            }}
-            placeholder="例：メンバーを招待"
-            data-testid="authority-input"
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={addAuthority}
-            disabled={!draftAuthority.trim()}
-          >
-            追加
-          </Button>
-        </div>
-      </div>
+      <RoleAttributesEditor
+        noun="権限"
+        items={value.authorities}
+        onChange={(next) => update("authorities", next)}
+        disabled={disabled}
+        labelPlaceholder="例：メンバーを招待"
+        descriptionPlaceholder="この権限でできることを入力"
+        testIdPrefix="authority"
+      />
     </div>
   );
 };

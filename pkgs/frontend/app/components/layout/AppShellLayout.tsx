@@ -53,10 +53,12 @@ function deriveActiveKey(pathname: string): string {
   const section = segments[1];
   if (!section) return "home";
   if (section === "splits") return "splits";
+  if (section === "scheduled") return "splits";
   if (section === "member" || section === "members") return "members";
-  if (section === "thankstoken") return "wallet";
-  if (section === "history") return "wallet";
+  if (section === "thankstoken") return "activity";
+  if (section === "history") return "activity";
   if (section === "role" || section === "roles") return "duties";
+  if (section === "quest") return "quests";
   if (section === "settings") return "home";
   // Hat-id deep paths like `/{treeId}/{hatId}/...` count as duties.
   return "duties";
@@ -125,14 +127,17 @@ function ShellView({ treeId }: ShellViewProps) {
       case "duties":
         navigate(`/${treeId}/role`);
         break;
+      case "quests":
+        navigate(`/${treeId}/quest`);
+        break;
       case "splits":
         navigate(`/${treeId}/splits`);
         break;
       case "members":
         navigate(`/${treeId}/member`);
         break;
-      case "wallet":
-        navigate(`/${treeId}/thankstoken/history`);
+      case "activity":
+        navigate(`/${treeId}/history`);
         break;
       default:
         navigate(`/${treeId}`);
@@ -151,6 +156,8 @@ function ShellView({ treeId }: ShellViewProps) {
         active={active}
         onNavigate={handleNavigate}
         onWorkspacePress={() => setSwitcherOpen(true)}
+        onNotificationsPress={() => navigate(`/${treeId}/history`)}
+        notificationsActive={active === "activity"}
         appHeaderRight={<AccountMenu variant="compact" />}
       >
         <Outlet />

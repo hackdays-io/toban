@@ -5,7 +5,7 @@ import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 import { AccountMenu } from "./AccountMenu";
-import { type BottomNavItem, DEFAULT_BOTTOM_NAV_ITEMS } from "./BottomNav";
+import { type BottomNavItem, DESKTOP_NAV_ITEMS } from "./BottomNav";
 
 interface SidebarProps extends React.ComponentProps<"aside"> {
   workspaceName: string;
@@ -25,7 +25,7 @@ function Sidebar({
   onWorkspacePress,
   active,
   onNavigate,
-  items = DEFAULT_BOTTOM_NAV_ITEMS,
+  items = DESKTOP_NAV_ITEMS,
   className,
   ...rest
 }: SidebarProps) {
@@ -45,7 +45,7 @@ function Sidebar({
       <button
         type="button"
         onClick={onWorkspacePress}
-        className="mx-3 mt-3.5 mb-1.5 flex items-center gap-2.5 rounded-sm border bg-surface px-3 py-2.5 text-left transition-colors hover:bg-bg"
+        className="mx-3 mt-3.5 mb-1.5 flex cursor-pointer items-center gap-2.5 rounded-sm border bg-surface px-3 py-2.5 text-left transition-colors hover:bg-bg"
       >
         <Avatar size="sm" className="rounded-md">
           {workspaceImageUrl && (
@@ -80,7 +80,7 @@ function Sidebar({
               onClick={() => onNavigate(it.key)}
               data-active={isActive ? "" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-sm px-3 py-2.5 text-left text-sm transition-colors",
+                "flex cursor-pointer items-center gap-3 rounded-sm px-3 py-2.5 text-left text-sm transition-colors",
                 isActive
                   ? "bg-primary-soft font-bold text-[#7A5A2E]"
                   : "font-medium text-text-primary hover:bg-bg",

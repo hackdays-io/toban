@@ -151,6 +151,12 @@ export const BIGBANG_ABI = [
       {
         indexed: false,
         internalType: "address",
+        name: "hatsQuestModule",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "address",
         name: "splitCreator",
         type: "address",
       },
@@ -254,6 +260,19 @@ export const BIGBANG_ABI = [
     outputs: [
       {
         internalType: "contract IHatsModuleFactory",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "HatsQuestModule_IMPL",
+    outputs: [
+      {
+        internalType: "address",
         name: "",
         type: "address",
       },
@@ -409,6 +428,11 @@ export const BIGBANG_ABI = [
       },
       {
         internalType: "address",
+        name: "_hatsQuestModule_IMPL",
+        type: "address",
+      },
+      {
+        internalType: "address",
         name: "_splitsCreatorFactory",
         type: "address",
       },
@@ -509,6 +533,19 @@ export const BIGBANG_ABI = [
       },
     ],
     name: "setHatsModuleFactory",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_hatsQuestModuleImpl",
+        type: "address",
+      },
+    ],
+    name: "setHatsQuestModuleImpl",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

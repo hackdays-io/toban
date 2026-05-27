@@ -323,6 +323,15 @@ contract ThanksToken is
         bytes32 s
     ) public override {
         require(owner != address(0), "ThanksToken: invalid owner");
+        // Unlike ERC-2612, the spender is the *only* party with a benign
+        // reason to submit (the bot/relayer is also the only entity that
+        // can call mintFrom). Restricting submission removes the
+        // mempool-replay grief vector where an attacker submits an
+        // older still-valid permit to lower allowance / consume nonce.
+        require(
+            msg.sender == spender,
+            "ThanksToken: caller must be spender"
+        );
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= deadline, "ThanksToken: permit expired");
 
@@ -358,6 +367,12 @@ contract ThanksToken is
         bytes memory data
     ) public override returns (bool) {
         require(to != from, "Cannot mint to yourself");
+        // Mirrors the anti-self-mint invariant of the original mint():
+        // even when `from` differs from the recipient, the *spender*
+        // (= msg.sender, holding the allowance) must not mint to its
+        // own address. Defends against a compromised spender key
+        // draining allowances to itself when from == owner.
+        require(to != msg.sender, "Cannot mint to spender");
         require(value > 0, "Amount must be greater than 0");
 
         uint256 currentAllowance = _mintAllowance[from][msg.sender];

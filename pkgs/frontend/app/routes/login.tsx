@@ -47,13 +47,24 @@ const Login: FC = () => {
   //    to the embedded EOA would misroute returning users to /signup.
   //    For external wallets, `wallets[0].address` IS the profile address,
   //    so we can use it as a fallback when `useAccountClient` stalls.
+  //
+  // The effect below depends on the resolved address *string*, never the
+  // `wallet` object. Privy's `useSmartWallets().client` is re-wrapped on
+  // every render (no memoization), so `useActiveWallet().wallet` changes
+  // identity every render. Keying the effect on the object made it tear
+  // down + re-run on each render while Privy provisioned a brand-new
+  // account's smart wallet — clearing the 5 s timeout and aborting the
+  // namestone lookup before either could complete, leaving the user stuck
+  // on "ワークスペースを準備しています…". The address string is stable
+  // across those re-renders, so the effect now runs exactly once per real
+  // address change.
+  const hasEmbeddedWallet = wallets.some((w) => w.connectorType === "embedded");
+  const resolvedAddress = hasEmbeddedWallet
+    ? wallet?.account?.address
+    : (wallet?.account?.address ?? wallets[0]?.address);
+
   useEffect(() => {
-    const hasEmbeddedWallet = wallets.some(
-      (w) => w.connectorType === "embedded",
-    );
-    const address = hasEmbeddedWallet
-      ? wallet?.account?.address
-      : (wallet?.account?.address ?? wallets[0]?.address);
+    const address = resolvedAddress;
     if (!address) return;
 
     const NAMESTONE_TIMEOUT_MS = 5000;
@@ -104,7 +115,7 @@ const Login: FC = () => {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [wallet, wallets, fetchNames]);
+  }, [resolvedAddress, fetchNames]);
 
   const isAuthenticated = authenticated;
   const isEmailValid = EMAIL_PATTERN.test(email);

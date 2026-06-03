@@ -11,6 +11,11 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     IHats public Hats;
 
     IHatsModuleFactory public HatsModuleFactory;

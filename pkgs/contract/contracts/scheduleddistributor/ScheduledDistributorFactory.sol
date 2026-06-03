@@ -20,6 +20,11 @@ contract ScheduledDistributorFactory is
 	UUPSUpgradeable,
 	IScheduledDistributorFactory
 {
+	/// @custom:oz-upgrades-unsafe-allow constructor
+	constructor() {
+		_disableInitializers();
+	}
+
 	address public IMPLEMENTATION;
 	address public HATS;
 

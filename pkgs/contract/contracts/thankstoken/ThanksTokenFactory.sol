@@ -12,6 +12,11 @@ contract ThanksTokenFactory is
     UUPSUpgradeable,
     IThanksTokenFactory
 {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     address public IMPLEMENTATION;
     address public HATS;
     address public BIG_BANG;

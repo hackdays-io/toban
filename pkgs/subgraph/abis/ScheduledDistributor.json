@@ -1,7 +1,16 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "inputs": [
-      { "internalType": "address", "name": "token", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
@@ -126,15 +135,40 @@
   },
   {
     "inputs": [],
+    "name": "MAX_WEARERS_PER_HAT",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "RECLAIM_DELAY",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "backupWallet",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -150,7 +184,11 @@
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "hatId", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "hatId",
+            "type": "uint256"
+          },
           {
             "internalType": "uint256",
             "name": "multiplierBottom",
@@ -177,8 +215,16 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "token", "type": "address" },
-      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "deposit",
     "outputs": [],
@@ -201,7 +247,13 @@
   {
     "inputs": [],
     "name": "executed",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -209,18 +261,30 @@
     "inputs": [],
     "name": "getAllConfirmedWearers",
     "outputs": [
-      { "internalType": "address[][]", "name": "result", "type": "address[][]" }
+      {
+        "internalType": "address[][]",
+        "name": "result",
+        "type": "address[][]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "index", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
     ],
     "name": "getConfirmedWearers",
     "outputs": [
-      { "internalType": "address[]", "name": "", "type": "address[]" }
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -229,7 +293,11 @@
     "inputs": [],
     "name": "getHatIds",
     "outputs": [
-      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -238,7 +306,11 @@
     "inputs": [],
     "name": "getMultiplierBottoms",
     "outputs": [
-      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -247,7 +319,11 @@
     "inputs": [],
     "name": "getMultiplierTops",
     "outputs": [
-      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -256,7 +332,11 @@
     "inputs": [],
     "name": "getTokens",
     "outputs": [
-      { "internalType": "address[]", "name": "", "type": "address[]" }
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -264,7 +344,13 @@
   {
     "inputs": [],
     "name": "hats",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -272,13 +358,21 @@
     "inputs": [
       {
         "components": [
-          { "internalType": "address", "name": "hats", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "hats",
+            "type": "address"
+          },
           {
             "internalType": "address",
             "name": "splitsCreator",
             "type": "address"
           },
-          { "internalType": "address", "name": "scheduler", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "scheduler",
+            "type": "address"
+          },
           {
             "internalType": "address[]",
             "name": "tokens",
@@ -355,14 +449,32 @@
   {
     "inputs": [],
     "name": "initialized",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "t", "type": "address" }],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "t",
+        "type": "address"
+      }
+    ],
     "name": "isToken",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -376,35 +488,65 @@
   {
     "inputs": [],
     "name": "reclaimed",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "scheduledDate",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "scheduler",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "split",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "splitsCreator",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -412,7 +554,11 @@
     "inputs": [],
     "name": "weights",
     "outputs": [
-      { "internalType": "uint256", "name": "roleWeight", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "roleWeight",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "thanksTokenWeight",

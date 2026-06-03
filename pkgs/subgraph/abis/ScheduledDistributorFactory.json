@@ -1,40 +1,85 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "inputs": [
-      { "internalType": "address", "name": "target", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "implementation", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
-  { "inputs": [], "name": "FailedCall", "type": "error" },
-  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
-  { "inputs": [], "name": "NotInitializing", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "address", "name": "owner", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
     ],
     "name": "OwnableInvalidOwner",
     "type": "error"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "OwnableUnauthorizedAccount",
     "type": "error"
   },
-  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
@@ -136,21 +181,39 @@
   {
     "inputs": [],
     "name": "HATS",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "IMPLEMENTATION",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -158,13 +221,21 @@
     "inputs": [
       {
         "components": [
-          { "internalType": "address", "name": "hats", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "hats",
+            "type": "address"
+          },
           {
             "internalType": "address",
             "name": "splitsCreator",
             "type": "address"
           },
-          { "internalType": "address", "name": "scheduler", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "scheduler",
+            "type": "address"
+          },
           {
             "internalType": "address[]",
             "name": "tokens",
@@ -232,24 +303,40 @@
         "name": "params",
         "type": "tuple"
       },
-      { "internalType": "bytes32", "name": "salt", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      }
     ],
     "name": "createScheduledDistributor",
     "outputs": [
-      { "internalType": "address", "name": "distributor", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "distributor",
+        "type": "address"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_initialOwner", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_initialOwner",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "_implementation",
         "type": "address"
       },
-      { "internalType": "address", "name": "_hatsAddress", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_hatsAddress",
+        "type": "address"
+      }
     ],
     "name": "initialize",
     "outputs": [],
@@ -259,24 +346,50 @@
   {
     "inputs": [],
     "name": "owner",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "scheduler", "type": "address" },
-      { "internalType": "bytes32", "name": "salt", "type": "bytes32" }
+      {
+        "internalType": "address",
+        "name": "scheduler",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      }
     ],
     "name": "predictScheduledDistributorAddress",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -289,7 +402,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_hatsAddress", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_hatsAddress",
+        "type": "address"
+      }
     ],
     "name": "setHats",
     "outputs": [],
@@ -311,7 +428,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "newOwner", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
     ],
     "name": "transferOwnership",
     "outputs": [],
@@ -325,7 +446,11 @@
         "name": "newImplementation",
         "type": "address"
       },
-      { "internalType": "bytes", "name": "data", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],

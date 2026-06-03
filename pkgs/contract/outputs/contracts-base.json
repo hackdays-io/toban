@@ -1,14 +1,17 @@
 {
   "contracts": {
-    "HatsTimeFrameModule": "\"0xadC508C3BA5eD8b3A6D06e2eC8D17162d2DD6F4f\"",
-    "ThanksTokenFactory_Implementation": "\"0x4481140f1c6CDe5195011cD050f0e8F37F7C8353\"",
-    "SplitsCreator": "\"0xC0D7B4E0485d71aDA9ffF9365E4e1938F8195dDa\"",
-    "ThanksTokenFactory": "\"0x058A1Ea145791269164e3Ab33A32459Bd4CC3438\"",
-    "SplitsCreatorFactory": "\"0x989ca7464cfA7135B9d22a43f4d85D164f97106C\"",
-    "BigBang": "\"0xfB4FA9Dbb82a36566154A038e5f3865fbAC92422\""
+    "HatsTimeFrameModule": "0x7fa6c0F8e4412ED72Ded8d591ABF58B276A992C9",
+    "ThanksTokenFactory_Implementation": "0x736B67AaDFE25BB972541293cDD2ECaB43495458",
+    "SplitsCreator": "0x346FDC51B832E2Da161703Fb7237c6FcC481f235",
+    "ThanksTokenFactory": "0xE4aD59c6f56B85Ef585A089157887cb93267BA2F",
+    "SplitsCreatorFactory": "0x94Cd3742A1D61B8cAa5f8E3741A5982c2a65408C",
+    "BigBang": "0xf020468eA71bbD70F25724Ae518a720923c9cC45",
+    "ScheduledDistributor": "0x406B184Ffe30FB5Bc096D373c42295F8F6474367",
+    "ScheduledDistributorFactory": "0x90b04bCfa471d9642e12667a5a07094A8f165AdE"
   },
   "implementations": {
-    "SplitsCreatorFactory_Implementation": "\"0x95394Da0460DCF87fC76F5b868D9251bf9738553\"",
-    "BigBang_Implementation": "\"0x1d31cc82f837Dd66E54EC4c6fcF7A1067354306D\""
+    "SplitsCreatorFactory_Implementation": "0x09fe221417C67028A042d596fE53e2d99BB22AA2",
+    "BigBang_Implementation": "0x38Fe9401939bf6356e62fdDcEaAf1be1bb9EFbc7",
+    "ScheduledDistributorFactory_Implementation": "0xF0FA1255d179542d424D2110e17CA7cbe409E75B"
   }
 }

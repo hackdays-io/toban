@@ -256,7 +256,7 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
         uint256 value,
         bytes memory data
     ) public virtual override returns (bytes4) {
-        if (msg.sender != address(_fractionToken)) revert InvalidStatus();
+        if (msg.sender != address(_fractionToken)) revert UnauthorizedReceiver();
         return super.onERC1155Received(operator, from, id, value, data);
     }
 
@@ -268,7 +268,7 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
         uint256[] memory,
         bytes memory
     ) public pure override returns (bytes4) {
-        revert InvalidStatus();
+        revert BatchReceiveUnsupported();
     }
 
     // ============ Internal ============

@@ -17,13 +17,23 @@ export const goldskyClient = new ApolloClient({
 // `hooks/useHats.ts` so both clients hit the same indexer.
 const BASE_HATS_SUBGRAPH_ID = "FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs";
 
-const resolveHatsEndpoint = (): string => {
+export const resolveHatsEndpoint = (): string => {
   const chainId = Number(import.meta.env.VITE_CHAIN_ID);
   const apiKey = import.meta.env.VITE_THEGRAPH_API_KEY;
-  // Base mainnet — use Gateway when we have an API key, otherwise fall back.
-  if (chainId === 8453 && apiKey) {
+  // Base mainnet — Hats Protocol's official subgraph lives on The Graph's
+  // decentralised Gateway. Require the API key explicitly so a missing key
+  // on Base fails loudly instead of silently falling back to the Sepolia
+  // Goldsky endpoint configured via VITE_HATS_GRAPHQL_ENDPOINT.
+  if (chainId === 8453) {
+    if (!apiKey) {
+      throw new Error(
+        "VITE_THEGRAPH_API_KEY is required on Base mainnet (Hats Protocol uses The Graph's decentralised Gateway).",
+      );
+    }
     return `https://gateway.thegraph.com/api/${apiKey}/subgraphs/id/${BASE_HATS_SUBGRAPH_ID}`;
   }
+  // Sepolia / local — no official Hats subgraph, use the self-hosted
+  // Goldsky deployment configured via env.
   return import.meta.env.VITE_HATS_GRAPHQL_ENDPOINT;
 };
 

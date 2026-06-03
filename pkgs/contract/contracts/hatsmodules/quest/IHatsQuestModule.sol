@@ -60,6 +60,12 @@ interface IHatsQuestModule {
     error CannotApproveOwnSubmission();
     error AlreadyApproved();
     error NotWorkspaceMember();
+    /// @notice Raised when an ERC1155 transfer is received from a sender that
+    ///         is not the bound HatsFractionTokenModule.
+    error UnauthorizedReceiver();
+    /// @notice Raised when an ERC1155 *batch* transfer is received. This module
+    ///         only escrows via single-id transfers.
+    error BatchReceiveUnsupported();
 
     // ============ Events ============
 

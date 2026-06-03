@@ -175,13 +175,19 @@ contract SplitsCreator is ISplitsCreator, Clone {
         uint256 roleTotalAllocation;
         (roleShareHolders, roleAllocations, roleTotalAllocation) = _calculateRoleAllocations(_splitsInfo);
 
+        // Skip a side entirely when its total allocation is zero. Otherwise the
+        // per-recipient division below (`... / thanksTotalAllocation`) would
+        // revert with EVM div-by-zero, locking any downstream caller (notably
+        // ScheduledDistributor.execute) into the reclaim path. Splits computes
+        // relative shares from `totalAllocation`, so absorbing the missing
+        // weight into a smaller totalAllocation preserves recipient ratios.
         uint256 numOfThanksShareHolders = 0;
-        if (_weightsInfo.thanksTokenWeight > 0) {
+        if (_weightsInfo.thanksTokenWeight > 0 && thanksTotalAllocation > 0) {
             numOfThanksShareHolders = thanksShareHolders.length;
         }
 
         uint256 numOfRoleShareHolders = 0;
-        if (_weightsInfo.roleWeight > 0) {
+        if (_weightsInfo.roleWeight > 0 && roleTotalAllocation > 0) {
             numOfRoleShareHolders = roleShareHolders.length;
         }
 

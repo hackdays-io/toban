@@ -3,7 +3,7 @@
   "startBlock": 36218446,
   "contracts": [
     {
-      "address": "0xfB4FA9Dbb82a36566154A038e5f3865fbAC92422",
+      "address": "0xf020468eA71bbD70F25724Ae518a720923c9cC45",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "address": "0x0000000000000000000000000000000000000000",
+      "address": "0x90b04bCfa471d9642e12667a5a07094A8f165AdE",
       "file": "ScheduledDistributorFactory",
       "mappingFile": "scheduledDistributorMapping",
       "entities": [{ "name": "ScheduledDistributor" }],

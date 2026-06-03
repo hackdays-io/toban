@@ -234,7 +234,12 @@ const ConnectDiscord: FC = () => {
               domain,
               types: IDENTITY_BINDING_TYPES,
               primaryType: IDENTITY_BINDING_PRIMARY_TYPE,
-              message,
+              // `expires` is a uint256 bigint. JSON can't serialize bigint and
+              // we no longer globally patch BigInt.prototype.toJSON (#15), so
+              // send it as a decimal string — the worker accepts string and
+              // normalises via BigInt(), and uint256 hashing is value-based so
+              // the recovered signer is unchanged.
+              message: { ...message, expires: expires.toString() },
             },
             signature,
           },

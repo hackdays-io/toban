@@ -3,24 +3,62 @@ main = "src/worker.ts"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# D1 is shared with `@toban/discord-bot`. `database_id` is per-environment —
-# replace with the real ID when provisioning a Cloudflare account
-# (`wrangler d1 create toban-identity-<env>`). In local dev `wrangler dev`
-# defaults to a local SQLite under `.wrangler/state/` keyed by `database_name`,
-# so the placeholder ID below works fine for `pnpm identity dev`.
+# ---------------------------------------------------------------------------
+# Environments
+# ---------------------------------------------------------------------------
+# Deploy / migrate with an explicit environment, never the bare top-level:
+#   pnpm --filter @toban/identity deploy:sepolia          # → toban-identity-sepolia
+#   pnpm --filter @toban/identity deploy:base             # → toban-identity-base
+#   pnpm --filter @toban/identity db:migrate:remote:base
+#
+# This worker has no [vars]: both values it needs are secrets so the Alchemy
+# key inside RPC_URL never lands in git. Set them per environment:
+#   pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY --env base
+#   pnpm exec wrangler secret put RPC_URL --env base
+# Local dev (`wrangler dev`, no --env) reads .dev.vars for the same names.
+#
+# The discord-bot reaches this worker via a service binding whose `service`
+# must equal this worker's deployed name (e.g. `toban-identity-base`).
+# ---------------------------------------------------------------------------
+
+# --- Local dev defaults (used by `wrangler dev`, no --env) ------------------
+# In local dev `wrangler dev` uses a local SQLite under `.wrangler/state/`
+# keyed by `database_name`, so the placeholder id below is fine.
 [[d1_databases]]
 binding = "DB"
 database_name = "toban-identity"
 database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
 
-# Secrets (set via `wrangler secret put <NAME>`, or via `.dev.vars` for local):
+# ===========================================================================
+# Sepolia (staging)
+# ===========================================================================
+[env.sepolia]
+name = "toban-identity-sepolia"
+
+[[env.sepolia.d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+# Shared with the discord-bot — keep identical to the bot's sepolia D1 id.
+database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
+
+# ===========================================================================
+# Base (production)
+# ===========================================================================
+[env.base]
+name = "toban-identity-base"
+
+[[env.base.d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+# Shared with the discord-bot — keep identical to the bot's base D1 id.
+# Create with: pnpm exec wrangler d1 create toban-identity   (on the prod account)
+database_id = "c3c68486-7de1-4295-b2a3-fdced0337c34"
+
+# ---------------------------------------------------------------------------
+# Secrets (set per environment via `wrangler secret put <NAME> --env <env>`):
 #   DISCORD_BOT_VERIFIER_PUBLIC_KEY  - ES256 SPKI PEM matching the discord-bot
-#                                      worker's VERIFIER_PRIVATE_KEY. Used to
-#                                      verify verifier_token JWTs.
-#   RPC_URL                          - Sepolia/Base RPC endpoint for EIP-1271
-#                                      and ERC-6492 smart-wallet signature
-#                                      verification on /api/connect.
-#
-# No top-level [vars] block: keep both values as secrets so the Alchemy API
-# key inside RPC_URL never lands in git. Local dev reads .dev.vars (also
-# gitignored) for the same names.
+#                                      worker's VERIFIER_PRIVATE_KEY (same env).
+#   RPC_URL                          - Sepolia/Base RPC for EIP-1271 / ERC-6492
+#                                      smart-wallet signature verification on
+#                                      /api/connect (must match the env's chain).
+# ---------------------------------------------------------------------------

@@ -8,7 +8,11 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "deploy:sepolia": "wrangler deploy --env sepolia",
+    "deploy:base": "wrangler deploy --env base",
     "deploy:dry": "wrangler deploy --dry-run --outdir=dist",
+    "deploy:dry:sepolia": "wrangler deploy --dry-run --outdir=dist --env sepolia",
+    "deploy:dry:base": "wrangler deploy --dry-run --outdir=dist --env base",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

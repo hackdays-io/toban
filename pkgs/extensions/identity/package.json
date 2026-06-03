@@ -22,9 +22,15 @@
     "dev": "wrangler dev --port 8788 --local",
     "dev-token": "tsx scripts/dev-token.ts",
     "deploy": "wrangler deploy",
+    "deploy:sepolia": "wrangler deploy --env sepolia",
+    "deploy:base": "wrangler deploy --env base",
     "deploy:dry": "wrangler deploy --dry-run",
+    "deploy:dry:sepolia": "wrangler deploy --dry-run --env sepolia",
+    "deploy:dry:base": "wrangler deploy --dry-run --env base",
     "db:migrate:local": "wrangler d1 execute toban-identity --local --file=./migrations/0001_init.sql",
-    "db:migrate:remote": "wrangler d1 execute toban-identity --remote --file=./migrations/0001_init.sql"
+    "db:migrate:remote": "wrangler d1 execute toban-identity --remote --file=./migrations/0001_init.sql",
+    "db:migrate:remote:sepolia": "wrangler d1 execute toban-identity --remote --env sepolia --file=./migrations/0001_init.sql",
+    "db:migrate:remote:base": "wrangler d1 execute toban-identity --remote --env base --file=./migrations/0001_init.sql"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.0",

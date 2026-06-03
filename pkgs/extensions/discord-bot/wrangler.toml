@@ -112,9 +112,12 @@ service = "toban-identity-base"
 [env.base.vars]
 # Toban subgraph (Goldsky) on Base.
 GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-base/0.0.1/gn"
-# Hats subgraph on Base — Hats Protocol's official The Graph deployment
-# (NOT Goldsky). Mirrors the frontend's Base config.
-HATS_GRAPHQL_ENDPOINT = "https://api.studio.thegraph.com/query/55784/hats-v1-base/version/latest"
+# Hats subgraph on Base — Hats Protocol's official subgraph on The Graph's
+# decentralised Gateway (the Studio endpoint was retired). The Gateway URL
+# embeds a Graph API key, so it is a secret (not in [vars]). Mirrors the
+# frontend (utils/apollo.ts: gateway.thegraph.com/.../id/FWeAqrp36QYqv9gDWLwr...):
+#   echo -n "https://gateway.thegraph.com/api/<THEGRAPH_API_KEY>/subgraphs/id/FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs" \
+#     | pnpm exec wrangler secret put HATS_GRAPHQL_ENDPOINT --env base
 TOBAN_FRONTEND_URL = "https://v3.toban.xyz"
 BOT_WORKER_URL = "https://toban-discord-bot-base.yuki-021423.workers.dev"
 # RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
@@ -143,7 +146,16 @@ head_sampling_rate = 1
 #                                   JWT signing (PEM PKCS8). Identity worker
 #                                   holds the matching public key.
 #   INSTALL_STATE_SECRET          - HMAC secret for OAuth install state JWT
+#   LOOKUP_READ_SECRET            - shared secret for identity /api/lookup auth.
+#                                   MUST equal the identity worker's value (same
+#                                   env), else lookups return 401 unauthorized.
+#   PLATFORM_LINK_WRITE_SECRET    - shared secret for identity /api/platform-link
+#                                   writes + install-state. MUST equal the
+#                                   identity worker's value (same env).
 #   RPC_URL                       - chain RPC (embeds the Alchemy key) for every
 #                                   env; kept as a secret so the key never lands
 #                                   in git. Local dev: put it in .dev.vars.
+#   HATS_GRAPHQL_ENDPOINT (base)  - Base only: The Graph Gateway URL embeds an
+#                                   API key, so it is a secret on Base. Sepolia
+#                                   keeps the keyless Goldsky URL in [vars].
 # ---------------------------------------------------------------------------

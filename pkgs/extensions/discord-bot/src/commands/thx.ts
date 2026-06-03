@@ -327,10 +327,16 @@ async function executeThxInner(
       ],
     });
   } catch (err) {
+    // Log the full error to Workers Logs (no length limit there); send the
+    // concise viem `shortMessage` (e.g. the revert reason) to Discord so the
+    // followup stays well under the 2000-char content cap.
+    console.error("mintFrom failed:", err);
+    const short =
+      (err as { shortMessage?: string }).shortMessage ?? (err as Error).message;
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `mintFrom failed: ${(err as Error).message}`,
+      `mintFrom failed: ${short}`,
     );
     return;
   }

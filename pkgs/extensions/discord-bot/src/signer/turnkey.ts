@@ -36,8 +36,6 @@ import {
   type TypedDataDefinition,
   hashMessage,
   hashTypedData,
-  hexToBytes,
-  keccak256,
   serializeTransaction,
   signatureToHex,
   toHex,
@@ -244,6 +242,65 @@ async function signRawPayload(
   return result;
 }
 
+/**
+ * POST to Turnkey's `sign_transaction` endpoint. Turnkey parses the
+ * Ethereum transaction *inside the TEE*, so the `eth.tx.*` policy
+ * (mintFrom-only: `to`, selector, `value`, `chain_id`) is enforced before
+ * signing — unlike `sign_raw_payload`, which only sees an opaque hash and
+ * cannot be policy-gated by transaction contents.
+ *
+ * Turnkey's wire convention is hex *without* the `0x` prefix for both the
+ * unsigned input and the signed output; we strip/re-add it for viem, which
+ * broadcasts the returned signed transaction verbatim via
+ * `eth_sendRawTransaction`.
+ */
+async function signTransactionTurnkey(
+  env: Env,
+  signWith: string,
+  /** Unsigned serialized transaction (0x-prefixed) from viem. */
+  unsignedTransaction: Hex,
+): Promise<Hex> {
+  const url = `${env.TURNKEY_API_BASE_URL}/public/v1/submit/sign_transaction`;
+  const body = JSON.stringify({
+    type: "ACTIVITY_TYPE_SIGN_TRANSACTION_V2",
+    timestampMs: Date.now().toString(),
+    organizationId: env.TURNKEY_ORGANIZATION_ID,
+    parameters: {
+      signWith,
+      type: "TRANSACTION_TYPE_ETHEREUM",
+      unsignedTransaction: unsignedTransaction.replace(/^0x/, ""),
+    },
+  });
+  const stamp = await createStamp(
+    env.TURNKEY_API_PRIVATE_KEY,
+    env.TURNKEY_API_PUBLIC_KEY,
+    body,
+  );
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "X-Stamp": stamp.header,
+    },
+    body,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Turnkey sign_transaction failed: ${res.status} ${text}`);
+  }
+  const json = (await res.json()) as {
+    activity?: {
+      result?: { signTransactionResult?: { signedTransaction?: string } };
+    };
+  };
+  const signed =
+    json.activity?.result?.signTransactionResult?.signedTransaction;
+  if (!signed) {
+    throw new Error("Turnkey sign_transaction: empty result");
+  }
+  return `0x${signed.replace(/^0x/, "")}` as Hex;
+}
+
 // ---------------------------------------------------------------------------
 // viem LocalAccount wrapper
 // ---------------------------------------------------------------------------
@@ -276,18 +333,30 @@ function packSignature(r: Hex, s: Hex, v: Hex): Hex {
  * `createWalletClient({ account, ... })` and ordinary `walletClient.
  * writeContract()` calls work transparently.
  *
- * @param overrideFetcher Optional dependency injection for tests; replace
- *   the underlying `signRawPayload` call without monkey-patching fetch.
+ * @param overrideFetcher Optional DI for tests: replaces the underlying
+ *   `sign_raw_payload` call (signMessage / signTypedData).
+ * @param overrideTxSigner Optional DI for tests: replaces the underlying
+ *   `sign_transaction` call (signTransaction). Receives the unsigned
+ *   serialized tx and returns the serialized signed tx.
  */
 export function createTurnkeySigner(
   env: Env,
   overrideFetcher?: (payload: Hex) => Promise<TurnkeySignRawPayloadResult>,
+  overrideTxSigner?: (unsignedTransaction: Hex) => Promise<Hex>,
 ): LocalAccount {
   const address = env.TURNKEY_BOT_SIGNER_ADDRESS as Hex;
   const fetcher =
     overrideFetcher ??
     ((payload: Hex) =>
       signRawPayload(env, env.TURNKEY_BOT_SIGNER_ADDRESS, payload));
+  const txSigner =
+    overrideTxSigner ??
+    ((unsignedTransaction: Hex) =>
+      signTransactionTurnkey(
+        env,
+        env.TURNKEY_BOT_SIGNER_ADDRESS,
+        unsignedTransaction,
+      ));
 
   return {
     address,
@@ -295,6 +364,10 @@ export function createTurnkeySigner(
     source: "custom",
     publicKey: "0x" as Hex,
 
+    // signMessage / signTypedData still go through sign_raw_payload. The
+    // production path only ever calls signTransaction; with the TEE policy
+    // restricted to ACTIVITY_TYPE_SIGN_TRANSACTION_V2, these raw-payload
+    // paths are intentionally *denied* by Turnkey if ever invoked.
     async signMessage({ message }: { message: SignableMessage }) {
       const hash = hashMessage(message);
       const { r, s, v } = await fetcher(hash);
@@ -306,18 +379,12 @@ export function createTurnkeySigner(
       args?: { serializer?: SerializeTransactionFn<TSerializable> },
     ): Promise<Hex> {
       const serializer = args?.serializer ?? serializeTransaction;
-      // viem serializes the unsigned tx then asks us to sign the
-      // keccak256 of those bytes. We hash here (rather than using
-      // Turnkey's KECCAK256 hashFunction) so that the tx hash we
-      // return to viem matches exactly what we signed.
+      // Hand the *unsigned* serialized tx to Turnkey's sign_transaction so
+      // the TEE parses it and the eth.tx.* policy (mintFrom-only) applies.
+      // Turnkey returns the fully serialized *signed* tx — exactly what viem
+      // broadcasts via eth_sendRawTransaction.
       const unsigned = serializer(transaction);
-      const hash = keccak256(hexToBytes(unsigned));
-      const { r, s, v } = await fetcher(hash);
-      return serializer(transaction, {
-        r,
-        s,
-        yParity: vToYParity(v),
-      });
+      return await txSigner(unsigned);
     },
 
     async signTypedData<
@@ -340,6 +407,7 @@ export const __testing = {
   bytesToBase64Url,
   packSignature,
   signRawPayload,
+  signTransactionTurnkey,
   toHex,
   vToYParity,
 };

@@ -173,6 +173,8 @@ pnpm --filter @toban/discord-bot register-commands <guild>
 
 end-to-end のデプロイは 3 つの外部サービス (Cloudflare、Turnkey、Discord) + identity Worker を扱います。identity を先にデプロイしてください ([identity README: デプロイ手順](../identity/README.md#デプロイ手順))。以降は identity が同じ Cloudflare アカウントで到達可能な状態を前提とします。
 
+> **Base 本番のデプロイ**と、実際にハマった落とし穴（鍵フォーマット、Turnkey policy と sign_transaction、Hats subgraph の Gateway/ドメイン制限、var が secret を上書きする件、`/thx` の followup 2000字制限 など）は [`docs/deploy-base-production.md`](docs/deploy-base-production.md) にまとめてあります。本番作業前に一読してください。
+
 ### Step 1 — Cloudflare 前準備
 
 identity 側と同じ。すでに `wrangler login` 済みなら何もしなくて OK:

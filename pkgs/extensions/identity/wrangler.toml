@@ -61,4 +61,10 @@ database_id = "c3c68486-7de1-4295-b2a3-fdced0337c34"
 #   RPC_URL                          - Sepolia/Base RPC for EIP-1271 / ERC-6492
 #                                      smart-wallet signature verification on
 #                                      /api/connect (must match the env's chain).
+#   LOOKUP_READ_SECRET               - shared secret gating /api/lookup. MUST
+#                                      equal the discord-bot worker's value
+#                                      (same env), else lookups return 401.
+#   PLATFORM_LINK_WRITE_SECRET       - shared secret gating /api/platform-link
+#                                      writes + install-state claim. MUST equal
+#                                      the discord-bot worker's value (same env).
 # ---------------------------------------------------------------------------

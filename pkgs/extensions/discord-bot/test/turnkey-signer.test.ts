@@ -1,11 +1,4 @@
-import {
-  type Hex,
-  hexToBytes,
-  keccak256,
-  parseTransaction,
-  recoverAddress,
-  serializeTransaction,
-} from "viem";
+import { type Hex, parseTransaction, recoverTransactionAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { generatePrivateKey } from "viem/accounts";
 import { describe, expect, it } from "vitest";
@@ -54,22 +47,17 @@ describe("createTurnkeySigner", () => {
     const local = privateKeyToAccount(pk);
     const env = makeEnv(local.address);
 
-    const signer = createTurnkeySigner(env, async (hash: Hex) => {
-      // Real Turnkey would not do this — but signing the hash with
-      // viem's local account is structurally identical, and gives us
-      // a deterministic recovery target.
-      const sig = await local.sign({ hash });
-      // viem's sig is a 65-byte 0x... string: r(32) | s(32) | v(1)
-      const bytes = sig.startsWith("0x") ? sig.slice(2) : sig;
-      const r = `0x${bytes.slice(0, 64)}` as Hex;
-      const s = `0x${bytes.slice(64, 128)}` as Hex;
-      // Feed the *legacy* (27/28) v form rather than reproducing the
-      // 00/01 shape production assumes today — this exercises
-      // `vToYParity`'s legacy branch end-to-end instead of testing the
-      // mock against itself.
-      const v = `0x${bytes.slice(128, 130)}` as Hex;
-      return { r, s, v };
-    });
+    // Simulate Turnkey's sign_transaction: parse the unsigned tx and sign it
+    // with viem's local account, returning the serialized signed tx — exactly
+    // the shape Turnkey returns and the wrapper passes straight through.
+    const signer = createTurnkeySigner(
+      env,
+      undefined,
+      async (unsignedTx: Hex) => {
+        const parsed = parseTransaction(unsignedTx);
+        return await local.signTransaction(parsed);
+      },
+    );
 
     const tx = {
       chainId: 8453,
@@ -84,20 +72,8 @@ describe("createTurnkeySigner", () => {
     };
     const signed = await signer.signTransaction(tx);
 
-    // Round-trip: parse the signed tx and recover its sender.
-    const parsed = parseTransaction(signed);
-    // Re-serialize unsigned form and hash, then recover.
-    const unsignedSerialized = serializeTransaction(tx);
-    const hash = keccak256(hexToBytes(unsignedSerialized));
-    expect(parsed.r).toBeDefined();
-    expect(parsed.s).toBeDefined();
-    const recovered = await recoverAddress({
-      hash,
-      signature: {
-        r: parsed.r as Hex,
-        s: parsed.s as Hex,
-        yParity: parsed.yParity ?? 0,
-      },
+    const recovered = await recoverTransactionAddress({
+      serializedTransaction: signed as `0x02${string}`,
     });
     expect(recovered.toLowerCase()).toBe(local.address.toLowerCase());
   });

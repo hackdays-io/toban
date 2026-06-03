@@ -56,25 +56,25 @@ export async function handleBalance(
     );
   }
 
+  const client = getPublicClient(env);
+  const spender = env.TURNKEY_BOT_SIGNER_ADDRESS as Hex;
+  const owner = record.wallet as Address;
+
+  // Token resolution and role-context resolution both depend only on
+  // (treeId, owner) and hit different subgraphs, so run them concurrently
+  // — `/balance` is not deferred and must stay inside Discord's 3s ACK.
   const resolveTokenAddress =
     deps.resolveTokenAddress ??
     ((treeId) => resolveThanksTokenAddress(env, treeId));
-  const token = await resolveTokenAddress(platformLink.treeId);
+  const [token, relatedRoles] = await Promise.all([
+    resolveTokenAddress(platformLink.treeId),
+    resolveRelatedRoles(env, owner, platformLink.treeId),
+  ]);
   if (!token) {
     return ephemeral(
       `Could not resolve the workspace's ThanksToken (tree ${platformLink.treeId}).`,
     );
   }
-
-  const client = getPublicClient(env);
-  const spender = env.TURNKEY_BOT_SIGNER_ADDRESS as Hex;
-  const owner = record.wallet as Address;
-
-  const relatedRoles = await resolveRelatedRoles(
-    env,
-    owner,
-    platformLink.treeId,
-  );
 
   const [allowance, mintable] = await Promise.all([
     client.readContract({

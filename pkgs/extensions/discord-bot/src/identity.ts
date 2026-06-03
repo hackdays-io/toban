@@ -106,7 +106,12 @@ class IdentityFetchClient implements IdentityClient {
         `identity lookup failed: ${res.status} ${await res.text()}`,
       );
     }
-    return (await res.json()) as IdentityRecord;
+    // The lookup worker returns only `{ wallet }` (plus optional metadata)
+    // on the wire — `provider`/`accountId` are not part of the response.
+    // Parse to that real shape, then reconstruct the boundary
+    // IdentityRecord from the request context instead of lying with a cast.
+    const body = (await res.json()) as { wallet: Address };
+    return { provider, accountId, wallet: body.wallet };
   }
 
   async getPlatformLink(

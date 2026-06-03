@@ -254,81 +254,98 @@ export async function resolveRelatedRoles(
   const ownerLower = owner.toLowerCase();
 
   // (a) FractionToken balances from the Toban subgraph.
-  const tobanRes = await fetchImpl(env.GOLDSKY_GRAPHQL_ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      query:
-        "query($owner: String!, $workspaceId: String!) {" +
-        " balanceOfFractionTokens(where: {owner: $owner, workspaceId: $workspaceId}, first: 200) {" +
-        " hatId wearer } }",
-      variables: { owner: ownerLower, workspaceId: treeId },
-    }),
-  });
-  if (!tobanRes.ok) {
-    throw new Error(
-      `Toban subgraph relatedRoles lookup failed: ${tobanRes.status} ${tobanRes.statusText}`,
-    );
-  }
-  const tobanBody = (await tobanRes.json()) as {
-    data?: {
-      balanceOfFractionTokens?: Array<{ hatId: string; wearer: string }>;
+  const fetchFractionRows = async (): Promise<
+    Array<{ hatId: string; wearer: string }>
+  > => {
+    const tobanRes = await fetchImpl(env.GOLDSKY_GRAPHQL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query:
+          "query($owner: String!, $workspaceId: String!) {" +
+          " balanceOfFractionTokens(where: {owner: $owner, workspaceId: $workspaceId}, first: 200) {" +
+          " hatId wearer } }",
+        variables: { owner: ownerLower, workspaceId: treeId },
+      }),
+    });
+    if (!tobanRes.ok) {
+      throw new Error(
+        `Toban subgraph relatedRoles lookup failed: ${tobanRes.status} ${tobanRes.statusText}`,
+      );
+    }
+    const tobanBody = (await tobanRes.json()) as {
+      data?: {
+        balanceOfFractionTokens?: Array<{ hatId: string; wearer: string }>;
+      };
+      errors?: Array<{ message: string }>;
     };
-    errors?: Array<{ message: string }>;
+    if (tobanBody.errors?.length) {
+      throw new Error(
+        `Toban subgraph errored: ${tobanBody.errors.map((e) => e.message).join("; ")}`,
+      );
+    }
+    return tobanBody.data?.balanceOfFractionTokens ?? [];
   };
-  if (tobanBody.errors?.length) {
-    throw new Error(
-      `Toban subgraph errored: ${tobanBody.errors.map((e) => e.message).join("; ")}`,
-    );
-  }
-  const fractionRows = tobanBody.data?.balanceOfFractionTokens ?? [];
 
   // (b) Hats the user wears, from the Hats subgraph.
-  const hatsRes = await fetchImpl(env.HATS_GRAPHQL_ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      query:
-        "query($treeId: ID!) {" +
-        " tree(id: $treeId) { hats { id wearers { id } } } }",
-      variables: { treeId: treeIdToHatsHex(treeId) },
-    }),
-  });
-  if (!hatsRes.ok) {
-    throw new Error(
-      `Hats subgraph lookup failed: ${hatsRes.status} ${hatsRes.statusText}`,
-    );
-  }
-  const hatsBody = (await hatsRes.json()) as {
-    data?: {
-      tree?: {
-        hats?: Array<{ id: string; wearers: Array<{ id: string }> }>;
-      } | null;
+  const fetchWornHats = async (): Promise<Array<{ id: string }>> => {
+    const hatsRes = await fetchImpl(env.HATS_GRAPHQL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query:
+          "query($treeId: ID!) {" +
+          " tree(id: $treeId) { hats { id wearers { id } } } }",
+        variables: { treeId: treeIdToHatsHex(treeId) },
+      }),
+    });
+    if (!hatsRes.ok) {
+      throw new Error(
+        `Hats subgraph lookup failed: ${hatsRes.status} ${hatsRes.statusText}`,
+      );
+    }
+    const hatsBody = (await hatsRes.json()) as {
+      data?: {
+        tree?: {
+          hats?: Array<{ id: string; wearers: Array<{ id: string }> }>;
+        } | null;
+      };
+      errors?: Array<{ message: string }>;
     };
-    errors?: Array<{ message: string }>;
-  };
-  if (hatsBody.errors?.length) {
-    throw new Error(
-      `Hats subgraph errored: ${hatsBody.errors.map((e) => e.message).join("; ")}`,
+    if (hatsBody.errors?.length) {
+      throw new Error(
+        `Hats subgraph errored: ${hatsBody.errors.map((e) => e.message).join("; ")}`,
+      );
+    }
+    return (hatsBody.data?.tree?.hats ?? []).filter((h) =>
+      h.wearers.some((w) => w.id.toLowerCase() === ownerLower),
     );
-  }
-  const myHats = (hatsBody.data?.tree?.hats ?? []).filter((h) =>
-    h.wearers.some((w) => w.id.toLowerCase() === ownerLower),
-  );
+  };
 
-  // Combine. De-duplicate by (hatId, wearer) string key — the same pair
-  // could in principle appear in both feeds.
+  // (a) and (b) hit different endpoints with independent inputs, so run
+  // them concurrently — this is on the `/balance` path which must answer
+  // inside Discord's 3s interaction ACK budget.
+  const [fractionRows, myHats] = await Promise.all([
+    fetchFractionRows(),
+    fetchWornHats(),
+  ]);
+
+  // Combine. De-duplicate by (hatId, wearer). The Toban subgraph returns
+  // hatId as a decimal string while the Hats subgraph returns it as a
+  // 0x-prefixed hex string, so a raw string key would never collide even
+  // for the same role — normalise both to a canonical hex form, otherwise
+  // the role is counted twice and `mintableAmount`'s cap silently doubles.
+  const keyFor = (hatId: string | bigint, wearer: string) =>
+    `${BigInt(hatId).toString(16)}:${wearer.toLowerCase()}`;
   const map = new Map<string, { hatId: bigint; wearer: Address }>();
   for (const r of fractionRows) {
-    const key = `${r.hatId}:${r.wearer.toLowerCase()}`;
-    map.set(key, {
+    map.set(keyFor(r.hatId, r.wearer), {
       hatId: BigInt(r.hatId),
       wearer: r.wearer as Address,
     });
   }
   for (const h of myHats) {
-    const key = `${h.id}:${ownerLower}`;
-    map.set(key, {
+    map.set(keyFor(h.id, ownerLower), {
       hatId: BigInt(h.id),
       wearer: owner,
     });

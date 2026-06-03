@@ -1,12 +1,23 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
+// EIP-712 IdentityBinding boundary contract — imported from the single
+// source of truth in `@toban/identity` rather than redeclared, so a field
+// reorder / domain-version bump there can't silently desync this signer
+// (which would make every /api/connect fail with wallet_mismatch).
+import {
+  IDENTITY_BINDING_DOMAIN_NAME,
+  IDENTITY_BINDING_DOMAIN_VERSION,
+  IDENTITY_BINDING_PRIMARY_TYPE,
+  IDENTITY_BINDING_TYPES,
+  hashVerifierToken,
+} from "@toban/identity/eip712";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
 import { SiDiscord } from "react-icons/si";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { type Address, type Hex, bytesToHex, keccak256, toBytes } from "viem";
+import { type Address, type Hex, bytesToHex } from "viem";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -14,17 +25,6 @@ import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
 import { withBigIntJSON } from "~/lib/bigint-json";
-
-const IDENTITY_BINDING_TYPES = {
-  IdentityBinding: [
-    { name: "wallet", type: "address" },
-    { name: "provider", type: "string" },
-    { name: "accountId", type: "string" },
-    { name: "verifierTokenHash", type: "bytes32" },
-    { name: "expires", type: "uint256" },
-    { name: "nonce", type: "bytes32" },
-  ],
-} as const;
 
 type VerifierClaims = {
   provider: "discord";
@@ -188,7 +188,7 @@ const ConnectDiscord: FC = () => {
       const nonceBytes = new Uint8Array(32);
       crypto.getRandomValues(nonceBytes);
       const nonce = bytesToHex(nonceBytes);
-      const verifierTokenHash = keccak256(toBytes(token));
+      const verifierTokenHash = hashVerifierToken(token);
       const expires = BigInt(Math.floor(Date.now() / 1000) + 30 * 60);
       const walletAddress = wallet.account.address as Address;
 
@@ -201,8 +201,8 @@ const ConnectDiscord: FC = () => {
         nonce,
       };
       const domain = {
-        name: "TobanIdentity",
-        version: "1",
+        name: IDENTITY_BINDING_DOMAIN_NAME,
+        version: IDENTITY_BINDING_DOMAIN_VERSION,
         chainId: currentChain.id,
       } as const;
 
@@ -211,7 +211,7 @@ const ConnectDiscord: FC = () => {
           account: walletAddress,
           domain,
           types: IDENTITY_BINDING_TYPES,
-          primaryType: "IdentityBinding",
+          primaryType: IDENTITY_BINDING_PRIMARY_TYPE,
           message,
         }),
       )) as Hex;
@@ -233,7 +233,7 @@ const ConnectDiscord: FC = () => {
             typedData: {
               domain,
               types: IDENTITY_BINDING_TYPES,
-              primaryType: "IdentityBinding",
+              primaryType: IDENTITY_BINDING_PRIMARY_TYPE,
               message,
             },
             signature,

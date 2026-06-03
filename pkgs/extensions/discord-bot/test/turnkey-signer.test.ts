@@ -9,7 +9,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { generatePrivateKey } from "viem/accounts";
 import { describe, expect, it } from "vitest";
-import { createTurnkeySigner } from "../src/signer/turnkey";
+import { __testing, createTurnkeySigner } from "../src/signer/turnkey";
 
 /**
  * The Turnkey wrapper's job is to take whatever 32-byte hash viem
@@ -63,8 +63,11 @@ describe("createTurnkeySigner", () => {
       const bytes = sig.startsWith("0x") ? sig.slice(2) : sig;
       const r = `0x${bytes.slice(0, 64)}` as Hex;
       const s = `0x${bytes.slice(64, 128)}` as Hex;
-      const vByte = Number.parseInt(bytes.slice(128, 130), 16);
-      const v = (vByte === 27 ? "0x00" : "0x01") as Hex;
+      // Feed the *legacy* (27/28) v form rather than reproducing the
+      // 00/01 shape production assumes today — this exercises
+      // `vToYParity`'s legacy branch end-to-end instead of testing the
+      // mock against itself.
+      const v = `0x${bytes.slice(128, 130)}` as Hex;
       return { r, s, v };
     });
 
@@ -110,13 +113,32 @@ describe("createTurnkeySigner", () => {
       const bytes = sig.startsWith("0x") ? sig.slice(2) : sig;
       const r = `0x${bytes.slice(0, 64)}` as Hex;
       const s = `0x${bytes.slice(64, 128)}` as Hex;
-      const vByte = Number.parseInt(bytes.slice(128, 130), 16);
-      const v = (vByte === 27 ? "0x00" : "0x01") as Hex;
+      const v = `0x${bytes.slice(128, 130)}` as Hex;
       return { r, s, v };
     });
     const out = await signer.signMessage({ message: "hello" });
     expect(out.startsWith("0x")).toBe(true);
     expect(out.length).toBe(2 + 130);
     expect(calls).toBe(1);
+  });
+});
+
+describe("vToYParity", () => {
+  const { vToYParity } = __testing;
+
+  it.each([
+    ["0x00", 0],
+    ["0x01", 1],
+    ["0x1b", 0], // legacy 27
+    ["0x1c", 1], // legacy 28
+  ] as const)("maps %s -> yParity %i", (v, expected) => {
+    expect(vToYParity(v)).toBe(expected);
+  });
+
+  it("throws on an unexpected v byte instead of silently mis-mapping", () => {
+    // EIP-155 form (chainId*2+35) and anything else must be rejected so a
+    // wrong yParity never reaches ecrecover.
+    expect(() => vToYParity("0x25")).toThrow(/unexpected v byte/);
+    expect(() => vToYParity("0x02")).toThrow(/unexpected v byte/);
   });
 });

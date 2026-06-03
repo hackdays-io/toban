@@ -282,6 +282,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.68.0
         version: 5.77.2(react@18.3.1)
+      '@toban/identity':
+        specifier: workspace:*
+        version: link:../extensions/identity
       '@vercel/react-router':
         specifier: ^1.3.0
         version: 1.3.0(@react-router/dev@7.15.0(@react-router/serve@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(@types/node@22.15.24)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.40.0)(tsx@4.22.1)(typescript@5.6.3)(vite@7.3.3(@types/node@22.15.24)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.40.0)(tsx@4.22.1)(yaml@2.8.0))(wrangler@3.114.17(@cloudflare/workers-types@4.20260516.1)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.8.0))(@react-router/node@7.15.0(react-router@7.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.3))(isbot@5.1.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

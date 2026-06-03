@@ -248,15 +248,25 @@ async function signRawPayload(
 // viem LocalAccount wrapper
 // ---------------------------------------------------------------------------
 
+/**
+ * Normalise an ECDSA `v` byte to a viem `yParity` (0 | 1).
+ *
+ * Turnkey's `sign_raw_payload V2` returns `v` as "00"/"01" today, but the
+ * `v` field has three historical encodings: raw recovery id (0/1), legacy
+ * (27/28), and EIP-155 (chainId*2+35/36). Handle the first two explicitly
+ * and throw on anything unexpected — a wrong `yParity` makes `ecrecover`
+ * return a different address, so the tx would be silently mis-signed. A
+ * throw surfaces in the Discord followup instead, making it operable.
+ */
+function vToYParity(v: Hex): 0 | 1 {
+  const n = Number.parseInt(v.slice(2), 16);
+  if (n === 0 || n === 27) return 0;
+  if (n === 1 || n === 28) return 1;
+  throw new Error(`turnkey: unexpected v byte ${v} (got ${n}, want 0/1/27/28)`);
+}
+
 function packSignature(r: Hex, s: Hex, v: Hex): Hex {
-  // Turnkey returns v as "00" or "01"; viem expects 27/28 for legacy or
-  // the raw recovery id (yParity) for EIP-1559.
-  const vNum = Number.parseInt(v.slice(2), 16);
-  return signatureToHex({
-    r,
-    s,
-    yParity: vNum === 0 ? 0 : 1,
-  });
+  return signatureToHex({ r, s, yParity: vToYParity(v) });
 }
 
 /**
@@ -306,7 +316,7 @@ export function createTurnkeySigner(
       return serializer(transaction, {
         r,
         s,
-        yParity: Number.parseInt(v.slice(2), 16) === 0 ? 0 : 1,
+        yParity: vToYParity(v),
       });
     },
 
@@ -331,4 +341,5 @@ export const __testing = {
   packSignature,
   signRawPayload,
   toHex,
+  vToYParity,
 };

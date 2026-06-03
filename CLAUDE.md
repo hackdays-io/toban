@@ -11,6 +11,7 @@ Each workspace package has its own `CLAUDE.md` with package-specific architectur
 - `pkgs/subgraph/CLAUDE.md` — Goldsky-deployed The Graph subgraph
 - `pkgs/cli/CLAUDE.md` — Commander-based TypeScript CLI
 - `pkgs/document/CLAUDE.md` — Docusaurus documentation site
+- `pkgs/extensions/*/CLAUDE.md` — External-service integrations (`identity`, `discord-bot`, ...). Cloudflare Workers + D1 runtime. Each extension imports `@toban/identity` for account ↔ wallet binding.
 
 ## Monorepo layout
 

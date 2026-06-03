@@ -118,6 +118,11 @@ export default defineConfig({
       ],
     },
   },
+  // `@toban/identity` ships TypeScript source (no build step), so SSR must
+  // transpile it rather than externalise it to Node's require.
+  ssr: {
+    noExternal: ["@toban/identity"],
+  },
   optimizeDeps: {
     include: [
       "@privy-io/react-auth",

@@ -1,0 +1,45 @@
+{
+  "name": "@toban/identity",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Provider-abstracted account ↔ wallet binding for Toban extensions (Discord, Slack, GitHub, ...). MVP ships the Discord provider.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./providers": "./src/providers/index.ts",
+    "./eip712": "./src/eip712/identity-binding.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "drizzle:generate": "drizzle-kit generate",
+    "dev": "wrangler dev --port 8788 --local",
+    "dev-token": "tsx scripts/dev-token.ts",
+    "deploy": "wrangler deploy",
+    "deploy:dry": "wrangler deploy --dry-run",
+    "db:migrate:local": "wrangler d1 execute toban-identity --local --file=./migrations/0001_init.sql",
+    "db:migrate:remote": "wrangler d1 execute toban-identity --remote --file=./migrations/0001_init.sql"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.0",
+    "jose": "^5.9.6",
+    "viem": "^2.21.51"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.7.4",
+    "better-sqlite3": "^11.5.0",
+    "drizzle-kit": "^0.28.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.6",
+    "wrangler": "^3.78.10"
+  }
+}

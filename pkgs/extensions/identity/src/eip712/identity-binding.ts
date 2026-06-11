@@ -1,5 +1,7 @@
-import { keccak256, toBytes } from "viem";
-import type { Address, Hex } from "viem";
+/** viem-compatible address / bytes hex brands — kept local so SSR consumers
+ *  (frontend) don't pull viem in through this boundary-contract module. */
+type Address = `0x${string}`;
+type Hex = `0x${string}`;
 
 /**
  * EIP-712 `IdentityBinding` boundary contract.
@@ -62,14 +64,4 @@ export function buildIdentityBindingDomain(
     version: IDENTITY_BINDING_DOMAIN_VERSION,
     chainId,
   };
-}
-
-/**
- * `verifierTokenHash = keccak256(utf8Bytes(verifier_token))`.
- *
- * Returned as a `0x`-prefixed 32-byte hex string (the `bytes32` field
- * of `IdentityBinding`).
- */
-export function hashVerifierToken(verifierToken: string): Hex {
-  return keccak256(toBytes(verifierToken));
 }

@@ -1,7 +1,7 @@
 import type { Hex } from "viem";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { hashVerifierToken } from "../eip712/identity-binding.js";
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import { handleConnect } from "../handlers/connect.js";
 import {
   DISCORD_PROVIDER_NAME,

@@ -1,9 +1,20 @@
+import { fileURLToPath } from "node:url";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { type Plugin, defineConfig } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
+
+const ssrBufferShim = fileURLToPath(
+  new URL("./app/vite-polyfills/ssr-buffer.ts", import.meta.url),
+);
+const ssrProcessShim = fileURLToPath(
+  new URL("./app/vite-polyfills/ssr-process.ts", import.meta.url),
+);
+const ssrGlobalShim = fileURLToPath(
+  new URL("./app/vite-polyfills/ssr-global.ts", import.meta.url),
+);
 
 const ignoreWellKnown = (): Plugin => ({
   name: "ignore-well-known",
@@ -19,12 +30,37 @@ const ignoreWellKnown = (): Plugin => ({
   },
 });
 
+// Client polyfills inject `vite-plugin-node-polyfills/shims/*` imports (via
+// esbuild banner / dep optimizer). Those paths are not resolvable from
+// workspace packages during SSR — serve Node builtins instead.
+const ssrPolyfillShims = (): Plugin => ({
+  name: "ssr-polyfill-shims",
+  enforce: "pre",
+  applyToEnvironment(env) {
+    return env.name === "ssr";
+  },
+  config() {
+    return {
+      resolve: {
+        alias: {
+          "vite-plugin-node-polyfills/shims/buffer": ssrBufferShim,
+          "vite-plugin-node-polyfills/shims/process": ssrProcessShim,
+          "vite-plugin-node-polyfills/shims/global": ssrGlobalShim,
+        },
+      },
+    };
+  },
+});
+
 // Apply node polyfills only to the client bundle. SSR keeps native Node
 // modules (avoids stream-browserify breaking `node:stream` etc).
 const clientNodePolyfills = (): Plugin[] => {
   const result = nodePolyfills({
     include: ["buffer", "process"],
-    globals: { Buffer: true, global: true, process: true },
+    // Inject Buffer/process/global only at build time. Dev-time banner injection
+    // trips TDZ errors ("Cannot access '__buffer_polyfill' before initialization")
+    // when React Router eagerly evaluates route modules in the bootstrap script.
+    globals: { Buffer: "build", global: "build", process: "build" },
     protocolImports: false,
   });
   const list = (Array.isArray(result) ? result : [result]) as Plugin[];
@@ -101,6 +137,7 @@ const pwa = (): Plugin[] =>
 
 export default defineConfig({
   plugins: [
+    ssrPolyfillShims(),
     ...clientNodePolyfills(),
     ignoreWellKnown(),
     tailwindcss(),

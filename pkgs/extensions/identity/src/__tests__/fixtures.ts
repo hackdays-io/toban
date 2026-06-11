@@ -15,8 +15,8 @@ import {
   IDENTITY_BINDING_PRIMARY_TYPE,
   IDENTITY_BINDING_TYPES,
   buildIdentityBindingDomain,
-  hashVerifierToken,
 } from "../eip712/identity-binding.js";
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import type { IdentityBindingTypedData } from "../eip712/identity-binding.js";
 import type { IdentityBindingVerifier } from "../handlers/connect.js";
 import { DISCORD_VERIFIER_ISSUER } from "../providers/discord.js";

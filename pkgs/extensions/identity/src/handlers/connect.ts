@@ -5,8 +5,8 @@ import {
   IDENTITY_BINDING_DOMAIN_NAME,
   IDENTITY_BINDING_DOMAIN_VERSION,
   IDENTITY_BINDING_PRIMARY_TYPE,
-  hashVerifierToken,
 } from "../eip712/identity-binding.js";
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import type { IdentityBindingTypedData } from "../eip712/identity-binding.js";
 import { DiscordProviderError } from "../providers/discord.js";
 import { providers } from "../providers/index.js";

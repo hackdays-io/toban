@@ -9,7 +9,6 @@ import {
   IDENTITY_BINDING_DOMAIN_VERSION,
   IDENTITY_BINDING_PRIMARY_TYPE,
   IDENTITY_BINDING_TYPES,
-  hashVerifierToken,
 } from "@toban/identity/eip712";
 import { currentChain } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
@@ -39,10 +38,7 @@ function decodeVerifierClaims(token: string): VerifierClaims | null {
   try {
     const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const padding = "=".repeat((4 - (padded.length % 4)) % 4);
-    const json =
-      typeof atob === "function"
-        ? atob(padded + padding)
-        : Buffer.from(padded + padding, "base64").toString("utf-8");
+    const json = atob(padded + padding);
     return JSON.parse(json) as VerifierClaims;
   } catch {
     return null;
@@ -188,6 +184,7 @@ const ConnectDiscord: FC = () => {
       const nonceBytes = new Uint8Array(32);
       crypto.getRandomValues(nonceBytes);
       const nonce = bytesToHex(nonceBytes);
+      const { hashVerifierToken } = await import("@toban/identity/eip712/hash");
       const verifierTokenHash = hashVerifierToken(token);
       const expires = BigInt(Math.floor(Date.now() / 1000) + 30 * 60);
       const walletAddress = wallet.account.address as Address;

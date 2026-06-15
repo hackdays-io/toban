@@ -6,8 +6,8 @@ import {
   IDENTITY_BINDING_PRIMARY_TYPE,
   IDENTITY_BINDING_TYPES,
   buildIdentityBindingDomain,
-  hashVerifierToken,
 } from "../eip712/identity-binding.js";
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 
 describe("eip712/identity-binding", () => {
   it("buildIdentityBindingDomain pins name/version and omits verifyingContract", () => {

@@ -11,7 +11,8 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./providers": "./src/providers/index.ts",
-    "./eip712": "./src/eip712/identity-binding.ts"
+    "./eip712": "./src/eip712/identity-binding.ts",
+    "./eip712/hash": "./src/eip712/hash-verifier-token.ts"
   },
   "scripts": {
     "build": "tsc",

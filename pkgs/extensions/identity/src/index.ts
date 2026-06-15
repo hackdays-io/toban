@@ -4,12 +4,12 @@
 
 export {
   buildIdentityBindingDomain,
-  hashVerifierToken,
   IDENTITY_BINDING_DOMAIN_NAME,
   IDENTITY_BINDING_DOMAIN_VERSION,
   IDENTITY_BINDING_PRIMARY_TYPE,
   IDENTITY_BINDING_TYPES,
 } from "./eip712/identity-binding.js";
+export { hashVerifierToken } from "./eip712/hash-verifier-token.js";
 export type {
   IdentityBindingDomain,
   IdentityBindingMessage,

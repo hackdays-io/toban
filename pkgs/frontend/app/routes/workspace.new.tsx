@@ -30,6 +30,7 @@ import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { buildFallbackSvgFile, pickRandomColor } from "~/lib/avatar-fallback";
+import { useWorkspaceStore } from "~/stores/workspace";
 
 type Step = "basic" | "initial" | "confirm" | "done";
 
@@ -43,6 +44,7 @@ const STEP_INDEX: Record<Step, number> = {
 
 const WorkspaceNew: FC = () => {
   const navigate = useNavigate();
+  const switchWorkspace = useWorkspaceStore((s) => s.switch);
   const { wallet } = useActiveWallet();
   const { bigbang, isLoading: isCreating } = useBigBang();
   const { uploadHatsDetailsToIpfs, isLoading: isUploadingDetails } =
@@ -189,6 +191,7 @@ const WorkspaceNew: FC = () => {
       const { topHatId } = parsedLog.args;
       const treeId = String(hatIdToTreeId(topHatId));
       setCreatedTreeId(treeId);
+      switchWorkspace(treeId);
       // wait briefly so the subgraph has a chance to index the new workspace
       await new Promise((resolve) => setTimeout(resolve, 3000));
       setStep("done");

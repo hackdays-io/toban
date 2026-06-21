@@ -107,9 +107,10 @@ const Workspace: FC = () => {
   // indexes these from BigBang immediately; the Hats subgraph wearer query
   // can miss TopHat-only wearers right after creation.
   const { data: tobanWorkspacesData, loading: loadingOwned } =
-    useGetTobanWorkspaces({
-      where: me ? { or: [{ owner: me }, { creator: me }] } : undefined,
-    });
+    useGetTobanWorkspaces(
+      me ? { where: { or: [{ owner: me }, { creator: me }] } } : undefined,
+      { skip: !me },
+    );
   const ownedWorkspaceIds = useMemo(
     () => tobanWorkspacesData?.workspaces.map((w) => w.id) ?? [],
     [tobanWorkspacesData],
@@ -118,16 +119,23 @@ const Workspace: FC = () => {
     () => ownedWorkspaceIds.filter((id) => !joinedWorkspaceIds.includes(id)),
     [ownedWorkspaceIds, joinedWorkspaceIds],
   );
-  const { hats: ownedHats } = useGetHatsByWorkspaceIds(ownedIdsToResolve);
-  const ownedWorkspaces = useMemo<Workspace[]>(
-    () =>
-      ownedHats.map((h) => ({
-        id: String(treeIdHexToDecimal(h.tree.id)),
-        details: h.details,
-        imageUri: h.imageUri,
-      })),
-    [ownedHats],
-  );
+  const { hats: ownedHats, loading: loadingOwnedHats } =
+    useGetHatsByWorkspaceIds(ownedIdsToResolve);
+  const ownedWorkspaces = useMemo<Workspace[]>(() => {
+    const hatByTreeId = new Map(
+      ownedHats.map((h) => [String(treeIdHexToDecimal(h.tree.id)), h]),
+    );
+    // Keep Toban-indexed ids even when Hats metadata is unavailable (e.g.
+    // invalid VITE_THEGRAPH_API_KEY). Cards fall back to "Workspace #id".
+    return ownedIdsToResolve.map((id) => {
+      const hat = hatByTreeId.get(id);
+      return {
+        id,
+        details: hat?.details ?? "",
+        imageUri: hat?.imageUri ?? "",
+      };
+    });
+  }, [ownedHats, ownedIdsToResolve]);
 
   const knownWorkspaceIds = useMemo(() => {
     if (loadingJoined || loadingOwned) return [];
@@ -219,6 +227,10 @@ const Workspace: FC = () => {
     navigate(`/${workspaceId}`);
   };
 
+  const isListLoading =
+    Boolean(me) &&
+    (loadingJoined || loadingOwned || (ownedIdsToResolve.length > 0 && loadingOwnedHats));
+
   return (
     <PageContainer
       data-testid="workspace-page"
@@ -246,7 +258,11 @@ const Workspace: FC = () => {
 
       <section className="-mx-1">
         <SectionLabel className="px-1">参加中</SectionLabel>
-        {filteredWorkspaces.length > 0 ? (
+        {isListLoading ? (
+          <Typography variant="bodySm" tone="secondary" className="px-1 py-6 text-center">
+            読み込み中...
+          </Typography>
+        ) : filteredWorkspaces.length > 0 ? (
           <div className="flex flex-col gap-2.5 px-1">
             {filteredWorkspaces.map((w) => {
               const d = detailsMap[w.id];

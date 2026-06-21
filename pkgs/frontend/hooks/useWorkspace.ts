@@ -70,10 +70,13 @@ export const useGetWorkspace = (variables?: GetWorkspaceQueryVariables) => {
   return result;
 };
 
-export const useGetWorkspaces = (variables?: GetWorkspacesQueryVariables) => {
+export const useGetWorkspaces = (
+  variables?: GetWorkspacesQueryVariables,
+  options?: { skip?: boolean },
+) => {
   const result = useQuery<GetWorkspacesQuery, GetWorkspacesQueryVariables>(
     queryGetWorkspaces,
-    { variables },
+    { variables, skip: options?.skip },
   );
 
   return result;

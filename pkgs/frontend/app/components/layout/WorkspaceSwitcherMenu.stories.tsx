@@ -17,6 +17,7 @@ export const Controlled: Story = () => {
         onOpenChange={setOpen}
         workspaceName="ひがしのシェアハウス"
         onSwitchWorkspace={() => console.log("[story] navigate /workspace")}
+        onCreateWorkspace={() => console.log("[story] navigate /workspace/new")}
         onOpenSettings={() => console.log("[story] navigate /:treeId/settings")}
       />
     </div>

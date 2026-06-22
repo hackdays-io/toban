@@ -1,4 +1,10 @@
-import type * as React from "react";
+import {
+  forwardRef,
+  type ComponentPropsWithoutRef,
+  type ComponentType,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import {
   LuArrowRight,
   LuChartPie,
@@ -122,35 +128,40 @@ function smoothScrollTo(hash: string) {
   history.replaceState(null, "", hash);
 }
 
-function HashLink({
-  href,
-  children,
-  className,
-  style,
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
+const HashLink = forwardRef<
+  HTMLAnchorElement,
+  {
+    href: string;
+    children: ReactNode;
+    className?: string;
+    style?: CSSProperties;
+  } & ComponentPropsWithoutRef<"a">
+>(function HashLink(
+  { href, children, className, style, onClick, ...rest },
+  ref,
+) {
   return (
     <a
+      ref={ref}
       href={href}
       className={className}
       style={style}
       onClick={(e) => {
+        onClick?.(e);
+        if (e.defaultPrevented) return;
         e.preventDefault();
         smoothScrollTo(href);
       }}
+      {...rest}
     >
       {children}
     </a>
   );
-}
+});
 
 function NavBar() {
   const linkClass =
-    "hidden transition-colors hover:text-[var(--accent-orange)] sm:inline";
+    "hidden cursor-pointer transition-colors hover:text-[var(--accent-orange)] sm:inline";
   const navStyle = { ["--accent-orange" as string]: ACCENT.orange };
   return (
     <nav
@@ -161,7 +172,7 @@ function NavBar() {
         <Link
           to="/"
           aria-label="Toban"
-          className="inline-flex items-center gap-2 text-lg font-extrabold tracking-tight text-text-primary md:text-xl"
+          className="inline-flex cursor-pointer items-center gap-2 text-lg font-extrabold tracking-tight text-text-primary md:text-xl"
         >
           <BrandMark className="h-7 w-7 md:h-8 md:w-8" />
           Toban
@@ -180,11 +191,9 @@ function NavBar() {
           >
             ユースケース
           </HashLink>
-          <Link to="/login">
-            <Button size="sm" variant="dark" className="rounded-full">
-              はじめる
-            </Button>
-          </Link>
+          <Button asChild size="sm" variant="dark" className="rounded-full">
+            <Link to="/login">はじめる</Link>
+          </Button>
         </div>
       </div>
     </nav>
@@ -218,21 +227,20 @@ function HeroCentered() {
       </Typography>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Link to="/login">
-          <Button
-            size="lg"
-            data-testid="start-button"
-            className="font-bold shadow-2"
-          >
+        <Button
+          asChild
+          size="lg"
+          data-testid="start-button"
+          className="font-bold shadow-2"
+        >
+          <Link to="/login">
             はじめる
             <LuArrowRight aria-hidden="true" />
-          </Button>
-        </Link>
-        <HashLink href="#features">
-          <Button size="lg" variant="secondary" className="font-bold">
-            機能を見る
-          </Button>
-        </HashLink>
+          </Link>
+        </Button>
+        <Button asChild size="lg" variant="secondary" className="font-bold">
+          <HashLink href="#features">機能を見る</HashLink>
+        </Button>
       </div>
 
       <Orbit />
@@ -730,7 +738,7 @@ function FeatureGroup({
 }: {
   label: string;
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className={className}>
@@ -760,7 +768,7 @@ function FeatureCard({
 }: {
   color: string;
   soft: string;
-  icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
+  icon: ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
   label: string;
   title: string;
   desc: string;
@@ -861,7 +869,7 @@ function Step({
   color: string;
   title: string;
   body: string;
-  visual: React.ReactNode;
+  visual: ReactNode;
 }) {
   return (
     <div className="rounded-md bg-surface p-7 transition-transform hover:-translate-y-1 md:p-8">
@@ -1109,7 +1117,7 @@ function UseCaseCard({
   tag: string;
   color: string;
   soft: string;
-  icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
+  icon: ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
   title: string;
   body: string;
 }) {
@@ -1146,7 +1154,7 @@ function SiteFooter() {
         <div>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-lg font-extrabold tracking-tight text-text-primary md:text-xl"
+            className="inline-flex cursor-pointer items-center gap-2 text-lg font-extrabold tracking-tight text-text-primary md:text-xl"
           >
             <BrandMark className="h-8 w-8" />
             Toban
@@ -1238,9 +1246,9 @@ function FooterColumn({
       <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
         {links.map((link) => {
           const linkClassName =
-            "text-sm font-semibold text-text-primary transition-colors hover:text-[var(--accent)]";
+            "cursor-pointer text-sm font-semibold text-text-primary transition-colors hover:text-[var(--accent)]";
           const linkStyle = { ["--accent" as string]: ACCENT.orange };
-          let body: React.ReactNode;
+          let body: ReactNode;
           if (link.to) {
             body = (
               <Link to={link.to} className={linkClassName} style={linkStyle}>
@@ -1284,7 +1292,7 @@ function SocialLink({
 }: {
   href: string;
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <a
@@ -1292,7 +1300,7 @@ function SocialLink({
       target="_blank"
       rel="noreferrer"
       aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-text-primary transition-[transform,border-color] hover:-translate-y-0.5 hover:border-text-primary"
+      className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border bg-surface text-text-primary transition-[transform,border-color] hover:-translate-y-0.5 hover:border-text-primary"
     >
       {children}
     </a>
@@ -1317,7 +1325,7 @@ function SectionEyebrow({
   children,
 }: {
   color: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div
@@ -1334,7 +1342,7 @@ function Highlight({
   children,
 }: {
   bg: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <span className="relative inline-block">

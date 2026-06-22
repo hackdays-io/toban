@@ -144,3 +144,29 @@
     min-height: 100vh;
   }
 }
+
+/* [data-slot="button"] — transparent ::after overlay so the pointer cursor is
+   consistent over label glyphs (Safari / Brave fall back to the arrow otherwise).
+   Direct children opt out of hit-testing; the overlay carries clicks instead. */
+:is(a, button)[data-slot="button"] {
+  position: relative;
+}
+:is(a, button)[data-slot="button"]:not(:disabled) {
+  cursor: pointer !important;
+}
+:is(a, button)[data-slot="button"]:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  cursor: pointer !important;
+}
+:is(a, button)[data-slot="button"] > * {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+}
+:is(a, button)[data-slot="button"]:disabled {
+  cursor: not-allowed;
+}

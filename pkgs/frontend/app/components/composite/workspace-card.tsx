@@ -49,7 +49,7 @@ function WorkspaceCard({
       data-current={current ? "true" : undefined}
       onClick={onSelect}
       className={cn(
-        "flex w-full items-center gap-3 rounded-md border bg-card px-4 py-3 text-left text-card-foreground shadow-1 transition-[transform,background-color] hover:bg-bg active:scale-[0.99] focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none",
+        "flex w-full cursor-pointer items-center gap-3 rounded-md border bg-card px-4 py-3 text-left text-card-foreground shadow-1 transition-[transform,background-color] hover:bg-bg active:scale-[0.99] focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none",
         className,
       )}
       {...rest}

@@ -145,16 +145,16 @@
   }
 }
 
-/* [data-slot="button"] — transparent ::after overlay so the pointer cursor is
+/* Interactive hit targets — transparent ::after overlay keeps pointer cursor
    consistent over label glyphs (Safari / Brave fall back to the arrow otherwise).
-   Direct children opt out of hit-testing; the overlay carries clicks instead. */
-:is(a, button)[data-slot="button"] {
+   Direct children opt out of hit-testing; the overlay carries clicks instead.
+   Scoped to <a> and <button> only so role="button" surfaces with nested
+   controls (e.g. split cards with copy buttons) stay clickable. */
+:is(a[href], button:not(:disabled)):not([aria-disabled="true"]) {
   position: relative;
-}
-:is(a, button)[data-slot="button"]:not(:disabled) {
   cursor: pointer !important;
 }
-:is(a, button)[data-slot="button"]:not(:disabled)::after {
+:is(a[href], button:not(:disabled)):not([aria-disabled="true"])::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -162,11 +162,15 @@
   border-radius: inherit;
   cursor: pointer !important;
 }
-:is(a, button)[data-slot="button"] > * {
+:is(a[href], button:not(:disabled)):not([aria-disabled="true"]) > * {
   position: relative;
   z-index: 0;
   pointer-events: none;
 }
-:is(a, button)[data-slot="button"]:disabled {
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer !important;
+}
+button:disabled,
+button[aria-disabled="true"] {
   cursor: not-allowed;
 }

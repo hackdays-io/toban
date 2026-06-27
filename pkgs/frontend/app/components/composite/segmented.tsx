@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type * as React from "react";
 
 import { cn } from "~/lib/utils";
@@ -18,46 +19,66 @@ interface SegmentedProps<T extends string>
 
 // Toban Segmented control — pill background with a sliding active surface.
 // Mirrors `docs/design/handoff/project/primitives.jsx:171-188`.
+// Radio + label tabs; globals.css ::after on labels keeps pointer over glyphs.
+// The outer wrapper sets body cursor while hovered (Brave).
 function Segmented<T extends string>({
   options,
   value,
   onChange,
   className,
   getOptionAriaLabel,
+  style,
   ...rest
 }: SegmentedProps<T>) {
+  const groupId = useId();
+
   return (
     <div
-      data-slot="segmented"
-      role="tablist"
-      className={cn(
-        "inline-flex items-stretch gap-0.5 rounded-full bg-[#F0EBE0] p-1 text-[13px] font-semibold",
-        className,
-      )}
-      {...rest}
+      className={cn("relative z-[2]", className)}
+      onPointerEnter={() => {
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={() => {
+        document.body.style.cursor = "";
+      }}
     >
-      {options.map((opt) => {
-        const isActive = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            aria-label={getOptionAriaLabel?.(opt)}
-            onClick={() => onChange(opt.value)}
-            data-active={isActive ? "" : undefined}
-            className={cn(
-              "inline-flex h-9 flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 transition-colors",
-              isActive
-                ? "bg-surface text-text-primary shadow-1"
-                : "bg-transparent text-text-secondary hover:text-text-primary",
-            )}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
+      <div
+        data-slot="segmented"
+        role="radiogroup"
+        className="grid rounded-full bg-[#F0EBE0] p-1 text-[13px] font-semibold"
+        style={{
+          gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
+          ...style,
+        }}
+        {...rest}
+      >
+        {options.map((opt) => {
+          const isActive = opt.value === value;
+          return (
+            <label
+              key={opt.value}
+              data-active={isActive ? "" : undefined}
+              className={cn(
+                "flex h-9 w-full min-w-0 cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-full px-3 transition-colors",
+                isActive
+                  ? "bg-surface text-text-primary shadow-1"
+                  : "bg-transparent text-text-secondary hover:text-text-primary",
+              )}
+            >
+              <input
+                type="radio"
+                name={groupId}
+                value={opt.value}
+                checked={isActive}
+                onChange={() => onChange(opt.value)}
+                className="sr-only"
+                aria-label={getOptionAriaLabel?.(opt)}
+              />
+              <span>{opt.label}</span>
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }

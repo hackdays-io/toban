@@ -43,7 +43,7 @@ function AppHeader({
       <button
         type="button"
         onClick={onWorkspacePress}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-surface py-1.5 pr-2.5 pl-1.5 text-left transition-colors hover:bg-bg"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full border border-border bg-surface py-1.5 pr-2.5 pl-1.5 text-left transition-colors hover:bg-bg"
       >
         <Avatar size="sm" data-size="sm">
           {workspaceImageUrl && (
@@ -69,7 +69,7 @@ function AppHeader({
           aria-label="アクティビティ"
           data-active={notificationsActive ? "" : undefined}
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
+            "flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors",
             notificationsActive
               ? "bg-primary-soft text-[#A07310]"
               : "border border-border bg-surface text-text-secondary hover:bg-bg",

@@ -138,7 +138,7 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
         type="button"
         aria-label="アカウントメニュー"
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-sm px-1.5 py-1 text-left transition-colors hover:bg-bg",
+          "flex w-full cursor-pointer items-center gap-2.5 rounded-sm px-1.5 py-1 text-left transition-colors hover:bg-bg",
           className,
         )}
       >
@@ -163,7 +163,7 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
         type="button"
         aria-label="アカウントメニュー"
         className={cn(
-          "inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-bg",
+          "inline-flex size-10 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-bg",
           className,
         )}
       >

@@ -144,3 +144,55 @@
     min-height: 100vh;
   }
 }
+
+/* Interactive hit targets — transparent ::after overlay keeps pointer cursor
+   consistent over label glyphs (Safari / Brave fall back to the arrow otherwise).
+   Direct children opt out of hit-testing; the overlay carries clicks instead.
+   Scoped to <a> and <button> only so role="button" surfaces with nested
+   controls (e.g. split cards with copy buttons) stay clickable. */
+:is(a[href], button:not(:disabled)):not([aria-disabled="true"]) {
+  position: relative;
+  cursor: pointer !important;
+}
+:is(a[href], button:not(:disabled)):not([aria-disabled="true"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  cursor: pointer !important;
+}
+:is(a[href], button:not(:disabled)):not([aria-disabled="true"]) > * {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+}
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer !important;
+}
+button:disabled,
+button[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Segmented — label ::after overlay (same idea as buttons above); container
+   ignores hits so labels own them. Wrapper sets body cursor while hovered. */
+[data-slot="segmented"] {
+  pointer-events: none;
+}
+[data-slot="segmented"] label {
+  position: relative;
+  pointer-events: auto;
+  cursor: pointer !important;
+}
+[data-slot="segmented"] label::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  cursor: pointer !important;
+}
+[data-slot="segmented"] label > * {
+  pointer-events: none;
+}

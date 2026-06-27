@@ -61,7 +61,7 @@ function BottomNav({
             aria-label={it.label}
             data-active={isActive ? "" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-1.5",
+              "flex flex-1 cursor-pointer flex-col items-center gap-1 py-1.5",
               isActive ? "text-primary" : "text-text-secondary",
             )}
           >

@@ -167,6 +167,7 @@ function ShellView({ treeId }: ShellViewProps) {
         onOpenChange={setSwitcherOpen}
         workspaceName={displayWorkspaceName}
         onSwitchWorkspace={() => navigate("/workspace")}
+        onCreateWorkspace={() => navigate("/workspace/new")}
         onOpenSettings={() => navigate(`/${treeId}/settings`)}
       />
     </>

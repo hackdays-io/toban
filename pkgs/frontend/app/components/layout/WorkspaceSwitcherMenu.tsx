@@ -24,6 +24,8 @@ interface WorkspaceSwitcherMenuProps {
   workspaceName: string;
   /** Switch to the workspace list (`/workspace`). */
   onSwitchWorkspace: () => void;
+  /** Start the workspace creation flow (`/workspace/new`). */
+  onCreateWorkspace: () => void;
   /** Open workspace settings (`/{treeId}/settings`). */
   onOpenSettings: () => void;
   /** Invite link copied to clipboard — defaults to `window.location.href`. */
@@ -35,7 +37,7 @@ interface WorkspaceSwitcherMenuProps {
 // - Desktop (`>=md`): Popover anchored near the Sidebar workspace button via
 //   a `PopoverAnchor` positioned at the top-left of the viewport (matches the
 //   design source `desktop.jsx:72-101`).
-// Both surfaces render the same three actions (switch / invite / settings).
+// Both surfaces render the same four actions (switch / create / invite / settings).
 // Only one primitive is mounted per viewport — both Popover and Sheet portal
 // to the body, so a CSS-only `md:hidden` gate would let both open at once
 // and their focus traps would fight (the Sheet flashed shut).
@@ -44,6 +46,7 @@ function WorkspaceSwitcherMenu({
   onOpenChange,
   workspaceName,
   onSwitchWorkspace,
+  onCreateWorkspace,
   onOpenSettings,
   inviteLink,
 }: WorkspaceSwitcherMenuProps) {
@@ -86,6 +89,15 @@ function WorkspaceSwitcherMenu({
         subtitle="参加中の一覧から選ぶ"
         onClick={() => {
           onSwitchWorkspace();
+          onOpenChange(false);
+        }}
+      />
+      <Row
+        left={<Icon name="plus" />}
+        title="新しいワークスペースを作成"
+        subtitle="必要事項を入力して作成"
+        onClick={() => {
+          onCreateWorkspace();
           onOpenChange(false);
         }}
       />

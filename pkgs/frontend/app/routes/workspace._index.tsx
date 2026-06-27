@@ -2,8 +2,12 @@ import { treeIdHexToDecimal } from "@hatsprotocol/sdk-v1-core";
 import axios from "axios";
 import { useActiveWalletIdentity } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
-import { useGetHatsByWorkspaceIds, useGetWorkspaces } from "hooks/useHats";
+import {
+  useGetHatsByWorkspaceIds,
+  useGetWorkspaces as useGetJoinedWorkspaces,
+} from "hooks/useHats";
 import { useGetHoldingThanksTokens } from "hooks/useThanksToken";
+import { useGetWorkspaces as useGetTobanWorkspaces } from "hooks/useWorkspace";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -93,17 +97,56 @@ const Workspace: FC = () => {
 
   // Joined workspaces — the user wears at least one hat in them.
   const { workspaces: joinedWorkspaces, loading: loadingJoined } =
-    useGetWorkspaces({ id: me });
+    useGetJoinedWorkspaces({ id: me });
   const joinedWorkspaceIds = useMemo(
     () => joinedWorkspaces.map((w) => w.id),
     [joinedWorkspaces],
   );
 
+  // Workspaces the user created or owns (TopHat holder). Toban subgraph
+  // indexes these from BigBang immediately; the Hats subgraph wearer query
+  // can miss TopHat-only wearers right after creation.
+  const { data: tobanWorkspacesData, loading: loadingOwned } =
+    useGetTobanWorkspaces(
+      me ? { where: { or: [{ owner: me }, { creator: me }] } } : undefined,
+      { skip: !me },
+    );
+  const ownedWorkspaceIds = useMemo(
+    () => tobanWorkspacesData?.workspaces.map((w) => w.id) ?? [],
+    [tobanWorkspacesData],
+  );
+  const ownedIdsToResolve = useMemo(
+    () => ownedWorkspaceIds.filter((id) => !joinedWorkspaceIds.includes(id)),
+    [ownedWorkspaceIds, joinedWorkspaceIds],
+  );
+  const { hats: ownedHats, loading: loadingOwnedHats } =
+    useGetHatsByWorkspaceIds(ownedIdsToResolve);
+  const ownedWorkspaces = useMemo<Workspace[]>(() => {
+    const hatByTreeId = new Map(
+      ownedHats.map((h) => [String(treeIdHexToDecimal(h.tree.id)), h]),
+    );
+    // Keep Toban-indexed ids even when Hats metadata is unavailable (e.g.
+    // invalid VITE_THEGRAPH_API_KEY). Cards fall back to "Workspace #id".
+    return ownedIdsToResolve.map((id) => {
+      const hat = hatByTreeId.get(id);
+      return {
+        id,
+        details: hat?.details ?? "",
+        imageUri: hat?.imageUri ?? "",
+      };
+    });
+  }, [ownedHats, ownedIdsToResolve]);
+
+  const knownWorkspaceIds = useMemo(() => {
+    if (loadingJoined || loadingOwned) return [];
+    return [...new Set([...joinedWorkspaceIds, ...ownedWorkspaceIds])];
+  }, [joinedWorkspaceIds, ownedWorkspaceIds, loadingJoined, loadingOwned]);
+
   // Workspaces where the user holds assist credit but no hat.
   const { data: fractionTokensData } = useGetBalanceOfFractionTokens({
     where: {
       owner: me,
-      workspaceId_not_in: loadingJoined ? [] : joinedWorkspaceIds,
+      workspaceId_not_in: knownWorkspaceIds.length > 0 ? knownWorkspaceIds : [],
     },
   });
   const assistedWorkspaceIds = useMemo(() => {
@@ -123,9 +166,13 @@ const Workspace: FC = () => {
 
   // Workspaces where the user has only received Thanks tokens.
   const excludeWorkspaceIds = useMemo(() => {
-    const ids = [...joinedWorkspaceIds, ...assistedWorkspaceIds];
+    const ids = [
+      ...joinedWorkspaceIds,
+      ...ownedWorkspaceIds,
+      ...assistedWorkspaceIds,
+    ];
     return ids.length > 0 ? ids : undefined;
-  }, [joinedWorkspaceIds, assistedWorkspaceIds]);
+  }, [joinedWorkspaceIds, ownedWorkspaceIds, assistedWorkspaceIds]);
   const holdingThanksToken = useGetHoldingThanksTokens(me as Address, {
     where: { workspaceId_not_in: excludeWorkspaceIds },
   });
@@ -148,6 +195,7 @@ const Workspace: FC = () => {
     const merged: Workspace[] = [];
     for (const w of [
       ...joinedWorkspaces,
+      ...ownedWorkspaces,
       ...assistedWorkspaces,
       ...thankedWorkspaces,
     ]) {
@@ -156,7 +204,7 @@ const Workspace: FC = () => {
       merged.push(w);
     }
     return merged;
-  }, [joinedWorkspaces, assistedWorkspaces, thankedWorkspaces]);
+  }, [joinedWorkspaces, ownedWorkspaces, assistedWorkspaces, thankedWorkspaces]);
 
   const detailsMap = useWorkspaceDetails(allWorkspaces);
 
@@ -178,6 +226,10 @@ const Workspace: FC = () => {
     switchWorkspace(workspaceId);
     navigate(`/${workspaceId}`);
   };
+
+  const isListLoading =
+    Boolean(me) &&
+    (loadingJoined || loadingOwned || (ownedIdsToResolve.length > 0 && loadingOwnedHats));
 
   return (
     <PageContainer
@@ -206,7 +258,11 @@ const Workspace: FC = () => {
 
       <section className="-mx-1">
         <SectionLabel className="px-1">参加中</SectionLabel>
-        {filteredWorkspaces.length > 0 ? (
+        {isListLoading ? (
+          <Typography variant="bodySm" tone="secondary" className="px-1 py-6 text-center">
+            読み込み中...
+          </Typography>
+        ) : filteredWorkspaces.length > 0 ? (
           <div className="flex flex-col gap-2.5 px-1">
             {filteredWorkspaces.map((w) => {
               const d = detailsMap[w.id];

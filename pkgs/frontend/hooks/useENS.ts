@@ -104,6 +104,7 @@ export const useActiveWalletIdentity = () => {
 };
 
 export const useIdentity = (address?: string) => {
+  const queryClient = useQueryClient();
   const addressArray = useMemo(() => {
     if (!address) return [];
     return [address];
@@ -115,7 +116,19 @@ export const useIdentity = (address?: string) => {
     return names[0][0];
   }, [names]);
 
-  return { identity };
+  const refetch = useCallback(async () => {
+    if (!address) return;
+    const normalized = normalizeAddress(address);
+    // Remove the per-address cache so resolveBatchViaCache goes to the API next time.
+    queryClient.removeQueries({
+      queryKey: [NAMES_QUERY_KEY, "addr", normalized],
+    });
+    await queryClient.invalidateQueries({
+      queryKey: [NAMES_QUERY_KEY, "batch"],
+    });
+  }, [address, queryClient]);
+
+  return { identity, refetch };
 };
 
 export const useNamesByAddresses = (addresses?: string[]) => {

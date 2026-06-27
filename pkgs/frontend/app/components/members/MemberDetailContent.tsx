@@ -62,7 +62,7 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
   const lowerAddress = address.toLowerCase();
   const { wallet } = useActiveWallet();
   const isMe = wallet?.account?.address?.toLowerCase() === lowerAddress;
-  const { identity } = useIdentity(address);
+  const { identity, refetch: refetchIdentity } = useIdentity(address);
   const [editOpen, setEditOpen] = useState(false);
 
   // Duty hats (role branch, level >= 2) this member wears.
@@ -249,6 +249,7 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
           onOpenChange={setEditOpen}
           address={address}
           identity={identity}
+          onSaved={refetchIdentity}
         />
       )}
     </div>

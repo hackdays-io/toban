@@ -1,9 +1,9 @@
 import {
-  forwardRef,
+  type CSSProperties,
   type ComponentPropsWithoutRef,
   type ComponentType,
-  type CSSProperties,
   type ReactNode,
+  forwardRef,
 } from "react";
 import {
   LuArrowRight,

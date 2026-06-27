@@ -1,12 +1,12 @@
 import { getAddress, isAddress } from "viem";
 import type { Hex } from "viem";
 import type { Address } from "viem";
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import {
   IDENTITY_BINDING_DOMAIN_NAME,
   IDENTITY_BINDING_DOMAIN_VERSION,
   IDENTITY_BINDING_PRIMARY_TYPE,
 } from "../eip712/identity-binding.js";
-import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import type { IdentityBindingTypedData } from "../eip712/identity-binding.js";
 import { DiscordProviderError } from "../providers/discord.js";
 import { providers } from "../providers/index.js";

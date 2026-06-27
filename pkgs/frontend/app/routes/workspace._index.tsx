@@ -7,8 +7,8 @@ import {
   useGetWorkspaces as useGetJoinedWorkspaces,
 } from "hooks/useHats";
 import { useGetHoldingThanksTokens } from "hooks/useThanksToken";
-import { useGetWorkspaces as useGetTobanWorkspaces } from "hooks/useWorkspace";
 import { useActiveWallet } from "hooks/useWallet";
+import { useGetWorkspaces as useGetTobanWorkspaces } from "hooks/useWorkspace";
 import { type FC, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
@@ -204,7 +204,12 @@ const Workspace: FC = () => {
       merged.push(w);
     }
     return merged;
-  }, [joinedWorkspaces, ownedWorkspaces, assistedWorkspaces, thankedWorkspaces]);
+  }, [
+    joinedWorkspaces,
+    ownedWorkspaces,
+    assistedWorkspaces,
+    thankedWorkspaces,
+  ]);
 
   const detailsMap = useWorkspaceDetails(allWorkspaces);
 
@@ -229,7 +234,9 @@ const Workspace: FC = () => {
 
   const isListLoading =
     Boolean(me) &&
-    (loadingJoined || loadingOwned || (ownedIdsToResolve.length > 0 && loadingOwnedHats));
+    (loadingJoined ||
+      loadingOwned ||
+      (ownedIdsToResolve.length > 0 && loadingOwnedHats));
 
   return (
     <PageContainer
@@ -259,7 +266,11 @@ const Workspace: FC = () => {
       <section className="-mx-1">
         <SectionLabel className="px-1">参加中</SectionLabel>
         {isListLoading ? (
-          <Typography variant="bodySm" tone="secondary" className="px-1 py-6 text-center">
+          <Typography
+            variant="bodySm"
+            tone="secondary"
+            className="px-1 py-6 text-center"
+          >
             読み込み中...
           </Typography>
         ) : filteredWorkspaces.length > 0 ? (

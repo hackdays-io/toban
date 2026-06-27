@@ -11,12 +11,12 @@ import { type KeyLike, SignJWT, exportSPKI, generateKeyPair } from "jose";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import {
   IDENTITY_BINDING_PRIMARY_TYPE,
   IDENTITY_BINDING_TYPES,
   buildIdentityBindingDomain,
 } from "../eip712/identity-binding.js";
-import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import type { IdentityBindingTypedData } from "../eip712/identity-binding.js";
 import type { IdentityBindingVerifier } from "../handlers/connect.js";
 import { DISCORD_VERIFIER_ISSUER } from "../providers/discord.js";

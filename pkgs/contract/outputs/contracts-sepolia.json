@@ -13,7 +13,8 @@
     "ThanksTokenFactory": "0xa52E399Bc54f7CeB9d74784dC5D6289B7d970d1C",
     "ThanksToken_Implementation": "0xc19A8B77c7127d28e8C7881ba72e9A9128BbD5D1",
     "ScheduledDistributor": "0xBde718a753871AE55B9bceEF800320DD476bA7f9",
-    "ScheduledDistributorFactory": "0x9eE2641Ba7017C63161C5682F077ab95E6C3eC0D"
+    "ScheduledDistributorFactory": "0x9eE2641Ba7017C63161C5682F077ab95E6C3eC0D",
+    "HatsQuestModule": "0xFe6ea08f2750Bad8dCD0ffC505cA22D1ea9E4304"
   },
   "implementations": {
     "FractionToken_Implementation": "0x6d701256205019e40cE02e13D799ed2cd3BBE8e8",

@@ -57,7 +57,7 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
         uint256 hatId_,
         address wearer,
         uint256 amount,
-        bytes32 metadataHash
+        string calldata metadataUri
     ) external override returns (uint256 questId) {
         if (amount == 0) revert InvalidAmount();
         if (HATS().getTopHatDomain(hatId_) != _domain) revert InvalidHatDomain();
@@ -73,7 +73,7 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
             submitter: address(0),
             amount: amount,
             status: QuestStatus.Open,
-            metadataHash: metadataHash,
+            metadataUri: metadataUri,
             createdAt: uint64(block.timestamp),
             submittedAt: 0
         });
@@ -89,7 +89,7 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
             ""
         );
 
-        emit QuestCreated(questId, msg.sender, hatId_, wearer, amount, metadataHash);
+        emit QuestCreated(questId, msg.sender, hatId_, wearer, amount, metadataUri);
     }
 
     /// @inheritdoc IHatsQuestModule

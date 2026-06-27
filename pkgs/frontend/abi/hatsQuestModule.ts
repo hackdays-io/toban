@@ -230,9 +230,9 @@ export const HATS_QUEST_MODULE_ABI = [
       },
       {
         indexed: false,
-        internalType: "bytes32",
-        name: "metadataHash",
-        type: "bytes32",
+        internalType: "string",
+        name: "metadataUri",
+        type: "string",
       },
     ],
     name: "QuestCreated",
@@ -370,9 +370,9 @@ export const HATS_QUEST_MODULE_ABI = [
         type: "uint256",
       },
       {
-        internalType: "bytes32",
-        name: "metadataHash",
-        type: "bytes32",
+        internalType: "string",
+        name: "metadataUri",
+        type: "string",
       },
     ],
     name: "createQuest",
@@ -490,9 +490,9 @@ export const HATS_QUEST_MODULE_ABI = [
             type: "uint8",
           },
           {
-            internalType: "bytes32",
-            name: "metadataHash",
-            type: "bytes32",
+            internalType: "string",
+            name: "metadataUri",
+            type: "string",
           },
           {
             internalType: "uint64",

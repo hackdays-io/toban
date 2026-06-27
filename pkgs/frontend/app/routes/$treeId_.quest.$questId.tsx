@@ -49,7 +49,10 @@ const QuestDetailRoute: FC = () => {
   }, [questModuleAddress, questId]);
 
   const { quest, isLoading, refetch } = useQuest(subgraphId);
-  const { data: meta } = useQuestMetadata(quest?.metadataHash);
+  const { data: meta } = useQuestMetadata({
+    metadataUri: quest?.metadataUri,
+    indexed: quest?.metadata,
+  });
 
   const tree = useTreeInfo(Number(treeId));
   const hat = useMemo(() => {

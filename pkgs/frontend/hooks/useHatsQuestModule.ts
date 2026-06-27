@@ -25,7 +25,7 @@ export const useCreateQuest = (
       hatId: bigint;
       wearer: Address;
       amount: bigint;
-      metadataHash: `0x${string}`;
+      metadataUri: string;
     }): Promise<bigint | undefined> => {
       if (!hatsQuestModuleAddress || !fractionTokenAddress || !wallet) return;
       setIsLoading(true);
@@ -54,7 +54,7 @@ export const useCreateQuest = (
             params.hatId,
             params.wearer,
             params.amount,
-            params.metadataHash,
+            params.metadataUri,
           ],
         });
         const receipt = await publicClient.waitForTransactionReceipt({

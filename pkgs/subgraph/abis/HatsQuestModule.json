@@ -227,9 +227,9 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes32",
-        "name": "metadataHash",
-        "type": "bytes32"
+        "internalType": "string",
+        "name": "metadataUri",
+        "type": "string"
       }
     ],
     "name": "QuestCreated",
@@ -367,9 +367,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
-        "name": "metadataHash",
-        "type": "bytes32"
+        "internalType": "string",
+        "name": "metadataUri",
+        "type": "string"
       }
     ],
     "name": "createQuest",
@@ -487,9 +487,9 @@
             "type": "uint8"
           },
           {
-            "internalType": "bytes32",
-            "name": "metadataHash",
-            "type": "bytes32"
+            "internalType": "string",
+            "name": "metadataUri",
+            "type": "string"
           },
           {
             "internalType": "uint64",

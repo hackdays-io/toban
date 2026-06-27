@@ -938,7 +938,17 @@ export type Query = {
   quest?: Maybe<Quest>;
   questApproval?: Maybe<QuestApproval>;
   questApprovals: Array<QuestApproval>;
+  questMetadata?: Maybe<QuestMetadata>;
+  questMetadata_collection: Array<QuestMetadata>;
   quests: Array<Quest>;
+  scheduledDistributor?: Maybe<ScheduledDistributor>;
+  scheduledDistributorDeposit?: Maybe<ScheduledDistributorDeposit>;
+  scheduledDistributorDeposits: Array<ScheduledDistributorDeposit>;
+  scheduledDistributorTokenBalance?: Maybe<ScheduledDistributorTokenBalance>;
+  scheduledDistributorTokenBalances: Array<ScheduledDistributorTokenBalance>;
+  scheduledDistributors: Array<ScheduledDistributor>;
+  splitsCreatorWorkspace?: Maybe<SplitsCreatorWorkspace>;
+  splitsCreatorWorkspaces: Array<SplitsCreatorWorkspace>;
   submissionAttempt?: Maybe<SubmissionAttempt>;
   submissionAttempts: Array<SubmissionAttempt>;
   thanksToken?: Maybe<ThanksToken>;
@@ -1126,6 +1136,24 @@ export type QueryQuestApprovalsArgs = {
 };
 
 
+export type QueryQuestMetadataArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryQuestMetadata_CollectionArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<QuestMetadata_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<QuestMetadata_Filter>;
+};
+
+
 export type QueryQuestsArgs = {
   block?: InputMaybe<Block_Height>;
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -1134,6 +1162,78 @@ export type QueryQuestsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   subgraphError?: _SubgraphErrorPolicy_;
   where?: InputMaybe<Quest_Filter>;
+};
+
+
+export type QueryScheduledDistributorArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryScheduledDistributorDepositArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryScheduledDistributorDepositsArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<ScheduledDistributorDeposit_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<ScheduledDistributorDeposit_Filter>;
+};
+
+
+export type QueryScheduledDistributorTokenBalanceArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryScheduledDistributorTokenBalancesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<ScheduledDistributorTokenBalance_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<ScheduledDistributorTokenBalance_Filter>;
+};
+
+
+export type QueryScheduledDistributorsArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<ScheduledDistributor_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<ScheduledDistributor_Filter>;
+};
+
+
+export type QuerySplitsCreatorWorkspaceArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QuerySplitsCreatorWorkspacesArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<SplitsCreatorWorkspace_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<SplitsCreatorWorkspace_Filter>;
 };
 
 
@@ -1240,7 +1340,8 @@ export type Quest = {
   creator: Scalars['String']['output'];
   hatId: Scalars['BigInt']['output'];
   id: Scalars['ID']['output'];
-  metadataHash: Scalars['Bytes']['output'];
+  metadata?: Maybe<QuestMetadata>;
+  metadataUri: Scalars['String']['output'];
   questId: Scalars['BigInt']['output'];
   questModule: Scalars['String']['output'];
   questModuleEntity: HatsQuestModule;
@@ -1401,7 +1502,7 @@ export enum QuestApproval_OrderBy {
   QuestCreator = 'quest__creator',
   QuestHatId = 'quest__hatId',
   QuestId = 'quest__id',
-  QuestMetadataHash = 'quest__metadataHash',
+  QuestMetadataUri = 'quest__metadataUri',
   QuestQuestId = 'quest__questId',
   QuestQuestModule = 'quest__questModule',
   QuestStatus = 'quest__status',
@@ -1410,6 +1511,74 @@ export enum QuestApproval_OrderBy {
   QuestTxHash = 'quest__txHash',
   QuestWearer = 'quest__wearer',
   TxHash = 'txHash'
+}
+
+export type QuestMetadata = {
+  __typename?: 'QuestMetadata';
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type QuestMetadata_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<QuestMetadata_Filter>>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  description_contains?: InputMaybe<Scalars['String']['input']>;
+  description_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  description_ends_with?: InputMaybe<Scalars['String']['input']>;
+  description_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  description_gt?: InputMaybe<Scalars['String']['input']>;
+  description_gte?: InputMaybe<Scalars['String']['input']>;
+  description_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  description_lt?: InputMaybe<Scalars['String']['input']>;
+  description_lte?: InputMaybe<Scalars['String']['input']>;
+  description_not?: InputMaybe<Scalars['String']['input']>;
+  description_not_contains?: InputMaybe<Scalars['String']['input']>;
+  description_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  description_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  description_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  description_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  description_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  description_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  description_starts_with?: InputMaybe<Scalars['String']['input']>;
+  description_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<QuestMetadata_Filter>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  title_contains?: InputMaybe<Scalars['String']['input']>;
+  title_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  title_ends_with?: InputMaybe<Scalars['String']['input']>;
+  title_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  title_gt?: InputMaybe<Scalars['String']['input']>;
+  title_gte?: InputMaybe<Scalars['String']['input']>;
+  title_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  title_lt?: InputMaybe<Scalars['String']['input']>;
+  title_lte?: InputMaybe<Scalars['String']['input']>;
+  title_not?: InputMaybe<Scalars['String']['input']>;
+  title_not_contains?: InputMaybe<Scalars['String']['input']>;
+  title_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  title_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  title_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  title_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  title_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  title_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  title_starts_with?: InputMaybe<Scalars['String']['input']>;
+  title_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum QuestMetadata_OrderBy {
+  Description = 'description',
+  Id = 'id',
+  Title = 'title'
 }
 
 export enum QuestStatus {
@@ -1524,16 +1693,47 @@ export type Quest_Filter = {
   id_lte?: InputMaybe<Scalars['ID']['input']>;
   id_not?: InputMaybe<Scalars['ID']['input']>;
   id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
-  metadataHash?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_contains?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_gt?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_gte?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
-  metadataHash_lt?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_lte?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_not?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
-  metadataHash_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  metadata?: InputMaybe<Scalars['String']['input']>;
+  metadataUri?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_contains?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_ends_with?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_gt?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_gte?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  metadataUri_lt?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_lte?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not_contains?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  metadataUri_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_starts_with?: InputMaybe<Scalars['String']['input']>;
+  metadataUri_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadata_?: InputMaybe<QuestMetadata_Filter>;
+  metadata_contains?: InputMaybe<Scalars['String']['input']>;
+  metadata_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadata_ends_with?: InputMaybe<Scalars['String']['input']>;
+  metadata_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadata_gt?: InputMaybe<Scalars['String']['input']>;
+  metadata_gte?: InputMaybe<Scalars['String']['input']>;
+  metadata_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  metadata_lt?: InputMaybe<Scalars['String']['input']>;
+  metadata_lte?: InputMaybe<Scalars['String']['input']>;
+  metadata_not?: InputMaybe<Scalars['String']['input']>;
+  metadata_not_contains?: InputMaybe<Scalars['String']['input']>;
+  metadata_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadata_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  metadata_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadata_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  metadata_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  metadata_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  metadata_starts_with?: InputMaybe<Scalars['String']['input']>;
+  metadata_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   or?: InputMaybe<Array<InputMaybe<Quest_Filter>>>;
   questId?: InputMaybe<Scalars['BigInt']['input']>;
   questId_gt?: InputMaybe<Scalars['BigInt']['input']>;
@@ -1682,7 +1882,11 @@ export enum Quest_OrderBy {
   Creator = 'creator',
   HatId = 'hatId',
   Id = 'id',
-  MetadataHash = 'metadataHash',
+  Metadata = 'metadata',
+  MetadataUri = 'metadataUri',
+  MetadataDescription = 'metadata__description',
+  MetadataId = 'metadata__id',
+  MetadataTitle = 'metadata__title',
   QuestId = 'questId',
   QuestModule = 'questModule',
   QuestModuleEntity = 'questModuleEntity',
@@ -1709,6 +1913,522 @@ export enum Quest_OrderBy {
   WorkspaceOwner = 'workspace__owner',
   WorkspaceSplitCreator = 'workspace__splitCreator',
   WorkspaceTopHatId = 'workspace__topHatId'
+}
+
+export type ScheduledDistributor = {
+  __typename?: 'ScheduledDistributor';
+  backupWallet: Scalars['String']['output'];
+  createdAt: Scalars['BigInt']['output'];
+  createdBlock: Scalars['BigInt']['output'];
+  deposits: Array<ScheduledDistributorDeposit>;
+  executedAt?: Maybe<Scalars['BigInt']['output']>;
+  id: Scalars['ID']['output'];
+  reclaimedAt?: Maybe<Scalars['BigInt']['output']>;
+  scheduledDate: Scalars['BigInt']['output'];
+  scheduler: Scalars['String']['output'];
+  split?: Maybe<Scalars['String']['output']>;
+  splitsCreator: Scalars['String']['output'];
+  status: ScheduledDistributorStatus;
+  tokenBalances: Array<ScheduledDistributorTokenBalance>;
+  tokens: Array<Scalars['String']['output']>;
+  workspaceId?: Maybe<Scalars['ID']['output']>;
+};
+
+
+export type ScheduledDistributorDepositsArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<ScheduledDistributorDeposit_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<ScheduledDistributorDeposit_Filter>;
+};
+
+
+export type ScheduledDistributorTokenBalancesArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<ScheduledDistributorTokenBalance_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<ScheduledDistributorTokenBalance_Filter>;
+};
+
+export type ScheduledDistributorDeposit = {
+  __typename?: 'ScheduledDistributorDeposit';
+  amount: Scalars['BigInt']['output'];
+  blockNumber: Scalars['BigInt']['output'];
+  blockTimestamp: Scalars['BigInt']['output'];
+  from: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  scheduledDistributor: ScheduledDistributor;
+  token: Scalars['String']['output'];
+  txHash: Scalars['Bytes']['output'];
+};
+
+export type ScheduledDistributorDeposit_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  amount?: InputMaybe<Scalars['BigInt']['input']>;
+  amount_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  amount_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  amount_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  amount_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  amount_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  amount_not?: InputMaybe<Scalars['BigInt']['input']>;
+  amount_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  and?: InputMaybe<Array<InputMaybe<ScheduledDistributorDeposit_Filter>>>;
+  blockNumber?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockNumber_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_not?: InputMaybe<Scalars['BigInt']['input']>;
+  blockNumber_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockTimestamp?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  blockTimestamp_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_not?: InputMaybe<Scalars['BigInt']['input']>;
+  blockTimestamp_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  from?: InputMaybe<Scalars['String']['input']>;
+  from_contains?: InputMaybe<Scalars['String']['input']>;
+  from_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  from_ends_with?: InputMaybe<Scalars['String']['input']>;
+  from_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  from_gt?: InputMaybe<Scalars['String']['input']>;
+  from_gte?: InputMaybe<Scalars['String']['input']>;
+  from_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  from_lt?: InputMaybe<Scalars['String']['input']>;
+  from_lte?: InputMaybe<Scalars['String']['input']>;
+  from_not?: InputMaybe<Scalars['String']['input']>;
+  from_not_contains?: InputMaybe<Scalars['String']['input']>;
+  from_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  from_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  from_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  from_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  from_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  from_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  from_starts_with?: InputMaybe<Scalars['String']['input']>;
+  from_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<ScheduledDistributorDeposit_Filter>>>;
+  scheduledDistributor?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_?: InputMaybe<ScheduledDistributor_Filter>;
+  scheduledDistributor_contains?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_ends_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_gt?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_gte?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  scheduledDistributor_lt?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_lte?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_contains?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  scheduledDistributor_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_starts_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token?: InputMaybe<Scalars['String']['input']>;
+  token_contains?: InputMaybe<Scalars['String']['input']>;
+  token_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_ends_with?: InputMaybe<Scalars['String']['input']>;
+  token_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_gt?: InputMaybe<Scalars['String']['input']>;
+  token_gte?: InputMaybe<Scalars['String']['input']>;
+  token_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  token_lt?: InputMaybe<Scalars['String']['input']>;
+  token_lte?: InputMaybe<Scalars['String']['input']>;
+  token_not?: InputMaybe<Scalars['String']['input']>;
+  token_not_contains?: InputMaybe<Scalars['String']['input']>;
+  token_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  token_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  token_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  token_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_starts_with?: InputMaybe<Scalars['String']['input']>;
+  token_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  txHash?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_gt?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_gte?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  txHash_lt?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_lte?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_not?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  txHash_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+};
+
+export enum ScheduledDistributorDeposit_OrderBy {
+  Amount = 'amount',
+  BlockNumber = 'blockNumber',
+  BlockTimestamp = 'blockTimestamp',
+  From = 'from',
+  Id = 'id',
+  ScheduledDistributor = 'scheduledDistributor',
+  ScheduledDistributorBackupWallet = 'scheduledDistributor__backupWallet',
+  ScheduledDistributorCreatedAt = 'scheduledDistributor__createdAt',
+  ScheduledDistributorCreatedBlock = 'scheduledDistributor__createdBlock',
+  ScheduledDistributorExecutedAt = 'scheduledDistributor__executedAt',
+  ScheduledDistributorId = 'scheduledDistributor__id',
+  ScheduledDistributorReclaimedAt = 'scheduledDistributor__reclaimedAt',
+  ScheduledDistributorScheduledDate = 'scheduledDistributor__scheduledDate',
+  ScheduledDistributorScheduler = 'scheduledDistributor__scheduler',
+  ScheduledDistributorSplit = 'scheduledDistributor__split',
+  ScheduledDistributorSplitsCreator = 'scheduledDistributor__splitsCreator',
+  ScheduledDistributorStatus = 'scheduledDistributor__status',
+  ScheduledDistributorWorkspaceId = 'scheduledDistributor__workspaceId',
+  Token = 'token',
+  TxHash = 'txHash'
+}
+
+export enum ScheduledDistributorStatus {
+  Executed = 'Executed',
+  Pending = 'Pending',
+  Reclaimed = 'Reclaimed'
+}
+
+export type ScheduledDistributorTokenBalance = {
+  __typename?: 'ScheduledDistributorTokenBalance';
+  executedAmount?: Maybe<Scalars['BigInt']['output']>;
+  id: Scalars['ID']['output'];
+  reclaimedAmount?: Maybe<Scalars['BigInt']['output']>;
+  scheduledDistributor: ScheduledDistributor;
+  token: Scalars['String']['output'];
+  totalDeposited: Scalars['BigInt']['output'];
+  updatedAt: Scalars['BigInt']['output'];
+};
+
+export type ScheduledDistributorTokenBalance_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<ScheduledDistributorTokenBalance_Filter>>>;
+  executedAmount?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAmount_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAmount_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAmount_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  executedAmount_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAmount_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAmount_not?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAmount_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<ScheduledDistributorTokenBalance_Filter>>>;
+  reclaimedAmount?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAmount_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAmount_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAmount_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  reclaimedAmount_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAmount_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAmount_not?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAmount_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  scheduledDistributor?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_?: InputMaybe<ScheduledDistributor_Filter>;
+  scheduledDistributor_contains?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_ends_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_gt?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_gte?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  scheduledDistributor_lt?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_lte?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_contains?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  scheduledDistributor_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_starts_with?: InputMaybe<Scalars['String']['input']>;
+  scheduledDistributor_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token?: InputMaybe<Scalars['String']['input']>;
+  token_contains?: InputMaybe<Scalars['String']['input']>;
+  token_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_ends_with?: InputMaybe<Scalars['String']['input']>;
+  token_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_gt?: InputMaybe<Scalars['String']['input']>;
+  token_gte?: InputMaybe<Scalars['String']['input']>;
+  token_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  token_lt?: InputMaybe<Scalars['String']['input']>;
+  token_lte?: InputMaybe<Scalars['String']['input']>;
+  token_not?: InputMaybe<Scalars['String']['input']>;
+  token_not_contains?: InputMaybe<Scalars['String']['input']>;
+  token_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  token_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  token_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  token_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  token_starts_with?: InputMaybe<Scalars['String']['input']>;
+  token_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  totalDeposited?: InputMaybe<Scalars['BigInt']['input']>;
+  totalDeposited_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  totalDeposited_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  totalDeposited_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  totalDeposited_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  totalDeposited_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  totalDeposited_not?: InputMaybe<Scalars['BigInt']['input']>;
+  totalDeposited_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  updatedAt?: InputMaybe<Scalars['BigInt']['input']>;
+  updatedAt_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  updatedAt_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  updatedAt_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  updatedAt_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  updatedAt_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  updatedAt_not?: InputMaybe<Scalars['BigInt']['input']>;
+  updatedAt_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+};
+
+export enum ScheduledDistributorTokenBalance_OrderBy {
+  ExecutedAmount = 'executedAmount',
+  Id = 'id',
+  ReclaimedAmount = 'reclaimedAmount',
+  ScheduledDistributor = 'scheduledDistributor',
+  ScheduledDistributorBackupWallet = 'scheduledDistributor__backupWallet',
+  ScheduledDistributorCreatedAt = 'scheduledDistributor__createdAt',
+  ScheduledDistributorCreatedBlock = 'scheduledDistributor__createdBlock',
+  ScheduledDistributorExecutedAt = 'scheduledDistributor__executedAt',
+  ScheduledDistributorId = 'scheduledDistributor__id',
+  ScheduledDistributorReclaimedAt = 'scheduledDistributor__reclaimedAt',
+  ScheduledDistributorScheduledDate = 'scheduledDistributor__scheduledDate',
+  ScheduledDistributorScheduler = 'scheduledDistributor__scheduler',
+  ScheduledDistributorSplit = 'scheduledDistributor__split',
+  ScheduledDistributorSplitsCreator = 'scheduledDistributor__splitsCreator',
+  ScheduledDistributorStatus = 'scheduledDistributor__status',
+  ScheduledDistributorWorkspaceId = 'scheduledDistributor__workspaceId',
+  Token = 'token',
+  TotalDeposited = 'totalDeposited',
+  UpdatedAt = 'updatedAt'
+}
+
+export type ScheduledDistributor_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<ScheduledDistributor_Filter>>>;
+  backupWallet?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_contains?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_ends_with?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_gt?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_gte?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  backupWallet_lt?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_lte?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not_contains?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  backupWallet_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_starts_with?: InputMaybe<Scalars['String']['input']>;
+  backupWallet_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['BigInt']['input']>;
+  createdAt_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  createdAt_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  createdAt_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  createdAt_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  createdAt_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  createdAt_not?: InputMaybe<Scalars['BigInt']['input']>;
+  createdAt_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  createdBlock?: InputMaybe<Scalars['BigInt']['input']>;
+  createdBlock_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  createdBlock_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  createdBlock_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  createdBlock_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  createdBlock_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  createdBlock_not?: InputMaybe<Scalars['BigInt']['input']>;
+  createdBlock_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  deposits_?: InputMaybe<ScheduledDistributorDeposit_Filter>;
+  executedAt?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAt_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAt_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAt_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  executedAt_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAt_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAt_not?: InputMaybe<Scalars['BigInt']['input']>;
+  executedAt_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<ScheduledDistributor_Filter>>>;
+  reclaimedAt?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAt_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAt_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAt_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  reclaimedAt_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAt_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAt_not?: InputMaybe<Scalars['BigInt']['input']>;
+  reclaimedAt_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  scheduledDate?: InputMaybe<Scalars['BigInt']['input']>;
+  scheduledDate_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  scheduledDate_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  scheduledDate_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  scheduledDate_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  scheduledDate_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  scheduledDate_not?: InputMaybe<Scalars['BigInt']['input']>;
+  scheduledDate_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  scheduler?: InputMaybe<Scalars['String']['input']>;
+  scheduler_contains?: InputMaybe<Scalars['String']['input']>;
+  scheduler_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduler_ends_with?: InputMaybe<Scalars['String']['input']>;
+  scheduler_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduler_gt?: InputMaybe<Scalars['String']['input']>;
+  scheduler_gte?: InputMaybe<Scalars['String']['input']>;
+  scheduler_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  scheduler_lt?: InputMaybe<Scalars['String']['input']>;
+  scheduler_lte?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not_contains?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  scheduler_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  scheduler_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  scheduler_starts_with?: InputMaybe<Scalars['String']['input']>;
+  scheduler_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  split?: InputMaybe<Scalars['String']['input']>;
+  split_contains?: InputMaybe<Scalars['String']['input']>;
+  split_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  split_ends_with?: InputMaybe<Scalars['String']['input']>;
+  split_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  split_gt?: InputMaybe<Scalars['String']['input']>;
+  split_gte?: InputMaybe<Scalars['String']['input']>;
+  split_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  split_lt?: InputMaybe<Scalars['String']['input']>;
+  split_lte?: InputMaybe<Scalars['String']['input']>;
+  split_not?: InputMaybe<Scalars['String']['input']>;
+  split_not_contains?: InputMaybe<Scalars['String']['input']>;
+  split_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  split_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  split_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  split_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  split_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  split_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  split_starts_with?: InputMaybe<Scalars['String']['input']>;
+  split_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_contains?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_ends_with?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_gt?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_gte?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  splitsCreator_lt?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_lte?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not_contains?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  splitsCreator_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_starts_with?: InputMaybe<Scalars['String']['input']>;
+  splitsCreator_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<ScheduledDistributorStatus>;
+  status_in?: InputMaybe<Array<ScheduledDistributorStatus>>;
+  status_not?: InputMaybe<ScheduledDistributorStatus>;
+  status_not_in?: InputMaybe<Array<ScheduledDistributorStatus>>;
+  tokenBalances_?: InputMaybe<ScheduledDistributorTokenBalance_Filter>;
+  tokens?: InputMaybe<Array<Scalars['String']['input']>>;
+  tokens_contains?: InputMaybe<Array<Scalars['String']['input']>>;
+  tokens_contains_nocase?: InputMaybe<Array<Scalars['String']['input']>>;
+  tokens_not?: InputMaybe<Array<Scalars['String']['input']>>;
+  tokens_not_contains?: InputMaybe<Array<Scalars['String']['input']>>;
+  tokens_not_contains_nocase?: InputMaybe<Array<Scalars['String']['input']>>;
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspaceId_lt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_lte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+export enum ScheduledDistributor_OrderBy {
+  BackupWallet = 'backupWallet',
+  CreatedAt = 'createdAt',
+  CreatedBlock = 'createdBlock',
+  Deposits = 'deposits',
+  ExecutedAt = 'executedAt',
+  Id = 'id',
+  ReclaimedAt = 'reclaimedAt',
+  ScheduledDate = 'scheduledDate',
+  Scheduler = 'scheduler',
+  Split = 'split',
+  SplitsCreator = 'splitsCreator',
+  Status = 'status',
+  TokenBalances = 'tokenBalances',
+  Tokens = 'tokens',
+  WorkspaceId = 'workspaceId'
+}
+
+export type SplitsCreatorWorkspace = {
+  __typename?: 'SplitsCreatorWorkspace';
+  id: Scalars['ID']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+export type SplitsCreatorWorkspace_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<SplitsCreatorWorkspace_Filter>>>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<SplitsCreatorWorkspace_Filter>>>;
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_gte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspaceId_lt?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_lte?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not?: InputMaybe<Scalars['ID']['input']>;
+  workspaceId_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+export enum SplitsCreatorWorkspace_OrderBy {
+  Id = 'id',
+  WorkspaceId = 'workspaceId'
 }
 
 export type SubmissionAttempt = {
@@ -1853,7 +2573,7 @@ export enum SubmissionAttempt_OrderBy {
   QuestCreator = 'quest__creator',
   QuestHatId = 'quest__hatId',
   QuestId = 'quest__id',
-  QuestMetadataHash = 'quest__metadataHash',
+  QuestMetadataUri = 'quest__metadataUri',
   QuestQuestId = 'quest__questId',
   QuestQuestModule = 'quest__questModule',
   QuestStatus = 'quest__status',
@@ -2605,14 +3325,28 @@ export type GetQuestsForWorkspaceQueryVariables = Exact<{
 }>;
 
 
-export type GetQuestsForWorkspaceQuery = { __typename?: 'Query', quests: Array<{ __typename?: 'Quest', id: string, questId: any, hatId: any, wearer: string, creator: string, submitter?: string | null, amount: any, status: QuestStatus, metadataHash: any, approvalCount: number, attemptCount: number, createdAt: any, blockTimestamp: any }> };
+export type GetQuestsForWorkspaceQuery = { __typename?: 'Query', quests: Array<{ __typename?: 'Quest', id: string, questId: any, hatId: any, wearer: string, creator: string, submitter?: string | null, amount: any, status: QuestStatus, metadataUri: string, approvalCount: number, attemptCount: number, createdAt: any, blockTimestamp: any, metadata?: { __typename?: 'QuestMetadata', title?: string | null, description?: string | null } | null }> };
 
 export type GetQuestDetailQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetQuestDetailQuery = { __typename?: 'Query', quest?: { __typename?: 'Quest', id: string, questId: any, hatId: any, wearer: string, creator: string, submitter?: string | null, amount: any, status: QuestStatus, metadataHash: any, approvalCount: number, attemptCount: number, createdAt: any, submittedAt?: any | null, completedAt?: any | null, cancelledAt?: any | null, questModule: string, attempts: Array<{ __typename?: 'SubmissionAttempt', id: string, attemptIndex: number, submitter: string, submittedAt: any, outcome: SubmissionOutcome, approvals: Array<{ __typename?: 'QuestApproval', id: string, approver: string, approvedAt: any }> }> } | null };
+export type GetQuestDetailQuery = { __typename?: 'Query', quest?: { __typename?: 'Quest', id: string, questId: any, hatId: any, wearer: string, creator: string, submitter?: string | null, amount: any, status: QuestStatus, metadataUri: string, approvalCount: number, attemptCount: number, createdAt: any, submittedAt?: any | null, completedAt?: any | null, cancelledAt?: any | null, questModule: string, metadata?: { __typename?: 'QuestMetadata', title?: string | null, description?: string | null } | null, attempts: Array<{ __typename?: 'SubmissionAttempt', id: string, attemptIndex: number, submitter: string, submittedAt: any, outcome: SubmissionOutcome, approvals: Array<{ __typename?: 'QuestApproval', id: string, approver: string, approvedAt: any }> }> } | null };
+
+export type GetScheduledDistributorsByWorkspaceQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type GetScheduledDistributorsByWorkspaceQuery = { __typename?: 'Query', scheduledDistributors: Array<{ __typename?: 'ScheduledDistributor', id: string, scheduler: string, splitsCreator: string, workspaceId?: string | null, tokens: Array<string>, backupWallet: string, scheduledDate: any, status: ScheduledDistributorStatus, split?: string | null, executedAt?: any | null, reclaimedAt?: any | null, createdAt: any, createdBlock: any, tokenBalances: Array<{ __typename?: 'ScheduledDistributorTokenBalance', id: string, token: string, totalDeposited: any, executedAmount?: any | null, reclaimedAmount?: any | null, updatedAt: any }> }> };
+
+export type GetScheduledDistributorQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetScheduledDistributorQuery = { __typename?: 'Query', scheduledDistributor?: { __typename?: 'ScheduledDistributor', id: string, scheduler: string, splitsCreator: string, workspaceId?: string | null, tokens: Array<string>, backupWallet: string, scheduledDate: any, status: ScheduledDistributorStatus, split?: string | null, executedAt?: any | null, reclaimedAt?: any | null, createdAt: any, createdBlock: any, tokenBalances: Array<{ __typename?: 'ScheduledDistributorTokenBalance', id: string, token: string, totalDeposited: any, executedAmount?: any | null, reclaimedAmount?: any | null, updatedAt: any }>, deposits: Array<{ __typename?: 'ScheduledDistributorDeposit', id: string, token: string, from: string, amount: any, blockTimestamp: any, txHash: any }> } | null };
 
 export type GetThanksTokenBalancesQueryVariables = Exact<{
   where?: InputMaybe<BalanceOfThanksToken_Filter>;
@@ -2670,8 +3404,10 @@ export type GetWorkspacesQuery = { __typename?: 'Query', workspaces: Array<{ __t
 
 export const GetTransferFractionTokensDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTransferFractionTokens"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferFractionToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferFractionToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"transferFractionTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"to"}},{"kind":"Field","name":{"kind":"Name","value":"tokenId"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"hatsFractionTokenModule"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<GetTransferFractionTokensQuery, GetTransferFractionTokensQueryVariables>;
 export const BalanceOfFractionTokensDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"BalanceOfFractionTokens"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"BalanceOfFractionToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"BalanceOfFractionToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"balanceOfFractionTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tokenId"}},{"kind":"Field","name":{"kind":"Name","value":"balance"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}}]}}]}}]} as unknown as DocumentNode<BalanceOfFractionTokensQuery, BalanceOfFractionTokensQueryVariables>;
-export const GetQuestsForWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetQuestsForWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"0"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"statuses"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"QuestStatus"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quests"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"workspace"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"status_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"statuses"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"createdAt"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"questId"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}},{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"submitter"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"metadataHash"}},{"kind":"Field","name":{"kind":"Name","value":"approvalCount"}},{"kind":"Field","name":{"kind":"Name","value":"attemptCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}}]}}]}}]} as unknown as DocumentNode<GetQuestsForWorkspaceQuery, GetQuestsForWorkspaceQueryVariables>;
-export const GetQuestDetailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetQuestDetail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quest"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"questId"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}},{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"submitter"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"metadataHash"}},{"kind":"Field","name":{"kind":"Name","value":"approvalCount"}},{"kind":"Field","name":{"kind":"Name","value":"attemptCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"submittedAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"cancelledAt"}},{"kind":"Field","name":{"kind":"Name","value":"questModule"}},{"kind":"Field","name":{"kind":"Name","value":"attempts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"attemptIndex"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attemptIndex"}},{"kind":"Field","name":{"kind":"Name","value":"submitter"}},{"kind":"Field","name":{"kind":"Name","value":"submittedAt"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"approvals"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"approvedAt"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"asc"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"approver"}},{"kind":"Field","name":{"kind":"Name","value":"approvedAt"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetQuestDetailQuery, GetQuestDetailQueryVariables>;
+export const GetQuestsForWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetQuestsForWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"0"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"statuses"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"QuestStatus"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quests"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"workspace"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"status_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"statuses"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"createdAt"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"questId"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}},{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"submitter"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"metadataUri"}},{"kind":"Field","name":{"kind":"Name","value":"metadata"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"approvalCount"}},{"kind":"Field","name":{"kind":"Name","value":"attemptCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}}]}}]}}]} as unknown as DocumentNode<GetQuestsForWorkspaceQuery, GetQuestsForWorkspaceQueryVariables>;
+export const GetQuestDetailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetQuestDetail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quest"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"questId"}},{"kind":"Field","name":{"kind":"Name","value":"hatId"}},{"kind":"Field","name":{"kind":"Name","value":"wearer"}},{"kind":"Field","name":{"kind":"Name","value":"creator"}},{"kind":"Field","name":{"kind":"Name","value":"submitter"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"metadataUri"}},{"kind":"Field","name":{"kind":"Name","value":"metadata"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"approvalCount"}},{"kind":"Field","name":{"kind":"Name","value":"attemptCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"submittedAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"cancelledAt"}},{"kind":"Field","name":{"kind":"Name","value":"questModule"}},{"kind":"Field","name":{"kind":"Name","value":"attempts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"attemptIndex"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attemptIndex"}},{"kind":"Field","name":{"kind":"Name","value":"submitter"}},{"kind":"Field","name":{"kind":"Name","value":"submittedAt"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"approvals"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"approvedAt"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"asc"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"approver"}},{"kind":"Field","name":{"kind":"Name","value":"approvedAt"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetQuestDetailQuery, GetQuestDetailQueryVariables>;
+export const GetScheduledDistributorsByWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetScheduledDistributorsByWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"scheduledDistributors"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"scheduledDate"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"scheduler"}},{"kind":"Field","name":{"kind":"Name","value":"splitsCreator"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"tokens"}},{"kind":"Field","name":{"kind":"Name","value":"backupWallet"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledDate"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"split"}},{"kind":"Field","name":{"kind":"Name","value":"executedAt"}},{"kind":"Field","name":{"kind":"Name","value":"reclaimedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBlock"}},{"kind":"Field","name":{"kind":"Name","value":"tokenBalances"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"totalDeposited"}},{"kind":"Field","name":{"kind":"Name","value":"executedAmount"}},{"kind":"Field","name":{"kind":"Name","value":"reclaimedAmount"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]}}]} as unknown as DocumentNode<GetScheduledDistributorsByWorkspaceQuery, GetScheduledDistributorsByWorkspaceQueryVariables>;
+export const GetScheduledDistributorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetScheduledDistributor"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"scheduledDistributor"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"scheduler"}},{"kind":"Field","name":{"kind":"Name","value":"splitsCreator"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"tokens"}},{"kind":"Field","name":{"kind":"Name","value":"backupWallet"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledDate"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"split"}},{"kind":"Field","name":{"kind":"Name","value":"executedAt"}},{"kind":"Field","name":{"kind":"Name","value":"reclaimedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBlock"}},{"kind":"Field","name":{"kind":"Name","value":"tokenBalances"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"totalDeposited"}},{"kind":"Field","name":{"kind":"Name","value":"executedAmount"}},{"kind":"Field","name":{"kind":"Name","value":"reclaimedAmount"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"deposits"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"blockTimestamp"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"txHash"}}]}}]}}]}}]} as unknown as DocumentNode<GetScheduledDistributorQuery, GetScheduledDistributorQueryVariables>;
 export const GetThanksTokenBalancesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetThanksTokenBalances"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"BalanceOfThanksToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"BalanceOfThanksToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"balanceOfThanksTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"thanksToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"balance"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetThanksTokenBalancesQuery, GetThanksTokenBalancesQueryVariables>;
 export const GetThanksTokenMintsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetThanksTokenMints"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"MintThanksToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"MintThanksToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mintThanksTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"thanksToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"to"}},{"kind":"Field","name":{"kind":"Name","value":"data"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetThanksTokenMintsQuery, GetThanksTokenMintsQueryVariables>;
 export const GetThanksTokenTransfersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetThanksTokenTransfers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferThanksToken_filter"}},"defaultValue":{"kind":"ObjectValue","fields":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TransferThanksToken_orderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}},"defaultValue":{"kind":"EnumValue","value":"asc"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"transferThanksTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"thanksToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"to"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"workspaceId"}},{"kind":"Field","name":{"kind":"Name","value":"blockTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"blockNumber"}}]}}]}}]} as unknown as DocumentNode<GetThanksTokenTransfersQuery, GetThanksTokenTransfersQueryVariables>;

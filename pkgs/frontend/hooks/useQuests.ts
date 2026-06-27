@@ -37,7 +37,11 @@ const queryGetQuests = gql(`
       submitter
       amount
       status
-      metadataHash
+      metadataUri
+      metadata {
+        title
+        description
+      }
       approvalCount
       attemptCount
       createdAt
@@ -57,7 +61,11 @@ const queryGetQuestDetail = gql(`
       submitter
       amount
       status
-      metadataHash
+      metadataUri
+      metadata {
+        title
+        description
+      }
       approvalCount
       attemptCount
       createdAt

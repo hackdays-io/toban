@@ -6,6 +6,7 @@ import {
   QuestApproval,
   SubmissionAttempt,
 } from "../generated/schema";
+import { QuestMetadata as QuestMetadataTemplate } from "../generated/templates";
 import {
   CompletionSubmitted,
   QuestApproved,
@@ -97,7 +98,19 @@ export function handleQuestCreated(ev: QuestCreated): void {
   quest.submitter = null;
   quest.amount = ev.params.amount;
   quest.status = STATUS_OPEN;
-  quest.metadataHash = ev.params.metadataHash;
+
+  // metadataUri is an IPFS URI (`ipfs://<cid>`). Strip the scheme to get the
+  // bare CID, which we (a) forward-reference from `quest.metadata` so the link
+  // resolves once the File Data Source materializes QuestMetadata(id = cid),
+  // and (b) hand to the File Data Source to fetch the JSON asynchronously.
+  const uri = ev.params.metadataUri;
+  quest.metadataUri = uri;
+  const cid = uri.startsWith("ipfs://") ? uri.substr(7) : uri;
+  if (cid.length > 0) {
+    quest.metadata = cid;
+    QuestMetadataTemplate.create(cid);
+  }
+
   quest.approvalCount = 0;
   quest.attemptCount = 0;
   quest.createdAt = ev.block.timestamp;

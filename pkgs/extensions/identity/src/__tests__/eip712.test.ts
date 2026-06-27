@@ -1,5 +1,6 @@
 import { hashTypedData, keccak256, toBytes } from "viem";
 import { describe, expect, it } from "vitest";
+import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 import {
   IDENTITY_BINDING_DOMAIN_NAME,
   IDENTITY_BINDING_DOMAIN_VERSION,
@@ -7,7 +8,6 @@ import {
   IDENTITY_BINDING_TYPES,
   buildIdentityBindingDomain,
 } from "../eip712/identity-binding.js";
-import { hashVerifierToken } from "../eip712/hash-verifier-token.js";
 
 describe("eip712/identity-binding", () => {
   it("buildIdentityBindingDomain pins name/version and omits verifyingContract", () => {

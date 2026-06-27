@@ -154,7 +154,7 @@ const QuestCreate: FC = () => {
         hatId: BigInt(hatIdDecimal),
         wearer,
         amount,
-        metadataHash: meta.metadataHash,
+        metadataUri: meta.ipfsUri,
       });
       if (questId === undefined) {
         toast.error("クエストの作成に失敗しました");

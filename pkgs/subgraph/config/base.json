@@ -96,7 +96,7 @@
       ],
       "handlers": [
         {
-          "event": "QuestCreated(indexed uint256,indexed address,indexed uint256,address,uint256,bytes32)",
+          "event": "QuestCreated(indexed uint256,indexed address,indexed uint256,address,uint256,string)",
           "handler": "handleQuestCreated"
         },
         {

@@ -697,7 +697,10 @@ const ActivityRow: FC<{ item: ActivityItem }> = ({ item }) => {
 };
 
 const QuestRow: FC<{ quest: Quest; treeId?: string }> = ({ quest, treeId }) => {
-  const { data: meta } = useQuestMetadata(quest.metadataHash);
+  const { data: meta } = useQuestMetadata({
+    metadataUri: quest.metadataUri,
+    indexed: quest.metadata,
+  });
   const title = meta?.title ?? `Quest #${quest.questId}`;
   const shareAmount = (() => {
     try {

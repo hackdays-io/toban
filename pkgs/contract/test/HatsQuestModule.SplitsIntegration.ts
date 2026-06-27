@@ -405,7 +405,7 @@ describe("HatsQuestModule + SplitsCreator integration", () => {
     const baseline = await previewScores();
 
     await HatsQuestModule.write.createQuest(
-      [workHatId, creatorAddr, 4_000n, ("0x" + "ab".repeat(32)) as `0x${string}`],
+      [workHatId, creatorAddr, 4_000n, "ipfs://bafkreiquestab"],
       { account: creator.account },
     );
 
@@ -457,7 +457,7 @@ describe("HatsQuestModule + SplitsCreator integration", () => {
 
     // New quest; cancelled before any submission.
     const txHash = await HatsQuestModule.write.createQuest(
-      [workHatId, creatorAddr, 1_500n, ("0x" + "cd".repeat(32)) as `0x${string}`],
+      [workHatId, creatorAddr, 1_500n, "ipfs://bafkreiquestcd"],
       { account: creator.account },
     );
     const receipt = await publicClient.waitForTransactionReceipt({

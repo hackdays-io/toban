@@ -41,7 +41,10 @@ interface QuestCardProps {
 const QuestCard: FC<QuestCardProps> = ({ quest, hat, treeId }) => {
   const detail = useHatDetail(hat?.details);
   const dutyName = detail?.data?.name;
-  const { data: meta } = useQuestMetadata(quest.metadataHash);
+  const { data: meta } = useQuestMetadata({
+    metadataUri: quest.metadataUri,
+    indexed: quest.metadata,
+  });
   const title = meta?.title ?? `Quest #${quest.questId}`;
   const shareAmount = (() => {
     try {

@@ -148,7 +148,11 @@ type Quest @entity {
   submitter: String
   amount: BigInt!
   status: QuestStatus!
-  metadataHash: Bytes!
+  # IPFS URI (e.g. `ipfs://bafkrei…`) emitted on-chain; always present.
+  metadataUri: String!
+  # Resolved off-chain metadata (title/description). Null until the File Data
+  # Source resolves the IPFS object asynchronously.
+  metadata: QuestMetadata
   approvalCount: Int!
   attemptCount: Int!
   attempts: [SubmissionAttempt!]! @derivedFrom(field: "quest")
@@ -159,6 +163,15 @@ type Quest @entity {
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   txHash: Bytes!
+}
+
+# Off-chain quest metadata resolved from IPFS via a File Data Source.
+# id = the bare CID (e.g. `bafkrei…`) so `Quest.metadata` can forward-reference
+# it deterministically at create time, before the IPFS object is fetched.
+type QuestMetadata @entity(immutable: true) {
+  id: ID!
+  title: String
+  description: String
 }
 
 type SubmissionAttempt @entity {

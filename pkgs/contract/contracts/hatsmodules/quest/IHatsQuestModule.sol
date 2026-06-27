@@ -31,7 +31,7 @@ interface IHatsQuestModule {
      * @param submitter The address that submitted completion (zero until submitted).
      * @param amount The amount of RoleShare escrowed for this quest.
      * @param status Current lifecycle state.
-     * @param metadataHash Off-chain pointer (e.g. IPFS CID hash) for quest details.
+     * @param metadataUri Off-chain pointer (IPFS URI, e.g. `ipfs://bafkrei…`) for quest details.
      * @param createdAt Timestamp when the quest was created.
      * @param submittedAt Timestamp when the completion was submitted (zero until submitted).
      */
@@ -42,7 +42,7 @@ interface IHatsQuestModule {
         address submitter;
         uint256 amount;
         QuestStatus status;
-        bytes32 metadataHash;
+        string metadataUri;
         uint64 createdAt;
         uint64 submittedAt;
     }
@@ -75,7 +75,7 @@ interface IHatsQuestModule {
         uint256 indexed hatId,
         address wearer,
         uint256 amount,
-        bytes32 metadataHash
+        string metadataUri
     );
     event CompletionSubmitted(uint256 indexed questId, address indexed submitter);
     event SubmissionWithdrawn(uint256 indexed questId, address indexed submitter);
@@ -96,14 +96,14 @@ interface IHatsQuestModule {
      * @param hatId The hat associated with the RoleShare.
      * @param wearer The wearer key of the share to escrow.
      * @param amount The amount of RoleShare to escrow.
-     * @param metadataHash Off-chain metadata pointer for the quest.
+     * @param metadataUri Off-chain metadata pointer (IPFS URI) for the quest.
      * @return questId The id assigned to the new quest.
      */
     function createQuest(
         uint256 hatId,
         address wearer,
         uint256 amount,
-        bytes32 metadataHash
+        string calldata metadataUri
     ) external returns (uint256 questId);
 
     /**

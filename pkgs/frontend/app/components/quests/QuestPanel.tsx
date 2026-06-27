@@ -143,7 +143,10 @@ const QuestCard: FC<{
   hatId?: string;
   resolveName: (addr?: string | null) => string;
 }> = ({ quest, treeId, resolveName }) => {
-  const { data: meta } = useQuestMetadata(quest.metadataHash);
+  const { data: meta } = useQuestMetadata({
+    metadataUri: quest.metadataUri,
+    indexed: quest.metadata,
+  });
   const title = meta?.title ?? `Quest #${quest.questId}`;
   const shareAmount = shareAmountOf(quest.amount);
 

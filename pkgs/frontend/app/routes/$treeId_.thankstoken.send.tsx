@@ -1,4 +1,3 @@
-import { useApolloClient } from "@apollo/client/react";
 import { MintThanksToken_OrderBy, type OrderDirection } from "gql/graphql";
 import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
@@ -19,6 +18,7 @@ import {
 import { LuCheck } from "react-icons/lu";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
+import { goldskyClient } from "utils/apollo";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import { type Address, formatEther, parseEther, stringToHex } from "viem";
@@ -65,7 +65,6 @@ const sameAddress = (a?: string, b?: string) =>
 const ThanksTokenSend: FC = () => {
   const { treeId } = useParams();
   const navigate = useNavigate();
-  const apolloClient = useApolloClient();
   const me = useActiveWalletIdentity();
   const { mintableAmount, mintThanksToken, batchMintThanksToken, isLoading } =
     useThanksToken(treeId as string);
@@ -304,7 +303,7 @@ const ThanksTokenSend: FC = () => {
       toast.success("サンクスを送りました");
       const sender = me.identity?.address;
       if (treeId && sender && blockNumber !== undefined) {
-        void pollActivityMintsAfterSend(apolloClient, {
+        void pollActivityMintsAfterSend(goldskyClient, {
           workspaceId: treeId,
           fromAddress: sender,
           blockNumber,

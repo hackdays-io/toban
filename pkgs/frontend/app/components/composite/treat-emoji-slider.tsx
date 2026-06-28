@@ -1,7 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type * as React from "react";
 import { getTreatEmojiByRatio } from "utils/treatEmoji";
 
+import { Button } from "~/components/ui/button";
+import { Icon } from "~/components/ui/icon";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
@@ -16,6 +19,73 @@ interface TreatEmojiSliderProps {
   unit?: string;
   disabled?: boolean;
   className?: string;
+}
+
+function clampAmount(n: number, max: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(max, Math.max(0, Math.trunc(n)));
+}
+
+const REPEAT_DELAY_MS = 400;
+const REPEAT_INTERVAL_MS = 80;
+const REPEAT_FAST_INTERVAL_MS = 40;
+/** Switch to 2× repeat speed after this long-press duration. */
+const REPEAT_ACCEL_MS = 1_200;
+
+function useRepeatingPress(action: () => boolean, enabled: boolean) {
+  const actionRef = useRef(action);
+  actionRef.current = action;
+
+  const timersRef = useRef<{
+    delay?: ReturnType<typeof setTimeout>;
+    interval?: ReturnType<typeof setInterval>;
+    accel?: ReturnType<typeof setTimeout>;
+  }>({});
+
+  const stop = useCallback(() => {
+    const { delay, interval, accel } = timersRef.current;
+    if (delay) clearTimeout(delay);
+    if (interval) clearInterval(interval);
+    if (accel) clearTimeout(accel);
+    timersRef.current = {};
+  }, []);
+
+  useEffect(() => () => stop(), [stop]);
+
+  const tick = useCallback(() => {
+    if (!actionRef.current()) stop();
+  }, [stop]);
+
+  const startInterval = useCallback(
+    (ms: number) => {
+      if (timersRef.current.interval) clearInterval(timersRef.current.interval);
+      timersRef.current.interval = setInterval(tick, ms);
+    },
+    [tick],
+  );
+
+  return useMemo(
+    () => ({
+      onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+        if (!enabled || e.button !== 0) return;
+        e.preventDefault();
+        tick();
+        timersRef.current.delay = setTimeout(() => {
+          startInterval(REPEAT_INTERVAL_MS);
+          timersRef.current.accel = setTimeout(() => {
+            startInterval(REPEAT_FAST_INTERVAL_MS);
+          }, REPEAT_ACCEL_MS);
+        }, REPEAT_DELAY_MS);
+      },
+      onPointerUp: stop,
+      onPointerLeave: stop,
+      onPointerCancel: stop,
+      onContextMenu: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+      },
+    }),
+    [enabled, startInterval, stop, tick],
+  );
 }
 
 /**
@@ -34,6 +104,35 @@ function TreatEmojiSlider({
   disabled,
   className,
 }: TreatEmojiSliderProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const decrement = useCallback(() => {
+    const next = clampAmount(valueRef.current - 1, max);
+    if (next === valueRef.current) return false;
+    onChange(next);
+    return true;
+  }, [max, onChange]);
+
+  const increment = useCallback(() => {
+    const next = clampAmount(valueRef.current + 1, max);
+    if (next === valueRef.current) return false;
+    onChange(next);
+    return true;
+  }, [max, onChange]);
+
+  const decrementPress = useRepeatingPress(
+    decrement,
+    !disabled && value > 0,
+  );
+  const incrementPress = useRepeatingPress(
+    increment,
+    !disabled && value < max,
+  );
+
   const { index: emojiKey, emoji } = useMemo(
     () => getTreatEmojiByRatio(value, max),
     [value, max],
@@ -46,11 +145,34 @@ function TreatEmojiSlider({
       ? Math.min(100, (sendable / max) * 100)
       : undefined;
 
+  const startEditing = () => {
+    if (disabled) return;
+    setDraft(value === 0 ? "" : String(value));
+    setIsEditing(true);
+  };
+
+  const commitDraft = () => {
+    const trimmed = draft.trim();
+    const parsed = trimmed === "" ? 0 : Number.parseInt(trimmed, 10);
+    onChange(clampAmount(parsed, max));
+    setIsEditing(false);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  useEffect(() => {
+    if (!isEditing || !inputRef.current) return;
+    inputRef.current.focus();
+    inputRef.current.select();
+  }, [isEditing]);
+
   return (
     <div
       data-slot="treat-emoji-slider"
       className={cn(
-        "rounded-md border border-primary/30 bg-primary-soft/60 px-5 pt-6 pb-5",
+        "min-w-0 rounded-md border border-primary/30 bg-primary-soft/60 px-3 pt-6 pb-5 sm:px-5",
         className,
       )}
     >
@@ -71,26 +193,99 @@ function TreatEmojiSlider({
         </AnimatePresence>
       </div>
 
-      {/* Big number readout */}
-      <div className="mt-3 flex items-baseline justify-center gap-1.5">
-        <Typography
-          as="span"
-          variant="statLg"
-          className={cn(
-            "text-[56px] tracking-[-2px] tabular-nums",
-            isOverSendable && "text-danger",
-          )}
-        >
-          {value.toLocaleString()}
-        </Typography>
-        <Typography
-          as="span"
-          variant="body"
-          weight="bold"
-          className="text-[#7A5A2E]"
-        >
-          {unit}
-        </Typography>
+      {/* Amount readout with ±1 and tap-to-edit */}
+      <div className="mt-3 flex w-full min-w-0 justify-center">
+        <div className="flex min-w-0 flex-col items-center">
+          <div className="inline-flex max-w-full min-w-0 items-center gap-1 sm:gap-1.5 md:gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-sm"
+              disabled={disabled || value <= 0}
+              aria-label="1減らす"
+              className="shrink-0 touch-none select-none"
+              {...decrementPress}
+            >
+              <Icon name="minus" size={18} />
+            </Button>
+
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={draft}
+                disabled={disabled}
+                aria-label="送る量を直接入力"
+                aria-invalid={isOverSendable || undefined}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (next === "" || /^\d+$/.test(next)) setDraft(next);
+                }}
+                onBlur={commitDraft}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitDraft();
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    cancelEditing();
+                  }
+                }}
+                className={cn(
+                  "h-auto min-w-[4.5ch] max-w-full rounded-sm border-0 bg-white/50 px-0 py-1 text-center text-[32px] font-bold leading-none tracking-[-2px] tabular-nums shadow-none outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:min-w-[5ch] sm:text-[40px] md:min-w-[6ch] md:text-[48px] lg:text-[56px]",
+                  isOverSendable && "text-danger",
+                )}
+              />
+            ) : (
+              <button
+                type="button"
+                disabled={disabled}
+                aria-label="送る量を直接入力"
+                onClick={startEditing}
+                className={cn(
+                  "rounded-sm px-1 py-1 transition-colors",
+                  "hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                <Typography
+                  as="span"
+                  variant="statLg"
+                  className={cn(
+                    "inline-block min-w-[4.5ch] max-w-full text-center text-[32px] leading-none tracking-[-2px] tabular-nums sm:min-w-[5ch] sm:text-[40px] md:min-w-[6ch] md:text-[48px] lg:text-[56px]",
+                    isOverSendable && "text-danger",
+                  )}
+                >
+                  {value.toLocaleString()}
+                </Typography>
+              </button>
+            )}
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-sm"
+              disabled={disabled || value >= max}
+              aria-label="1増やす"
+              className="shrink-0 touch-none select-none"
+              {...incrementPress}
+            >
+              <Icon name="plus" size={18} />
+            </Button>
+          </div>
+
+          <Typography
+            as="span"
+            variant="body"
+            weight="bold"
+            className="text-[#7A5A2E]"
+          >
+            {unit}
+          </Typography>
+        </div>
       </div>
 
       {/* Slider track */}

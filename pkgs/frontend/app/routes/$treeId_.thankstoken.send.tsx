@@ -610,7 +610,7 @@ const UserAvatar: FC<{
 
 // ───────────────────────────────────────────────────────────────
 // Step 2: compose (amount + message)
-// PC: 2-col grid (amount | message + CTA). Mobile: stacked + sticky CTA.
+// Desktop (lg+): 2-col grid (amount | message + CTA). Mobile/tablet: stacked + sticky CTA.
 // ───────────────────────────────────────────────────────────────
 
 interface ComposeStepProps {
@@ -638,16 +638,16 @@ const ComposeStep: FC<ComposeStepProps> = ({
 }) => {
   const valid = amount > 0 && amount <= effectiveMax;
   return (
-    <div className="grid gap-5 md:grid-cols-2 md:gap-6">
+    <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
       {/* Amount column */}
-      <div className="px-1 md:px-0">
+      <div className="min-w-0 overflow-hidden px-1 lg:px-0">
         <FieldLabel>送る量</FieldLabel>
         <TreatEmojiSlider
           value={amount}
           onChange={setAmount}
           max={sliderMax}
           sendable={effectiveMax}
-          step={5}
+          step={effectiveMax < 5 ? 1 : 5}
         />
         <div className="mt-3 flex gap-2">
           {presets.map((p, i) => {
@@ -678,7 +678,7 @@ const ComposeStep: FC<ComposeStepProps> = ({
       </div>
 
       {/* Message + CTA column */}
-      <div className="px-1 md:flex md:flex-col md:px-0">
+      <div className="min-w-0 px-1 lg:flex lg:flex-col lg:px-0">
         <FieldLabel htmlFor="thanks-message">メッセージ</FieldLabel>
         <Textarea
           id="thanks-message"
@@ -703,15 +703,15 @@ const ComposeStep: FC<ComposeStepProps> = ({
         </div>
 
         {/* Desktop CTA — inline within the right column. */}
-        <div className="mt-auto hidden md:block md:pt-5">
+        <div className="mt-auto hidden lg:block lg:pt-5">
           <Button full disabled={!valid} onClick={onNext}>
             次へ
           </Button>
         </div>
       </div>
 
-      {/* Mobile CTA — sticky at the bottom of the page. */}
-      <div className="sticky bottom-4 col-span-full px-1 pt-2 md:hidden">
+      {/* Mobile / tablet CTA — sticky at the bottom of the page. */}
+      <div className="sticky bottom-4 col-span-full px-1 pt-2 lg:hidden">
         <Button full disabled={!valid} onClick={onNext}>
           次へ
         </Button>

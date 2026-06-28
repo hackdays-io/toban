@@ -32,6 +32,22 @@ export const SmallRange = () => {
   );
 };
 
+/** Sendable cap under 5 — use ±1 buttons or tap the amount for 1-step input. */
+export const LowSendableCap = () => {
+  const [value, setValue] = useState(2);
+  return (
+    <div className="max-w-[420px] p-6">
+      <TreatEmojiSlider
+        value={value}
+        onChange={setValue}
+        max={100}
+        sendable={3}
+        step={1}
+      />
+    </div>
+  );
+};
+
 export const OverSendable = () => {
   const [value, setValue] = useState(450);
   return (

@@ -17,6 +17,22 @@ export const Default = () => {
   );
 };
 
+/** Initial value 0 — shows the slider hint caption. */
+export const ZeroInitial = () => {
+  const [value, setValue] = useState(0);
+  return (
+    <div className="max-w-[420px] p-6">
+      <TreatEmojiSlider
+        value={value}
+        onChange={setValue}
+        max={500}
+        sendable={300}
+        step={5}
+      />
+    </div>
+  );
+};
+
 export const SmallRange = () => {
   const [value, setValue] = useState(10);
   return (

@@ -293,10 +293,10 @@ function TreatEmojiSlider({
         <div className="relative h-6">
           {/* Background track */}
           <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-white/70 shadow-[inset_0_1px_2px_rgba(31,31,31,0.06)]" />
-          {/* Filled portion */}
+          {/* Filled portion — no width transition; it caused visible lag while dragging. */}
           <div
             className={cn(
-              "absolute top-1/2 left-0 h-2 -translate-y-1/2 rounded-full transition-[width] duration-150 ease-out",
+              "absolute top-1/2 left-0 h-2 -translate-y-1/2 rounded-full",
               isOverSendable ? "bg-danger" : "bg-primary",
             )}
             style={{ width: `${fillPct}%` }}
@@ -322,6 +322,17 @@ function TreatEmojiSlider({
             className="absolute inset-0 z-10 h-6 w-full cursor-pointer appearance-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed [&::-moz-range-thumb]:size-6 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:shadow-2 [&::-moz-range-thumb]:transition-transform [&::-moz-range-track]:bg-transparent [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-2 [&::-webkit-slider-thumb]:transition-transform active:[&::-webkit-slider-thumb]:scale-110"
           />
         </div>
+        <Typography
+          variant="caption"
+          tone="secondary"
+          className={cn(
+            "mt-1.5 block",
+            (value !== 0 || disabled) && "invisible",
+          )}
+          aria-hidden={value !== 0 || disabled}
+        >
+          スライド調整
+        </Typography>
       </div>
 
       {isOverSendable && (

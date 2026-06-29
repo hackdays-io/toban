@@ -6,6 +6,7 @@ import {
   useScheduledDistributor,
   useScheduledDistributorFactory,
 } from "hooks/useScheduledDistributor";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { chainId as currentChainId } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -392,8 +393,10 @@ const ScheduledNew: FC = () => {
     }
   };
 
+  const rootRef = useScrollToTop([step]);
+
   return (
-    <div className="pb-8">
+    <div ref={rootRef} className="pb-8">
       <ScreenHeader
         title={
           step === 0 ? "予約分配を作成" : step === 1 ? "原資を預ける" : "完了"

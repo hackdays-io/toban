@@ -4,6 +4,7 @@ import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -210,9 +211,10 @@ const WorkspaceNew: FC = () => {
   };
 
   const stepIndex = STEP_INDEX[step];
+  const rootRef = useScrollToTop([step]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg pb-6">
+    <div ref={rootRef} className="flex min-h-dvh flex-col bg-bg pb-6">
       {step !== "done" && (
         <>
           <ScreenHeader

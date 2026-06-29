@@ -4,16 +4,10 @@ import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { Address } from "viem";
@@ -55,27 +49,7 @@ const NewRole: FC = () => {
     setFallbackIcon(pickRandomDutyIcon());
   }, []);
 
-  // Reset the AppShell's scroll container to the top on mount — otherwise the
-  // user lands on this form scrolled down to wherever they were on the
-  // previous page. `window.scrollTo` is a no-op because AppShell wraps the
-  // routes in `<main overflow-y-auto>`, so we walk up the DOM to find the
-  // actual scroll container.
-  const rootRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    let node: HTMLElement | null = el;
-    while (node) {
-      if (node.scrollHeight > node.clientHeight) {
-        node.scrollTo({ top: 0, behavior: "auto" });
-        break;
-      }
-      node = node.parentElement;
-    }
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
-  }, []);
+  const rootRef = useScrollToTop();
 
   const { wallet } = useActiveWallet();
   const { data: workspace } = useGetWorkspace({ workspaceId: treeId || "" });

@@ -3,16 +3,10 @@ import axios from "axios";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
@@ -242,26 +236,7 @@ const AssignDuty: FC = () => {
     address: trimmed as Address,
   };
 
-  // Reset the scroll container to the top on mount — AppShell wraps routes in
-  // `<main overflow-y-auto>`, so window.scrollTo alone is a no-op; walk up the
-  // DOM to find the actual scroll container. Later steps are short enough that
-  // the browser clamps the scroll position on its own when content shrinks.
-  const rootRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    let node: HTMLElement | null = el;
-    while (node) {
-      if (node.scrollHeight > node.clientHeight) {
-        node.scrollTo({ top: 0, behavior: "auto" });
-        break;
-      }
-      node = node.parentElement;
-    }
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
-  }, []);
+  const rootRef = useScrollToTop([step]);
 
   const goToDetail = useCallback(
     () => navigate(`/${treeId}/${hatId}`),

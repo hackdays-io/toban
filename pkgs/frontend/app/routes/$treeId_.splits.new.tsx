@@ -5,15 +5,9 @@ import {
   useSetName,
 } from "hooks/useENS";
 import { useAssignableHats } from "hooks/useHats";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { useSplitsCreator } from "hooks/useSplitsCreator";
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { ipfs2https } from "utils/ipfs";
@@ -98,27 +92,7 @@ const SplitterNew: FC = () => {
   // Flow state.
   const [step, setStep] = useState<Step>("form");
 
-  // Each step change resets the scroll position to the top. AppShell wraps
-  // routes in its own `<main>` with `overflow-y-auto`, so `window.scrollTo`
-  // is a no-op here — we walk up from this component's root and ask the
-  // ancestor scroll container to reset.
-  const rootRef = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll-on-step-change is the entire point of this effect; `step` must stay in the deps array even though the body doesn't read it.
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    let node: HTMLElement | null = el;
-    while (node) {
-      if (node.scrollHeight > node.clientHeight) {
-        node.scrollTo({ top: 0, behavior: "auto" });
-        break;
-      }
-      node = node.parentElement;
-    }
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
-  }, [step]);
+  const rootRef = useScrollToTop([step]);
 
   // Step 1 — form state.
   const [splitterName, setSplitterName] = useState("");

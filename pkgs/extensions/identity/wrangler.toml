@@ -4,45 +4,40 @@ compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # ---------------------------------------------------------------------------
-# Environments
+# Environments  (see docs/deployment.md for the full runbook)
 # ---------------------------------------------------------------------------
-# Deploy / migrate with an explicit environment, never the bare top-level:
-#   pnpm --filter @toban/identity deploy:sepolia          # → toban-identity-sepolia
-#   pnpm --filter @toban/identity deploy:base             # → toban-identity-base
+#   pnpm --filter @toban/identity deploy:sepolia   # → toban-identity       (top-level)
+#   pnpm --filter @toban/identity deploy:base      # → toban-identity-base  (--env base)
 #   pnpm --filter @toban/identity db:migrate:remote:base
+#
+# SEPOLIA IS THE TOP-LEVEL CONFIG (deployed worker `toban-identity`), which is
+# what the discord-bot's top-level `IDENTITY` service binding points at. There
+# is deliberately no [env.sepolia] — it would only duplicate this.
+#
+# DEPLOY THIS WORKER BEFORE THE DISCORD BOT: the bot service-binds to it by
+# name, and deploying the bot against a missing identity worker fails with
+# Cloudflare error 10143 ("Worker not found").
+#
+# Base lives on a SEPARATE Cloudflare account from Sepolia — `wrangler login`
+# to the right account first.
 #
 # This worker has no [vars]: both values it needs are secrets so the Alchemy
 # key inside RPC_URL never lands in git. Set them per environment:
-#   pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY --env base
-#   pnpm exec wrangler secret put RPC_URL --env base
-# Local dev (`wrangler dev`, no --env) reads .dev.vars for the same names.
-#
-# The discord-bot reaches this worker via a service binding whose `service`
-# must equal this worker's deployed name (e.g. `toban-identity-base`).
+#   pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY            # sepolia
+#   pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY --env base # base
+# Local dev (`wrangler dev`) reads .dev.vars for the same names.
 # ---------------------------------------------------------------------------
 
-# --- Local dev defaults (used by `wrangler dev`, no --env) ------------------
+# --- Sepolia (staging) + `wrangler dev` default ----------------------------
 # In local dev `wrangler dev` uses a local SQLite under `.wrangler/state/`
-# keyed by `database_name`, so the placeholder id below is fine.
+# keyed by `database_name`, so the id below is only used for remote ops.
 [[d1_databases]]
 binding = "DB"
 database_name = "toban-identity"
 database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
 
 # ===========================================================================
-# Sepolia (staging)
-# ===========================================================================
-[env.sepolia]
-name = "toban-identity-sepolia"
-
-[[env.sepolia.d1_databases]]
-binding = "DB"
-database_name = "toban-identity"
-# Shared with the discord-bot — keep identical to the bot's sepolia D1 id.
-database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
-
-# ===========================================================================
-# Base (production)
+# Base (production)  — SEPARATE Cloudflare account (yuki-021423)
 # ===========================================================================
 [env.base]
 name = "toban-identity-base"

@@ -64,30 +64,54 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 ## Related Contract Addresses
 
+> **一次情報は `pkgs/contract/outputs/contracts-<net>.json`** です（デプロイスクリプトが自動更新）。
+> 下表は参考用のスナップショットで、デプロイのたびに古くなります。
+> デプロイ手順は **[docs/deployment.md](./docs/deployment.md)** を参照。
+
 ### Sepolia
 
-| ContractAddress                            | Name                    | Memo |
-| ------------------------------------------ | ----------------------- | ---- |
-| 0x3E70d10aCdcC14B6C31DA26DcC195a6EDf1C2c16 | BigBang                 |      |
-| 0x54889278bf4F16ACAa3CC1402C987A6C42a5308B | FractionToken           |      |
-| 0x2b44c1F5B0D2a6a39F83effbF48aA09C833EBe12 | SplitsCreatorFactory    |      |
-| 0x09b853E0945d1c86af10b5665472501bD5F6627c | SplitsCreatorIMPL       |      |
-| 0x808996331ADD2715854e31e3dd4f9a736DE23604 | HatsTimeFrameModuleIMPL |      |
-| 0xbE24C4270B65f68E22CD2e58eD7A61eAF36240a0 | HatsHatCreatorModuleIMPL |      |
-| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                    |      |
-| 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory       |      |
-| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory       |      |
+| ContractAddress | Name | Memo |
+| --- | --- | --- |
+| 0x010329e42cAc221D799C105516830D84901Dc2Ac | BigBang | **Toban のエントリポイント** |
+| 0x84988CD2DdaC2137C9DF6b679341F0F180D9aaf2 | HatsQuestModule |  |
+| 0x7fa6c0F8e4412ED72Ded8d591ABF58B276A992C9 | HatsTimeFrameModule |  |
+| 0x830B6E01bf0d90941c756Ce3d9A24bC6FDCFbAb1 | SplitsCreatorFactory |  |
+| 0x3a961240Ae4c01b15170940D2EDfAceCa996f2D8 | SplitsCreator |  |
+| 0xa52E399Bc54f7CeB9d74784dC5D6289B7d970d1C | ThanksTokenFactory |  |
+| 0x9eE2641Ba7017C63161C5682F077ab95E6C3eC0D | ScheduledDistributorFactory |  |
+| 0xd6031f9543bEB0963e32CA2AC474de69D0515059 | FractionToken |  |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats | 外部プロトコル（全チェーン共通） |
+| 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory | 外部プロトコル（全チェーン共通） |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory | 外部プロトコル（全チェーン共通） |
 
 ### Base
 
-| ContractAddress                            | Name                    | Memo |
-| ------------------------------------------ | ----------------------- | ---- |
-| 0xc498cCBc53FB6A31D947fF1631bF69b2F1224445 | BigBang                 |      |
-| 0xBe3eC807B3062bfbADDa16c05C060d223F727fa3 | FractionToken           |      |
-| 0x4BbA4e70437bF162F8EfB8de88E5ECb3C19e11e6 | SplitsCreatorFactory    |      |
-| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats                    |      |
-| 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory       |      |
-| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory       |      |
+| ContractAddress | Name | Memo |
+| --- | --- | --- |
+| 0xda7BFDb08e09Bb3ba0bC8e37c5c322328E458003 | BigBang | **Toban のエントリポイント** |
+| 0x7fa6c0F8e4412ED72Ded8d591ABF58B276A992C9 | HatsTimeFrameModule |  |
+| 0x01e7fb1De0919c9743C5a93806CB957214D0d4cC | SplitsCreatorFactory |  |
+| 0xbEDa908672b45ce6dd6a5a9461d5e83f03F27C9F | SplitsCreator |  |
+| 0xa183E2C368B2BdDf14cE1C29Dfd23cFE2F7c1280 | ThanksTokenFactory |  |
+| 0x90b04bCfa471d9642e12667a5a07094A8f165AdE | ScheduledDistributorFactory |  |
+| 0x3bc1A0Ad72417f2d411118085256fC53CBdDd137 | Hats | 外部プロトコル（全チェーン共通） |
+| 0x0a3f85fa597B6a967271286aA0724811acDF5CD9 | HatsModuleFactory | 外部プロトコル（全チェーン共通） |
+| 0x80f1B766817D04870f115fEBbcCADF8DBF75E017 | PullSplitsFactory | 外部プロトコル（全チェーン共通） |
+
+## Deploy
+
+コントラクト / インデクサー / フロントエンド / Cloudflare Workers / Turnkey / Discord は
+一列に依存しており、順序を間違えると壊れます。**必ず
+[docs/deployment.md](./docs/deployment.md)** の手順に従ってください。
+
+```
+contract → sync:abis → subgraph → frontend(codegen)
+                    ↘ Turnkey policy
+   Cloudflare: identity Worker → discord-bot Worker → Discord
+```
+
+- 全レイヤーの手順書: **[docs/deployment.md](./docs/deployment.md)**
+- つまづきポイント集: [deploy-base-production.md](./pkgs/extensions/discord-bot/docs/deploy-base-production.md)
 
 ## How to work
 

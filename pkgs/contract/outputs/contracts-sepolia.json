@@ -14,12 +14,12 @@
     "ThanksToken_Implementation": "0xc19A8B77c7127d28e8C7881ba72e9A9128BbD5D1",
     "ScheduledDistributor": "0xBde718a753871AE55B9bceEF800320DD476bA7f9",
     "ScheduledDistributorFactory": "0x9eE2641Ba7017C63161C5682F077ab95E6C3eC0D",
-    "HatsQuestModule": "0xFe6ea08f2750Bad8dCD0ffC505cA22D1ea9E4304"
+    "HatsQuestModule": "0x84988CD2DdaC2137C9DF6b679341F0F180D9aaf2"
   },
   "implementations": {
     "FractionToken_Implementation": "0x6d701256205019e40cE02e13D799ed2cd3BBE8e8",
     "SplitsCreatorFactory_Implementation": "0x1324057af5CCC8E5a9a1Bd0008b5DFD28685b025",
-    "BigBang_Implementation": "0x035F395A10F25f4C0AeC2a6B06f00A92a4B16B5e",
+    "BigBang_Implementation": "0xD91A21d104DB994572cEE83aD73cc745A4582f41",
     "ScheduledDistributorFactory_Implementation": "0xb478E28390d6163d5F1DddcadC1Fa0Cca87181a8"
   }
 }

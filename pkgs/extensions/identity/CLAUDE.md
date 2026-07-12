@@ -99,3 +99,23 @@ The success path performs an atomic-feeling pair of writes (D1 transactions are 
 ## Test approach
 
 Tests live under `src/__tests__/`. They sign real ES256 JWTs and EIP-712 payloads via `jose` and `viem` so the same code paths run as in production; no mocking of cryptographic primitives. The DB layer is exercised against an in-memory SQLite (matching D1's dialect) — `queries.ts` is agnostic to the underlying `BetterSQLite3Database` vs `DrizzleD1Database` choice because both implement the same `SQLiteSyncDialect` / `SQLiteAsyncDialect` query surface.
+
+## Deploying
+
+Read `docs/deployment.md` (repo root) — the full, order-dependent runbook.
+
+```
+pnpm --filter @toban/identity deploy:sepolia          # → toban-identity       (wrangler top-level)
+pnpm --filter @toban/identity deploy:base             # → toban-identity-base  (--env base)
+pnpm --filter @toban/identity db:migrate:remote:base  # first deploy to an env only
+```
+
+- **Deploy this worker BEFORE `@toban/discord-bot`.** The bot service-binds to it *by name*;
+  deploying the bot against a missing identity worker fails with Cloudflare error 10143.
+- **Sepolia is the wrangler top-level config** (worker `toban-identity`); only Base is a named env.
+  There is no `[env.sepolia]`.
+- **Base is a different Cloudflare account** than Sepolia — `wrangler whoami` before deploying.
+- No bare `deploy` script: `pnpm --filter <pkg> deploy` hits pnpm's builtin and errors with
+  `ERR_PNPM_INVALID_DEPLOY_TARGET`.
+- `LOOKUP_READ_SECRET` / `PLATFORM_LINK_WRITE_SECRET` **must be identical** to the discord-bot
+  worker's values in the same env, or every lookup returns 401.

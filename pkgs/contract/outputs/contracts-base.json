@@ -1,17 +1,17 @@
 {
   "contracts": {
     "HatsTimeFrameModule": "0x7fa6c0F8e4412ED72Ded8d591ABF58B276A992C9",
-    "ThanksTokenFactory_Implementation": "0x736B67AaDFE25BB972541293cDD2ECaB43495458",
-    "SplitsCreator": "0x346FDC51B832E2Da161703Fb7237c6FcC481f235",
-    "ThanksTokenFactory": "0xE4aD59c6f56B85Ef585A089157887cb93267BA2F",
-    "SplitsCreatorFactory": "0x94Cd3742A1D61B8cAa5f8E3741A5982c2a65408C",
-    "BigBang": "0xf020468eA71bbD70F25724Ae518a720923c9cC45",
+    "ThanksTokenFactory_Implementation": "0x6E50A9C909043Bf518d31E43E35fffe34306A1D4",
+    "SplitsCreator": "0xbEDa908672b45ce6dd6a5a9461d5e83f03F27C9F",
+    "ThanksTokenFactory": "0xa183E2C368B2BdDf14cE1C29Dfd23cFE2F7c1280",
+    "SplitsCreatorFactory": "0x01e7fb1De0919c9743C5a93806CB957214D0d4cC",
+    "BigBang": "0xda7BFDb08e09Bb3ba0bC8e37c5c322328E458003",
     "ScheduledDistributor": "0x406B184Ffe30FB5Bc096D373c42295F8F6474367",
     "ScheduledDistributorFactory": "0x90b04bCfa471d9642e12667a5a07094A8f165AdE"
   },
   "implementations": {
-    "SplitsCreatorFactory_Implementation": "0x09fe221417C67028A042d596fE53e2d99BB22AA2",
-    "BigBang_Implementation": "0x38Fe9401939bf6356e62fdDcEaAf1be1bb9EFbc7",
+    "SplitsCreatorFactory_Implementation": "0xaFE964766cCD100F9FCd288F863B0972f8283885",
+    "BigBang_Implementation": "0xD91A21d104DB994572cEE83aD73cc745A4582f41",
     "ScheduledDistributorFactory_Implementation": "0xF0FA1255d179542d424D2110e17CA7cbe409E75B"
   }
 }

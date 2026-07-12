@@ -12,26 +12,32 @@ enabled = true
 head_sampling_rate = 1
 
 # ---------------------------------------------------------------------------
-# Environments
+# Environments  (see docs/deployment.md for the full runbook)
 # ---------------------------------------------------------------------------
-# Deploy with an explicit environment, never the bare top-level config:
-#   pnpm --filter @toban/discord-bot deploy:sepolia   # → toban-discord-bot-sepolia
-#   pnpm --filter @toban/discord-bot deploy:base      # → toban-discord-bot-base
+#   pnpm --filter @toban/discord-bot deploy:sepolia   # → toban-discord-bot       (top-level)
+#   pnpm --filter @toban/discord-bot deploy:base      # → toban-discord-bot-base  (--env base)
+#
+# SEPOLIA IS THE TOP-LEVEL CONFIG. The block below is both the `wrangler dev`
+# default AND the deployed Sepolia staging worker (`toban-discord-bot`), which
+# service-binds to the deployed `toban-identity`. There is deliberately no
+# [env.sepolia]: a second Sepolia worker would only duplicate this one.
+#
+# Base lives on a SEPARATE Cloudflare account (*.yuki-021423.workers.dev) from
+# Sepolia (*.kawabeyuki23.workers.dev). `wrangler login` to the right account
+# before deploying, or the deploy silently targets the wrong one.
 #
 # Secrets are scoped to the deployed worker name, so set them per environment:
-#   pnpm exec wrangler secret put <NAME> --env sepolia
-#   pnpm exec wrangler secret put <NAME> --env base
+#   pnpm exec wrangler secret put <NAME>              # sepolia (top-level)
+#   pnpm exec wrangler secret put <NAME> --env base   # base
 #
 # Wrangler does NOT inherit `vars` / `d1_databases` / `services` from the
-# top-level into named environments — each environment fully redeclares them.
-# The top-level block below is used only by `wrangler dev` (local), which reads
-# `.dev.vars` for secrets.
+# top-level into named environments — [env.base] fully redeclares them.
 #
 # Hats subgraph differs by chain: Base uses Hats Protocol's official The Graph
 # deployment; Sepolia has no such deployment so we run our own on Goldsky.
 # ---------------------------------------------------------------------------
 
-# --- Local dev defaults (used by `wrangler dev`, no --env) ------------------
+# --- Sepolia (staging) + `wrangler dev` default ----------------------------
 [[d1_databases]]
 binding = "DB"
 database_name = "toban-identity"
@@ -56,45 +62,7 @@ TURNKEY_BOT_SIGNER_ADDRESS = "0xae4E13De7C14Dff7ff296De69cADf3A7F5208461"
 IDENTITY_WORKER_URL = "https://toban-identity.kawabeyuki23.workers.dev"
 
 # ===========================================================================
-# Sepolia (staging)
-# ===========================================================================
-[env.sepolia]
-name = "toban-discord-bot-sepolia"
-
-[[env.sepolia.d1_databases]]
-binding = "DB"
-database_name = "toban-identity"
-# Shared with the identity worker — keep identical to identity's sepolia D1 id.
-database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
-
-[[env.sepolia.services]]
-binding = "IDENTITY"
-service = "toban-identity-sepolia"
-
-[env.sepolia.vars]
-# Toban subgraph (Goldsky) — resolves each workspace's current ThanksToken.
-GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-sepolia/1.0.3/gn"
-# Hats subgraph — Sepolia has no official Hats deployment, so we run our own
-# on Goldsky (same project). Base uses The Graph instead (see [env.base.vars]).
-HATS_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/hats-v1-sepolia/0.0.1/gn"
-TOBAN_FRONTEND_URL = "https://toban.xyz"
-BOT_WORKER_URL = "https://toban-discord-bot-sepolia.kawabeyuki23.workers.dev"
-# RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
-#   wrangler secret put RPC_URL --env <env>   |   local dev: add it to .dev.vars
-CHAIN_ID = "11155111"
-# ENS resolution always hits Ethereum mainnet, regardless of the tx chain.
-MAINNET_RPC_URL = "https://rpc.ankr.com/eth"
-TURNKEY_API_BASE_URL = "https://api.turnkey.com"
-TURNKEY_ORGANIZATION_ID = "24cfae8c-aae0-4341-8492-295057f66bac"
-TURNKEY_BOT_SIGNER_ADDRESS = "0xae4E13De7C14Dff7ff296De69cADf3A7F5208461"
-IDENTITY_WORKER_URL = "https://toban-identity-sepolia.kawabeyuki23.workers.dev"
-
-[env.sepolia.observability]
-enabled = true
-head_sampling_rate = 1
-
-# ===========================================================================
-# Base (production)
+# Base (production)  — SEPARATE Cloudflare account (yuki-021423)
 # ===========================================================================
 [env.base]
 name = "toban-discord-bot-base"

@@ -1,14 +1,16 @@
 # `@toban/discord-bot` (`pkgs/extensions/discord-bot`)
 
 Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
-`/thx`, and `/balance`.
+`/thx`, `/balance`, and `/quest submit`.
 
 ## Important invariants
 
 - **No Ethereum private key lives in this Worker.** All on-chain signing
   goes through Turnkey (TEE, AWS Nitro Enclave). The Worker only holds
   Turnkey API stamper credentials (a P-256 key pair) which the Turnkey
-  policy engine constrains to `mintFrom`-only calls.
+  policy engine constrains to two operations: ThanksToken `mintFrom`
+  (`/thx`) and HatsQuestModule `submitCompletion` (`/quest submit`) — each
+  gated to its own contract registry + identity-bound actor argument.
 - **D1 is shared with `@toban/identity`.** This package never writes
   directly to `identity_bindings` / `platform_links`. All identity
   reads + writes go through the identity Worker's HTTP API
@@ -41,6 +43,7 @@ src/
     toban-link.ts
     balance.ts
     thx.ts                  /thx end-to-end (resolve, check, sign, send)
+    quest-submit.ts         /quest submit + `quest` autocomplete handler
     responses.ts            Discord response/followup helpers
   api/install/callback.ts   OAuth bot-install callback
 turnkey/policy.json         Declarative policy stub (version-controlled)
@@ -53,12 +56,26 @@ test/                       Vitest unit tests (no network, no chain)
 ## Commands
 
 ```
-pnpm --filter @toban/discord-bot dev          # wrangler dev
-pnpm --filter @toban/discord-bot test         # vitest run
-pnpm --filter @toban/discord-bot typecheck    # tsc --noEmit
-pnpm --filter @toban/discord-bot deploy:dry   # wrangler deploy --dry-run
-pnpm --filter @toban/discord-bot deploy       # wrangler deploy
+pnpm --filter @toban/discord-bot dev                # wrangler dev
+pnpm --filter @toban/discord-bot test               # vitest run
+pnpm --filter @toban/discord-bot typecheck          # tsc --noEmit
+pnpm --filter @toban/discord-bot deploy:dry:sepolia # dry-run (top-level config)
+pnpm --filter @toban/discord-bot deploy:sepolia     # → toban-discord-bot       (top-level)
+pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base  (--env base)
 ```
+
+**Deploying**: read `docs/deployment.md` (repo root) first. Non-obvious constraints:
+
+- **Sepolia is the wrangler top-level config** (worker `toban-discord-bot`); only Base is a named
+  env. There is no `[env.sepolia]`.
+- **Base is a different Cloudflare account** (`yuki-021423`) from Sepolia (`kawabeyuki23`).
+  `wrangler whoami` before deploying; export `CLOUDFLARE_ACCOUNT_ID` if wrangler picks the wrong one.
+- **Deploy `@toban/identity` first** — this worker service-binds to it by name; a missing identity
+  worker fails the bot deploy with Cloudflare error 10143.
+- There is deliberately **no bare `deploy` script**: `pnpm --filter <pkg> deploy` is pnpm's builtin
+  and errors with `ERR_PNPM_INVALID_DEPLOY_TARGET`.
+- Adding a command → register it in **both** `scripts/register-commands.ts` and
+  `src/api/install/callback.ts`, and re-run `register-commands` for already-installed guilds.
 
 ## Runtime constraints
 

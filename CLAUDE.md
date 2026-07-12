@@ -50,7 +50,17 @@ When adding a feature, expect to touch all three layers: contract event → subg
 
 - **Sepolia** — testnet, primary dev environment. Subgraph: `toban-sepolia/1.0.3` on Goldsky.
 - **Base** — production. Subgraph: `toban-base/0.0.1` on Goldsky. Frontend: https://toban.xyz.
-- Canonical contract addresses for each network live in `README.md` and `pkgs/subgraph/config/{sepolia,base}.json`.
+- Canonical contract addresses are `pkgs/contract/outputs/contracts-<net>.json` (written by the deploy scripts). `README.md` carries a snapshot.
+
+**`docs/deployment.md` is the single source of truth for how to deploy anything.** The layers are
+order-dependent and quietly break each other — read it before touching a deploy:
+
+- Contract change → **always** `pnpm contract sync:abis`. A stale `pkgs/frontend/abi/bigbang.ts` changes `Executed`'s topic0 and silently breaks *all* workspace creation.
+- Subgraph must be deployed **before** `pnpm frontend codegen` (gql types come from the live schema).
+- Cloudflare: **identity Worker before discord-bot** (service binding, else Cloudflare error 10143).
+- Sepolia = wrangler *top-level* config; Base = `--env base` **on a different Cloudflare account**.
+- `pnpm --filter <pkg> deploy` collides with pnpm's builtin — use `deploy:sepolia` / `deploy:base`.
+- Turnkey's `policy.json` is **not** auto-applied; new bot-signed selectors need a manual policy update.
 
 ## Claude Code worktree workflow
 

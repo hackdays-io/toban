@@ -4,8 +4,16 @@
 デプロイした際の実践記録です。`README.md` / `docs/turnkey-setup.md` の汎用手順を
 補完し、特に **一度ハマると分かりにくい落とし穴**をまとめています。
 
-環境は `wrangler.toml` の `[env.sepolia]` / `[env.base]` で分離されています。本番は
-必ず `--env base`（`deploy:base` 等）で操作してください。
+> **全レイヤーを通した手順は [`docs/deployment.md`](../../../../docs/deployment.md)（リポジトリ
+> ルート）を先に読んでください。** このドキュメントはその「つまづきポイント集」です。
+
+環境は **Sepolia = `wrangler.toml` の top-level 設定**（worker `toban-discord-bot`）、
+**Base = `[env.base]`**（worker `toban-discord-bot-base`）で分離されています。本番は必ず
+`deploy:base`（`--env base`）で操作してください。`[env.sepolia]` は存在しません
+（top-level と重複するため削除済み）。
+
+さらに **Base は Sepolia とは別の Cloudflare アカウント**（`yuki-021423` / `kawabeyuki23`）
+にあります。`wrangler whoami` で向き先を確認してから操作してください。
 
 ---
 

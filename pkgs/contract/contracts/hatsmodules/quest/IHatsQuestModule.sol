@@ -60,6 +60,13 @@ interface IHatsQuestModule {
     error CannotApproveOwnSubmission();
     error AlreadyApproved();
     error NotWorkspaceMember();
+    /// @notice Raised when a non-`questAgentHat` wearer attempts to submit on
+    ///         behalf of another address (i.e. passes a non-zero `submitter`).
+    error NotQuestAgent();
+    /// @notice Raised when a `questAgentHat` wearer names itself as the
+    ///         `submitter` on the proxy path. The agent is a relay for other
+    ///         members' consent, never a submitter/beneficiary in its own right.
+    error AgentCannotSelfSubmit();
     /// @notice Raised when an ERC1155 transfer is received from a sender that
     ///         is not the bound HatsFractionTokenModule.
     error UnauthorizedReceiver();
@@ -107,12 +114,24 @@ interface IHatsQuestModule {
     ) external returns (uint256 questId);
 
     /**
-     * @notice Submits completion of an open quest. The caller becomes the submitter.
+     * @notice Submits completion of an open quest on behalf of `submitter`.
+     * @dev When `submitter == address(0)` the caller (`msg.sender`) becomes the
+     *      submitter — the direct, self-service path used by the frontend. When
+     *      `submitter != address(0)` the caller must wear the `questAgentHat`
+     *      (trusted proxy agent, e.g. the Discord bot); the named `submitter`
+     *      becomes the on-chain submitter. The submitter — whoever it resolves
+     *      to — must itself be a workspace member and not the quest creator.
+     * @param submitter The address to record as submitter, or `address(0)` to
+     *        submit as `msg.sender`.
      * @param questId The quest to submit completion for.
-     * @param membershipHatId A hat the caller wears in this workspace, used to
-     *        prove workspace membership.
+     * @param membershipHatId A hat the submitter wears in this workspace, used
+     *        to prove workspace membership.
      */
-    function submitCompletion(uint256 questId, uint256 membershipHatId) external;
+    function submitCompletion(
+        address submitter,
+        uint256 questId,
+        uint256 membershipHatId
+    ) external;
 
     /**
      * @notice Lets the current submitter retract their own submission while the
@@ -181,4 +200,10 @@ interface IHatsQuestModule {
      * @notice Returns the address of the HatsFractionTokenModule used for escrow.
      */
     function FRACTION_TOKEN() external view returns (address);
+
+    /**
+     * @notice Returns the hat id whose wearers may submit completions on behalf
+     *         of another address (the trusted proxy-agent gate).
+     */
+    function questAgentHatId() external view returns (uint256);
 }

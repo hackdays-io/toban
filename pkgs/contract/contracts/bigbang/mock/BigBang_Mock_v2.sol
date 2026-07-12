@@ -193,7 +193,7 @@ contract BigBang_Mock_v2 is OwnableUpgradeable, UUPSUpgradeable {
             HatsQuestModule_IMPL,
             topHatId,
             "",
-            abi.encode(hatsFractionTokenModule),
+            abi.encode(hatsFractionTokenModule, uint256(0)),
             0
         );
 

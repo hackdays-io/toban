@@ -36,18 +36,23 @@ describe("HatsQuestModule", () => {
   let submitter: WalletClient;
   let approver: WalletClient;
   let outsider: WalletClient;
+  let agent: WalletClient;
 
   let adminAddr: Address;
   let creatorAddr: Address;
   let submitterAddr: Address;
   let approverAddr: Address;
   let outsiderAddr: Address;
+  let agentAddr: Address;
+
+  const ZERO_ADDRESS: Address = "0x0000000000000000000000000000000000000000";
 
   let publicClient: PublicClient;
 
   let topHatId: bigint;
   let hatterHatId: bigint;
   let workHatId: bigint;
+  let questAgentHatId: bigint;
   let foreignTopHatId: bigint;
   let foreignHatId: bigint;
 
@@ -73,13 +78,14 @@ describe("HatsQuestModule", () => {
   };
 
   before(async () => {
-    [admin, creator, submitter, approver, outsider] =
+    [admin, creator, submitter, approver, outsider, agent] =
       await viem.getWalletClients();
     adminAddr = validateAddress(admin);
     creatorAddr = validateAddress(creator);
     submitterAddr = validateAddress(submitter);
     approverAddr = validateAddress(approver);
     outsiderAddr = validateAddress(outsider);
+    agentAddr = validateAddress(agent);
 
     publicClient = await viem.getPublicClient();
 
@@ -152,6 +158,29 @@ describe("HatsQuestModule", () => {
       });
       if (decoded.eventName === "HatCreated") {
         workHatId = decoded.args.id as bigint;
+      }
+    }
+
+    // Quest-agent hat (trusted proxy gate). Created under the top hat so it
+    // lives in domain 1; the quest module is initialized with its id.
+    txHash = await Hats.write.createHat([
+      topHatId,
+      "QuestAgent",
+      10,
+      "0x0000000000000000000000000000000000004A75",
+      "0x0000000000000000000000000000000000004A75",
+      true,
+      "",
+    ]);
+    receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+    for (const log of receipt.logs) {
+      const decoded = decodeEventLog({
+        abi: Hats.abi,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decoded.eventName === "HatCreated") {
+        questAgentHatId = decoded.args.id as bigint;
       }
     }
 
@@ -233,10 +262,16 @@ describe("HatsQuestModule", () => {
       { account: creator.account },
     );
 
-    // Deploy QuestModule (clone) bound to the FractionToken module
+    // Mint the quest-agent hat to the agent so it can submit on behalf of members
+    await Hats.write.mintHat([questAgentHatId, agentAddr], {
+      account: admin.account,
+    });
+
+    // Deploy QuestModule (clone) bound to the FractionToken module and the
+    // quest-agent hat (the proxy-submission gate).
     const qInitData = encodeAbiParameters(
-      [{ type: "address" }],
-      [HatsFractionTokenModule.address],
+      [{ type: "address" }, { type: "uint256" }],
+      [HatsFractionTokenModule.address, questAgentHatId],
     );
     await HatsModuleFactory.write.createHatsModule([
       HatsQuestModule_IMPL.address,
@@ -371,7 +406,7 @@ describe("HatsQuestModule", () => {
   describe("submitCompletion", () => {
     it("reverts when caller is the creator", async () => {
       await expect(
-        HatsQuestModule.write.submitCompletion([0n, workHatId], {
+        HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, 0n, workHatId], {
           account: creator.account,
         }),
       ).to.be.rejectedWith(/CannotSubmitOwnQuest/);
@@ -380,14 +415,14 @@ describe("HatsQuestModule", () => {
     it("reverts when caller is not a workspace member", async () => {
       // outsider does not wear any hat in this workspace
       await expect(
-        HatsQuestModule.write.submitCompletion([0n, foreignHatId], {
+        HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, 0n, foreignHatId], {
           account: outsider.account,
         }),
       ).to.be.rejectedWith(/NotWorkspaceMember|InvalidHatDomain/);
     });
 
     it("transitions the quest to PendingReview", async () => {
-      await HatsQuestModule.write.submitCompletion([0n, workHatId], {
+      await HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, 0n, workHatId], {
         account: submitter.account,
       });
       const quest = await HatsQuestModule.read.getQuest([0n]);
@@ -399,7 +434,7 @@ describe("HatsQuestModule", () => {
 
     it("reverts on second submission of the same quest", async () => {
       await expect(
-        HatsQuestModule.write.submitCompletion([0n, workHatId], {
+        HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, 0n, workHatId], {
           account: approver.account,
         }),
       ).to.be.rejectedWith(/InvalidStatus/);
@@ -474,7 +509,7 @@ describe("HatsQuestModule", () => {
       });
       questId = decodeQuestId(receipt.logs);
 
-      await HatsQuestModule.write.submitCompletion([questId, workHatId], {
+      await HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, questId, workHatId], {
         account: submitter.account,
       });
     });
@@ -583,7 +618,7 @@ describe("HatsQuestModule", () => {
         hash: txHash,
       });
       const pendingId = decodeQuestId(receipt.logs);
-      await HatsQuestModule.write.submitCompletion([pendingId, workHatId], {
+      await HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, pendingId, workHatId], {
         account: submitter.account,
       });
 
@@ -617,7 +652,7 @@ describe("HatsQuestModule", () => {
         hash: txHash,
       });
       questId = decodeQuestId(receipt.logs);
-      await HatsQuestModule.write.submitCompletion([questId, workHatId], {
+      await HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, questId, workHatId], {
         account: submitter.account,
       });
     });
@@ -684,7 +719,7 @@ describe("HatsQuestModule", () => {
       ).to.equal(false);
 
       // a different person (admin / outsider would fail domain) submits anew
-      await HatsQuestModule.write.submitCompletion([questId, workHatId], {
+      await HatsQuestModule.write.submitCompletion([ZERO_ADDRESS, questId, workHatId], {
         account: approver.account,
       });
       const quest = await HatsQuestModule.read.getQuest([questId]);
@@ -770,6 +805,85 @@ describe("HatsQuestModule", () => {
 
       // before may already include earlier pending quests; only assert delta
       expect(after - before).to.equal(400n);
+    });
+  });
+
+  // Placed last: each case escrows a fresh quest, so running it before the
+  // approve/cancel blocks would pollute their absolute `getEscrowedBalance == 0`
+  // assertions. The proxy cases assert on submitter/status, not absolute escrow.
+  describe("submitCompletion (proxy via questAgentHat)", () => {
+    let proxyQuestId: bigint;
+
+    beforeEach(async () => {
+      // Top up the creator and create a fresh Open quest for each case.
+      try {
+        await HatsFractionTokenModule.write.mint(
+          [workHatId, creatorAddr, 1_000n],
+          { account: admin.account },
+        );
+      } catch {}
+      const txHash = await HatsQuestModule.write.createQuest(
+        [workHatId, creatorAddr, 100n, "ipfs://bafkreiproxy"],
+        { account: creator.account },
+      );
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+      proxyQuestId = decodeQuestId(receipt.logs);
+    });
+
+    it("agent submits on behalf of a member; the actor (not the agent) is recorded", async () => {
+      await HatsQuestModule.write.submitCompletion(
+        [submitterAddr, proxyQuestId, workHatId],
+        { account: agent.account },
+      );
+      const quest = await HatsQuestModule.read.getQuest([proxyQuestId]);
+      expect(quest.submitter.toLowerCase()).to.equal(
+        submitterAddr.toLowerCase(),
+      );
+      expect(quest.status).to.equal(1); // PendingReview
+    });
+
+    it("reverts when a non-agent specifies a non-zero submitter", async () => {
+      // approver is a workspace member but does NOT wear the quest-agent hat
+      await expect(
+        HatsQuestModule.write.submitCompletion(
+          [submitterAddr, proxyQuestId, workHatId],
+          { account: approver.account },
+        ),
+      ).to.be.rejectedWith(/NotQuestAgent/);
+    });
+
+    it("reverts when the named actor is not a workspace member, even via the agent", async () => {
+      await expect(
+        HatsQuestModule.write.submitCompletion(
+          [outsiderAddr, proxyQuestId, workHatId],
+          { account: agent.account },
+        ),
+      ).to.be.rejectedWith(/NotWorkspaceMember|InvalidHatDomain/);
+    });
+
+    it("reverts when the agent names the quest creator as actor", async () => {
+      await expect(
+        HatsQuestModule.write.submitCompletion(
+          [creatorAddr, proxyQuestId, workHatId],
+          { account: agent.account },
+        ),
+      ).to.be.rejectedWith(/CannotSubmitOwnQuest/);
+    });
+
+    it("reverts when the agent names itself as submitter (no self-dealing)", async () => {
+      // Make the agent a workspace member too, so the only thing stopping the
+      // self-submission is the dedicated AgentCannotSelfSubmit guard.
+      await Hats.write.mintHat([workHatId, agentAddr], {
+        account: admin.account,
+      });
+      await expect(
+        HatsQuestModule.write.submitCompletion(
+          [agentAddr, proxyQuestId, workHatId],
+          { account: agent.account },
+        ),
+      ).to.be.rejectedWith(/AgentCannotSelfSubmit/);
     });
   });
 });

@@ -263,8 +263,8 @@ describe("HatsQuestModule + SplitsCreator integration", () => {
     );
 
     const qInitData = encodeAbiParameters(
-      [{ type: "address" }],
-      [HatsFractionTokenModule.address],
+      [{ type: "address" }, { type: "uint256" }],
+      [HatsFractionTokenModule.address, topHatId],
     );
     await HatsModuleFactory.write.createHatsModule([
       HatsQuestModule_IMPL.address,
@@ -427,9 +427,10 @@ describe("HatsQuestModule + SplitsCreator integration", () => {
   it("after completion: submitter shows up with the released share", async () => {
     // The quest created above has questId = 0 (we created it in the previous test).
     const questId = 0n;
-    await HatsQuestModule.write.submitCompletion([questId, workHatId], {
-      account: submitter.account,
-    });
+    await HatsQuestModule.write.submitCompletion(
+      ["0x0000000000000000000000000000000000000000", questId, workHatId],
+      { account: submitter.account },
+    );
     await HatsQuestModule.write.approve([questId, workHatId], {
       account: creator.account,
     });

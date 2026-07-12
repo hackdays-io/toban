@@ -1,15 +1,15 @@
 {
   "network": "base",
-  "startBlock": 36218446,
+  "startBlock": 48518792,
   "contracts": [
     {
-      "address": "0xf020468eA71bbD70F25724Ae518a720923c9cC45",
+      "address": "0xda7BFDb08e09Bb3ba0bC8e37c5c322328E458003",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address,address)",
           "handler": "handleExecuted"
         }
       ]

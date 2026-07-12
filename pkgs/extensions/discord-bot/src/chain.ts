@@ -81,6 +81,35 @@ export const THANKS_TOKEN_ABI = [
 ] as const;
 
 /**
+ * HatsQuestModule ABI slice the bot calls.
+ *
+ * Only `submitCompletion` (proxy submission) is needed for writes; the
+ * `questAgentHatId` getter is included for completeness / diagnostics. The
+ * selector for `submitCompletion(address,uint256,uint256)` is `0x947ec45f`
+ * — keep `turnkey/policy.json` in sync if this signature ever changes.
+ */
+export const HATS_QUEST_MODULE_ABI = [
+  {
+    type: "function",
+    name: "submitCompletion",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "submitter", type: "address" },
+      { name: "questId", type: "uint256" },
+      { name: "membershipHatId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "questAgentHatId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+/**
  * MVP `/thx` sends `relatedRoles = []`. `mintableAmount(owner, [])` falls
  * back to the address-coefficient cap (see ThanksToken.sol), which is the
  * defensive boundary we want until role-context plumbing arrives.
@@ -172,13 +201,48 @@ function treeIdToHatsHex(treeId: string): string {
 }
 
 /**
- * Returns true iff `wallet` wears any hat in the workspace tree
- * identified by `treeId`. Used by `/toban-link` to gate bindings to
- * members of the workspace (not strictly admins — see issue #509
- * decision: any member-Hat is sufficient).
+ * POST a GraphQL `query` to `endpoint` and return its `data`, applying the
+ * env guard, `res.ok` check, and `errors[]` handling every resolver in this
+ * module shares. Centralised so a fix to error handling lives in one place
+ * (this replaced three hand-repeated copies — see issue #531 review).
+ */
+async function postGraphQL<T>(
+  endpoint: string | undefined,
+  envVarName: string,
+  query: string,
+  variables: Record<string, unknown>,
+  fetchImpl: typeof fetch,
+  label: string,
+): Promise<T> {
+  if (!endpoint) {
+    throw new Error(`${envVarName} is not configured`);
+  }
+  const res = await fetchImpl(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) {
+    throw new Error(`${label} failed: ${res.status} ${res.statusText}`);
+  }
+  const body = (await res.json()) as {
+    data?: T;
+    errors?: Array<{ message: string }>;
+  };
+  if (body.errors?.length) {
+    throw new Error(
+      `${label} errored: ${body.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  return body.data as T;
+}
+
+/**
+ * Returns true iff `wallet` wears any hat in the workspace tree identified by
+ * `treeId`. Used by `/toban-link` to gate bindings to members of the workspace
+ * (not strictly admins — see issue #509: any member-Hat is sufficient).
  *
- * Hits the Hats subgraph directly so we don't have to deploy and
- * indexer-pin a separate query for this.
+ * Thin wrapper over {@link resolveMembershipHatId} so the two share one query.
  */
 export async function wearsAnyHatInTree(
   env: Env,
@@ -186,42 +250,8 @@ export async function wearsAnyHatInTree(
   treeId: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<boolean> {
-  if (!env.HATS_GRAPHQL_ENDPOINT) {
-    throw new Error("HATS_GRAPHQL_ENDPOINT is not configured");
-  }
-  const wearerId = wallet.toLowerCase();
-  const expectedTreeHex = treeIdToHatsHex(treeId);
-  const res = await fetchImpl(env.HATS_GRAPHQL_ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      query:
-        "query($wearer: ID!) {" +
-        " wearer(id: $wearer) { currentHats { id tree { id } } } }",
-      variables: { wearer: wearerId },
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(
-      `Hats subgraph wearer lookup failed: ${res.status} ${res.statusText}`,
-    );
-  }
-  const body = (await res.json()) as {
-    data?: {
-      wearer?: {
-        currentHats?: Array<{ id: string; tree?: { id: string } | null }>;
-      } | null;
-    };
-    errors?: Array<{ message: string }>;
-  };
-  if (body.errors?.length) {
-    throw new Error(
-      `Hats subgraph errored: ${body.errors.map((e) => e.message).join("; ")}`,
-    );
-  }
-  const currentHats = body.data?.wearer?.currentHats ?? [];
-  return currentHats.some(
-    (h) => (h.tree?.id ?? "").toLowerCase() === expectedTreeHex,
+  return (
+    (await resolveMembershipHatId(env, wallet, treeId, fetchImpl)) !== null
   );
 }
 
@@ -351,4 +381,115 @@ export async function resolveRelatedRoles(
     });
   }
   return Array.from(map.values());
+}
+
+/**
+ * Resolve a workspace's HatsQuestModule clone address from Goldsky.
+ *
+ * Each workspace owns its own quest module; the bot's proxy `submitCompletion`
+ * tx must target the right one. The subgraph's `Workspace.hatsQuestModule` is
+ * the authoritative source. Returns `null` when the workspace isn't indexed
+ * yet or has no quest module — callers treat that as user-facing error.
+ */
+export async function resolveQuestModuleAddress(
+  env: Env,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Hex | null> {
+  const data = await postGraphQL<{
+    workspace?: { hatsQuestModule?: string | null } | null;
+  }>(
+    env.GOLDSKY_GRAPHQL_ENDPOINT,
+    "GOLDSKY_GRAPHQL_ENDPOINT",
+    "query($id: ID!) { workspace(id: $id) { hatsQuestModule } }",
+    { id: treeId },
+    fetchImpl,
+    "subgraph quest-module lookup",
+  );
+  const addr = data.workspace?.hatsQuestModule;
+  return addr ? (addr as Hex) : null;
+}
+
+/**
+ * Resolve a hat the `wallet` wears in the workspace tree, returned as the
+ * 256-bit hat id `submitCompletion` expects for its `membershipHatId` proof.
+ *
+ * Returns `null` when the wallet wears no hat in the tree (i.e. it isn't a
+ * workspace member, so the proxy submission would revert anyway). Reads the
+ * Hats subgraph directly — same source as {@link wearsAnyHatInTree}.
+ */
+export async function resolveMembershipHatId(
+  env: Env,
+  wallet: Address,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<bigint | null> {
+  const expectedTreeHex = treeIdToHatsHex(treeId);
+  const data = await postGraphQL<{
+    wearer?: {
+      currentHats?: Array<{ id: string; tree?: { id: string } | null }>;
+    } | null;
+  }>(
+    env.HATS_GRAPHQL_ENDPOINT,
+    "HATS_GRAPHQL_ENDPOINT",
+    "query($wearer: ID!) {" +
+      " wearer(id: $wearer) { currentHats { id tree { id } } } }",
+    { wearer: wallet.toLowerCase() },
+    fetchImpl,
+    "Hats subgraph wearer lookup",
+  );
+  const hat = (data.wearer?.currentHats ?? []).find(
+    (h) => (h.tree?.id ?? "").toLowerCase() === expectedTreeHex,
+  );
+  return hat ? BigInt(hat.id) : null;
+}
+
+/** An Open quest the actor may submit completion for. */
+export interface SubmittableQuest {
+  questId: bigint;
+  /** Off-chain title (#532), or null when not yet indexed. */
+  title: string | null;
+}
+
+/**
+ * Resolve the workspace's Open quests that `actor` may submit — i.e. every
+ * Open quest the actor did not create. Membership is enforced separately via
+ * {@link resolveMembershipHatId}; the autocomplete handler short-circuits to
+ * an empty list when the actor wears no hat in the tree.
+ *
+ * Titles come from the indexed `QuestMetadata.title` (#532) so the
+ * autocomplete needs a single GraphQL round-trip and no per-quest IPFS fetch.
+ */
+export async function resolveSubmittableQuests(
+  env: Env,
+  treeId: string,
+  actor: Address,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SubmittableQuest[]> {
+  const data = await postGraphQL<{
+    workspace?: {
+      quests?: Array<{
+        questId: string;
+        creator: string;
+        metadata?: { title?: string | null } | null;
+      }>;
+    } | null;
+  }>(
+    env.GOLDSKY_GRAPHQL_ENDPOINT,
+    "GOLDSKY_GRAPHQL_ENDPOINT",
+    "query($id: ID!) {" +
+      " workspace(id: $id) {" +
+      " quests(where: {status: Open}, first: 100, orderBy: createdAt, orderDirection: desc) {" +
+      " questId creator metadata { title } } } }",
+    { id: treeId },
+    fetchImpl,
+    "subgraph quests lookup",
+  );
+  const actorLower = actor.toLowerCase();
+  return (data.workspace?.quests ?? [])
+    .filter((q) => q.creator.toLowerCase() !== actorLower)
+    .map((q) => ({
+      questId: BigInt(q.questId),
+      title: q.metadata?.title ?? null,
+    }));
 }

@@ -1,5 +1,6 @@
 import { task } from "hardhat/config";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
+import { parseEventLogs } from "viem";
 import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJsonHelper";
 
 interface BigBangTaskArgs {
@@ -85,33 +86,13 @@ task("bigbang", "bigbang")
         }
 
         console.log("✅ Transaction successful!");
-        const executedEvents = await publicClient.getLogs({
-          address: BigBang,
-          event: {
-            type: "event",
-            name: "Executed",
-            inputs: [
-              { name: "creator", type: "address", indexed: true },
-              { name: "owner", type: "address", indexed: true },
-              { name: "topHatId", type: "uint256", indexed: true },
-              { name: "hatterHatId", type: "uint256", indexed: false },
-              { name: "memberHatId", type: "uint256", indexed: false },
-              { name: "operatorHatId", type: "uint256", indexed: false },
-              { name: "creatorHatId", type: "uint256", indexed: false },
-              { name: "minterHatId", type: "uint256", indexed: false },
-              { name: "hatsTimeFrameModule", type: "address", indexed: false },
-              { name: "hatsHatCreatorModule", type: "address", indexed: false },
-              {
-                name: "hatsFractionTokenModule",
-                type: "address",
-                indexed: false,
-              },
-              { name: "splitCreator", type: "address", indexed: false },
-              { name: "thanksToken", type: "address", indexed: false },
-            ],
-          },
-          fromBlock: receipt.blockNumber,
-          toBlock: receipt.blockNumber,
+        // Decode Executed straight from the contract's artifact ABI so this
+        // task never drifts when the event signature changes (e.g. the
+        // questAgentHatId field added in #531).
+        const executedEvents = parseEventLogs({
+          abi: bigbang.abi,
+          eventName: "Executed",
+          logs: receipt.logs,
         });
 
         if (executedEvents.length > 0) {
@@ -125,6 +106,7 @@ task("bigbang", "bigbang")
           console.log(`OperatorHat ID: ${event.args.operatorHatId}`);
           console.log(`CreatorHat ID: ${event.args.creatorHatId}`);
           console.log(`MinterHat ID: ${event.args.minterHatId}`);
+          console.log(`QuestAgentHat ID: ${event.args.questAgentHatId}`);
           console.log(`HatsTimeFrameModule: ${event.args.hatsTimeFrameModule}`);
           console.log(
             `HatsHatCreatorModule: ${event.args.hatsHatCreatorModule}`,

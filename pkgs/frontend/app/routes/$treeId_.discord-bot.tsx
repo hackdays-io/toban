@@ -1,6 +1,10 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useQuery as useTanstackQuery } from "@tanstack/react-query";
-import { thanksTokenBaseConfig } from "hooks/useContracts";
+import {
+  hatsContractBaseConfig,
+  thanksTokenBaseConfig,
+} from "hooks/useContracts";
+import { useHats } from "hooks/useHats";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -24,6 +28,165 @@ function formatAllowance(value: bigint | undefined): string {
   if (value === maxUint256) return "∞ (無制限)";
   return formatEther(value);
 }
+
+interface QuestAgentSectionProps {
+  /** questAgentHat id for this workspace, from the subgraph Workspace entity. */
+  questAgentHatId: string | undefined;
+  /** Workspace owner = top-hat wearer (super-admin of every authority hat). */
+  owner: string | undefined;
+  /** operatorHat id — the direct admin of questAgentHat. */
+  operatorHatId: string | undefined;
+  /** Bot signer address that should wear the questAgentHat when enabled. */
+  botSigner: Address;
+}
+
+// Grants/revokes the questAgentHat to the Discord bot signer so it can submit
+// quest completions on members' behalf. Mirrors the settings page's
+// AuthorityList (mintHat to grant, adminRevokeAuthorityHat to revoke) but
+// specialised to the single, fixed bot address.
+const QuestAgentSection: FC<QuestAgentSectionProps> = ({
+  questAgentHatId: questAgentHatIdStr,
+  owner,
+  operatorHatId,
+  botSigner,
+}) => {
+  const { wallet } = useActiveWallet();
+  const walletAddress = wallet?.account?.address as Address | undefined;
+  const { mintHat, adminRevokeAuthorityHat } = useHats();
+  const [pending, setPending] = useState<"grant" | "revoke" | null>(null);
+
+  // questAgentHat id comes from the subgraph Workspace entity (indexed from
+  // BigBang's Executed event), same source as every other hat id on this page.
+  const questAgentHatId = useMemo(
+    () => (questAgentHatIdStr ? BigInt(questAgentHatIdStr) : undefined),
+    [questAgentHatIdStr],
+  );
+
+  const statusQuery = useTanstackQuery({
+    queryKey: ["quest-agent-status", botSigner, questAgentHatId?.toString()],
+    enabled: !!questAgentHatId && !!botSigner,
+    queryFn: async (): Promise<boolean> =>
+      (await publicClient.readContract({
+        ...hatsContractBaseConfig,
+        functionName: "isWearerOfHat",
+        args: [botSigner, questAgentHatId as bigint],
+      })) as boolean,
+  });
+  const isEnabled = statusQuery.data === true;
+
+  // Only the operatorHat wearer or the workspace owner (top hat) can mint/revoke
+  // the questAgentHat — gate the buttons so we don't prompt a doomed tx.
+  const canManageQuery = useTanstackQuery({
+    queryKey: ["quest-agent-admin", walletAddress, owner, operatorHatId],
+    enabled: !!walletAddress && (!!owner || !!operatorHatId),
+    queryFn: async (): Promise<boolean> => {
+      if (!walletAddress) return false;
+      if (owner && walletAddress.toLowerCase() === owner.toLowerCase()) {
+        return true;
+      }
+      if (!operatorHatId) return false;
+      return (await publicClient.readContract({
+        ...hatsContractBaseConfig,
+        functionName: "isWearerOfHat",
+        args: [walletAddress, BigInt(operatorHatId)],
+      })) as boolean;
+    },
+  });
+  const canManage = canManageQuery.data === true;
+
+  const grant = async () => {
+    if (!questAgentHatId) return;
+    setPending("grant");
+    try {
+      await mintHat({ hatId: questAgentHatId, wearer: botSigner });
+      await statusQuery.refetch();
+      toast.success("Bot に代理申請の権限を付与しました");
+    } catch (e) {
+      console.error(e);
+      toast.error("権限の付与に失敗しました");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const revoke = async () => {
+    if (!questAgentHatId || !walletAddress) return;
+    setPending("revoke");
+    try {
+      // transferHat(from→signer)+renounce, so the admin param must be the
+      // signing wallet (it temporarily receives the hat before renouncing).
+      await adminRevokeAuthorityHat({
+        hatId: questAgentHatId,
+        from: botSigner,
+        admin: walletAddress,
+      });
+      await statusQuery.refetch();
+      toast.success("Bot の代理申請の権限を剥奪しました");
+    } catch (e) {
+      console.error(e);
+      toast.error("権限の剥奪に失敗しました");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <Heading variant="h3" level={2}>
+            Quest 代理申請の権限
+          </Heading>
+          <Typography variant="bodySm" tone="secondary">
+            有効にすると、メンバーがウォレット操作なしに Discord から{" "}
+            <code>/quest submit</code>{" "}
+            でクエスト完了申請を出せるようになります。Bot
+            はメンバー本人の名義で申請します。
+          </Typography>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Typography variant="bodySm" tone="secondary">
+            現在の状態
+          </Typography>
+          <Typography
+            variant="statMd"
+            tone={isEnabled ? "success" : "secondary"}
+          >
+            {!questAgentHatId || statusQuery.isLoading
+              ? "読み込み中…"
+              : isEnabled
+                ? "有効"
+                : "無効"}
+          </Typography>
+        </div>
+
+        {!canManage && walletAddress && (
+          <Typography variant="caption" tone="secondary">
+            付与・剥奪には operatorHat
+            またはワークスペースオーナーの権限が必要です。
+          </Typography>
+        )}
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            disabled={!canManage || pending !== null || isEnabled}
+            onClick={grant}
+          >
+            {pending === "grant" ? "送信中…" : "有効化（付与）"}
+          </Button>
+          <Button
+            variant="danger"
+            disabled={!canManage || pending !== null || !isEnabled}
+            onClick={revoke}
+          >
+            {pending === "revoke" ? "送信中…" : "無効化（剥奪）"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const DiscordBotWorkspace: FC = () => {
   const { treeId } = useParams<{ treeId: string }>();
@@ -158,6 +321,13 @@ const DiscordBotWorkspace: FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <QuestAgentSection
+        questAgentHatId={workspaceData?.workspace?.questAgentHatId ?? undefined}
+        owner={workspaceData?.workspace?.owner ?? undefined}
+        operatorHatId={workspaceData?.workspace?.operatorHatId ?? undefined}
+        botSigner={botSigner}
+      />
 
       <section className="flex flex-col gap-2">
         <Heading variant="h3" level={2}>

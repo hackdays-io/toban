@@ -140,6 +140,12 @@ export const BIGBANG_ABI = [
       },
       {
         indexed: false,
+        internalType: "uint256",
+        name: "questAgentHatId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
         internalType: "address",
         name: "hatsTimeFrameModule",
         type: "address",

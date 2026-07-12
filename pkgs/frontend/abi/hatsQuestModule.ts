@@ -15,6 +15,11 @@ export const HATS_QUEST_MODULE_ABI = [
   },
   {
     inputs: [],
+    name: "AgentCannotSelfSubmit",
+    type: "error",
+  },
+  {
+    inputs: [],
     name: "AlreadyApproved",
     type: "error",
   },
@@ -66,6 +71,11 @@ export const HATS_QUEST_MODULE_ABI = [
   {
     inputs: [],
     name: "NotInitializing",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotQuestAgent",
     type: "error",
   },
   {
@@ -642,6 +652,19 @@ export const HATS_QUEST_MODULE_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "questAgentHatId",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
@@ -669,6 +692,11 @@ export const HATS_QUEST_MODULE_ABI = [
   },
   {
     inputs: [
+      {
+        internalType: "address",
+        name: "submitter",
+        type: "address",
+      },
       {
         internalType: "uint256",
         name: "questId",

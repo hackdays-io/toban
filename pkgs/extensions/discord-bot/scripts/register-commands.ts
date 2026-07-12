@@ -88,6 +88,27 @@ const commands = [
     description: "Show your mintAllowance and mintable budget",
     type: 1,
   },
+  {
+    name: "quest",
+    description: "Quest actions",
+    type: 1,
+    options: [
+      {
+        name: "submit",
+        description: "Submit completion of a quest you can work on",
+        type: 1, // SUB_COMMAND
+        options: [
+          {
+            name: "quest",
+            description: "Pick a quest to submit",
+            type: 3, // STRING
+            required: true,
+            autocomplete: true,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 const url = `https://discord.com/api/v10/applications/${APP_ID}/guilds/${GUILD_ID}/commands`;

@@ -26,6 +26,7 @@ export function handleExecuted(ev: Executed): void {
   workspace.operatorHatId = ev.params.operatorHatId;
   workspace.creatorHatId = ev.params.creatorHatId;
   workspace.minterHatId = ev.params.minterHatId;
+  workspace.questAgentHatId = ev.params.questAgentHatId;
   workspace.hatsTimeFrameModule = ev.params.hatsTimeFrameModule.toHex();
   workspace.hatsHatCreatorModule = ev.params.hatsHatCreatorModule.toHex();
   workspace.hatsFractionTokenModule = ev.params.hatsFractionTokenModule.toHex();

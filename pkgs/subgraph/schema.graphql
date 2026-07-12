@@ -8,6 +8,7 @@ type Workspace @entity {
   operatorHatId: BigInt!
   creatorHatId: BigInt!
   minterHatId: BigInt!
+  questAgentHatId: BigInt!
   hatsTimeFrameModule: String!
   hatsHatCreatorModule: String!
   hatsFractionTokenModule: HatsFractionTokenModule!

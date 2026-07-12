@@ -25,6 +25,10 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
     uint32 private _domain;
     uint256 private _nextQuestId;
 
+    // Hat whose wearers may submit completions on behalf of another address.
+    // Set once at init from immutable clone init data (no setter — module idiom).
+    uint256 private _questAgentHatId;
+
     mapping(uint256 => Quest) private _quests;
     mapping(uint256 => mapping(address => bool)) private _hasApproved;
     mapping(uint256 => uint8) private _approvalCount;
@@ -41,12 +45,17 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
     constructor(string memory _version) HatsModule(_version) {}
 
     /**
-     * @dev Initializes the module with the workspace's HatsFractionTokenModule address.
-     * @param _initData ABI-encoded `(address fractionToken)`.
+     * @dev Initializes the module with the workspace's HatsFractionTokenModule
+     *      address and the quest-agent hat id.
+     * @param _initData ABI-encoded `(address fractionToken, uint256 questAgentHatId)`.
      */
     function _setUp(bytes calldata _initData) internal override {
-        address fractionTokenAddress = abi.decode(_initData, (address));
+        (address fractionTokenAddress, uint256 questAgentHatId_) = abi.decode(
+            _initData,
+            (address, uint256)
+        );
         _fractionToken = IHatsFractionTokenModule(fractionTokenAddress);
+        _questAgentHatId = questAgentHatId_;
         _domain = HATS().getTopHatDomain(hatId());
     }
 
@@ -94,20 +103,35 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
 
     /// @inheritdoc IHatsQuestModule
     function submitCompletion(
+        address submitter,
         uint256 questId,
         uint256 membershipHatId
     ) external override {
         Quest storage quest = _quests[questId];
         if (quest.creator == address(0)) revert QuestNotFound();
         if (quest.status != QuestStatus.Open) revert InvalidStatus();
-        if (msg.sender == quest.creator) revert CannotSubmitOwnQuest();
-        _requireWorkspaceMember(msg.sender, membershipHatId);
 
-        quest.submitter = msg.sender;
+        // submitter == 0 → self-service path (actor is msg.sender). A non-zero
+        // submitter is proxy submission and is gated to questAgentHat wearers,
+        // so an arbitrary address can only ever be set by a trusted agent.
+        address actor = submitter == address(0) ? msg.sender : submitter;
+        if (submitter != address(0)) {
+            if (!HATS().isWearerOfHat(msg.sender, _questAgentHatId)) {
+                revert NotQuestAgent();
+            }
+            // The agent relays other members' consent; it must not name itself
+            // as the submitter (and thereby the escrow beneficiary on approval).
+            if (submitter == msg.sender) revert AgentCannotSelfSubmit();
+        }
+
+        if (actor == quest.creator) revert CannotSubmitOwnQuest();
+        _requireWorkspaceMember(actor, membershipHatId);
+
+        quest.submitter = actor;
         quest.status = QuestStatus.PendingReview;
         quest.submittedAt = uint64(block.timestamp);
 
-        emit CompletionSubmitted(questId, msg.sender);
+        emit CompletionSubmitted(questId, actor);
     }
 
     /// @inheritdoc IHatsQuestModule
@@ -237,6 +261,11 @@ contract HatsQuestModule is HatsModule, ERC1155Holder, IHatsQuestModule {
     /// @inheritdoc IHatsQuestModule
     function FRACTION_TOKEN() external view override returns (address) {
         return address(_fractionToken);
+    }
+
+    /// @inheritdoc IHatsQuestModule
+    function questAgentHatId() external view override returns (uint256) {
+        return _questAgentHatId;
     }
 
     /**

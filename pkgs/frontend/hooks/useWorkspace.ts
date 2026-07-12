@@ -22,6 +22,7 @@ const queryGetWorkspace = gql(`
       hatsQuestModule
       creator
       creatorHatId
+      questAgentHatId
       blockTimestamp
       blockNumber
       hatsFractionTokenModule {
@@ -49,6 +50,7 @@ const queryGetWorkspaces = gql(`
       hatsQuestModule
       creator
       creatorHatId
+      questAgentHatId
       blockTimestamp
       blockNumber
       hatsFractionTokenModule {

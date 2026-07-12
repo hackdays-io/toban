@@ -8,6 +8,7 @@
  * Anything else returns 404.
  */
 import {
+  type APIApplicationCommandAutocompleteInteraction,
   type APIChatInputApplicationCommandInteraction,
   type APIInteraction,
   InteractionResponseType,
@@ -15,6 +16,10 @@ import {
 } from "discord-api-types/v10";
 import { handleInstallCallback } from "./api/install/callback";
 import { handleBalance } from "./commands/balance";
+import {
+  executeQuestSubmit,
+  handleQuestAutocomplete,
+} from "./commands/quest-submit";
 import { deferredEphemeral, ephemeral, pong } from "./commands/responses";
 import { executeThx } from "./commands/thx";
 import { handleTobanLink } from "./commands/toban-link";
@@ -61,6 +66,18 @@ async function handleInteraction(
   if (interaction.type === InteractionType.Ping) {
     return jsonResponse(pong());
   }
+  // Autocomplete (type 4): must answer inside Discord's 3s budget — no defer
+  // is possible, so respond synchronously with the choice list (type 8).
+  if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+    const ac = interaction as APIApplicationCommandAutocompleteInteraction;
+    if (ac.data?.name === "quest") {
+      return jsonResponse(await handleQuestAutocomplete(env, ac));
+    }
+    return jsonResponse({
+      type: InteractionResponseType.ApplicationCommandAutocompleteResult,
+      data: { choices: [] },
+    });
+  }
   if (interaction.type !== InteractionType.ApplicationCommand) {
     return jsonResponse(ephemeral("Unsupported interaction type"));
   }
@@ -77,6 +94,15 @@ async function handleInteraction(
     case "thx": {
       // 3-second budget — defer immediately, run real work in background.
       ctx.waitUntil(executeThx(env, cmd));
+      return jsonResponse({
+        type: InteractionResponseType.DeferredChannelMessageWithSource,
+        data: { flags: 1 << 6 /* EPHEMERAL */ },
+      });
+    }
+    case "quest": {
+      // Proxy quest submission: defer immediately, sign + broadcast in the
+      // background (same 3-second-budget pattern as /thx).
+      ctx.waitUntil(executeQuestSubmit(env, cmd));
       return jsonResponse({
         type: InteractionResponseType.DeferredChannelMessageWithSource,
         data: { flags: 1 << 6 /* EPHEMERAL */ },

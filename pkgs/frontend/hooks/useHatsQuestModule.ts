@@ -1,6 +1,6 @@
 import { HATS_QUEST_MODULE_ABI } from "abi/hatsQuestModule";
 import { useCallback, useState } from "react";
-import { type Address, parseEventLogs } from "viem";
+import { type Address, parseEventLogs, zeroAddress } from "viem";
 import {
   fractionTokenBaseConfig,
   hatsQuestContractBaseConfig,
@@ -93,7 +93,10 @@ export const useSubmitQuestCompletion = (hatsQuestModuleAddress?: Address) => {
         const txHash = await wallet.writeContract({
           ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
           functionName: "submitCompletion",
-          args: [params.questId, params.membershipHatId],
+          // Self-service path: submitter = address(0) → the contract records
+          // msg.sender as the submitter. Proxy submission (non-zero submitter)
+          // is the Discord bot's path, gated to questAgentHat wearers.
+          args: [zeroAddress, params.questId, params.membershipHatId],
         });
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: txHash,

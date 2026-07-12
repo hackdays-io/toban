@@ -75,6 +75,27 @@ const COMMANDS_PAYLOAD = [
       },
     ],
   },
+  {
+    name: "quest",
+    description: "Quest actions",
+    type: 1, // CHAT_INPUT
+    options: [
+      {
+        name: "submit",
+        description: "Submit completion of a quest you can work on",
+        type: 1, // SUB_COMMAND
+        options: [
+          {
+            name: "quest",
+            description: "Pick a quest to submit",
+            type: 3, // STRING
+            required: true,
+            autocomplete: true,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 const VALID_TREE_ID = /^[0-9]+$/;

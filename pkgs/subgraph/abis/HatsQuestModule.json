@@ -12,6 +12,11 @@
   },
   {
     "inputs": [],
+    "name": "AgentCannotSelfSubmit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "AlreadyApproved",
     "type": "error"
   },
@@ -63,6 +68,11 @@
   {
     "inputs": [],
     "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotQuestAgent",
     "type": "error"
   },
   {
@@ -639,6 +649,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "questAgentHatId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -666,6 +689,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "submitter",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "questId",

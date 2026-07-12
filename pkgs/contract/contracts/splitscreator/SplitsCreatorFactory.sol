@@ -3,8 +3,6 @@
 pragma solidity ^0.8.24;
 
 import {LibClone} from "solady/src/utils/LibClone.sol";
-import {SplitsCreator} from "./SplitsCreator.sol";
-import {ISplitsCreator} from "./ISplitsCreator.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 

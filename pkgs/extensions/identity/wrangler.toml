@@ -18,8 +18,8 @@ compatibility_flags = ["nodejs_compat"]
 # name, and deploying the bot against a missing identity worker fails with
 # Cloudflare error 10143 ("Worker not found").
 #
-# Base lives on a SEPARATE Cloudflare account from Sepolia — `wrangler login`
-# to the right account first.
+# Both environments live in the SAME Cloudflare account (kawabeyuki23), separated
+# by worker name and by D1 (`toban-identity` / `toban-identity-base`).
 #
 # This worker has no [vars]: both values it needs are secrets so the Alchemy
 # key inside RPC_URL never lands in git. Set them per environment:
@@ -37,17 +37,21 @@ database_name = "toban-identity"
 database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
 
 # ===========================================================================
-# Base (production)  — SEPARATE Cloudflare account (yuki-021423)
+# Base (production)
 # ===========================================================================
 [env.base]
 name = "toban-identity-base"
 
 [[env.base.d1_databases]]
 binding = "DB"
-database_name = "toban-identity"
+# Base has its OWN D1, separate from Sepolia's `toban-identity`: platform_links
+# maps guild -> treeId, and a treeId only exists on one chain, so sharing one DB
+# would let Sepolia test links collide with Base production.
+# D1 names are unique per account, hence the `-base` suffix.
+database_name = "toban-identity-base"
 # Shared with the discord-bot — keep identical to the bot's base D1 id.
-# Create with: pnpm exec wrangler d1 create toban-identity   (on the prod account)
-database_id = "c3c68486-7de1-4295-b2a3-fdced0337c34"
+# Create with: pnpm exec wrangler d1 create toban-identity-base
+database_id = "bf40df4f-9e12-48bf-9a80-ef90027d0ba7"
 
 # ---------------------------------------------------------------------------
 # Secrets (set per environment via `wrangler secret put <NAME> --env <env>`):

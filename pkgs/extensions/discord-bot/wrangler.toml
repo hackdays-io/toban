@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 # Workers Logs — persist console.* output and uncaught exceptions, viewable in
 # the Cloudflare dashboard (Workers & Pages → <worker> → Observability) and via
 # `wrangler tail`. observability is NOT inherited by named environments, so it
-# is repeated under [env.sepolia]/[env.base] below.
+# is repeated under [env.base] below.
 [observability]
 enabled = true
 head_sampling_rate = 1
@@ -22,9 +22,10 @@ head_sampling_rate = 1
 # service-binds to the deployed `toban-identity`. There is deliberately no
 # [env.sepolia]: a second Sepolia worker would only duplicate this one.
 #
-# Base lives on a SEPARATE Cloudflare account (*.yuki-021423.workers.dev) from
-# Sepolia (*.kawabeyuki23.workers.dev). `wrangler login` to the right account
-# before deploying, or the deploy silently targets the wrong one.
+# Both environments live in the SAME Cloudflare account (kawabeyuki23). They are
+# separated by worker name (`toban-discord-bot` / `toban-discord-bot-base`) and
+# by D1 (`toban-identity` / `toban-identity-base`), NOT by account. Sepolia test
+# data therefore never touches Base production.
 #
 # Secrets are scoped to the deployed worker name, so set them per environment:
 #   pnpm exec wrangler secret put <NAME>              # sepolia (top-level)
@@ -69,16 +70,18 @@ TURNKEY_BOT_SIGNER_ADDRESS = "0xae4E13De7C14Dff7ff296De69cADf3A7F5208461"
 IDENTITY_WORKER_URL = "https://toban-identity.kawabeyuki23.workers.dev"
 
 # ===========================================================================
-# Base (production)  — SEPARATE Cloudflare account (yuki-021423)
+# Base (production)
 # ===========================================================================
 [env.base]
 name = "toban-discord-bot-base"
 
 [[env.base.d1_databases]]
 binding = "DB"
-database_name = "toban-identity"
+# Base has its OWN D1, separate from Sepolia's `toban-identity` (see identity's
+# wrangler.toml). D1 names are unique per account, hence the `-base` suffix.
+database_name = "toban-identity-base"
 # Shared with the identity worker — keep identical to identity's base D1 id.
-database_id = "c3c68486-7de1-4295-b2a3-fdced0337c34"
+database_id = "bf40df4f-9e12-48bf-9a80-ef90027d0ba7"
 
 [[env.base.services]]
 binding = "IDENTITY"
@@ -94,7 +97,7 @@ GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viz
 #   echo -n "https://gateway.thegraph.com/api/<THEGRAPH_API_KEY>/subgraphs/id/FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs" \
 #     | pnpm exec wrangler secret put HATS_GRAPHQL_ENDPOINT --env base
 TOBAN_FRONTEND_URL = "https://v3.toban.xyz"
-BOT_WORKER_URL = "https://toban-discord-bot-base.yuki-021423.workers.dev"
+BOT_WORKER_URL = "https://toban-discord-bot-base.kawabeyuki23.workers.dev"
 # RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
 #   pnpm exec wrangler secret put RPC_URL --env base
 CHAIN_ID = "8453"
@@ -102,7 +105,7 @@ MAINNET_RPC_URL = "https://rpc.ankr.com/eth"
 TURNKEY_API_BASE_URL = "https://api.turnkey.com"
 TURNKEY_ORGANIZATION_ID = "24cfae8c-aae0-4341-8492-295057f66bac"
 TURNKEY_BOT_SIGNER_ADDRESS = "0xE21E99d384409e119cee731D368359BDc719a5f0"
-IDENTITY_WORKER_URL = "https://toban-identity-base.yuki-021423.workers.dev"
+IDENTITY_WORKER_URL = "https://toban-identity-base.kawabeyuki23.workers.dev"
 
 [env.base.observability]
 enabled = true

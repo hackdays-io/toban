@@ -68,8 +68,9 @@ pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base
 
 - **Sepolia is the wrangler top-level config** (worker `toban-discord-bot`); only Base is a named
   env. There is no `[env.sepolia]`.
-- **Base is a different Cloudflare account** (`yuki-021423`) from Sepolia (`kawabeyuki23`).
-  `wrangler whoami` before deploying; export `CLOUDFLARE_ACCOUNT_ID` if wrangler picks the wrong one.
+- **Both envs live in the same Cloudflare account**, separated by worker name and by D1
+  (`toban-identity` / `toban-identity-base`) — not by account. The D1s are separate because
+  `platform_links` maps guild → treeId, and a treeId only exists on one chain.
 - **Deploy `@toban/identity` first** — this worker service-binds to it by name; a missing identity
   worker fails the bot deploy with Cloudflare error 10143.
 - There is deliberately **no bare `deploy` script**: `pnpm --filter <pkg> deploy` is pnpm's builtin

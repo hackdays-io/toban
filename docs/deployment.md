@@ -46,38 +46,30 @@ Toban は **コントラクト → インデクサー → フロントエンド 
 | Chain ID | `11155111` | `8453` |
 | コントラクト鍵 | `PRIVATE_KEY` | **`PRODUCTION_PRIVATE_KEY`**（別鍵） |
 | subgraph | `toban-sepolia/1.0.3` | `toban-base/0.0.1` |
-| **Cloudflare アカウント** | `kawabeyuki23` | **`yuki-021423`（別アカウント！）** |
+| Cloudflare アカウント | `kawabeyuki23`（`225895f1…`） | **同左（同一アカウント）** |
 | Worker（bot） | `toban-discord-bot`（top-level） | `toban-discord-bot-base`（`--env base`） |
 | Worker（identity） | `toban-identity`（top-level） | `toban-identity-base`（`--env base`） |
-| D1 | `6332ba44-…` | `c3c68486-…` |
+| D1 | `toban-identity`（`6332ba44-…`） | `toban-identity-base`（`bf40df4f-…`） |
 | Turnkey bot signer | `0xae4E13De7C14Dff7ff296De69cADf3A7F5208461` | `0xE21E99d384409e119cee731D368359BDc719a5f0` |
 | Hats subgraph | Goldsky（自前・キー不要） | The Graph Gateway（**APIキー入り＝secret**） |
 
 > ⚠️ **Sepolia は「top-level 設定」がそのままデプロイ対象**です（`[env.sepolia]` は存在しません）。
 > Base だけが named environment（`--env base`）。
-> ⚠️ **Base は別 Cloudflare アカウント**です。`wrangler login` の向き先を必ず確認してください。
 
-### Cloudflare アカウント取り違えの防ぎ方
+**Sepolia と Base は同一 Cloudflare アカウント**にあり、**worker 名と D1 で分離**されています
+（アカウントでは分けていません）。D1 を分けているのは、`platform_links` が guild → treeId を
+持ち treeId はチェーン固有のため、共有すると Sepolia のテストデータが Base 本番に混ざるからです。
 
-Sepolia と Base は**別アカウント**です。ログインしたままネットワークを切り替えると、
-**Base の Worker を Sepolia のアカウントにデプロイしようとして失敗**します。
-
-```bash
-pnpm --filter @toban/discord-bot exec wrangler whoami   # 必ず向き先を確認してから
-pnpm --filter @toban/discord-bot exec wrangler logout
-pnpm --filter @toban/discord-bot exec wrangler login    # 対象ネットワークのアカウントで
-```
-
-> ⚠️ **`CLOUDFLARE_ACCOUNT_ID` を export したまま別ネットワークを触らないこと。**
-> 片方のアカウントに固定されてしまいます。使ったら必ず `unset CLOUDFLARE_ACCOUNT_ID`。
-
-**症状 → 原因**
+### Cloudflare のエラー: 症状 → 原因
 
 | 症状 | 原因 |
 |---|---|
-| `D1 binding 'DB' references database '<id>' which was not found [10181]` | **アカウント違い**。その D1 は対象アカウント側にある。エラー URL 中の `/accounts/<id>/` を見て、意図したアカウントか確認 |
-| `Service binding 'IDENTITY' references Worker '…' which was not found [10143]` | identity Worker が未デプロイ、または**アカウント違い** |
-| `Authentication error [10000]` | wrangler が別アカウントを見に行っている（既知の不具合）。`whoami` で確認 |
+| `Service binding 'IDENTITY' references Worker '…' which was not found [10143]` | **identity Worker が未デプロイ**。identity → bot の順で deploy する |
+| `D1 binding 'DB' references database '<id>' which was not found [10181]` | その D1 が**このアカウントに無い**。エラー URL 中の `/accounts/<id>/` が意図したアカウントか確認。新環境なら `wrangler d1 create <name>` して `database_id` を更新 |
+| `Authentication error [10000]` | wrangler が別アカウントを見に行っている（既知の不具合）。`wrangler whoami` で確認 |
+
+> ⚠️ **`CLOUDFLARE_ACCOUNT_ID` を export したまま放置しないこと。** wrangler がそのアカウントに
+> 固定され、別アカウントを触るときに上記 10181 / 10143 を踏みます。使ったら `unset` する。
 
 ### ⚠️ 無視してよい警告（直すと壊れる）
 

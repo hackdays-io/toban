@@ -12,8 +12,8 @@
 `deploy:base`（`--env base`）で操作してください。`[env.sepolia]` は存在しません
 （top-level と重複するため削除済み）。
 
-さらに **Base は Sepolia とは別の Cloudflare アカウント**（`yuki-021423` / `kawabeyuki23`）
-にあります。`wrangler whoami` で向き先を確認してから操作してください。
+Sepolia と Base は **同一 Cloudflare アカウント**にあり、**worker 名と D1 で分離**されています
+（`toban-discord-bot` / `toban-discord-bot-base`、`toban-identity` / `toban-identity-base`）。
 
 ---
 

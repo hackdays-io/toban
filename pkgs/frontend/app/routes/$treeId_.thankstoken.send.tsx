@@ -1,7 +1,11 @@
 import { MintThanksToken_OrderBy, type OrderDirection } from "gql/graphql";
 import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
-import { useGetMintThanksTokens, useThanksToken } from "hooks/useThanksToken";
+import {
+  pollActivityMintsAfterSend,
+  useGetMintThanksTokens,
+  useThanksToken,
+} from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
 import {
   type FC,
@@ -14,6 +18,7 @@ import {
 import { LuCheck } from "react-icons/lu";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
+import { goldskyClient } from "utils/apollo";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import { type Address, formatEther, parseEther, stringToHex } from "viem";
@@ -278,6 +283,7 @@ const ThanksTokenSend: FC = () => {
     setStep("sending");
     try {
       const extra = message ? stringToHex(message) : undefined;
+      let blockNumber: bigint | undefined;
       if (recipients.length === 1) {
         const res = await mintThanksToken(
           recipients[0].address as Address,
@@ -285,14 +291,27 @@ const ThanksTokenSend: FC = () => {
           extra,
         );
         if (res?.error) throw new Error(res.error);
+        blockNumber = res?.blockNumber;
       } else {
         const tos = recipients.map((r) => r.address as Address);
         const amounts = recipients.map(() => parseEther(amount.toString()));
         const res = await batchMintThanksToken(tos, amounts, extra);
         if (res?.error) throw new Error(res.error);
+        blockNumber = res?.blockNumber;
       }
       setStep("done");
       toast.success("サンクスを送りました");
+      const sender = me.identity?.address;
+      if (treeId && sender && blockNumber !== undefined) {
+        void pollActivityMintsAfterSend(goldskyClient, {
+          workspaceId: treeId,
+          fromAddress: sender,
+          blockNumber,
+          toAddresses: recipients.map((r) => r.address),
+        }).catch((err) => {
+          console.error("Activity mint poll failed:", err);
+        });
+      }
     } catch (e) {
       console.error("Thanks send error:", e);
       toast.error("送信に失敗しました");

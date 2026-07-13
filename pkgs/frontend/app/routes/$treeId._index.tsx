@@ -5,6 +5,7 @@ import { useTreeInfo } from "hooks/useHats";
 import { useQuestMetadata } from "hooks/useQuestMetadata";
 import { type Quest, useQuests } from "hooks/useQuests";
 import {
+  HOME_ACTIVITY_MINTS_LIMIT,
   useThanksToken,
   useThanksTokenActivity,
   useUserThanksTokenBalance,
@@ -108,7 +109,7 @@ const WorkspaceHome: FC = () => {
   const { balance: receivedBalance } = useUserThanksTokenBalance(treeId);
   const { mints, isLoading: isActivityLoading } = useThanksTokenActivity(
     treeId,
-    20,
+    HOME_ACTIVITY_MINTS_LIMIT,
   );
   const recentMints = mints?.mintThanksTokens ?? [];
 

@@ -1,3 +1,4 @@
+import type { ApolloClient } from "@apollo/client/core";
 import { gql } from "@apollo/client/core";
 import { useQuery } from "@apollo/client/react/hooks";
 import {
@@ -22,6 +23,97 @@ import { useTreeInfo } from "./useHats";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
 import { useGetWorkspace } from "./useWorkspace";
+
+/** Matches `$treeId._index` — keep poll refetches aligned with the home feed. */
+export const HOME_ACTIVITY_MINTS_LIMIT = 20;
+
+const ACTIVITY_MINTS_POLL_INTERVAL_MS = 3000;
+const ACTIVITY_MINTS_POLL_MAX_MS = 30_000;
+
+const activityMintsQueryVariables = (
+  workspaceId: string,
+  limit = HOME_ACTIVITY_MINTS_LIMIT,
+): GetThanksTokenMintsQueryVariables => ({
+  where: { workspaceId },
+  orderBy: MintThanksToken_OrderBy.BlockTimestamp,
+  orderDirection: "desc" as OrderDirection,
+  first: limit,
+});
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+export type ActivityMintPollCriteria = {
+  workspaceId: string;
+  fromAddress: string;
+  blockNumber: bigint;
+  /** Lowercase or checksummed — one entry per recipient (batch mint). */
+  toAddresses: string[];
+};
+
+const mintMatchesSend = (
+  mint: { from: string; to: string; blockNumber: unknown },
+  criteria: ActivityMintPollCriteria,
+): boolean => {
+  if (mint.from.toLowerCase() !== criteria.fromAddress.toLowerCase()) {
+    return false;
+  }
+  if (BigInt(String(mint.blockNumber)) !== criteria.blockNumber) {
+    return false;
+  }
+  return criteria.toAddresses.some(
+    (to) => to.toLowerCase() === mint.to.toLowerCase(),
+  );
+};
+
+const allRecipientsIndexed = (
+  mints: Array<{ from: string; to: string; blockNumber: unknown }>,
+  criteria: ActivityMintPollCriteria,
+): boolean => {
+  const indexedTos = new Set(
+    mints
+      .filter((m) => mintMatchesSend(m, criteria))
+      .map((m) => m.to.toLowerCase()),
+  );
+  return criteria.toAddresses.every((to) =>
+    indexedTos.has(to.toLowerCase()),
+  );
+};
+
+/**
+ * After a successful thanks mint, refetch workspace mints immediately then poll
+ * every 3s (max 30s) until the subgraph indexes this send. Updates Apollo
+ * cache for `useThanksTokenActivity` / home "最近のアクティビティ".
+ */
+export async function pollActivityMintsAfterSend(
+  client: ApolloClient<object>,
+  criteria: ActivityMintPollCriteria,
+): Promise<void> {
+  const variables = activityMintsQueryVariables(criteria.workspaceId);
+
+  const fetchMints = () =>
+    client.query<GetThanksTokenMintsQuery, GetThanksTokenMintsQueryVariables>({
+      query: queryGetThanksTokenMints,
+      variables,
+      fetchPolicy: "network-only",
+    });
+
+  const deadline = Date.now() + ACTIVITY_MINTS_POLL_MAX_MS;
+
+  while (Date.now() <= deadline) {
+    const { data } = await fetchMints();
+    const mints = data?.mintThanksTokens ?? [];
+    if (allRecipientsIndexed(mints, criteria)) {
+      return;
+    }
+    if (Date.now() + ACTIVITY_MINTS_POLL_INTERVAL_MS > deadline) {
+      return;
+    }
+    await sleep(ACTIVITY_MINTS_POLL_INTERVAL_MS);
+  }
+}
 
 // GraphQL queries for ThanksToken data from Goldsky
 const queryGetThanksTokenBalances = gql(`
@@ -265,6 +357,7 @@ export const useThanksToken = (treeId: string) => {
       setIsLoading(true);
 
       let txHash: `0x${string}` | undefined = undefined;
+      let blockNumber: bigint | undefined = undefined;
       let error = "";
 
       try {
@@ -275,14 +368,17 @@ export const useThanksToken = (treeId: string) => {
           functionName: "mint",
           args: [to, amount, relatedRoles, extraData],
         });
-        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        blockNumber = receipt.blockNumber;
         setIsLoading(false);
       } catch (_) {
         error = "トークンの送信に失敗しました";
         setIsLoading(false);
       }
 
-      return { txHash, error };
+      return { txHash, blockNumber, error };
     },
     [relatedRoles, wallet, data?.workspace?.thanksToken.id],
   );
@@ -297,6 +393,7 @@ export const useThanksToken = (treeId: string) => {
       setIsLoading(true);
 
       let txHash: `0x${string}` | undefined = undefined;
+      let blockNumber: bigint | undefined = undefined;
       let error = "";
 
       try {
@@ -307,14 +404,17 @@ export const useThanksToken = (treeId: string) => {
           functionName: "batchMint",
           args: [tos, amount, relatedRoles, extraData],
         });
-        await publicClient.waitForTransactionReceipt({ hash: txHash });
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        blockNumber = receipt.blockNumber;
         setIsLoading(false);
       } catch (_) {
         error = "トークンの送信に失敗しました";
         setIsLoading(false);
       }
 
-      return { txHash, error };
+      return { txHash, blockNumber, error };
     },
     [relatedRoles, wallet, data?.workspace?.thanksToken.id],
   );
@@ -364,12 +464,9 @@ export const useThanksTokenActivity = (workspaceId?: string, limit = 10) => {
     GetThanksTokenMintsQuery,
     GetThanksTokenMintsQueryVariables
   >(queryGetThanksTokenMints, {
-    variables: {
-      where: { workspaceId },
-      orderBy: MintThanksToken_OrderBy.BlockTimestamp,
-      orderDirection: "desc" as OrderDirection,
-      first: limit,
-    },
+    variables: workspaceId
+      ? activityMintsQueryVariables(workspaceId, limit)
+      : undefined,
     skip: !workspaceId,
   });
 

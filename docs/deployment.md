@@ -58,11 +58,37 @@ Toban は **コントラクト → インデクサー → フロントエンド 
 > ⚠️ **Base は別 Cloudflare アカウント**です。`wrangler login` の向き先を必ず確認してください。
 
 ### Cloudflare アカウント取り違えの防ぎ方
+
+Sepolia と Base は**別アカウント**です。ログインしたままネットワークを切り替えると、
+**Base の Worker を Sepolia のアカウントにデプロイしようとして失敗**します。
+
 ```bash
-pnpm --filter @toban/discord-bot exec wrangler whoami   # ログイン中アカウントを確認
-# wrangler が別アカウントを見に行って Authentication error を出す既知の不具合あり。明示する:
-export CLOUDFLARE_ACCOUNT_ID=<対象アカウントID>
+pnpm --filter @toban/discord-bot exec wrangler whoami   # 必ず向き先を確認してから
+pnpm --filter @toban/discord-bot exec wrangler logout
+pnpm --filter @toban/discord-bot exec wrangler login    # 対象ネットワークのアカウントで
 ```
+
+> ⚠️ **`CLOUDFLARE_ACCOUNT_ID` を export したまま別ネットワークを触らないこと。**
+> 片方のアカウントに固定されてしまいます。使ったら必ず `unset CLOUDFLARE_ACCOUNT_ID`。
+
+**症状 → 原因**
+
+| 症状 | 原因 |
+|---|---|
+| `D1 binding 'DB' references database '<id>' which was not found [10181]` | **アカウント違い**。その D1 は対象アカウント側にある。エラー URL 中の `/accounts/<id>/` を見て、意図したアカウントか確認 |
+| `Service binding 'IDENTITY' references Worker '…' which was not found [10143]` | identity Worker が未デプロイ、または**アカウント違い** |
+| `Authentication error [10000]` | wrangler が別アカウントを見に行っている（既知の不具合）。`whoami` で確認 |
+
+### ⚠️ 無視してよい警告（直すと壊れる）
+
+`deploy:base` 時に必ず出ます:
+```
+"vars.HATS_GRAPHQL_ENDPOINT" exists at the top level, but not on "env.base.vars".
+```
+**これは意図どおりです。** Base の Hats エンドポイントは The Graph Gateway の URL で
+**API キーを含むため secret** として投入しています。警告に従って `[env.base.vars]` に
+追記すると、**平文の var が secret を上書き**してしまい壊れます
+（[deploy-base-production.md §1](../pkgs/extensions/discord-bot/docs/deploy-base-production.md)）。
 
 ---
 

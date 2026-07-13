@@ -35,6 +35,13 @@ head_sampling_rate = 1
 #
 # Hats subgraph differs by chain: Base uses Hats Protocol's official The Graph
 # deployment; Sepolia has no such deployment so we run our own on Goldsky.
+#
+# EXPECTED WARNING on `deploy:base` — do NOT "fix" it:
+#   "vars.HATS_GRAPHQL_ENDPOINT exists at the top level, but not on env.base.vars"
+# That is deliberate. On Base the Hats endpoint is a The Graph Gateway URL that
+# embeds an API key, so it is a SECRET, not a var. Adding it to [env.base.vars]
+# to silence the warning would make the plaintext var OVERRIDE the secret at
+# deploy time (see docs/deploy-base-production.md §1). Ignore the warning.
 # ---------------------------------------------------------------------------
 
 # --- Sepolia (staging) + `wrangler dev` default ----------------------------

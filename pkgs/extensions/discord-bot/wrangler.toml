@@ -96,7 +96,7 @@ GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viz
 # frontend (utils/apollo.ts: gateway.thegraph.com/.../id/FWeAqrp36QYqv9gDWLwr...):
 #   echo -n "https://gateway.thegraph.com/api/<THEGRAPH_API_KEY>/subgraphs/id/FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs" \
 #     | pnpm exec wrangler secret put HATS_GRAPHQL_ENDPOINT --env base
-TOBAN_FRONTEND_URL = "https://v3.toban.xyz"
+TOBAN_FRONTEND_URL = "https://toban.xyz"
 BOT_WORKER_URL = "https://toban-discord-bot-base.kawabeyuki23.workers.dev"
 # RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
 #   pnpm exec wrangler secret put RPC_URL --env base

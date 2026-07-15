@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {IThanksTokenFactory} from "./IThanksTokenFactory.sol";
-import {ThanksToken} from "./ThanksToken.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {LibClone} from "solady/src/utils/LibClone.sol";
@@ -12,6 +11,11 @@ contract ThanksTokenFactory is
     UUPSUpgradeable,
     IThanksTokenFactory
 {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     address public IMPLEMENTATION;
     address public HATS;
     address public BIG_BANG;

@@ -22,7 +22,7 @@ const upgrade = async () => {
   // BigBangコントラクトをアップグレードする
   const newBigBang = await upgradeBigBang(
     BigBang,
-    "BigBang_Mock_v2", // ここにアップグレード後のBigBangのコントラクト名を指定する。
+    "BigBang", // アップグレード後のBigBangのコントラクト名（#531: questAgentHat 対応版）
   );
 
   console.log("upgrded address:", newBigBang.address);

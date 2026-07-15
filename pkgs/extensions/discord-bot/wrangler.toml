@@ -1,0 +1,139 @@
+name = "toban-discord-bot"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers Logs — persist console.* output and uncaught exceptions, viewable in
+# the Cloudflare dashboard (Workers & Pages → <worker> → Observability) and via
+# `wrangler tail`. observability is NOT inherited by named environments, so it
+# is repeated under [env.base] below.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+# ---------------------------------------------------------------------------
+# Environments  (see docs/deployment.md for the full runbook)
+# ---------------------------------------------------------------------------
+#   pnpm --filter @toban/discord-bot deploy:sepolia   # → toban-discord-bot       (top-level)
+#   pnpm --filter @toban/discord-bot deploy:base      # → toban-discord-bot-base  (--env base)
+#
+# SEPOLIA IS THE TOP-LEVEL CONFIG. The block below is both the `wrangler dev`
+# default AND the deployed Sepolia staging worker (`toban-discord-bot`), which
+# service-binds to the deployed `toban-identity`. There is deliberately no
+# [env.sepolia]: a second Sepolia worker would only duplicate this one.
+#
+# Both environments live in the SAME Cloudflare account (kawabeyuki23). They are
+# separated by worker name (`toban-discord-bot` / `toban-discord-bot-base`) and
+# by D1 (`toban-identity` / `toban-identity-base`), NOT by account. Sepolia test
+# data therefore never touches Base production.
+#
+# Secrets are scoped to the deployed worker name, so set them per environment:
+#   pnpm exec wrangler secret put <NAME>              # sepolia (top-level)
+#   pnpm exec wrangler secret put <NAME> --env base   # base
+#
+# Wrangler does NOT inherit `vars` / `d1_databases` / `services` from the
+# top-level into named environments — [env.base] fully redeclares them.
+#
+# Hats subgraph differs by chain: Base uses Hats Protocol's official The Graph
+# deployment; Sepolia has no such deployment so we run our own on Goldsky.
+#
+# EXPECTED WARNING on `deploy:base` — do NOT "fix" it:
+#   "vars.HATS_GRAPHQL_ENDPOINT exists at the top level, but not on env.base.vars"
+# That is deliberate. On Base the Hats endpoint is a The Graph Gateway URL that
+# embeds an API key, so it is a SECRET, not a var. Adding it to [env.base.vars]
+# to silence the warning would make the plaintext var OVERRIDE the secret at
+# deploy time (see docs/deploy-base-production.md §1). Ignore the warning.
+# ---------------------------------------------------------------------------
+
+# --- Sepolia (staging) + `wrangler dev` default ----------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
+
+[[services]]
+binding = "IDENTITY"
+service = "toban-identity"
+
+[vars]
+GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-sepolia/1.0.3/gn"
+HATS_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/hats-v1-sepolia/0.0.1/gn"
+TOBAN_FRONTEND_URL = "http://localhost:5173"
+BOT_WORKER_URL = "https://toban-discord-bot.kawabeyuki23.workers.dev"
+# RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
+#   wrangler secret put RPC_URL --env <env>   |   local dev: add it to .dev.vars
+CHAIN_ID = "11155111"
+MAINNET_RPC_URL = "https://rpc.ankr.com/eth"
+TURNKEY_API_BASE_URL = "https://api.turnkey.com"
+TURNKEY_ORGANIZATION_ID = "24cfae8c-aae0-4341-8492-295057f66bac"
+TURNKEY_BOT_SIGNER_ADDRESS = "0xae4E13De7C14Dff7ff296De69cADf3A7F5208461"
+IDENTITY_WORKER_URL = "https://toban-identity.kawabeyuki23.workers.dev"
+
+# ===========================================================================
+# Base (production)
+# ===========================================================================
+[env.base]
+name = "toban-discord-bot-base"
+
+[[env.base.d1_databases]]
+binding = "DB"
+# Base has its OWN D1, separate from Sepolia's `toban-identity` (see identity's
+# wrangler.toml). D1 names are unique per account, hence the `-base` suffix.
+database_name = "toban-identity-base"
+# Shared with the identity worker — keep identical to identity's base D1 id.
+database_id = "bf40df4f-9e12-48bf-9a80-ef90027d0ba7"
+
+[[env.base.services]]
+binding = "IDENTITY"
+service = "toban-identity-base"
+
+[env.base.vars]
+# Toban subgraph (Goldsky) on Base.
+GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-base/0.0.1/gn"
+# Hats subgraph on Base — Hats Protocol's official subgraph on The Graph's
+# decentralised Gateway (the Studio endpoint was retired). The Gateway URL
+# embeds a Graph API key, so it is a secret (not in [vars]). Mirrors the
+# frontend (utils/apollo.ts: gateway.thegraph.com/.../id/FWeAqrp36QYqv9gDWLwr...):
+#   echo -n "https://gateway.thegraph.com/api/<THEGRAPH_API_KEY>/subgraphs/id/FWeAqrp36QYqv9gDWLwr7em8vtvPnPrmRRQgnBb6QbBs" \
+#     | pnpm exec wrangler secret put HATS_GRAPHQL_ENDPOINT --env base
+TOBAN_FRONTEND_URL = "https://toban.xyz"
+BOT_WORKER_URL = "https://toban-discord-bot-base.kawabeyuki23.workers.dev"
+# RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
+#   pnpm exec wrangler secret put RPC_URL --env base
+CHAIN_ID = "8453"
+MAINNET_RPC_URL = "https://rpc.ankr.com/eth"
+TURNKEY_API_BASE_URL = "https://api.turnkey.com"
+TURNKEY_ORGANIZATION_ID = "24cfae8c-aae0-4341-8492-295057f66bac"
+TURNKEY_BOT_SIGNER_ADDRESS = "0xE21E99d384409e119cee731D368359BDc719a5f0"
+IDENTITY_WORKER_URL = "https://toban-identity-base.kawabeyuki23.workers.dev"
+
+[env.base.observability]
+enabled = true
+head_sampling_rate = 1
+
+# ---------------------------------------------------------------------------
+# Secrets (set per environment via `wrangler secret put <NAME> --env <env>`):
+#   DISCORD_PUBLIC_KEY            - Discord interactions Ed25519 public key (hex)
+#   DISCORD_BOT_TOKEN             - Discord bot token (REST: register commands,
+#                                   send followups)
+#   DISCORD_APP_ID                - Discord application id
+#   DISCORD_CLIENT_SECRET         - OAuth bot-install callback
+#   TURNKEY_API_PUBLIC_KEY        - Turnkey API stamper public key (P-256, hex)
+#   TURNKEY_API_PRIVATE_KEY       - Turnkey API stamper private key (PEM PKCS8)
+#   VERIFIER_PRIVATE_KEY          - ES256 (P-256) private key for verifier_token
+#                                   JWT signing (PEM PKCS8). Identity worker
+#                                   holds the matching public key.
+#   INSTALL_STATE_SECRET          - HMAC secret for OAuth install state JWT
+#   LOOKUP_READ_SECRET            - shared secret for identity /api/lookup auth.
+#                                   MUST equal the identity worker's value (same
+#                                   env), else lookups return 401 unauthorized.
+#   PLATFORM_LINK_WRITE_SECRET    - shared secret for identity /api/platform-link
+#                                   writes + install-state. MUST equal the
+#                                   identity worker's value (same env).
+#   RPC_URL                       - chain RPC (embeds the Alchemy key) for every
+#                                   env; kept as a secret so the key never lands
+#                                   in git. Local dev: put it in .dev.vars.
+#   HATS_GRAPHQL_ENDPOINT (base)  - Base only: The Graph Gateway URL embeds an
+#                                   API key, so it is a secret on Base. Sepolia
+#                                   keeps the keyless Goldsky URL in [vars].
+# ---------------------------------------------------------------------------

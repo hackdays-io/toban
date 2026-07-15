@@ -1,19 +1,11 @@
-import type { ApolloQueryResult } from "@apollo/client/core";
-import { Box, Flex, HStack, Input, Text } from "@chakra-ui/react";
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
-import { useParams } from "@remix-run/react";
+import {
+  useQueryClient,
+  useQuery as useTanstackQuery,
+} from "@tanstack/react-query";
 import axios from "axios";
-import type { Exact, GetWorkspaceQuery, Scalars } from "gql/graphql";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
-import { useHats, useTreeInfo } from "hooks/useHats";
-import {
-  useGrantCreateHatAuthority,
-  useRevokeCreateHatAuthority,
-} from "hooks/useHatsHatCreatorModule";
-import {
-  useGrantOperationAuthority,
-  useRevokeOperationAuthority,
-} from "hooks/useHatsTimeFrameModule";
+import { treeInfoQueryKey, useHats, useTreeInfo } from "hooks/useHats";
 import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
@@ -23,615 +15,780 @@ import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
-import { FaCircleCheck } from "react-icons/fa6";
-import { toast } from "react-toastify";
+import { LuCheck } from "react-icons/lu";
+import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
-import type { Address, TransactionReceipt } from "viem";
-import { PageHeader } from "~/components/PageHeader";
-import {
-  SettingsSection,
-  SettingsSubSection,
-} from "~/components/SettingSections";
-import { CommonButton } from "~/components/common/CommonButton";
-import { CommonInput } from "~/components/common/CommonInput";
-import { CommonTextArea } from "~/components/common/CommonTextarea";
-import { UserIcon } from "~/components/icon/UserIcon";
-import { WorkspaceIcon } from "~/components/icon/WorkspaceIcon";
+import type { Address } from "viem";
+import { Divider } from "~/components/composite/divider";
+import { FieldLabel } from "~/components/composite/field-label";
+import { Row } from "~/components/composite/row";
+import { SectionLabel } from "~/components/composite/section-label";
+import { ScreenHeader } from "~/components/layout/ScreenHeader";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { Icon } from "~/components/ui/icon";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Typography } from "~/components/ui/typography";
 
-interface ActionButtonWrapperWithoutChildrenProps {
-  buttonText: string;
-  color?: string;
-  backgroundColor?: string;
-  onClick: () => void;
-  isLoading: boolean;
-  isDisabled?: boolean;
-}
-
-interface ActionButtonWrapperProps
-  extends React.PropsWithChildren<ActionButtonWrapperWithoutChildrenProps> {}
-
-const ActionButtonWrapper: FC<ActionButtonWrapperProps> = ({
-  children,
-  buttonText,
-  color = "gray.800",
-  backgroundColor = "yellow.400",
-  onClick,
-  isLoading,
-  isDisabled,
-}) => (
-  <Flex gap={2.5} mb={3.5}>
-    {children}
-    <Box>
-      <CommonButton
-        color={color}
-        backgroundColor={backgroundColor}
-        onClick={onClick}
-        loading={isLoading}
-        disabled={isDisabled}
-      >
-        {buttonText}
-      </CommonButton>
-    </Box>
-  </Flex>
-);
-
-const InputAddressWithButton: FC<
-  ActionButtonWrapperWithoutChildrenProps & {
-    placeholder?: string;
-    inputAccount: string;
-    setInputAccount: (account: string) => void;
-    resolvedAddress?: string | undefined;
-  }
-> = ({
-  placeholder = "",
-  inputAccount,
-  setInputAccount,
-  buttonText,
-  resolvedAddress,
-  color = "gray.800",
-  backgroundColor = "yellow.400",
-  onClick,
-  isLoading,
-  isDisabled,
-}) => (
-  <ActionButtonWrapper
-    buttonText={buttonText}
-    color={color}
-    backgroundColor={backgroundColor}
-    onClick={onClick}
-    isLoading={isLoading}
-    isDisabled={isDisabled}
-  >
-    <Box width="100%">
-      <CommonInput
-        placeholder={placeholder}
-        value={inputAccount}
-        onChange={(e) => setInputAccount(e.target.value)}
-      />
-      <HStack
-        mt={1}
-        fontSize="sm"
-        justifyContent="end"
-        color="blue.300"
-        visibility={resolvedAddress ? "visible" : "hidden"}
-      >
-        <FaCircleCheck />
-        <Text color="gray.500">
-          {resolvedAddress
-            ? abbreviateAddress(resolvedAddress)
-            : "address not found"}
-        </Text>
-      </HStack>
-    </Box>
-  </ActionButtonWrapper>
-);
-
-const RoleSubSection: FC<{
-  authorities:
-    | {
-        address: string;
-        authorised: boolean;
-        [key: string]: unknown;
-      }[]
-    | undefined;
-  headingText: string;
-  remove: (address: Address) => Promise<TransactionReceipt | undefined>;
-  add: (address: Address) => Promise<TransactionReceipt | undefined>;
-  isLoadingRemove: boolean;
-  isLoadingAdd: boolean;
-  isRemoveSuccess: boolean;
-  isAddSuccess: boolean;
-  refetch: (
-    variables?:
-      | Partial<
-          Exact<{
-            workspaceId: Scalars["ID"]["input"];
-          }>
-        >
-      | undefined,
-  ) => Promise<ApolloQueryResult<GetWorkspaceQuery>>;
-}> = ({
-  authorities,
-  headingText,
-  remove,
-  add,
-  isLoadingRemove,
-  isLoadingAdd,
-  isRemoveSuccess,
-  isAddSuccess,
-  refetch,
-}) => {
-  const [currentAuthoritiesAddresses, setCurrentAuthoritiesAddresses] =
-    useState<string[]>([]);
-  const [currentAuthoritiesAccounts, setCurrentAuthoritiesAccounts] = useState<
-    NameData[][]
-  >([]);
-  const [newAuthority, setNewAuthority] = useState<string>("");
-  const { fetchNames } = useNamesByAddresses(currentAuthoritiesAddresses);
-  const { fetchAddresses } = useAddressesByNames(undefined, true);
-  const [address, setAddress] = useState<string | undefined>(undefined);
-
-  const setAuthority = useCallback(async () => {
-    if (!authorities) return;
-    const addresses = authorities?.map((authority) => authority.address);
-    if (addresses) {
-      setCurrentAuthoritiesAddresses(addresses);
-
-      const accounts = await fetchNames(addresses);
-      setCurrentAuthoritiesAccounts(accounts as NameData[][]);
-    } else {
-      setCurrentAuthoritiesAddresses([]);
-      setCurrentAuthoritiesAccounts([]);
-    }
-  }, [authorities, fetchNames]);
-
-  useEffect(() => {
-    setAuthority();
-  }, [setAuthority]);
-
-  useEffect(() => {
-    const refetchData = async () => {
-      const { data } = await refetch();
-      console.log("data", data);
-    };
-
-    if (isRemoveSuccess || isAddSuccess) {
-      refetchData();
-      toast.success(
-        "権限の変更が完了しました。反映には時間がかかる場合があります。",
-      );
-    }
-  }, [isRemoveSuccess, isAddSuccess, refetch]);
-
-  useEffect(() => {
-    const resolveAddress = async () => {
-      let targetAddress = undefined;
-      if (newAuthority !== "") {
-        if (isValidEthAddress(newAuthority)) {
-          targetAddress = newAuthority;
-        } else {
-          const addressesData = await fetchAddresses([newAuthority]);
-          const resolvedAddress = addressesData?.[0]?.[0]?.address;
-          if (resolvedAddress) {
-            targetAddress = resolvedAddress;
-          }
-        }
-      }
-      if (targetAddress !== address) {
-        setAddress(targetAddress);
-      }
-      console.log("targetAddress:", targetAddress);
-    };
-
-    resolveAddress();
-  }, [newAuthority, fetchAddresses, address]);
-
-  return (
-    <SettingsSubSection headingText={headingText}>
-      <Box>
-        {currentAuthoritiesAccounts.map((accountArr) => {
-          const account = accountArr[0];
-          if (!account) return null;
-          return (
-            <ActionButtonWrapper
-              key={account.address}
-              buttonText="削除"
-              backgroundColor="red.300"
-              onClick={() => remove(account.address as Address)}
-              isLoading={isLoadingRemove}
-            >
-              <Flex width="100%" alignItems="center" gap={2}>
-                <UserIcon
-                  size="40px"
-                  userImageUrl={ipfs2https(account?.text_records?.avatar)}
-                />
-                <Box flexGrow={1}>
-                  <Text textStyle="sm">{account?.name}</Text>
-                  <Text textStyle="sm">
-                    {abbreviateAddress(account?.address || "")}
-                  </Text>
-                </Box>
-              </Flex>
-            </ActionButtonWrapper>
-          );
-        })}
-        <InputAddressWithButton
-          placeholder="ユーザー名 or ウォレットアドレス"
-          inputAccount={newAuthority}
-          setInputAccount={setNewAuthority}
-          buttonText="追加"
-          resolvedAddress={address}
-          onClick={() => add(address as Address)}
-          isLoading={isLoadingAdd}
-          isDisabled={!address}
-        />
-      </Box>
-    </SettingsSubSection>
-  );
-};
-
-interface WorkspaceOverviewSettingsProps {
+interface BasicInfoSectionProps {
   wallet: WalletType;
-  treeInfo: Tree | undefined;
+  treeId: string;
+  topHat: Hat | undefined;
 }
 
-const WorkspaceOverviewSettings: FC<WorkspaceOverviewSettingsProps> = ({
+const BasicInfoSection: FC<BasicInfoSectionProps> = ({
   wallet,
-  treeInfo,
+  treeId,
+  topHat,
 }) => {
+  const queryClient = useQueryClient();
   const { uploadImageFileToIpfs, imageFile, setImageFile } =
     useUploadImageFileToIpfs();
   const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const { changeHatDetails, changeHatImageURI } = useHats();
 
-  const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
-  const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>(
-    undefined,
-  );
-  const [workspaceName, setWorkspaceName] = useState<string>("");
-  const [workspaceDescription, setWorkspaceDescription] = useState<string>("");
-  const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<
+  const [workspaceImgUrl, setWorkspaceImgUrl] = useState<string | undefined>();
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [workspaceDescription, setWorkspaceDescription] = useState("");
+  const [currentDetails, setCurrentDetails] = useState<
     HatsDetailSchama | undefined
-  >(undefined);
-  const [isLoading, setIsLoading] = useState(false);
+  >();
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const computedTopHat = treeInfo?.hats?.find(
-      (hat) => hat.levelAtLocalTree === 0,
-    );
-    if (computedTopHat !== topHat) setTopHat(computedTopHat);
-  }, [treeInfo, topHat]);
+    if (!topHat?.imageUri) return;
+    const url = ipfs2https(topHat.imageUri);
+    setWorkspaceImgUrl(url ?? undefined);
+  }, [topHat]);
 
   useEffect(() => {
-    const setInitialWorkspaceImgUrl = async () => {
-      if (!topHat?.imageUri) return;
-      const url = ipfs2https(topHat.imageUri);
-      if (url !== workspaceImgUrl) setWorkspaceImgUrl(url);
-    };
-    setInitialWorkspaceImgUrl();
-  }, [topHat, workspaceImgUrl]);
-
-  useEffect(() => {
-    const setInitialWorkspaceStates = async () => {
+    const load = async () => {
       if (!topHat?.details) return;
-      const { data } = await axios.get<HatsDetailSchama>(
-        ipfs2https(topHat.details) || "",
-      );
-      const name = data.data.name;
-      const description = data.data.description;
-      setWorkspaceName(name);
-      setCurrentWorkspaceDetails(data);
-      setWorkspaceDescription(description ?? "");
+      const url = ipfs2https(topHat.details);
+      if (!url) return;
+      const { data } = await axios.get<HatsDetailSchama>(url);
+      setCurrentDetails(data);
+      setWorkspaceName(data.data.name ?? "");
+      setWorkspaceDescription(data.data.description ?? "");
     };
-    setInitialWorkspaceStates();
+    load();
   }, [topHat]);
 
   const handleUploadImg = (file: File | undefined) => {
-    if (!file?.type?.startsWith("image/")) {
-      alert("画像ファイルを選択してください");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("画像ファイルを選択してください");
       return;
     }
-    const imgUrl = file ? URL.createObjectURL(file) : undefined;
     setImageFile(file);
-    setWorkspaceImgUrl(imgUrl);
+    setWorkspaceImgUrl(URL.createObjectURL(file));
   };
 
-  const isChangedDetails = useMemo(() => {
-    return (
-      workspaceName !== currentWorkspaceDetails?.data.name ||
-      workspaceDescription !== currentWorkspaceDetails?.data.description
-    );
-  }, [workspaceName, workspaceDescription, currentWorkspaceDetails]);
+  const isChangedDetails = useMemo(
+    () =>
+      workspaceName !== (currentDetails?.data.name ?? "") ||
+      workspaceDescription !== (currentDetails?.data.description ?? ""),
+    [workspaceName, workspaceDescription, currentDetails],
+  );
 
-  const changeDetails = useCallback(async () => {
-    if (!topHat) return;
-    if (!isChangedDetails) return;
+  const hasChanges = isChangedDetails || Boolean(imageFile);
+  const canSave =
+    Boolean(wallet) &&
+    Boolean(topHat) &&
+    workspaceName.trim().length > 0 &&
+    hasChanges;
 
-    const resUploadHatsDetails = await uploadHatsDetailsToIpfs({
-      name: workspaceName,
-      description: workspaceDescription,
-      responsabilities: currentWorkspaceDetails?.data.responsabilities,
-      authorities: currentWorkspaceDetails?.data.authorities,
-    });
-    if (!resUploadHatsDetails)
-      throw new Error("Failed to upload metadata to ipfs");
-    const ipfsUri = resUploadHatsDetails.ipfsUri;
-    console.log("ipfsUri", ipfsUri);
-    const parsedLog = await changeHatDetails({
-      hatId: BigInt(topHat.id),
-      newDetails: ipfsUri,
-    });
-    if (!parsedLog) throw new Error("Failed to change hat details");
-    console.log("parsedLog", parsedLog);
-  }, [
-    topHat,
-    isChangedDetails,
-    changeHatDetails,
-    uploadHatsDetailsToIpfs,
-    workspaceName,
-    workspaceDescription,
-    currentWorkspaceDetails,
-  ]);
-
-  const changeImage = useCallback(async () => {
-    if (!topHat) return;
-    const resUploadImage = await uploadImageFileToIpfs();
-    if (!resUploadImage) throw new Error("Failed to upload image to ipfs");
-    const ipfsUri = resUploadImage.ipfsUri;
-    console.log("ipfsUri", ipfsUri);
-    const parsedLog = await changeHatImageURI({
-      hatId: BigInt(topHat.id),
-      newImageURI: ipfsUri,
-    });
-    if (!parsedLog) throw new Error("Failed to change hat image");
-    console.log("parsedLog", parsedLog);
-  }, [topHat, changeHatImageURI, uploadImageFileToIpfs]);
-
-  const handleSubmit = async () => {
-    if (!wallet) {
-      alert("ウォレットを接続してください。");
-      return;
-    }
-    if (!workspaceName || !workspaceDescription) {
-      alert("全ての項目を入力してください。");
-      return;
-    }
-
+  const performSave = useCallback(async () => {
+    if (!wallet || !topHat) return;
+    setIsSaving(true);
     try {
-      setIsLoading(true);
-      const requestArray = [];
-      if (isChangedDetails) requestArray.push(changeDetails());
-      if (imageFile) requestArray.push(changeImage());
-      await Promise.all(requestArray);
-      toast.success("ワークスペースの設定を保存しました。");
+      const detailsTask = isChangedDetails
+        ? (async () => {
+            const uploaded = await uploadHatsDetailsToIpfs({
+              name: workspaceName,
+              description: workspaceDescription,
+              responsabilities: currentDetails?.data.responsabilities,
+              authorities: currentDetails?.data.authorities,
+            });
+            if (!uploaded) throw new Error("メタデータの保存に失敗しました");
+            const parsed = await changeHatDetails({
+              hatId: BigInt(topHat.id),
+              newDetails: uploaded.ipfsUri,
+            });
+            if (!parsed) throw new Error("詳細の更新に失敗しました");
+            return uploaded.ipfsUri;
+          })()
+        : Promise.resolve<string | undefined>(undefined);
+
+      const imageTask = imageFile
+        ? (async () => {
+            const uploaded = await uploadImageFileToIpfs();
+            if (!uploaded) throw new Error("画像のアップロードに失敗しました");
+            const parsed = await changeHatImageURI({
+              hatId: BigInt(topHat.id),
+              newImageURI: uploaded.ipfsUri,
+            });
+            if (!parsed) throw new Error("画像の更新に失敗しました");
+            return uploaded.ipfsUri;
+          })()
+        : Promise.resolve<string | undefined>(undefined);
+
+      const [nextDetailsUri, nextImageUri] = await Promise.all([
+        detailsTask,
+        imageTask,
+      ]);
+
+      toast.success("ワークスペースの設定を保存しました");
+      setCurrentDetails((prev) =>
+        prev
+          ? {
+              ...prev,
+              data: {
+                ...prev.data,
+                name: workspaceName,
+                description: workspaceDescription,
+              },
+            }
+          : prev,
+      );
+      setImageFile(null);
+
+      // Optimistic cache patch — point the top hat at the freshly-uploaded
+      // IPFS URIs so the AppShell pill picks up the new name / image without
+      // waiting for the Hats subgraph to index the change.
+      queryClient.setQueryData<Tree | null>(
+        treeInfoQueryKey(Number(treeId)),
+        (prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            hats: prev.hats?.map((hat) =>
+              hat.levelAtLocalTree === 0
+                ? {
+                    ...hat,
+                    ...(nextDetailsUri ? { details: nextDetailsUri } : {}),
+                    ...(nextImageUri ? { imageUri: nextImageUri } : {}),
+                  }
+                : hat,
+            ),
+          };
+        },
+      );
     } catch (error) {
       console.error(error);
-      toast.error("設定の保存に失敗しました。");
+      toast.error("設定の保存に失敗しました");
+    } finally {
+      setIsSaving(false);
     }
-    setIsLoading(false);
-  };
+  }, [
+    wallet,
+    treeId,
+    topHat,
+    isChangedDetails,
+    imageFile,
+    workspaceName,
+    workspaceDescription,
+    currentDetails,
+    uploadHatsDetailsToIpfs,
+    uploadImageFileToIpfs,
+    changeHatDetails,
+    changeHatImageURI,
+    setImageFile,
+    queryClient,
+  ]);
 
   return (
-    <SettingsSection headingText="ワークスペースの概要">
-      <Flex mt={8} width="100%" gap={8} alignItems="center">
-        <Box
-          mb={4}
-          minW="120px"
-          maxW="200px"
-          w="20%"
-          aspectRatio={1}
-          bg="gray.100"
-          borderRadius="3xl"
-        >
-          <WorkspaceIcon workspaceImageUrl={workspaceImgUrl} />
-        </Box>
-        <Box>
-          <CommonButton as="label">
+    <>
+      <SectionLabel>基本情報</SectionLabel>
+      <div className="px-5">
+        <Card className="gap-4 py-4">
+          <div className="flex items-center gap-4 px-4">
+            <Avatar size="lg" className="rounded-md">
+              {workspaceImgUrl && (
+                <AvatarImage src={workspaceImgUrl} alt={workspaceName} />
+              )}
+              <AvatarFallback
+                seed={workspaceName || "Toban"}
+                className="rounded-md"
+              />
+            </Avatar>
+            <div>
+              <Button variant="secondary" size="sm" asChild>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleUploadImg(e.target.files?.[0])}
+                  />
+                  画像をアップロード
+                </label>
+              </Button>
+            </div>
+          </div>
+
+          <div className="px-4">
+            <FieldLabel htmlFor="ws-settings-name">
+              ワークスペース名 <span className="text-danger">*</span>
+            </FieldLabel>
             <Input
-              type="file"
-              accept="image/*"
-              display="none"
-              onChange={(e) => {
-                handleUploadImg(e.target.files?.[0]);
-              }}
+              id="ws-settings-name"
+              value={workspaceName}
+              onChange={(e) => setWorkspaceName(e.target.value)}
+              placeholder="例：kuu village #1"
             />
-            <Text>画像をアップロード</Text>
-          </CommonButton>
-        </Box>
-      </Flex>
-      <SettingsSubSection headingText="名前">
-        <CommonInput
-          // placeholder={workspaceName}
-          value={workspaceName}
-          onChange={(e) => setWorkspaceName(e.target.value)}
-        />
-      </SettingsSubSection>
-      <SettingsSubSection headingText="説明">
-        <CommonTextArea
-          minHeight="80px"
-          // placeholder={workspaceDescription}
-          value={workspaceDescription}
-          onChange={(e) => setWorkspaceDescription(e.target.value)}
-        />
-      </SettingsSubSection>
-      <CommonButton
-        size="lg"
-        maxHeight="64px"
-        minHeight="48px"
-        onClick={handleSubmit}
-        disabled={
-          !workspaceName ||
-          !workspaceDescription ||
-          (!isChangedDetails && !imageFile)
-        }
-        loading={isLoading}
-      >
-        保存
-      </CommonButton>
-    </SettingsSection>
+          </div>
+
+          <div className="px-4">
+            <FieldLabel htmlFor="ws-settings-desc">説明</FieldLabel>
+            <Textarea
+              id="ws-settings-desc"
+              rows={3}
+              value={workspaceDescription}
+              onChange={(e) => setWorkspaceDescription(e.target.value)}
+              placeholder="どんなコミュニティかを入力"
+            />
+          </div>
+        </Card>
+      </div>
+
+      <div className="px-5 pt-4">
+        <Button
+          variant="primary"
+          full
+          size="lg"
+          disabled={!canSave || isSaving}
+          onClick={performSave}
+        >
+          <LuCheck size={18} />
+          {isSaving ? "保存中..." : "保存"}
+        </Button>
+      </div>
+    </>
   );
 };
 
-interface WorkspaceAuthoritiesSettingsProps {
-  wallet: WalletType;
-  treeId: string | undefined;
-  treeInfo: Tree | undefined;
+interface OtherSectionProps {
+  treeId: string;
 }
 
-const WorkspaceAuthoritiesSettings: FC<WorkspaceAuthoritiesSettingsProps> = ({
+const OtherSection: FC<OtherSectionProps> = ({ treeId }) => {
+  const handleInvite = async () => {
+    const link =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/${treeId}`
+        : "";
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+        toast.success("招待リンクをコピーしました");
+      } else {
+        toast.error("クリップボードを利用できません");
+      }
+    } catch (error) {
+      console.error("Failed to copy invite link:", error);
+      toast.error("招待リンクのコピーに失敗しました");
+    }
+  };
+
+  const handleCopyId = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(treeId);
+        toast.success("ワークスペース ID をコピーしました");
+      } else {
+        toast.error("クリップボードを利用できません");
+      }
+    } catch (error) {
+      console.error("Failed to copy workspace id:", error);
+      toast.error("ワークスペース ID のコピーに失敗しました");
+    }
+  };
+
+  return (
+    <>
+      <SectionLabel>その他</SectionLabel>
+      <div className="px-4">
+        <Card className="gap-0 p-0">
+          <Row
+            left={
+              <span className="flex size-9 items-center justify-center rounded-full bg-[#F0EBE0]">
+                <Icon name="invite" size={18} />
+              </span>
+            }
+            title="メンバーを招待"
+            subtitle="招待リンクをコピー"
+            right={
+              <Icon
+                name="chevron-right"
+                size={16}
+                className="text-text-secondary"
+              />
+            }
+            onClick={handleInvite}
+          />
+          <Divider inset={64} />
+          <Row
+            left={
+              <span className="flex size-9 items-center justify-center rounded-full bg-[#F0EBE0]">
+                <Icon name="copy" size={18} />
+              </span>
+            }
+            title="ワークスペース ID をコピー"
+            subtitle={treeId}
+            right={
+              <Icon
+                name="chevron-right"
+                size={16}
+                className="text-text-secondary"
+              />
+            }
+            onClick={handleCopyId}
+          />
+        </Card>
+      </div>
+    </>
+  );
+};
+
+const authorityWearersQueryKey = (hatId: string | undefined) =>
+  ["authorityWearers", hatId ?? null] as const;
+
+interface AuthorityListProps {
+  headingText: string;
+  /** The authority hat — wearing it (or being its admin) grants the gated
+   *  permission on the corresponding Toban module. */
+  authorityHatId: string | undefined;
+  /** Current wallet address — drives the per-row revoke affordance: own row
+   *  renounces, others' rows are only revocable by the workspace admin. */
+  currentUserAddress: string | undefined;
+  /** Top-hat wearer. Admins can revoke other wearers via `transferHat` since
+   *  Hats Protocol's `setHatWearerStatus` is gated to the eligibility module
+   *  only (which Toban leaves as the constant "always eligible" sentinel). */
+  adminAddress: string | undefined;
+}
+
+const AuthorityList: FC<AuthorityListProps> = ({
+  headingText,
+  authorityHatId,
+  currentUserAddress,
+  adminAddress,
+}) => {
+  const queryClient = useQueryClient();
+  const { getWearersInfo, mintHat, renounceHat, adminRevokeAuthorityHat } =
+    useHats();
+  const { fetchNames } = useNamesByAddresses();
+  const { fetchAddresses } = useAddressesByNames(undefined, true);
+
+  const [newAuthority, setNewAuthority] = useState("");
+  const [resolved, setResolved] = useState<string | undefined>();
+  const [pendingAddress, setPendingAddress] = useState<string | undefined>();
+  const [mutationKind, setMutationKind] = useState<
+    "add" | "remove" | undefined
+  >();
+
+  const { data: accounts = [] } = useTanstackQuery({
+    queryKey: authorityWearersQueryKey(authorityHatId),
+    enabled: Boolean(authorityHatId),
+    queryFn: async () => {
+      if (!authorityHatId) return [] as NameData[][];
+      const wearers = await getWearersInfo({ hatId: authorityHatId });
+      const addrs = wearers?.map((w) => w.id) ?? [];
+      if (addrs.length === 0) return [] as NameData[][];
+      const named = await fetchNames(addrs);
+      return (named ?? []) as NameData[][];
+    },
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolve = async () => {
+      if (!newAuthority) {
+        setResolved(undefined);
+        return;
+      }
+      if (isValidEthAddress(newAuthority)) {
+        if (!cancelled) setResolved(newAuthority);
+        return;
+      }
+      const matches = await fetchAddresses([newAuthority]);
+      if (!cancelled) setResolved(matches?.[0]?.[0]?.address);
+    };
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [newAuthority, fetchAddresses]);
+
+  const handleAdd = useCallback(async () => {
+    if (!authorityHatId || !resolved) return;
+    setPendingAddress(resolved);
+    setMutationKind("add");
+    try {
+      await mintHat({
+        hatId: BigInt(authorityHatId),
+        wearer: resolved as Address,
+      });
+      // Resolve name for the new wearer so the optimistic row matches the
+      // shape the queryFn returns. fetchNames is cached upstream so this is
+      // cheap on the second call.
+      const named = (await fetchNames([resolved])) as
+        | NameData[][]
+        | null
+        | undefined;
+      const newEntry: NameData[] = named?.[0]?.length
+        ? named[0]
+        : [
+            {
+              address: resolved,
+              name: "",
+              domain: "",
+              text_records: {},
+            } as NameData,
+          ];
+      queryClient.setQueryData<NameData[][]>(
+        authorityWearersQueryKey(authorityHatId),
+        (prev) => {
+          const filtered = (prev ?? []).filter(
+            (arr) =>
+              (arr?.[0]?.address ?? "").toLowerCase() !==
+              resolved.toLowerCase(),
+          );
+          return [newEntry, ...filtered];
+        },
+      );
+      toast.success("権限を付与しました");
+      setNewAuthority("");
+      setResolved(undefined);
+    } catch (error) {
+      console.error(error);
+      toast.error("権限の付与に失敗しました");
+    } finally {
+      setPendingAddress(undefined);
+      setMutationKind(undefined);
+    }
+  }, [authorityHatId, resolved, mintHat, fetchNames, queryClient]);
+
+  const handleRemove = useCallback(
+    async (address: string, kind: "renounce" | "transfer") => {
+      if (!authorityHatId) return;
+      setPendingAddress(address);
+      setMutationKind("remove");
+      try {
+        if (kind === "renounce") {
+          await renounceHat(BigInt(authorityHatId));
+        } else {
+          if (!adminAddress) throw new Error("admin address unknown");
+          await adminRevokeAuthorityHat({
+            hatId: BigInt(authorityHatId),
+            from: address as Address,
+            admin: adminAddress as Address,
+          });
+        }
+        queryClient.setQueryData<NameData[][]>(
+          authorityWearersQueryKey(authorityHatId),
+          (prev) =>
+            (prev ?? []).filter(
+              (arr) =>
+                (arr?.[0]?.address ?? "").toLowerCase() !==
+                address.toLowerCase(),
+            ),
+        );
+        toast.success(
+          kind === "renounce" ? "権限を返上しました" : "権限を剥奪しました",
+        );
+      } catch (error) {
+        console.error(error);
+        toast.error(
+          kind === "renounce"
+            ? "権限の返上に失敗しました"
+            : "権限の剥奪に失敗しました",
+        );
+      } finally {
+        setPendingAddress(undefined);
+        setMutationKind(undefined);
+      }
+    },
+    [
+      authorityHatId,
+      adminAddress,
+      renounceHat,
+      adminRevokeAuthorityHat,
+      queryClient,
+    ],
+  );
+
+  return (
+    <div className="space-y-2">
+      <Typography as="div" variant="bodySm" weight="semibold">
+        {headingText}
+      </Typography>
+      <Card className="gap-0 p-0">
+        {accounts.map((arr) => {
+          const account = arr?.[0];
+          if (!account) return null;
+          const isSelf =
+            currentUserAddress?.toLowerCase() === account.address.toLowerCase();
+          const callerIsAdmin =
+            !!adminAddress &&
+            currentUserAddress?.toLowerCase() === adminAddress.toLowerCase();
+          const action: "renounce" | "transfer" | null = isSelf
+            ? "renounce"
+            : callerIsAdmin
+              ? "transfer"
+              : null;
+          const isRemoving =
+            mutationKind === "remove" && pendingAddress === account.address;
+          return (
+            <Row
+              key={account.address}
+              left={
+                <Avatar size="sm">
+                  {account.text_records?.avatar && (
+                    <AvatarImage
+                      src={ipfs2https(account.text_records.avatar)}
+                      alt={account.name}
+                    />
+                  )}
+                  <AvatarFallback seed={account.name || account.address} />
+                </Avatar>
+              }
+              title={account.name || abbreviateAddress(account.address)}
+              subtitle={abbreviateAddress(account.address)}
+              right={
+                action ? (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    disabled={isRemoving}
+                    onClick={() => handleRemove(account.address, action)}
+                  >
+                    {isRemoving
+                      ? action === "renounce"
+                        ? "返上中..."
+                        : "剥奪中..."
+                      : action === "renounce"
+                        ? "返上"
+                        : "剥奪"}
+                  </Button>
+                ) : null
+              }
+            />
+          );
+        })}
+        {accounts.length === 0 && (
+          <Typography
+            as="div"
+            variant="caption"
+            tone="secondary"
+            className="px-4 py-3"
+          >
+            権限を持つメンバーはいません
+          </Typography>
+        )}
+      </Card>
+      <div className="flex gap-2.5">
+        <div className="flex-1">
+          <Input
+            placeholder="ユーザー名 or ウォレットアドレス"
+            value={newAuthority}
+            onChange={(e) => setNewAuthority(e.target.value)}
+          />
+          <Typography
+            as="div"
+            variant="caption"
+            tone="secondary"
+            className="mt-1 min-h-4 text-right"
+          >
+            {resolved ? abbreviateAddress(resolved) : ""}
+          </Typography>
+        </div>
+        <Button
+          variant="primary"
+          disabled={
+            !authorityHatId ||
+            !resolved ||
+            (mutationKind === "add" && pendingAddress === resolved)
+          }
+          onClick={handleAdd}
+        >
+          {mutationKind === "add" && pendingAddress === resolved
+            ? "追加中..."
+            : "追加"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+interface AuthoritiesSectionProps {
+  wallet: WalletType;
+  treeId: string;
+  topHat: Hat | undefined;
+}
+
+const AuthoritiesSection: FC<AuthoritiesSectionProps> = ({
   wallet,
   treeId,
-  treeInfo,
+  topHat,
 }) => {
-  const { data, refetch } = useGetWorkspace({ workspaceId: treeId || "" });
-  const {
-    grantCreateHatAuthority,
-    isLoading: isGrantCreateHatAuthorityLoading,
-    isSuccess: isGrantCreateHatAuthoritySuccess,
-  } = useGrantCreateHatAuthority(
-    data?.workspace?.hatsHatCreatorModule as Address,
-  );
-  const {
-    revokeCreateHatAuthority,
-    isLoading: isRevokeCreateHatAuthorityLoading,
-    isSuccess: isRevokeCreateHatAuthoritySuccess,
-  } = useRevokeCreateHatAuthority(
-    data?.workspace?.hatsHatCreatorModule as Address,
-  );
-  const {
-    grantOperationAuthority,
-    isLoading: isGrantOperationAuthorityLoading,
-    isSuccess: isGrantOperationAuthoritySuccess,
-  } = useGrantOperationAuthority(
-    data?.workspace?.hatsTimeFrameModule as Address,
-  );
-  const {
-    revokeOperationAuthority,
-    isLoading: isRevokeOperationAuthorityLoading,
-    isSuccess: isRevokeOperationAuthoritySuccess,
-  } = useRevokeOperationAuthority(
-    data?.workspace?.hatsTimeFrameModule as Address,
-  );
+  const { data } = useGetWorkspace({ workspaceId: treeId });
   const {
     transferHat,
-    isLoading: isTransferHatLoading,
-    isSuccess: isTransferHatSuccess,
+    isLoading: isTransferLoading,
+    isSuccess: isTransferSuccess,
+    getWearersInfo,
   } = useHats();
-  const { getWearersInfo } = useHats();
 
-  const [topHat, setTopHat] = useState<Hat | undefined>(undefined);
-  const [owner, setOwner] = useState<string | undefined>(undefined);
-  const [newOwner, setNewOwner] = useState<string>("");
-  const [createHatAuthorities, setCreateHatAuthorities] = useState<
-    | {
-        address: string;
-        authorised: boolean;
-        [key: string]: unknown;
-      }[]
-    | undefined
-  >(undefined);
-  const [operationAuthorities, setOperationAuthorities] = useState<
-    | {
-        address: string;
-        authorised: boolean;
-        [key: string]: unknown;
-      }[]
-    | undefined
-  >(undefined);
+  const [owner, setOwner] = useState<string | undefined>();
+  const [newOwner, setNewOwner] = useState("");
+  const [resolvedNewOwner, setResolvedNewOwner] = useState<
+    string | undefined
+  >();
+  const { fetchAddresses } = useAddressesByNames(undefined, true);
 
   useEffect(() => {
-    setCreateHatAuthorities([]);
-    setOperationAuthorities([]);
-  }, []);
-
-  useEffect(() => {
-    const computedTopHat = treeInfo?.hats?.find(
-      (hat) => hat.levelAtLocalTree === 0,
-    );
-    if (computedTopHat !== topHat) setTopHat(computedTopHat);
-  }, [treeInfo, topHat]);
-
-  useEffect(() => {
-    const fetchTophatWearer = async () => {
+    const fetchOwner = async () => {
       if (!topHat) return;
-      const wearerInfo = await getWearersInfo({ hatId: topHat.id });
-      setOwner(wearerInfo?.[0].id);
+      const info = await getWearersInfo({ hatId: topHat.id });
+      setOwner(info?.[0]?.id);
     };
-    fetchTophatWearer();
+    fetchOwner();
   }, [topHat, getWearersInfo]);
 
   useEffect(() => {
-    if (isTransferHatSuccess) {
-      setOwner(newOwner);
+    if (isTransferSuccess && resolvedNewOwner) {
+      setOwner(resolvedNewOwner);
+      setNewOwner("");
+      setResolvedNewOwner(undefined);
+      toast.success("オーナーを変更しました");
     }
-  }, [isTransferHatSuccess, newOwner]);
+  }, [isTransferSuccess, resolvedNewOwner]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolve = async () => {
+      if (!newOwner) {
+        setResolvedNewOwner(undefined);
+        return;
+      }
+      if (isValidEthAddress(newOwner)) {
+        if (!cancelled) setResolvedNewOwner(newOwner);
+        return;
+      }
+      const matches = await fetchAddresses([newOwner]);
+      if (!cancelled) setResolvedNewOwner(matches?.[0]?.[0]?.address);
+    };
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [newOwner, fetchAddresses]);
 
   return (
-    <SettingsSection headingText="ワークスペースの権限">
-      <RoleSubSection
-        authorities={createHatAuthorities}
-        headingText="当番の新規作成"
-        remove={revokeCreateHatAuthority}
-        add={grantCreateHatAuthority}
-        isLoadingRemove={isRevokeCreateHatAuthorityLoading}
-        isLoadingAdd={isGrantCreateHatAuthorityLoading}
-        isRemoveSuccess={isRevokeCreateHatAuthoritySuccess}
-        isAddSuccess={isGrantCreateHatAuthoritySuccess}
-        refetch={refetch}
-      />
-      <RoleSubSection
-        authorities={operationAuthorities}
-        headingText="当番の割当・休止・剥奪"
-        remove={revokeOperationAuthority}
-        add={grantOperationAuthority}
-        isLoadingRemove={isRevokeOperationAuthorityLoading}
-        isLoadingAdd={isGrantOperationAuthorityLoading}
-        isRemoveSuccess={isRevokeOperationAuthoritySuccess}
-        isAddSuccess={isGrantOperationAuthoritySuccess}
-        refetch={refetch}
-      />
-      <SettingsSubSection headingText="オーナー（注意して変更してください）">
-        <InputAddressWithButton
-          placeholder={owner}
-          inputAccount={newOwner}
-          buttonText="変更"
-          color="white"
-          backgroundColor="orange.500"
-          setInputAccount={setNewOwner}
-          onClick={() => {
-            wallet &&
-              topHat &&
-              transferHat({
-                hatId: BigInt(topHat.id),
-                from: wallet.account.address as Address,
-                to: newOwner as Address,
-              });
-          }}
-          isLoading={isTransferHatLoading}
-          isDisabled={!wallet || !topHat || !isValidEthAddress(newOwner)}
+    <>
+      <SectionLabel>権限</SectionLabel>
+      <div className="space-y-5 px-5">
+        <AuthorityList
+          headingText="当番の新規作成"
+          authorityHatId={data?.workspace?.creatorHatId ?? undefined}
+          currentUserAddress={wallet?.account.address}
+          adminAddress={owner}
         />
-      </SettingsSubSection>
-    </SettingsSection>
+        <AuthorityList
+          headingText="当番の割当・休止・剥奪"
+          authorityHatId={data?.workspace?.minterHatId ?? undefined}
+          currentUserAddress={wallet?.account.address}
+          adminAddress={owner}
+        />
+
+        <div className="space-y-2">
+          <Typography as="div" variant="bodySm" weight="semibold">
+            オーナー（注意して変更してください）
+          </Typography>
+          {owner && (
+            <Typography
+              as="div"
+              variant="caption"
+              tone="secondary"
+              className="break-all"
+            >
+              現在のオーナー: {owner}
+            </Typography>
+          )}
+          <div className="flex gap-2.5">
+            <div className="flex-1">
+              <Input
+                placeholder="ユーザー名 or ウォレットアドレス"
+                value={newOwner}
+                onChange={(e) => setNewOwner(e.target.value)}
+              />
+              <Typography
+                as="div"
+                variant="caption"
+                tone="secondary"
+                className="mt-1 min-h-4 text-right"
+              >
+                {resolvedNewOwner ? abbreviateAddress(resolvedNewOwner) : ""}
+              </Typography>
+            </div>
+            <Button
+              variant="danger"
+              disabled={
+                !wallet ||
+                !topHat ||
+                !resolvedNewOwner ||
+                isTransferLoading ||
+                resolvedNewOwner.toLowerCase() === owner?.toLowerCase()
+              }
+              onClick={() => {
+                if (!wallet || !topHat || !resolvedNewOwner) return;
+                transferHat({
+                  hatId: BigInt(topHat.id),
+                  from: wallet.account.address as Address,
+                  to: resolvedNewOwner as Address,
+                });
+              }}
+            >
+              変更
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
+function pickTopHat(treeInfo: Tree | undefined): Hat | undefined {
+  return treeInfo?.hats?.find((hat) => hat.levelAtLocalTree === 0);
+}
+
 const WorkspaceSettings: FC = () => {
+  const navigate = useNavigate();
   const { wallet } = useActiveWallet();
   const { treeId } = useParams();
   const treeInfo = useTreeInfo(Number(treeId));
+  const topHat = useMemo(() => pickTopHat(treeInfo), [treeInfo]);
+
+  if (!treeId) return null;
 
   return (
-    <Box width="100%" pb={10}>
-      <PageHeader title="ワークスペース設定" />
-      <WorkspaceOverviewSettings wallet={wallet} treeInfo={treeInfo} />
-      <WorkspaceAuthoritiesSettings
-        wallet={wallet}
-        treeId={treeId}
-        treeInfo={treeInfo}
+    <div className="flex min-h-dvh flex-col bg-bg pb-10">
+      <ScreenHeader
+        title="ワークスペース設定"
+        onBack={() => navigate(`/${treeId}`)}
       />
-    </Box>
+      <div className="flex flex-col gap-2">
+        <BasicInfoSection wallet={wallet} treeId={treeId} topHat={topHat} />
+        <OtherSection treeId={treeId} />
+        <AuthoritiesSection wallet={wallet} treeId={treeId} topHat={topHat} />
+      </div>
+    </div>
   );
 };
 

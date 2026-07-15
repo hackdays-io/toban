@@ -1,16 +1,28 @@
 {
   "network": "sepolia",
-  "startBlock": 9010696,
+  "startBlock": 10838000,
   "contracts": [
     {
-      "address": "0xA764F51dcaE050DBFf8404D0bf5C089E4Fb85AdD",
+      "address": "0x010329e42cAc221D799C105516830D84901Dc2Ac",
       "file": "BigBang",
       "mappingFile": "bigbangMapping",
       "entities": [{ "name": "Executed" }],
       "handlers": [
         {
-          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address)",
+          "event": "Executed(indexed address,indexed address,indexed uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,address,address,address,address,address)",
           "handler": "handleExecuted"
+        }
+      ]
+    },
+    {
+      "address": "0x9eE2641Ba7017C63161C5682F077ab95E6C3eC0D",
+      "file": "ScheduledDistributorFactory",
+      "mappingFile": "scheduledDistributorMapping",
+      "entities": [{ "name": "ScheduledDistributor" }],
+      "handlers": [
+        {
+          "event": "ScheduledDistributorCreated(indexed address,indexed address,address,address[],address,uint256,bytes32)",
+          "handler": "handleScheduledDistributorCreated"
         }
       ]
     }
@@ -43,6 +55,73 @@
         {
           "event": "Transfer(indexed address,indexed address,uint256)",
           "handler": "handleTransfer"
+        }
+      ]
+    },
+    {
+      "file": "ScheduledDistributor",
+      "mappingFile": "scheduledDistributorMapping",
+      "entities": [
+        { "name": "ScheduledDistributor" },
+        { "name": "ScheduledDistributorDeposit" },
+        { "name": "ScheduledDistributorTokenBalance" }
+      ],
+      "handlers": [
+        {
+          "event": "RuleCreated(indexed address,address,address[],address,uint256)",
+          "handler": "handleRuleCreated"
+        },
+        {
+          "event": "Deposited(indexed address,indexed address,uint256)",
+          "handler": "handleDeposited"
+        },
+        {
+          "event": "Executed(indexed address,indexed address,indexed address,uint256)",
+          "handler": "handleExecuted"
+        },
+        {
+          "event": "Reclaimed(indexed address,indexed address,uint256)",
+          "handler": "handleReclaimed"
+        }
+      ]
+    },
+    {
+      "file": "HatsQuestModule",
+      "mappingFile": "questMapping",
+      "entities": [
+        { "name": "Quest" },
+        { "name": "SubmissionAttempt" },
+        { "name": "QuestApproval" },
+        { "name": "EscrowedRoleShare" }
+      ],
+      "handlers": [
+        {
+          "event": "QuestCreated(indexed uint256,indexed address,indexed uint256,address,uint256,string)",
+          "handler": "handleQuestCreated"
+        },
+        {
+          "event": "CompletionSubmitted(indexed uint256,indexed address)",
+          "handler": "handleCompletionSubmitted"
+        },
+        {
+          "event": "SubmissionWithdrawn(indexed uint256,indexed address)",
+          "handler": "handleSubmissionWithdrawn"
+        },
+        {
+          "event": "SubmissionRejected(indexed uint256,indexed address,indexed address)",
+          "handler": "handleSubmissionRejected"
+        },
+        {
+          "event": "QuestApproved(indexed uint256,indexed address,uint8)",
+          "handler": "handleQuestApproved"
+        },
+        {
+          "event": "QuestCompleted(indexed uint256,indexed address,uint256)",
+          "handler": "handleQuestCompleted"
+        },
+        {
+          "event": "QuestCancelled(indexed uint256,indexed address,uint256)",
+          "handler": "handleQuestCancelled"
         }
       ]
     }

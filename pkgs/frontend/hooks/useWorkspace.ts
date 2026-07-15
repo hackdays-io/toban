@@ -19,8 +19,10 @@ const queryGetWorkspace = gql(`
       hatterHatId
       hatsTimeFrameModule
       hatsHatCreatorModule
+      hatsQuestModule
       creator
       creatorHatId
+      questAgentHatId
       blockTimestamp
       blockNumber
       hatsFractionTokenModule {
@@ -45,8 +47,10 @@ const queryGetWorkspaces = gql(`
       hatterHatId
       hatsTimeFrameModule
       hatsHatCreatorModule
+      hatsQuestModule
       creator
       creatorHatId
+      questAgentHatId
       blockTimestamp
       blockNumber
       hatsFractionTokenModule {
@@ -68,10 +72,13 @@ export const useGetWorkspace = (variables?: GetWorkspaceQueryVariables) => {
   return result;
 };
 
-export const useGetWorkspaces = (variables?: GetWorkspacesQueryVariables) => {
+export const useGetWorkspaces = (
+  variables?: GetWorkspacesQueryVariables,
+  options?: { skip?: boolean },
+) => {
   const result = useQuery<GetWorkspacesQuery, GetWorkspacesQueryVariables>(
     queryGetWorkspaces,
-    { variables },
+    { variables, skip: options?.skip },
   );
 
   return result;

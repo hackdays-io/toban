@@ -35,6 +35,7 @@ ENV_FILES=(
   "pkgs/cli/.env"
   "pkgs/contract/.env"
   "pkgs/frontend/.env"
+  "pkgs/frontend/.env.base"
 )
 for f in "${ENV_FILES[@]}"; do
   if [ -f "${REPO_PATH}/$f" ]; then
@@ -49,10 +50,6 @@ SETUP_ERRORS=()
 log "Running pnpm install (output: ${LOGFILE})..."
 (cd "$WORKTREE_PATH" && pnpm install --frozen-lockfile) >> "$LOGFILE" 2>&1 \
   || SETUP_ERRORS+=("pnpm install failed")
-
-log "Running frontend graphql-codegen..."
-(cd "$WORKTREE_PATH" && pnpm frontend codegen) >> "$LOGFILE" 2>&1 \
-  || SETUP_ERRORS+=("frontend codegen failed (network or schema issue?)")
 
 log "Running contract hardhat compile..."
 (cd "$WORKTREE_PATH" && pnpm contract compile) >> "$LOGFILE" 2>&1 \

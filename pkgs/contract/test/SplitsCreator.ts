@@ -305,6 +305,7 @@ describe("SplitsCreator Factory", () => {
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ]),
     ).to.be.a("string");
@@ -325,6 +326,7 @@ describe("SplitsCreator Factory", () => {
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ]);
 
@@ -336,6 +338,7 @@ describe("SplitsCreator Factory", () => {
         HatsTimeFrameModule.address,
         HatsFractionTokenModule.address,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -648,6 +651,7 @@ describe("CreateSplit without thanks token weight", () => {
         HatsTimeFrameModule.address,
         hatsFractionTokenModuleAddress,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -1521,6 +1525,7 @@ describe("CreateSplit with thanks token weight", () => {
         HatsTimeFrameModule.address,
         hatsFractionTokenModuleAddress,
         ThanksToken.address,
+        zeroAddress,
         keccak256("0x1234"),
       ],
       { account: bigBangAddress.account },
@@ -1814,6 +1819,7 @@ describe("CreateSplit with thanks token weight", () => {
             HatsTimeFrameModule.address,
             HatsFractionTokenModule.address,
             ThanksToken.address, // Now using actual ThanksToken address
+            zeroAddress,
             keccak256(
               encodeAbiParameters(
                 [{ type: "string" }],
@@ -2273,15 +2279,20 @@ describe("CreateSplit with thanks token weight", () => {
     const allocations = previewResult[1];
     const totalAllocation = previewResult[2];
 
-    const endWoreTime = await publicClient
-      .getBlock({
-        blockTag: "latest",
-      })
-      .then((block) => block.timestamp);
-
-    const address1Time = BigInt(endWoreTime - address1WoreTime);
-    const address2Time = BigInt(endWoreTime - address2WoreTime);
-    const address3Time = BigInt(endWoreTime - address3WoreTime);
+    // Read elapsed times from the same source the contract uses so the
+    // expected sqrt(time) matches block.timestamp at the preview eth_call.
+    const address1Time = await HatsTimeFrameModule.read.getWearingElapsedTime([
+      address1.account?.address!,
+      hat1_id,
+    ]);
+    const address2Time = await HatsTimeFrameModule.read.getWearingElapsedTime([
+      address2.account?.address!,
+      hat1_id,
+    ]);
+    const address3Time = await HatsTimeFrameModule.read.getWearingElapsedTime([
+      address3.account?.address!,
+      hat2_id,
+    ]);
 
     const sqrtAddress1Time = sqrt(address1Time);
     const sqrtAddress2Time = sqrt(address2Time);

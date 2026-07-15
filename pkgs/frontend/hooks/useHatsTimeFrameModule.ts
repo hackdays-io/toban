@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import type { Address } from "viem";
 import { hatsTimeFrameContractBaseConfig } from "./useContracts";
@@ -26,9 +27,11 @@ export const useMintHatFromTimeFrameModule = (
       await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
-    } catch (error) {
-      console.error(error);
     } finally {
+      // Callers (e.g. the duty-assign route) need to distinguish success from
+      // failure to decide whether to navigate or surface a toast — so let
+      // viem's revert / user-rejection errors bubble up instead of swallowing
+      // them here.
       setIsLoading(false);
     }
   };
@@ -59,8 +62,6 @@ export const useReactivate = (hatsTimeFrameModuleAddress?: string) => {
         await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -94,8 +95,6 @@ export const useDeactivate = (hatsTimeFrameModuleAddress?: string) => {
         await publicClient.waitForTransactionReceipt({
           hash: txHash,
         });
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -106,61 +105,90 @@ export const useDeactivate = (hatsTimeFrameModuleAddress?: string) => {
   return { deactivate, isLoading };
 };
 
+// Mirrors `HatsTimeFrameModule.hasAuthority(address)` — true if the address
+// is the wearer or admin of the module's configured `minterHatId`, which the
+// contract uses to gate `deactivate` / `reactivate` / `renounce` for accounts
+// other than the wearer themselves.
+export const useHasAuthority = (
+  hatsTimeFrameModuleAddress?: string,
+  authority?: string,
+) => {
+  const enabled = !!hatsTimeFrameModuleAddress && !!authority;
+  const { data } = useQuery({
+    queryKey: [
+      "hatsTimeFrame",
+      "hasAuthority",
+      hatsTimeFrameModuleAddress,
+      authority,
+    ],
+    queryFn: async () => {
+      const result = await publicClient.readContract({
+        ...hatsTimeFrameContractBaseConfig(
+          hatsTimeFrameModuleAddress as Address,
+        ),
+        functionName: "hasAuthority",
+        args: [authority as Address],
+      });
+      return result;
+    },
+    enabled,
+  });
+  return data ?? false;
+};
+
 export const useActiveState = (
   hatsTimeFrameModuleAddress?: string,
   hatId?: string,
   wearer?: string,
-  count?: number,
 ) => {
-  const [activeState, setActiveState] = useState({
-    isActive: false,
-    woreTime: 0,
-    wearingElapsedTime: 0,
+  const enabled = !!hatsTimeFrameModuleAddress && !!hatId && !!wearer;
+  const { data, refetch } = useQuery({
+    queryKey: [
+      "hatsTimeFrame",
+      "activeState",
+      hatsTimeFrameModuleAddress,
+      hatId,
+      wearer,
+    ],
+    queryFn: async () => {
+      const [isActive, woreTime, wearingElapsedTime] = await Promise.all([
+        publicClient.readContract({
+          ...hatsTimeFrameContractBaseConfig(
+            hatsTimeFrameModuleAddress as Address,
+          ),
+          functionName: "isActive",
+          args: [BigInt(hatId as string), wearer as Address],
+        }),
+        publicClient.readContract({
+          ...hatsTimeFrameContractBaseConfig(
+            hatsTimeFrameModuleAddress as Address,
+          ),
+          functionName: "getWoreTime",
+          args: [wearer as Address, BigInt(hatId as string)],
+        }),
+        publicClient.readContract({
+          ...hatsTimeFrameContractBaseConfig(
+            hatsTimeFrameModuleAddress as Address,
+          ),
+          functionName: "getWearingElapsedTime",
+          args: [wearer as Address, BigInt(hatId as string)],
+        }),
+      ]);
+      return {
+        isActive,
+        woreTime: Number(woreTime),
+        wearingElapsedTime: Number(wearingElapsedTime),
+      };
+    },
+    enabled,
   });
 
-  useEffect(() => {
-    const fetch = async () => {
-      if (!hatsTimeFrameModuleAddress || !hatId || !wearer) return;
-
-      try {
-        const [isActive, woreTime, wearingElapsedTime] = await Promise.all([
-          publicClient.readContract({
-            ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address,
-            ),
-            functionName: "isActive",
-            args: [BigInt(hatId), wearer as Address],
-          }),
-          publicClient.readContract({
-            ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address,
-            ),
-            functionName: "getWoreTime",
-            args: [wearer as Address, BigInt(hatId)],
-          }),
-          publicClient.readContract({
-            ...hatsTimeFrameContractBaseConfig(
-              hatsTimeFrameModuleAddress as Address,
-            ),
-            functionName: "getWearingElapsedTime",
-            args: [wearer as Address, BigInt(hatId)],
-          }),
-        ]);
-
-        setActiveState({
-          isActive,
-          woreTime: Number(woreTime),
-          wearingElapsedTime: Number(wearingElapsedTime),
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetch();
-  }, [hatsTimeFrameModuleAddress, hatId, wearer]);
-
-  return activeState;
+  return {
+    isActive: data?.isActive ?? false,
+    woreTime: data?.woreTime ?? 0,
+    wearingElapsedTime: data?.wearingElapsedTime ?? 0,
+    refetch,
+  };
 };
 
 export const useWearingElapsedTime = (
@@ -241,84 +269,4 @@ export const useRenounceHatFromTimeFrameModule = (
   );
 
   return { renounceHat, isLoading };
-};
-
-export const useGrantOperationAuthority = (
-  hatsTimeFrameModuleAddress: Address,
-) => {
-  const { wallet } = useActiveWallet();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const grantOperationAuthority = useCallback(
-    async (authority: Address) => {
-      if (!hatsTimeFrameModuleAddress || !wallet) return;
-
-      setIsLoading(true);
-      setIsSuccess(false);
-
-      try {
-        const txHash = await wallet?.writeContract({
-          ...hatsTimeFrameContractBaseConfig(hatsTimeFrameModuleAddress),
-          functionName: "grantOperationAuthority",
-          args: [authority],
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-
-        setIsSuccess(true);
-
-        return receipt;
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [hatsTimeFrameModuleAddress, wallet],
-  );
-
-  return { grantOperationAuthority, isLoading, isSuccess };
-};
-
-export const useRevokeOperationAuthority = (
-  hatsTimeFrameModuleAddress: Address,
-) => {
-  const { wallet } = useActiveWallet();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const revokeOperationAuthority = useCallback(
-    async (authority: Address) => {
-      if (!hatsTimeFrameModuleAddress || !wallet) return;
-
-      setIsLoading(true);
-      setIsSuccess(false);
-
-      try {
-        const txHash = await wallet?.writeContract({
-          ...hatsTimeFrameContractBaseConfig(hatsTimeFrameModuleAddress),
-          functionName: "revokeOperationAuthority",
-          args: [authority],
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-
-        setIsSuccess(true);
-
-        return receipt;
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [hatsTimeFrameModuleAddress, wallet],
-  );
-
-  return { revokeOperationAuthority, isLoading, isSuccess };
 };

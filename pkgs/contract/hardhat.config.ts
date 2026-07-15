@@ -30,6 +30,7 @@ const config: HardhatUserConfig = {
           optimizer: {
             runs: 200,
           },
+          evmVersion: "cancun",
         },
       },
     ],

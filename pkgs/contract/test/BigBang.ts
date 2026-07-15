@@ -11,11 +11,13 @@ import {
   type HatsFractionTokenModule,
   type HatsHatCreatorModule,
   type HatsModuleFactory,
+  type HatsQuestModule,
   type HatsTimeFrameModule,
   deployHatsFractionTokenModule,
   deployHatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
+  deployHatsQuestModule,
   deployHatsTimeFrameModule,
 } from "../helpers/deploy/Hats";
 import {
@@ -42,6 +44,7 @@ describe("BigBang", () => {
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsHatCreatorModule_IMPL: HatsHatCreatorModule;
   let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
+  let HatsQuestModule_IMPL: HatsQuestModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
@@ -78,6 +81,10 @@ describe("BigBang", () => {
     const { HatsFractionTokenModule: _HatsFractionTokenModule_IMPL } =
       await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
+
+    const { HatsQuestModule: _HatsQuestModule_IMPL } =
+      await deployHatsQuestModule("0.0.0", Create2Deployer.address);
+    HatsQuestModule_IMPL = _HatsQuestModule_IMPL;
 
     const {
       SplitsWarehouse: _SplitsWarehouse,
@@ -129,6 +136,7 @@ describe("BigBang", () => {
         hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
         hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
         hatsFractionTokenModule_impl: HatsFractionTokenModule_IMPL.address,
+        hatsQuestModule_impl: HatsQuestModule_IMPL.address,
         splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
         splitsFactoryV2Address: PullSplitsFactory.address,
         thanksTokenFactoryAddress: ThanksTokenFactory.address,

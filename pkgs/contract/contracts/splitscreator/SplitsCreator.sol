@@ -10,6 +10,7 @@ import {SplitV2Lib} from "../splits/libraries/SplitV2.sol";
 import {IThanksToken} from "../thankstoken/IThanksToken.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
+import {IHatsQuestModule} from "../hatsmodules/quest/IHatsQuestModule.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
 
 contract SplitsCreator is ISplitsCreator, Clone {
@@ -39,6 +40,10 @@ contract SplitsCreator is ISplitsCreator, Clone {
         return IThanksToken(_getArgAddress(140));
     }
 
+    function HATS_QUEST_MODULE() public pure returns (IHatsQuestModule) {
+        return IHatsQuestModule(_getArgAddress(172));
+    }
+
     /**
      * @notice Creates a new split contract based on the provided splits information.
      * @param _splitsInfo An array of SplitsInfo structs containing details about roles, wearers, and multipliers.
@@ -48,6 +53,38 @@ contract SplitsCreator is ISplitsCreator, Clone {
         SplitsInfo[] memory _splitsInfo,
         WeightsInfo memory _weightsInfo
     ) external returns (address) {
+        return _create(_splitsInfo, _weightsInfo, _generateSalt(_splitsInfo));
+    }
+
+    /**
+     * @notice Creates a new split contract using a caller-supplied salt.
+     * @dev Used by upstream modules (e.g. ScheduledDistributor) that need to
+     *      derive the resulting Split address deterministically from off-chain
+     *      data instead of from the SplitsInfo payload.
+     */
+    function createWithSalt(
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo,
+        bytes32 _salt
+    ) external returns (address) {
+        // Mix msg.sender into the salt so a griefer can't pre-deploy at the
+        // same deterministic address that the legitimate caller will later
+        // hit. PullSplitFactory's CREATE2 keys on (this, salt) but `this`
+        // is the SplitsCreator clone for both honest and attacker paths, so
+        // we need to disambiguate by caller here.
+        return
+            _create(
+                _splitsInfo,
+                _weightsInfo,
+                keccak256(abi.encode(msg.sender, _salt))
+            );
+    }
+
+    function _create(
+        SplitsInfo[] memory _splitsInfo,
+        WeightsInfo memory _weightsInfo,
+        bytes32 _salt
+    ) internal returns (address) {
         (
             address[] memory shareHolders,
             uint256[] memory allocations,
@@ -70,7 +107,7 @@ contract SplitsCreator is ISplitsCreator, Clone {
             _splitParams,
             address(this),
             msg.sender,
-            _generateSalt(_splitsInfo)
+            _salt
         );
 
         emit SplitsCreated(split, shareHolders, allocations, totalAllocation);
@@ -138,13 +175,19 @@ contract SplitsCreator is ISplitsCreator, Clone {
         uint256 roleTotalAllocation;
         (roleShareHolders, roleAllocations, roleTotalAllocation) = _calculateRoleAllocations(_splitsInfo);
 
+        // Skip a side entirely when its total allocation is zero. Otherwise the
+        // per-recipient division below (`... / thanksTotalAllocation`) would
+        // revert with EVM div-by-zero, locking any downstream caller (notably
+        // ScheduledDistributor.execute) into the reclaim path. Splits computes
+        // relative shares from `totalAllocation`, so absorbing the missing
+        // weight into a smaller totalAllocation preserves recipient ratios.
         uint256 numOfThanksShareHolders = 0;
-        if (_weightsInfo.thanksTokenWeight > 0) {
+        if (_weightsInfo.thanksTokenWeight > 0 && thanksTotalAllocation > 0) {
             numOfThanksShareHolders = thanksShareHolders.length;
         }
 
         uint256 numOfRoleShareHolders = 0;
-        if (_weightsInfo.roleWeight > 0) {
+        if (_weightsInfo.roleWeight > 0 && roleTotalAllocation > 0) {
             numOfRoleShareHolders = roleShareHolders.length;
         }
 
@@ -242,6 +285,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
             uint256 totalAllocation
         )
     {
+        address questModule = address(HATS_QUEST_MODULE());
+
         uint256 numOfShareHolders = 0;
         for (uint256 i = 0; i < _splitsInfo.length; i++) {
             SplitsInfo memory _splitInfo = _splitsInfo[i];
@@ -256,7 +301,13 @@ contract SplitsCreator is ISplitsCreator, Clone {
                 if (recipients.length == 0) {
                     numOfShareHolders++;
                 } else {
-                    numOfShareHolders += recipients.length;
+                    uint256 effectiveCount = recipients.length;
+                    for (uint256 r = 0; r < recipients.length; r++) {
+                        if (recipients[r] == questModule) {
+                            effectiveCount -= 1;
+                        }
+                    }
+                    numOfShareHolders += effectiveCount;
                 }
             }
         }
@@ -290,6 +341,15 @@ contract SplitsCreator is ISplitsCreator, Clone {
                     _splitInfo.hatId
                 );
 
+                // Credit any escrow currently posted by the wearer back to them.
+                if (questModule != address(0)) {
+                    wearerBalance += HATS_QUEST_MODULE().getEscrowedBalance(
+                        _splitInfo.wearers[j],
+                        _splitInfo.hatId,
+                        _splitInfo.wearers[j]
+                    );
+                }
+
                 uint256 wearerScore = wearerBalance *
                     roleMultiplier *
                     hatsTimeFrameMultiplier;
@@ -309,12 +369,24 @@ contract SplitsCreator is ISplitsCreator, Clone {
 
                 for (uint256 k = 0; k < recipients.length; k++) {
                     if (recipients[k] == _splitInfo.wearers[j]) continue;
+                    // The quest module escrows shares on behalf of others,
+                    // so its raw balance is excluded from the recipients list.
+                    if (recipients[k] == questModule) continue;
 
                     uint256 recipientBalance = FRACTION_TOKEN().balanceOf(
                         recipients[k],
                         _splitInfo.wearers[j],
                         _splitInfo.hatId
                     );
+
+                    if (questModule != address(0)) {
+                        recipientBalance += HATS_QUEST_MODULE()
+                            .getEscrowedBalance(
+                                recipients[k],
+                                _splitInfo.hatId,
+                                _splitInfo.wearers[j]
+                            );
+                    }
 
                     uint256 recipientScore = recipientBalance *
                         roleMultiplier *

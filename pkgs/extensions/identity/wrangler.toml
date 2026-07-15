@@ -1,0 +1,69 @@
+name = "toban-identity"
+main = "src/worker.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# Environments  (see docs/deployment.md for the full runbook)
+# ---------------------------------------------------------------------------
+#   pnpm --filter @toban/identity deploy:sepolia   # → toban-identity       (top-level)
+#   pnpm --filter @toban/identity deploy:base      # → toban-identity-base  (--env base)
+#   pnpm --filter @toban/identity db:migrate:remote:base
+#
+# SEPOLIA IS THE TOP-LEVEL CONFIG (deployed worker `toban-identity`), which is
+# what the discord-bot's top-level `IDENTITY` service binding points at. There
+# is deliberately no [env.sepolia] — it would only duplicate this.
+#
+# DEPLOY THIS WORKER BEFORE THE DISCORD BOT: the bot service-binds to it by
+# name, and deploying the bot against a missing identity worker fails with
+# Cloudflare error 10143 ("Worker not found").
+#
+# Both environments live in the SAME Cloudflare account (kawabeyuki23), separated
+# by worker name and by D1 (`toban-identity` / `toban-identity-base`).
+#
+# This worker has no [vars]: both values it needs are secrets so the Alchemy
+# key inside RPC_URL never lands in git. Set them per environment:
+#   pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY            # sepolia
+#   pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY --env base # base
+# Local dev (`wrangler dev`) reads .dev.vars for the same names.
+# ---------------------------------------------------------------------------
+
+# --- Sepolia (staging) + `wrangler dev` default ----------------------------
+# In local dev `wrangler dev` uses a local SQLite under `.wrangler/state/`
+# keyed by `database_name`, so the id below is only used for remote ops.
+[[d1_databases]]
+binding = "DB"
+database_name = "toban-identity"
+database_id = "6332ba44-8dfe-44c5-8baa-356763b4c7bf"
+
+# ===========================================================================
+# Base (production)
+# ===========================================================================
+[env.base]
+name = "toban-identity-base"
+
+[[env.base.d1_databases]]
+binding = "DB"
+# Base has its OWN D1, separate from Sepolia's `toban-identity`: platform_links
+# maps guild -> treeId, and a treeId only exists on one chain, so sharing one DB
+# would let Sepolia test links collide with Base production.
+# D1 names are unique per account, hence the `-base` suffix.
+database_name = "toban-identity-base"
+# Shared with the discord-bot — keep identical to the bot's base D1 id.
+# Create with: pnpm exec wrangler d1 create toban-identity-base
+database_id = "bf40df4f-9e12-48bf-9a80-ef90027d0ba7"
+
+# ---------------------------------------------------------------------------
+# Secrets (set per environment via `wrangler secret put <NAME> --env <env>`):
+#   DISCORD_BOT_VERIFIER_PUBLIC_KEY  - ES256 SPKI PEM matching the discord-bot
+#                                      worker's VERIFIER_PRIVATE_KEY (same env).
+#   RPC_URL                          - Sepolia/Base RPC for EIP-1271 / ERC-6492
+#                                      smart-wallet signature verification on
+#                                      /api/connect (must match the env's chain).
+#   LOOKUP_READ_SECRET               - shared secret gating /api/lookup. MUST
+#                                      equal the discord-bot worker's value
+#                                      (same env), else lookups return 401.
+#   PLATFORM_LINK_WRITE_SECRET       - shared secret gating /api/platform-link
+#                                      writes + install-state claim. MUST equal
+#                                      the discord-bot worker's value (same env).
+# ---------------------------------------------------------------------------

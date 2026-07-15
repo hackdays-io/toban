@@ -8,13 +8,17 @@ type Workspace @entity {
   operatorHatId: BigInt!
   creatorHatId: BigInt!
   minterHatId: BigInt!
+  questAgentHatId: BigInt!
   hatsTimeFrameModule: String!
   hatsHatCreatorModule: String!
   hatsFractionTokenModule: HatsFractionTokenModule!
+  hatsQuestModule: String!
   thanksToken: ThanksToken!
   splitCreator: String!
   blockTimestamp: BigInt!
   blockNumber: BigInt!
+  quests: [Quest!]! @derivedFrom(field: "workspace")
+  escrowedRoleShares: [EscrowedRoleShare!]! @derivedFrom(field: "workspace")
 }
 
 type HatsFractionTokenModule @entity {
@@ -111,4 +115,149 @@ type BalanceOfThanksToken @entity {
   balance: BigInt!
   workspaceId: ID!
   updatedAt: BigInt!
+}
+
+type HatsQuestModule @entity {
+  id: ID!
+  workspaceId: ID!
+  quests: [Quest!]! @derivedFrom(field: "questModuleEntity")
+}
+
+enum QuestStatus {
+  Open
+  PendingReview
+  Completed
+  Cancelled
+}
+
+enum SubmissionOutcome {
+  Pending
+  Withdrawn
+  Rejected
+  Approved
+}
+
+type Quest @entity {
+  id: ID!
+  workspace: Workspace!
+  questModuleEntity: HatsQuestModule!
+  questModule: String!
+  questId: BigInt!
+  hatId: BigInt!
+  wearer: String!
+  creator: String!
+  submitter: String
+  amount: BigInt!
+  status: QuestStatus!
+  # IPFS URI (e.g. `ipfs://bafkrei…`) emitted on-chain; always present.
+  metadataUri: String!
+  # Resolved off-chain metadata (title/description). Null until the File Data
+  # Source resolves the IPFS object asynchronously.
+  metadata: QuestMetadata
+  approvalCount: Int!
+  attemptCount: Int!
+  attempts: [SubmissionAttempt!]! @derivedFrom(field: "quest")
+  createdAt: BigInt!
+  submittedAt: BigInt
+  completedAt: BigInt
+  cancelledAt: BigInt
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  txHash: Bytes!
+}
+
+# Off-chain quest metadata resolved from IPFS via a File Data Source.
+# id = the bare CID (e.g. `bafkrei…`) so `Quest.metadata` can forward-reference
+# it deterministically at create time, before the IPFS object is fetched.
+type QuestMetadata @entity(immutable: true) {
+  id: ID!
+  title: String
+  description: String
+}
+
+type SubmissionAttempt @entity {
+  id: ID!
+  quest: Quest!
+  attemptIndex: Int!
+  submitter: String!
+  submittedAt: BigInt!
+  outcome: SubmissionOutcome!
+  withdrawnAt: BigInt
+  rejectedAt: BigInt
+  approvedAt: BigInt
+  approvals: [QuestApproval!]! @derivedFrom(field: "attempt")
+}
+
+type QuestApproval @entity {
+  id: ID!
+  quest: Quest!
+  attempt: SubmissionAttempt!
+  approver: String!
+  approvedAt: BigInt!
+  blockNumber: BigInt!
+  txHash: Bytes!
+}
+
+type EscrowedRoleShare @entity {
+  id: ID!
+  workspace: Workspace!
+  creator: String!
+  hatId: BigInt!
+  wearer: String!
+  amount: BigInt!
+  updatedAt: BigInt!
+}
+
+enum ScheduledDistributorStatus {
+  Pending
+  Executed
+  Reclaimed
+}
+
+type SplitsCreatorWorkspace @entity {
+  id: ID! # splitsCreator address (lowercased)
+  workspaceId: ID!
+}
+
+type ScheduledDistributor @entity {
+  id: ID! # distributor clone address (lowercased)
+  scheduler: String!
+  splitsCreator: String!
+  workspaceId: ID
+  tokens: [String!]!
+  backupWallet: String!
+  scheduledDate: BigInt!
+  status: ScheduledDistributorStatus!
+  split: String
+  executedAt: BigInt
+  reclaimedAt: BigInt
+  createdAt: BigInt!
+  createdBlock: BigInt!
+  tokenBalances: [ScheduledDistributorTokenBalance!]!
+    @derivedFrom(field: "scheduledDistributor")
+  deposits: [ScheduledDistributorDeposit!]!
+    @derivedFrom(field: "scheduledDistributor")
+}
+
+# Per-(distributor, token) aggregate: how much was deposited, how much
+# distributed at execute-time, how much returned at reclaim-time.
+type ScheduledDistributorTokenBalance @entity {
+  id: ID! # `${distributorId}-${tokenAddress}` (both lowercased)
+  scheduledDistributor: ScheduledDistributor!
+  token: String!
+  totalDeposited: BigInt!
+  executedAmount: BigInt
+  reclaimedAmount: BigInt
+  updatedAt: BigInt!
+}
+
+type ScheduledDistributorDeposit @entity {
+  id: ID!
+  scheduledDistributor: ScheduledDistributor!
+  token: String!
+  from: String!
+  amount: BigInt!
+  blockTimestamp: BigInt!
+  blockNumber: BigInt!
+  txHash: Bytes!
 }

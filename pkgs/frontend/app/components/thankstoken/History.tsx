@@ -1,14 +1,14 @@
-import { Box, Flex, Grid, Skeleton, Text, VStack } from "@chakra-ui/react";
-import { Link } from "@remix-run/react";
 import type { GetThanksTokenMintsQuery } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetHat } from "hooks/useHats";
 import { useThanksTokenActivity } from "hooks/useThanksToken";
 import type { NameData } from "namestone-sdk";
 import { type FC, useMemo } from "react";
+import { Link } from "react-router";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { formatEther, hexToString } from "viem";
+import { Skeleton } from "~/components/ui/skeleton";
 import { UserIcon } from "../icon/UserIcon";
 
 interface Props {
@@ -66,11 +66,11 @@ const HistorySkeletonList: FC<{ rows?: number; height?: string }> = ({
   rows = 3,
   height = "56px",
 }) => (
-  <VStack gap={2} w="full">
+  <div className="flex w-full flex-col gap-2">
     {SKELETON_ROW_KEYS.slice(0, rows).map((k) => (
-      <Skeleton key={k} height={height} w="full" borderRadius={5} />
+      <Skeleton key={k} className="w-full rounded-[5px]" style={{ height }} />
     ))}
-  </VStack>
+  </div>
 );
 
 const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
@@ -84,85 +84,47 @@ const ThanksTokenActivityItem: FC<ActivityItemProps> = ({
   }, [activity.data]);
 
   return (
-    <Box
-      py={3}
-      px={2}
-      w="full"
-      borderColor="gray.200"
-      position="relative"
-      bgColor="green.100"
-      borderRadius={5}
-      overflow="hidden"
-    >
-      <Box
-        position="absolute"
-        w="55%"
-        h="100%"
-        top={0}
-        left={0}
-        bgColor="green.300"
-        opacity={0.5}
+    <div className="relative w-full overflow-hidden rounded-[5px] border-[color:var(--color-gray-200,#e5e7eb)] bg-green-100 px-2 py-3">
+      <div className="absolute top-0 left-0 h-full w-[55%] bg-green-300 opacity-50" />
+      <span
+        aria-hidden
+        className="absolute top-0 mr-2 inline-block h-0 w-0 border-y-[30px] border-l-[60px] border-y-transparent border-l-green-300 opacity-50"
+        style={{ left: "55%" }}
       />
-      <Box
-        position="absolute"
-        top={0}
-        left="55%"
-        as="span"
-        display="inline-block"
-        width="0"
-        height="0"
-        borderTop="30px solid transparent"
-        borderBottom="30px solid transparent"
-        borderLeft="60px solid"
-        borderLeftColor="green.300"
-        opacity={0.5}
-        marginRight={2}
-      />
-      <Grid
-        position="relative"
-        gridTemplateColumns="37.5% 25% 37.5%"
-        justifyContent="space-between"
-        alignItems="center"
-      >
+      <div className="relative grid grid-cols-[37.5%_25%_37.5%] items-center justify-between">
         <Link to={`/${treeId}/member/${activity.from}`}>
-          <Flex alignItems="center" gap={2}>
+          <div className="flex items-center gap-2">
             <UserIcon
               size="25px"
               userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
             />
-            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+            <span className="text-sm font-medium text-gray-700">
               {fromUser?.name || abbreviateAddress(activity.from)}
-            </Text>
-          </Flex>
+            </span>
+          </div>
         </Link>
 
-        <Box textAlign="center">
-          <Text fontSize="lg" fontWeight="semibold" color="green.600">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-green-600">
             {Number(formatEther(BigInt(activity.amount))).toLocaleString()}{" "}
-            <Box fontSize="xs" as="span">
-              THX
-            </Box>
-          </Text>
-        </Box>
+            <span className="text-xs">THX</span>
+          </p>
+        </div>
 
         <Link to={`/${treeId}/member/${activity.to}`}>
-          <Flex justifyContent="flex-end" alignItems="center" gap={2}>
-            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm font-medium text-gray-700">
               {toUser?.name || abbreviateAddress(activity.to)}
-            </Text>
+            </span>
             <UserIcon
               size="25px"
               userImageUrl={ipfs2https(toUser?.text_records?.avatar)}
             />
-          </Flex>
+          </div>
         </Link>
-      </Grid>
-      {message && (
-        <Text fontSize="sm" zIndex={1} position="relative">
-          {message}
-        </Text>
-      )}
-    </Box>
+      </div>
+      {message && <p className="relative z-[1] text-sm">{message}</p>}
+    </div>
   );
 };
 
@@ -190,9 +152,9 @@ export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
 
   if (mints.mintThanksTokens.length === 0) {
     return (
-      <Box p={4} textAlign="center" color="gray.500">
+      <div className="p-4 text-center text-gray-500">
         アクティビティはまだありません
-      </Box>
+      </div>
     );
   }
 
@@ -201,7 +163,7 @@ export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
   }
 
   return (
-    <VStack gap={2}>
+    <div className="flex w-full flex-col gap-2">
       {mints.mintThanksTokens.map((mint) => (
         <ThanksTokenActivityItem
           key={`activity_${mint.id}`}
@@ -211,7 +173,7 @@ export const ThanksTokenHistory: FC<Props> = ({ treeId, limit = 10 }) => {
           toUser={namesByAddress.get(mint.to.toLowerCase())}
         />
       ))}
-    </VStack>
+    </div>
   );
 };
 
@@ -231,89 +193,49 @@ const ThanksTokenItem: FC<ItemProps> = ({
   from,
   to,
   amount,
-  hatId,
   fromUser,
   toUser,
 }) => {
-  const { hat } = useGetHat(hatId);
-
   return (
-    <Flex
-      h="60px"
-      py={3}
-      px={2}
-      w="full"
-      borderColor="gray.200"
-      position="relative"
-      bgColor="blue.100"
-      borderRadius={5}
-      overflow="hidden"
-    >
-      <Box
-        position="absolute"
-        w="55%"
-        h="100%"
-        top={0}
-        left={0}
-        bgColor="blue.300"
-        opacity={0.5}
+    <div className="relative flex h-[60px] w-full overflow-hidden rounded-[5px] border-[color:var(--color-gray-200,#e5e7eb)] bg-blue-100 px-2 py-3">
+      <div className="absolute top-0 left-0 h-full w-[55%] bg-blue-300 opacity-50" />
+      <span
+        aria-hidden
+        className="absolute top-0 mr-2 inline-block h-0 w-0 border-y-[30px] border-l-[60px] border-y-transparent border-l-blue-300 opacity-50"
+        style={{ left: "55%" }}
       />
-      <Box
-        position="absolute"
-        top={0}
-        left="55%"
-        as="span"
-        display="inline-block"
-        width="0"
-        height="0"
-        borderTop="30px solid transparent"
-        borderBottom="30px solid transparent"
-        borderLeft="60px solid"
-        borderLeftColor="blue.300"
-        opacity={0.5}
-        marginRight={2}
-      />
-      <Grid
-        position="relative"
-        gridTemplateColumns="37.5% 25% 37.5%"
-        justifyContent="space-between"
-        alignItems="center"
-        width="full"
-      >
+      <div className="relative grid w-full grid-cols-[37.5%_25%_37.5%] items-center justify-between">
         <Link to={`/${treeId}/member/${from}`}>
-          <Flex alignItems="center" gap={2}>
+          <div className="flex items-center gap-2">
             <UserIcon
               size="25px"
               userImageUrl={ipfs2https(fromUser?.text_records?.avatar)}
             />
-            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+            <span className="text-sm font-medium text-gray-700">
               {fromUser?.name || abbreviateAddress(from)}
-            </Text>
-          </Flex>
+            </span>
+          </div>
         </Link>
 
-        <Box textAlign="left">
-          <Text fontSize="lg" fontWeight="semibold" color="blue.600">
-            {amount}{" "}
-            <Box fontSize="xs" as="span">
-              THX
-            </Box>
-          </Text>
-        </Box>
+        <div className="text-left">
+          <p className="text-lg font-semibold text-blue-600">
+            {amount} <span className="text-xs">THX</span>
+          </p>
+        </div>
 
         <Link to={`/${treeId}/member/${to}`}>
-          <Flex justifyContent="flex-end" alignItems="center" gap={2}>
-            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm font-medium text-gray-700">
               {toUser?.name || abbreviateAddress(to)}
-            </Text>
+            </span>
             <UserIcon
               size="25px"
               userImageUrl={ipfs2https(toUser?.text_records?.avatar)}
             />
-          </Flex>
+          </div>
         </Link>
-      </Grid>
-    </Flex>
+      </div>
+    </div>
   );
 };
 
@@ -333,9 +255,9 @@ export const UserThanksHistory: FC<UserProps> = ({ data, txType }) => {
 
   if (!data.mintThanksTokens || data.mintThanksTokens.length === 0) {
     return (
-      <Box p={4} textAlign="center" color="gray.500">
+      <div className="p-4 text-center text-gray-500">
         {txType === "sent" ? "送信履歴はありません" : "受信履歴はありません"}
-      </Box>
+      </div>
     );
   }
 
@@ -344,7 +266,7 @@ export const UserThanksHistory: FC<UserProps> = ({ data, txType }) => {
   }
 
   return (
-    <VStack gap={2}>
+    <div className="flex w-full flex-col gap-2">
       {data.mintThanksTokens.map((token) => (
         <ThanksTokenItem
           treeId={token.workspaceId || ""}
@@ -358,6 +280,6 @@ export const UserThanksHistory: FC<UserProps> = ({ data, txType }) => {
           toUser={namesByAddress.get(token.to.toLowerCase())}
         />
       ))}
-    </VStack>
+    </div>
   );
 };

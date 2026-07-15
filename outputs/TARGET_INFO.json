@@ -1,0 +1,10 @@
+{
+  "target_repo": "https://github.com/hackdays-io/toban",
+  "target_ref_type": "commit",
+  "target_ref_label": "v3",
+  "target_commit": "v3",
+  "target_commit_short": "",
+  "project_name": "toban",
+  "target_language": "Solidity",
+  "target_layer": "smart-contract"
+}

@@ -1,9 +1,41 @@
+import { useQuery } from "@tanstack/react-query";
 import { HATS_ABI } from "abi/hats";
 import { useCallback, useState } from "react";
 import { type Address, parseEventLogs } from "viem";
 import { hatsHatCreatorContractBaseConfig } from "./useContracts";
 import { publicClient } from "./useViem";
 import { useActiveWallet } from "./useWallet";
+
+// Mirrors `HatsHatCreatorModule.hasAuthority(address)` — true if the address
+// is admin or wearer of the module's configured `creatorHatId`. The contract
+// gates `createHat` (and the grant/revoke admin entrypoints) on this exact
+// check, so the UI hides the "当番作成" affordance unless it would succeed.
+export const useHasCreatorAuthority = (
+  hatsHatCreatorModuleAddress?: string,
+  authority?: string,
+) => {
+  const enabled = !!hatsHatCreatorModuleAddress && !!authority;
+  const { data } = useQuery({
+    queryKey: [
+      "hatsHatCreator",
+      "hasAuthority",
+      hatsHatCreatorModuleAddress,
+      authority,
+    ],
+    queryFn: async () => {
+      const result = await publicClient.readContract({
+        ...hatsHatCreatorContractBaseConfig(
+          hatsHatCreatorModuleAddress as Address,
+        ),
+        functionName: "hasAuthority",
+        args: [authority as Address],
+      });
+      return result;
+    },
+    enabled,
+  });
+  return data ?? false;
+};
 
 export const useCreateHatFromHatCreatorModule = (
   hatsHatCreatorModuleAddress: Address,
@@ -65,87 +97,4 @@ export const useCreateHatFromHatCreatorModule = (
   );
 
   return { createHat, isLoading };
-};
-
-export const useGrantCreateHatAuthority = (
-  hatsHatCreatorModuleAddress: Address,
-) => {
-  const { wallet } = useActiveWallet();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const grantCreateHatAuthority = useCallback(
-    async (authority: Address) => {
-      if (!hatsHatCreatorModuleAddress || !wallet) return;
-
-      setIsLoading(true);
-      setIsSuccess(false);
-
-      try {
-        const txHash = await wallet.writeContract({
-          ...hatsHatCreatorContractBaseConfig(
-            hatsHatCreatorModuleAddress as Address,
-          ),
-          functionName: "grantCreateHatAuthority",
-          args: [authority],
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-
-        setIsSuccess(true);
-
-        return receipt;
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [hatsHatCreatorModuleAddress, wallet],
-  );
-
-  return { grantCreateHatAuthority, isLoading, isSuccess };
-};
-
-export const useRevokeCreateHatAuthority = (
-  hatsHatCreatorModuleAddress: Address,
-) => {
-  const { wallet } = useActiveWallet();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const revokeCreateHatAuthority = useCallback(
-    async (authority: Address) => {
-      if (!hatsHatCreatorModuleAddress || !wallet) return;
-
-      setIsLoading(true);
-      setIsSuccess(false);
-
-      try {
-        const txHash = await wallet.writeContract({
-          ...hatsHatCreatorContractBaseConfig(
-            hatsHatCreatorModuleAddress as Address,
-          ),
-          functionName: "revokeCreateHatAuthority",
-          args: [authority],
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-
-        setIsSuccess(true);
-
-        return receipt;
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [hatsHatCreatorModuleAddress, wallet],
-  );
-
-  return { revokeCreateHatAuthority, isLoading, isSuccess };
 };

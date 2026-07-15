@@ -1,75 +1,145 @@
-import { Box, Stack, Text } from "@chakra-ui/react";
-import { hatIdDecimalToHex, hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
-import { useNavigate } from "@remix-run/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { hatIdToTreeId } from "@hatsprotocol/sdk-v1-core";
 import { useBigBang } from "hooks/useBigBang";
 import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useState } from "react";
+import { type FC, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import type {
-  HatsDetailsAttributes,
   HatsDetailsAuthorities,
   HatsDetailsResponsabilities,
 } from "types/hats";
-import { ipfs2https } from "utils/ipfs";
 import type { Address } from "viem";
-import { BasicButton } from "~/components/BasicButton";
-import { ContentContainer } from "~/components/ContentContainer";
-import { PageHeader } from "~/components/PageHeader";
-import { RoleAttributesList } from "~/components/RoleAttributesList";
-import { InputDescription } from "~/components/input/InputDescription";
-import { InputImage } from "~/components/input/InputImage";
-import { InputName } from "~/components/input/InputName";
-import { InputNumber } from "~/components/input/InputNumber";
-import { AddRoleAttributeDialog } from "~/components/roleAttributeDialog/AddRoleAttributeDialog";
-import { RoleImageLibrarySelector } from "~/components/roles/RoleImageLibrarySelector";
+import { Chip } from "~/components/composite/chip";
+import { Divider } from "~/components/composite/divider";
+import { FieldLabel } from "~/components/composite/field-label";
+import { NextStepCard } from "~/components/composite/next-step-card";
+import { StepBar } from "~/components/composite/step-bar";
+import { SummaryRow } from "~/components/composite/summary-row";
+import { ScreenHeader } from "~/components/layout/ScreenHeader";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  SEED_PALETTE,
+} from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { Icon } from "~/components/ui/icon";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { buildFallbackSvgFile, pickRandomColor } from "~/lib/avatar-fallback";
+import { useWorkspaceStore } from "~/stores/workspace";
 
-const MotionBox = motion(Box);
+type Step = "basic" | "initial" | "confirm" | "done";
+
+const TOTAL_STEPS = 3;
+const STEP_INDEX: Record<Step, number> = {
+  basic: 0,
+  initial: 1,
+  confirm: 2,
+  done: 2,
+};
 
 const WorkspaceNew: FC = () => {
+  const navigate = useNavigate();
+  const switchWorkspace = useWorkspaceStore((s) => s.switch);
+  const { wallet } = useActiveWallet();
+  const { bigbang, isLoading: isCreating } = useBigBang();
+  const { uploadHatsDetailsToIpfs, isLoading: isUploadingDetails } =
+    useUploadHatsDetailsToIpfs();
+  const {
+    uploadImageFileToIpfs: uploadWorkspaceImage,
+    imageFile: workspaceImage,
+    setImageFile: setWorkspaceImage,
+    isLoading: isUploadingWorkspaceImage,
+  } = useUploadImageFileToIpfs();
+  const {
+    uploadImageFileToIpfs: uploadRoleImage,
+    imageFile: roleImage,
+    setImageFile: setRoleImage,
+    isLoading: isUploadingRoleImage,
+  } = useUploadImageFileToIpfs();
+
+  // Flow state
+  const [step, setStep] = useState<Step>("basic");
+  const [createdTreeId, setCreatedTreeId] = useState<string | null>(null);
+
+  // Step 1 — workspace basics
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [workspaceData, setWorkspaceData] = useState<{
-    details: string;
-    imageUri?: string;
-  }>();
 
-  // Role creation states
+  // Step 2 — initial role
   const [roleName, setRoleName] = useState("");
-  const [roleDescription, setRoleDescription] = useState("");
-  const [roleMaxSupply, setRoleMaxSupply] = useState<number | undefined>(10);
-  const [isCreatingRole, setIsCreatingRole] = useState(false);
-  const [responsibilities, setResponsibilities] =
-    useState<HatsDetailsResponsabilities>([]);
-  const [authorities, setAuthorities] = useState<HatsDetailsAuthorities>([]);
-  const [selectedImageCid, setSelectedImageCid] = useState("");
+  const [roleDefinition, setRoleDefinition] = useState("");
+  const [responsibilities, setResponsibilities] = useState<
+    NonNullable<HatsDetailsResponsabilities>
+  >([]);
+  const [authorities, setAuthorities] = useState<
+    NonNullable<HatsDetailsAuthorities>
+  >([]);
+  const [draftResponsibility, setDraftResponsibility] = useState("");
+  const [draftAuthority, setDraftAuthority] = useState("");
 
-  const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
-  const { uploadImageFileToIpfs, imageFile, setImageFile } =
-    useUploadImageFileToIpfs();
-  const {
-    uploadImageFileToIpfs: uploadRoleImageFileToIpfs,
-    imageFile: roleImageFile,
-    setImageFile: setRoleImageFile,
-  } = useUploadImageFileToIpfs();
-  const { bigbang } = useBigBang();
-  const { wallet } = useActiveWallet();
-  const navigate = useNavigate();
+  const addResponsibility = () => {
+    const label = draftResponsibility.trim();
+    if (!label) return;
+    setResponsibilities((current) => [...current, { label }]);
+    setDraftResponsibility("");
+  };
+  const removeResponsibility = (index: number) => {
+    setResponsibilities((current) => current.filter((_, i) => i !== index));
+  };
+  const addAuthority = () => {
+    const label = draftAuthority.trim();
+    if (!label) return;
+    setAuthorities((current) => [...current, { label }]);
+    setDraftAuthority("");
+  };
+  const removeAuthority = (index: number) => {
+    setAuthorities((current) => current.filter((_, i) => i !== index));
+  };
 
-  const handleUploadWorkspaceData = async () => {
+  // Random fallback colours — chosen on mount (post-hydration to avoid
+  // an SSR/CSR mismatch from Math.random in the initialiser).
+  const [workspaceColor, setWorkspaceColor] = useState<string>(SEED_PALETTE[0]);
+  const [roleColor, setRoleColor] = useState<string>(SEED_PALETTE[0]);
+  useEffect(() => {
+    setWorkspaceColor(pickRandomColor());
+    setRoleColor(pickRandomColor());
+  }, []);
+
+  const isBasicValid = name.trim().length > 0;
+  const isRoleValid = roleName.trim().length > 0;
+  const isWorking =
+    isUploadingDetails ||
+    isUploadingWorkspaceImage ||
+    isUploadingRoleImage ||
+    isCreating;
+
+  const workspaceImagePreview = useMemo(
+    () => (workspaceImage ? URL.createObjectURL(workspaceImage) : undefined),
+    [workspaceImage],
+  );
+  const roleImagePreview = useMemo(
+    () => (roleImage ? URL.createObjectURL(roleImage) : undefined),
+    [roleImage],
+  );
+
+  const handleCreate = async () => {
     if (!wallet) {
       alert("ウォレットを接続してください。");
       return;
     }
-    if (!name) {
-      alert("名前を入力してください。");
+    if (!isBasicValid) {
+      setStep("basic");
       return;
     }
-    setIsLoading(true);
+    if (!isRoleValid) {
+      setStep("initial");
+      return;
+    }
 
     try {
       const workspaceMetadata = await uploadHatsDetailsToIpfs({
@@ -79,270 +149,536 @@ const WorkspaceNew: FC = () => {
         authorities: [],
       });
       if (!workspaceMetadata) {
-        throw new Error("Failed to upload metadata to ipfs");
+        throw new Error("ワークスペースメタデータの保存に失敗しました。");
       }
 
-      const workspaceImage = await uploadImageFileToIpfs();
-
-      setWorkspaceData({
-        details: workspaceMetadata.ipfsUri,
-        imageUri: workspaceImage?.ipfsUri,
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateWorkspaceWithRole = async () => {
-    if (!wallet) {
-      alert("ウォレットを接続してください。");
-      return;
-    }
-    if (!workspaceData) {
-      alert("ワークスペースデータが見つかりません。");
-      return;
-    }
-    if (!roleName) {
-      alert("ロール名を入力してください。");
-      return;
-    }
-
-    setIsCreatingRole(true);
-
-    try {
-      // Upload role metadata to IPFS
       const roleMetadata = await uploadHatsDetailsToIpfs({
         name: roleName,
-        description: roleDescription,
+        description: roleDefinition,
         responsabilities: responsibilities,
         authorities: authorities,
       });
       if (!roleMetadata) {
-        throw new Error("Failed to upload role metadata to ipfs");
+        throw new Error("初期ロールメタデータの保存に失敗しました。");
       }
 
-      // Upload role image to IPFS
-      const roleImage = await uploadRoleImageFileToIpfs();
+      const workspaceImageFile =
+        workspaceImage ??
+        buildFallbackSvgFile(workspaceColor, "house", "workspace-icon.svg");
+      const roleImageFile =
+        roleImage ?? buildFallbackSvgFile(roleColor, "user", "role-icon.svg");
 
-      // Execute bigbang with workspace and role data
+      const workspaceImageUpload =
+        await uploadWorkspaceImage(workspaceImageFile);
+      const roleImageUpload = await uploadRoleImage(roleImageFile);
+
+      const workspaceImageUri = workspaceImageUpload?.ipfsUri ?? "";
+      const roleImageUri = roleImageUpload?.ipfsUri ?? "";
+
       const parsedLog = await bigbang({
-        owner: wallet?.account.address as Address,
-        topHatDetails: workspaceData.details,
-        topHatImageURI: workspaceData.imageUri || "",
-        hatterHatDetails: workspaceData.details,
-        hatterHatImageURI: workspaceData.imageUri || "",
+        owner: wallet.account.address as Address,
+        topHatDetails: workspaceMetadata.ipfsUri,
+        topHatImageURI: workspaceImageUri,
+        hatterHatDetails: workspaceMetadata.ipfsUri,
+        hatterHatImageURI: workspaceImageUri,
         memberHatDetails: roleMetadata.ipfsUri,
-        memberHatImageURI:
-          roleImage?.ipfsUri ||
-          (selectedImageCid && `ipfs://${selectedImageCid}`) ||
-          "",
+        memberHatImageURI: roleImageUri,
       });
       if (!parsedLog) {
-        throw new Error("Failed to execute bigbang");
+        throw new Error("BigBang の実行に失敗しました。");
       }
 
       const { topHatId } = parsedLog.args;
-      const treeId = hatIdToTreeId(topHatId);
-      // wait for 3 seconds to ensure the subgraph is updated
+      const treeId = String(hatIdToTreeId(topHatId));
+      setCreatedTreeId(treeId);
+      switchWorkspace(treeId);
+      // wait briefly so the subgraph has a chance to index the new workspace
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      navigate(`/${treeId}`);
+      setStep("done");
     } catch (error) {
       console.error(error);
       alert(`エラーが発生しました。${error}`);
-    } finally {
-      setIsCreatingRole(false);
     }
   };
 
+  const goToTreeHome = () => {
+    if (createdTreeId) {
+      navigate(`/${createdTreeId}`);
+    } else {
+      navigate("/workspace");
+    }
+  };
+
+  const stepIndex = STEP_INDEX[step];
+
   return (
-    <Box display="flex" flexDirection="column" w="100%" overflow="hidden">
-      {/* Fixed Header */}
-      <Box w="100%" position="sticky" top={0} zIndex={10}>
-        {!workspaceData ? (
-          <PageHeader title="ワークスペースを新規作成" />
-        ) : (
-          <PageHeader title="最初のロールを作成" />
-        )}
-      </Box>
+    <div className="flex min-h-dvh flex-col bg-bg pb-6">
+      {step !== "done" && (
+        <>
+          <ScreenHeader
+            title={
+              step === "basic"
+                ? "ワークスペースを作成"
+                : step === "initial"
+                  ? "メンバーの初期ロール"
+                  : "作成内容を確認"
+            }
+            subtitle={`${stepIndex + 1} / ${TOTAL_STEPS}`}
+            onBack={
+              step === "basic"
+                ? () => navigate("/workspace")
+                : step === "initial"
+                  ? () => setStep("basic")
+                  : () => setStep("initial")
+            }
+          />
+          <div className="px-5 pb-3">
+            <StepBar
+              total={TOTAL_STEPS}
+              current={stepIndex}
+              ariaLabel={`ワークスペース作成 ${stepIndex + 1}/${TOTAL_STEPS}`}
+            />
+          </div>
+        </>
+      )}
 
-      {/* Scrollable Content */}
-      <Box pb={4} position="relative">
-        <AnimatePresence mode="wait">
-          {!workspaceData ? (
-            <MotionBox
-              key="workspace-form"
-              initial={{ x: 300, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -300, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              w="100%"
-            >
-              <Box
-                display="flex"
-                flexDirection="column"
-                justifyContent="center"
-                alignItems="center"
-                gapY={4}
-                mt={10}
-                data-testid="workspace-creation-form"
-              >
-                <InputImage
-                  imageFile={imageFile}
-                  setImageFile={setImageFile}
-                  data-testid="file-input"
-                />
-                <InputName
-                  name={name}
-                  setName={setName}
-                  data-testid="workspace-name-input"
-                />
-                <InputDescription
-                  description={description}
-                  setDescription={setDescription}
-                  data-testid="description-input"
-                />
-              </Box>
-            </MotionBox>
-          ) : (
-            <MotionBox
-              key="role-form"
-              initial={{ x: 300, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -300, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              w="100%"
-            >
-              <ContentContainer>
-                <Stack my="30px" gap={3}>
-                  <InputImage
-                    imageFile={
-                      roleImageFile || ipfs2https(`ipfs://${selectedImageCid}`)
+      {step === "basic" && (
+        <div className="flex flex-col gap-5">
+          <div className="px-5">
+            <FieldLabel>アイコン</FieldLabel>
+            <div className="flex flex-col items-center gap-2">
+              <label className="group relative cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  data-testid="workspace-image-input"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file?.type.startsWith("image/")) {
+                      setWorkspaceImage(file);
+                    } else {
+                      alert("画像ファイルを選択してください。");
                     }
-                    setImageFile={setRoleImageFile}
-                    data-testid="role-file-input"
+                  }}
+                />
+                <Avatar
+                  size="xl"
+                  className="size-36 ring-2 ring-border transition group-hover:ring-primary"
+                >
+                  {workspaceImagePreview && (
+                    <AvatarImage
+                      src={workspaceImagePreview}
+                      alt="ワークスペースアイコン"
+                    />
+                  )}
+                  <AvatarFallback
+                    className="text-white"
+                    style={{ backgroundColor: workspaceColor }}
+                  >
+                    <Icon name="home" size={44} className="text-white" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
+                  <Icon name="edit" size={14} />
+                </span>
+              </label>
+              <span className="text-xs text-text-secondary">
+                アイコンをタップして画像を選択
+              </span>
+            </div>
+          </div>
+
+          <div className="px-5">
+            <FieldLabel htmlFor="ws-name">
+              ワークスペース名 <span className="text-danger">*</span>
+            </FieldLabel>
+            <Input
+              id="ws-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="例：kuu village #1"
+              data-testid="workspace-name-input"
+              aria-invalid={!isBasicValid && name.length > 0}
+            />
+          </div>
+
+          <div className="px-5">
+            <FieldLabel htmlFor="ws-desc">説明</FieldLabel>
+            <Textarea
+              id="ws-desc"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="どんなコミュニティかを入力"
+              data-testid="description-input"
+            />
+          </div>
+
+          <div className="px-4 pt-4">
+            <Button
+              variant="primary"
+              full
+              disabled={!isBasicValid}
+              onClick={() => setStep("initial")}
+            >
+              次へ
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === "initial" && (
+        <div className="flex flex-col gap-5">
+          <div className="px-5 text-[13px] leading-relaxed text-text-secondary">
+            最初のメンバーロールを作成します。あとから変更できます。
+          </div>
+
+          <div className="px-5">
+            <FieldLabel>アイコン</FieldLabel>
+            <div className="flex flex-col items-center gap-2">
+              <label className="group relative cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  data-testid="role-image-input"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file?.type.startsWith("image/")) {
+                      setRoleImage(file);
+                    } else {
+                      alert("画像ファイルを選択してください。");
+                    }
+                  }}
+                />
+                <Avatar
+                  size="xl"
+                  className="size-36 ring-2 ring-border transition group-hover:ring-primary"
+                >
+                  {roleImagePreview && (
+                    <AvatarImage src={roleImagePreview} alt="ロールアイコン" />
+                  )}
+                  <AvatarFallback
+                    className="text-white"
+                    style={{ backgroundColor: roleColor }}
+                  >
+                    <Icon name="user" size={44} className="text-white" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-1 transition group-hover:text-primary">
+                  <Icon name="edit" size={14} />
+                </span>
+              </label>
+              <span className="text-xs text-text-secondary">
+                アイコンをタップして画像を選択
+              </span>
+            </div>
+          </div>
+
+          <div className="px-5">
+            <FieldLabel htmlFor="role-name">
+              ロール名 <span className="text-danger">*</span>
+            </FieldLabel>
+            <Input
+              id="role-name"
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
+              placeholder="例：Member"
+              data-testid="role-name-input"
+              aria-invalid={!isRoleValid && roleName.length > 0}
+            />
+          </div>
+
+          <div className="px-5">
+            <FieldLabel htmlFor="role-definition">役割定義</FieldLabel>
+            <Textarea
+              id="role-definition"
+              rows={4}
+              value={roleDefinition}
+              onChange={(e) => setRoleDefinition(e.target.value)}
+              placeholder="このロールが担う役割を入力"
+              data-testid="role-definition-input"
+            />
+          </div>
+
+          <div className="px-5">
+            <FieldLabel>役割（担当）</FieldLabel>
+            {responsibilities.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {responsibilities.map((item, index) => (
+                  <Chip
+                    key={`${item.label}-${index}`}
+                    onClick={() => removeResponsibility(index)}
+                    aria-label={`${item.label} を削除`}
+                  >
+                    {item.label}
+                    <Icon name="close" size={12} />
+                  </Chip>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={draftResponsibility}
+                onChange={(e) => setDraftResponsibility(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    addResponsibility();
+                  }
+                }}
+                placeholder="例：当番管理"
+                data-testid="responsibility-input"
+              />
+              <Button
+                variant="secondary"
+                onClick={addResponsibility}
+                disabled={!draftResponsibility.trim()}
+              >
+                追加
+              </Button>
+            </div>
+          </div>
+
+          <div className="px-5">
+            <FieldLabel>権限</FieldLabel>
+            {authorities.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {authorities.map((item, index) => (
+                  <Chip
+                    key={`${item.label}-${index}`}
+                    onClick={() => removeAuthority(index)}
+                    aria-label={`${item.label} を削除`}
+                  >
+                    {item.label}
+                    <Icon name="close" size={12} />
+                  </Chip>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={draftAuthority}
+                onChange={(e) => setDraftAuthority(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    addAuthority();
+                  }
+                }}
+                placeholder="例：メンバーを追加"
+                data-testid="authority-input"
+              />
+              <Button
+                variant="secondary"
+                onClick={addAuthority}
+                disabled={!draftAuthority.trim()}
+              >
+                追加
+              </Button>
+            </div>
+          </div>
+
+          <div className="px-4 pt-4">
+            <Button
+              variant="primary"
+              full
+              disabled={!isRoleValid}
+              onClick={() => setStep("confirm")}
+            >
+              確認へ
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === "confirm" && (
+        <div className="flex flex-col gap-3">
+          <div className="px-4">
+            <div className="flex flex-col items-center gap-3 rounded-md border border-border bg-surface p-5 text-center shadow-1">
+              <Avatar size="xl" className="size-[72px]">
+                {workspaceImagePreview && (
+                  <AvatarImage
+                    src={workspaceImagePreview}
+                    alt="ワークスペースアイコン"
                   />
+                )}
+                <AvatarFallback
+                  className="text-white"
+                  style={{ backgroundColor: workspaceColor }}
+                >
+                  <Icon name="home" size={28} className="text-white" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-lg font-bold text-text-primary">{name}</div>
+              {description && (
+                <div className="text-xs leading-relaxed text-text-secondary">
+                  {description}
+                </div>
+              )}
+            </div>
+          </div>
 
-                  <RoleImageLibrarySelector
-                    setImageCid={(cid) => {
-                      setRoleImageFile(null);
-                      setSelectedImageCid(cid);
-                    }}
-                    selectedCid={selectedImageCid}
+          <div className="px-4">
+            <div className="overflow-hidden rounded-md border border-border bg-surface shadow-1">
+              <SummaryRow
+                label="初期ロール"
+                value={
+                  <span className="inline-flex items-center gap-2">
+                    <Avatar size="sm">
+                      {roleImagePreview && (
+                        <AvatarImage
+                          src={roleImagePreview}
+                          alt="ロールアイコン"
+                        />
+                      )}
+                      <AvatarFallback
+                        className="text-white"
+                        style={{ backgroundColor: roleColor }}
+                      >
+                        <Icon name="user" size={14} className="text-white" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>{roleName}</span>
+                  </span>
+                }
+              />
+              {roleDefinition && (
+                <>
+                  <Divider inset={16} />
+                  <SummaryRow label="役割定義" value={roleDefinition} />
+                </>
+              )}
+              {responsibilities.length > 0 && (
+                <>
+                  <Divider inset={16} />
+                  <SummaryRow
+                    label="役割（担当）"
+                    value={
+                      <span className="inline-flex flex-wrap justify-end gap-1.5">
+                        {responsibilities.map((item, index) => (
+                          <span
+                            key={`${item.label}-${index}`}
+                            className="rounded-full border border-border bg-bg px-2 py-0.5 text-xs"
+                          >
+                            {item.label}
+                          </span>
+                        ))}
+                      </span>
+                    }
                   />
-                </Stack>
+                </>
+              )}
+              {authorities.length > 0 && (
+                <>
+                  <Divider inset={16} />
+                  <SummaryRow
+                    label="権限"
+                    value={
+                      <span className="inline-flex flex-wrap justify-end gap-1.5">
+                        {authorities.map((item, index) => (
+                          <span
+                            key={`${item.label}-${index}`}
+                            className="rounded-full border border-border bg-bg px-2 py-0.5 text-xs"
+                          >
+                            {item.label}
+                          </span>
+                        ))}
+                      </span>
+                    }
+                  />
+                </>
+              )}
+            </div>
+          </div>
 
-                <InputName
-                  name={roleName}
-                  setName={setRoleName}
-                  data-testid="role-name-input"
-                />
+          <div className="flex gap-2.5 px-4 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setStep("initial")}
+              disabled={isWorking}
+              className="shrink-0"
+            >
+              戻って修正
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreate}
+              disabled={isWorking || !wallet}
+              data-testid="workspace-create-submit"
+              className="flex-1"
+            >
+              {isWorking ? "作成中..." : "作成する"}
+            </Button>
+          </div>
+        </div>
+      )}
 
-                <InputDescription
-                  description={roleDescription}
-                  setDescription={setRoleDescription}
-                  mt={6}
-                  data-testid="role-description-input"
+      {step === "done" && (
+        <div className="flex flex-col gap-5 px-6 pt-10 text-center">
+          <div className="flex flex-col items-center">
+            <Avatar size="xl" className="size-24">
+              {workspaceImagePreview && (
+                <AvatarImage
+                  src={workspaceImagePreview}
+                  alt="ワークスペースアイコン"
                 />
-              </ContentContainer>
+              )}
+              <AvatarFallback
+                className="text-white"
+                style={{ backgroundColor: workspaceColor }}
+              >
+                <Icon name="home" size={40} className="text-white" />
+              </AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xl font-bold text-text-primary">
+              ワークスペースを作成しました
+            </div>
+            <div className="text-[13px] leading-relaxed text-text-secondary">
+              <strong className="text-text-primary">{name}</strong>{" "}
+              をはじめましょう。
+            </div>
+          </div>
 
-              <Text mt={7}>当番</Text>
-              <ContentContainer>
-                <RoleAttributesList
-                  items={responsibilities || []}
-                  setItem={(
-                    index: number,
-                    value: HatsDetailsAttributes[number],
-                  ) => {
-                    const newResponsibilities = [...(responsibilities || [])];
-                    newResponsibilities[index] = value;
-                    setResponsibilities(newResponsibilities);
-                  }}
-                  deleteItem={(index: number) => {
-                    const newResponsibilities = (responsibilities || []).filter(
-                      (_, i) => i !== index,
-                    );
-                    setResponsibilities(newResponsibilities);
-                  }}
-                />
-                <AddRoleAttributeDialog
-                  type="responsibility"
-                  attributes={responsibilities || []}
-                  setAttributes={(newAttributes) => {
-                    setResponsibilities([
-                      ...(responsibilities || []),
-                      ...newAttributes,
-                    ]);
-                  }}
-                />
-              </ContentContainer>
+          <div className="text-left">
+            <div className="overflow-hidden rounded-md border border-border bg-surface shadow-1">
+              <div className="px-4 pt-3 pb-1 text-xs font-bold tracking-[0.04em] text-text-secondary">
+                次にできること
+              </div>
+              <NextStepCard
+                icon="invite"
+                label="メンバーを招待する"
+                onClick={goToTreeHome}
+              />
+              <Divider inset={16} />
+              <NextStepCard
+                icon="duty"
+                label="当番を作成する"
+                onClick={goToTreeHome}
+              />
+              <Divider inset={16} />
+              <NextStepCard
+                icon="send"
+                label="サンクスを送る"
+                onClick={goToTreeHome}
+              />
+            </div>
+          </div>
 
-              <Text mt={7}>権限</Text>
-              <ContentContainer>
-                <RoleAttributesList
-                  items={authorities || []}
-                  setItem={(
-                    index: number,
-                    value: HatsDetailsAttributes[number],
-                  ) => {
-                    const newAuthorities = [...(authorities || [])];
-                    newAuthorities[index] = value;
-                    setAuthorities(newAuthorities);
-                  }}
-                  deleteItem={(index: number) => {
-                    const newAuthorities = (authorities || []).filter(
-                      (_, i) => i !== index,
-                    );
-                    setAuthorities(newAuthorities);
-                  }}
-                />
-                <AddRoleAttributeDialog
-                  type="authority"
-                  attributes={authorities || []}
-                  setAttributes={(newAttributes) => {
-                    setAuthorities([...(authorities || []), ...newAttributes]);
-                  }}
-                />
-              </ContentContainer>
-
-              <Text mt={7}>ロールの上限人数</Text>
-              <ContentContainer>
-                <InputNumber
-                  mt={3}
-                  number={roleMaxSupply}
-                  setNumber={setRoleMaxSupply}
-                  defaultValue={10}
-                />
-              </ContentContainer>
-            </MotionBox>
-          )}
-        </AnimatePresence>
-      </Box>
-
-      {/* Fixed Footer */}
-      <Box w="100%" position="sticky" bottom={0} py={4} zIndex={10}>
-        {!workspaceData ? (
-          <BasicButton
-            onClick={handleUploadWorkspaceData}
-            disabled={!name}
-            loading={isLoading}
-            w="100%"
-          >
-            次へ
-          </BasicButton>
-        ) : (
-          <BasicButton
-            onClick={handleCreateWorkspaceWithRole}
-            disabled={!roleName || !roleMaxSupply}
-            loading={isCreatingRole}
-            w="100%"
-          >
-            作成
-          </BasicButton>
-        )}
-      </Box>
-    </Box>
+          <div className="flex flex-col gap-2.5">
+            <Button variant="primary" full onClick={goToTreeHome}>
+              メンバーを招待
+            </Button>
+            <Button variant="ghost" full onClick={() => navigate("/")}>
+              ホームへ
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -6,14 +6,34 @@ import {IHats} from "../hats/src/Interfaces/IHats.sol";
 import {IHatsFractionTokenModule} from "../hatsmodules/fractiontoken/IHatsFractionTokenModule.sol";
 import {IHatsTimeFrameModule} from "../hatsmodules/timeframe/IHatsTimeFrameModule.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Clone} from "solady/src/utils/Clone.sol";
-import "hardhat/console.sol";
 
-contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
+contract ThanksToken is
+    Clone,
+    ERC20("", ""),
+    EIP712("ThanksToken", "1"),
+    IThanksToken
+{
     mapping(address => uint256) private _mintedAmount;
     mapping(address => uint256) private _addressCoefficient;
     address[] private _participants;
     mapping(address => bool) private _isParticipant;
+
+    // -- Mint allowance state -----------------------------------------------
+    // ERC-20-symmetric allowance for delegated mint (e.g. Discord bot).
+    // Kept independent from ERC-20 allowance / nonces (which would belong to
+    // ERC-2612-style transfer permit) so the two domains do not interfere.
+    mapping(address => mapping(address => uint256)) private _mintAllowance;
+    mapping(address => uint256) private _mintNonces;
+
+    /// @dev EIP-712 type hash for `permitMint`.
+    /// PermitMint(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)
+    bytes32 public constant PERMIT_MINT_TYPEHASH =
+        keccak256(
+            "PermitMint(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
 
     uint256 private constant SECONDS_PER_HOUR = 3600;
 
@@ -188,6 +208,24 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         for (uint256 i = 0; i < relatedRoles.length; i++) {
             RelatedRole memory role = relatedRoles[i];
 
+            // Skip duplicate (wearer, hatId) pairs. `mintFrom` lets a spender
+            // supply `relatedRoles`, so without dedup the same role passed N
+            // times would multiply the role-derived cap by N and defeat the
+            // mintableAmount defensive boundary that backs the allowance.
+            bool seenBefore = false;
+            for (uint256 j = 0; j < i; j++) {
+                if (
+                    relatedRoles[j].wearer == role.wearer &&
+                    relatedRoles[j].hatId == role.hatId
+                ) {
+                    seenBefore = true;
+                    break;
+                }
+            }
+            if (seenBefore) {
+                continue;
+            }
+
             uint256 shareBalance = FRACTION_TOKEN().balanceOf(
                 owner,
                 role.wearer,
@@ -277,6 +315,150 @@ contract ThanksToken is Clone, ERC20("", ""), IThanksToken {
         for (uint256 i = 0; i < userAddresses.length; i++) {
             _addressCoefficient[userAddresses[i]] = coefficients[i];
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Mint allowance (ERC-20-symmetric primitives for delegated mint)
+    // -----------------------------------------------------------------------
+
+    /// @inheritdoc IThanksToken
+    function approveMint(
+        address spender,
+        uint256 value
+    ) public override returns (bool) {
+        _approveMint(msg.sender, spender, value);
+        return true;
+    }
+
+    /// @inheritdoc IThanksToken
+    function permitMint(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public override {
+        require(owner != address(0), "ThanksToken: invalid owner");
+        // EIP-2612-style relay-friendly: anyone holding a valid signature
+        // may submit. This lets `owner` revoke (value=0) via an arbitrary
+        // relayer even when `spender` is compromised. Replay protection is
+        // provided by the per-owner nonce; deadline bounds the validity
+        // window.
+        // solhint-disable-next-line not-rely-on-time
+        require(block.timestamp <= deadline, "ThanksToken: permit expired");
+
+        uint256 nonce = _mintNonces[owner];
+        bytes32 structHash = keccak256(
+            abi.encode(
+                PERMIT_MINT_TYPEHASH,
+                owner,
+                spender,
+                value,
+                nonce,
+                deadline
+            )
+        );
+
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = ECDSA.recover(digest, v, r, s);
+        require(signer == owner, "ThanksToken: invalid signature");
+
+        // Effects: advance nonce *before* updating allowance for clarity.
+        unchecked {
+            _mintNonces[owner] = nonce + 1;
+        }
+        _approveMint(owner, spender, value);
+    }
+
+    /// @inheritdoc IThanksToken
+    function mintFrom(
+        address from,
+        address to,
+        uint256 value,
+        RelatedRole[] memory relatedRoles,
+        bytes memory data
+    ) public override returns (bool) {
+        require(to != from, "Cannot mint to yourself");
+        // Mirrors the anti-self-mint invariant of the original mint():
+        // even when `from` differs from the recipient, the *spender*
+        // (= msg.sender, holding the allowance) must not mint to its
+        // own address. Defends against a compromised spender key
+        // draining allowances to itself when from == owner.
+        require(to != msg.sender, "Cannot mint to spender");
+        require(value > 0, "Amount must be greater than 0");
+
+        uint256 currentAllowance = _mintAllowance[from][msg.sender];
+        require(
+            currentAllowance >= value,
+            "ThanksToken: mint allowance exceeded"
+        );
+
+        // Preserve the existing mintableAmount cap as a second defensive
+        // boundary: even if `spender`'s allowance is large, the role-derived
+        // formula limits how much `from` can ever mint.
+        uint256 maxAmount = mintableAmount(from, relatedRoles);
+        require(value <= maxAmount, "Amount exceeds mintable amount");
+
+        // Effects (Checks-Effects-Interactions): decrement allowance *before*
+        // mint. "Infinite approval" optimisation matches ERC-20 semantics.
+        if (currentAllowance != type(uint256).max) {
+            unchecked {
+                _mintAllowance[from][msg.sender] = currentAllowance - value;
+            }
+        }
+        _mintedAmount[from] += value;
+
+        _mint(to, value);
+
+        if (!_isParticipant[from]) {
+            _participants.push(from);
+            _isParticipant[from] = true;
+        }
+        if (!_isParticipant[to]) {
+            _participants.push(to);
+            _isParticipant[to] = true;
+        }
+
+        emit TokenMinted(from, to, value, data);
+        emit MintFrom(from, to, msg.sender, value);
+
+        return true;
+    }
+
+    /// @inheritdoc IThanksToken
+    function mintAllowance(
+        address owner,
+        address spender
+    ) public view override returns (uint256) {
+        return _mintAllowance[owner][spender];
+    }
+
+    /// @inheritdoc IThanksToken
+    function mintNonces(
+        address owner
+    ) public view override returns (uint256) {
+        return _mintNonces[owner];
+    }
+
+    /// @inheritdoc IThanksToken
+    function DOMAIN_SEPARATOR() external view override returns (bytes32) {
+        return _domainSeparatorV4();
+    }
+
+    function _approveMint(
+        address owner,
+        address spender,
+        uint256 value
+    ) internal {
+        require(owner != address(0), "ThanksToken: approve from zero address");
+        require(
+            spender != address(0),
+            "ThanksToken: approve to zero address"
+        );
+        _mintAllowance[owner][spender] = value;
+        emit ApproveMint(owner, spender, value);
     }
 
     // Note: setDefaultCoefficient is not available in Clone pattern

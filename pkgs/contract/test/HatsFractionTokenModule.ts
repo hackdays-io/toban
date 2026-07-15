@@ -351,5 +351,80 @@ describe("HatsFractionTokenModule", () => {
       ]);
       expect(balanceAddress3).to.equal(0n);
     });
+
+    it("non-wearer recipient can transfer all of their balance", async () => {
+      // The wearer-only retention rule must not block intermediate holders
+      // (e.g. escrow modules) from draining the full balance of a tokenId.
+      // address2 is the wearer; address3 is a recipient.
+      const tokenId = await HatsFractionTokenModule.read.getTokenId([
+        hatId1,
+        address2Validated,
+      ]);
+
+      // Top up: wearer keeps a balance, recipient gets some to drain.
+      await HatsFractionTokenModule.write.mint(
+        [hatId1, address2Validated, 2000n],
+        { account: address1Validated },
+      );
+      await HatsFractionTokenModule.write.safeTransferFrom(
+        [address2Validated, address3Validated, tokenId, 1000n, "0x"],
+        { account: address2Validated },
+      );
+
+      const recipientBalance = await HatsFractionTokenModule.read.balanceOf([
+        address3Validated,
+        tokenId,
+      ]);
+      expect(recipientBalance).to.equal(1000n);
+
+      // Recipient transfers their full balance — must NOT revert.
+      await HatsFractionTokenModule.write.safeTransferFrom(
+        [
+          address3Validated,
+          address1Validated,
+          tokenId,
+          recipientBalance,
+          "0x",
+        ],
+        { account: address3Validated },
+      );
+
+      expect(
+        await HatsFractionTokenModule.read.balanceOf([
+          address3Validated,
+          tokenId,
+        ]),
+      ).to.equal(0n);
+    });
+
+    it("wearer still cannot transfer their entire balance", async () => {
+      const tokenId = await HatsFractionTokenModule.read.getTokenId([
+        hatId1,
+        address2Validated,
+      ]);
+      const wearerBalance = await HatsFractionTokenModule.read.balanceOf([
+        address2Validated,
+        tokenId,
+      ]);
+      expect(wearerBalance > 0n, "wearer balance is non-zero").to.be.true;
+
+      let reverted = false;
+      try {
+        await HatsFractionTokenModule.write.safeTransferFrom(
+          [
+            address2Validated,
+            address3Validated,
+            tokenId,
+            wearerBalance,
+            "0x",
+          ],
+          { account: address2Validated },
+        );
+      } catch (error) {
+        reverted = true;
+        expect((error as Error).message).to.include("CannotTransferAllTokens");
+      }
+      expect(reverted, "wearer full transfer should revert").to.be.true;
+    });
   });
 });

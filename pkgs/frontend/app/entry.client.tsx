@@ -1,28 +1,23 @@
-import { RemixBrowser } from "@remix-run/react";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { ChakraProvider } from "./components/chakra-provider";
-import { ClientCacheProvider } from "./emotion/emotion-client";
+import { I18nextProvider } from "react-i18next";
+import { HydratedRouter } from "react-router/dom";
+import { i18n, initI18n } from "./i18n";
 
-const hydrate = () => {
-  startTransition(() => {
-    hydrateRoot(
-      document,
-      <StrictMode>
-        <ClientCacheProvider>
-          <ChakraProvider>
-            <RemixBrowser />
-          </ChakraProvider>
-        </ClientCacheProvider>
-      </StrictMode>,
-    );
-  });
-};
+// NOTE: the previous global `BigInt.prototype.toJSON` patch lived here.
+// It was removed in favour of `app/lib/bigint-json.ts:withBigIntJSON`,
+// which scopes the patch to a single signing call. See that file for
+// the rationale and the (#15) review context.
 
-if (typeof requestIdleCallback === "function") {
-  requestIdleCallback(hydrate);
-} else {
-  // Safari doesn't support requestIdleCallback
-  // https://caniuse.com/requestidlecallback
-  setTimeout(hydrate, 1);
-}
+initI18n();
+
+startTransition(() => {
+  hydrateRoot(
+    document,
+    <StrictMode>
+      <I18nextProvider i18n={i18n}>
+        <HydratedRouter />
+      </I18nextProvider>
+    </StrictMode>,
+  );
+});

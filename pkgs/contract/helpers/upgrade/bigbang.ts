@@ -11,7 +11,7 @@ import { baseSalt, deployContract_Create2 } from "../deploy/Create2Factory";
  */
 export const upgradeBigBang = async (
   contractAddress: Address,
-  contractName: "BigBang_Mock_v2",
+  contractName: "BigBang" | "BigBang_Mock_v2",
   create2DeployerAddress?: string,
 ) => {
   const UpgradedBigBangFactory = await ethers.getContractFactory(contractName);

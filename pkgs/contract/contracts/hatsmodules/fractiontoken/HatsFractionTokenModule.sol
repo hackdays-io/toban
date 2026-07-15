@@ -255,8 +255,12 @@ contract HatsFractionTokenModule is
         uint256 _amount,
         bytes memory _data
     ) public override {
-        // Prevent complete token transfers to maintain hat association
-        if (balanceOf(_from, _id) == _amount) {
+        // Only the original wearer must retain at least one token to keep the
+        // hat association; intermediate holders (e.g. escrow modules) are
+        // allowed to transfer their full balance.
+        if (
+            _isOriginalWearer(_id, _from) && balanceOf(_from, _id) == _amount
+        ) {
             revert CannotTransferAllTokens();
         }
 
@@ -290,6 +294,16 @@ contract HatsFractionTokenModule is
         uint256[] memory _amounts,
         bytes memory _data
     ) public override {
+        // Apply the same wearer-only retention rule per token id.
+        for (uint256 i = 0; i < _ids.length; i++) {
+            if (
+                _isOriginalWearer(_ids[i], _from) &&
+                balanceOf(_from, _ids[i]) == _amounts[i]
+            ) {
+                revert CannotTransferAllTokens();
+            }
+        }
+
         super.safeBatchTransferFrom(_from, _to, _ids, _amounts, _data);
 
         for (uint256 i = 0; i < _ids.length; i++) {
@@ -485,6 +499,21 @@ contract HatsFractionTokenModule is
             }
         }
         return false;
+    }
+
+    /**
+     * @notice Whether `_account` is the original wearer that minted `_tokenId`
+     * @dev The wearer is recorded as the first entry of `tokenRecipients` by
+     *      `mintInitialSupply`. Returning false for unminted tokens is fine —
+     *      they have no balance and the transfer guard cannot fire on them.
+     */
+    function _isOriginalWearer(
+        uint256 _tokenId,
+        address _account
+    ) private view returns (bool) {
+        address[] storage recipients = tokenRecipients[_tokenId];
+        if (recipients.length == 0) return false;
+        return recipients[0] == _account;
     }
 
     function _update(

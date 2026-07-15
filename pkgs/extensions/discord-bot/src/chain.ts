@@ -1,0 +1,495 @@
+/**
+ * viem public client + ThanksToken ABI fragment.
+ *
+ * The full ABI is produced by `pkgs/contract` (#506). This module exposes
+ * only the slice the bot calls (`mintAllowance`, `mintableAmount`,
+ * `mintFrom`) plus the `MintFrom` event for indexer reference. When the
+ * contract's ABI changes, update only this file — every command imports
+ * {@link THANKS_TOKEN_ABI} from here.
+ */
+import {
+  http,
+  type Address,
+  type Hex,
+  type PublicClient,
+  createPublicClient,
+  defineChain,
+} from "viem";
+import { base, sepolia } from "viem/chains";
+import type { Env } from "./env";
+
+export const THANKS_TOKEN_ABI = [
+  {
+    type: "function",
+    name: "mintAllowance",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "mintableAmount",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      {
+        name: "relatedRoles",
+        type: "tuple[]",
+        components: [
+          { name: "hatId", type: "uint256" },
+          { name: "wearer", type: "address" },
+        ],
+      },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "mintFrom",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "from", type: "address" },
+      { name: "to", type: "address" },
+      { name: "value", type: "uint256" },
+      {
+        name: "relatedRoles",
+        type: "tuple[]",
+        components: [
+          { name: "hatId", type: "uint256" },
+          { name: "wearer", type: "address" },
+        ],
+      },
+      { name: "data", type: "bytes" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  // Event included for reference — subgraph indexers will consume it.
+  {
+    type: "event",
+    name: "MintFrom",
+    inputs: [
+      { name: "from", type: "address", indexed: true },
+      { name: "to", type: "address", indexed: true },
+      { name: "spender", type: "address", indexed: true },
+      { name: "value", type: "uint256", indexed: false },
+    ],
+    anonymous: false,
+  },
+] as const;
+
+/**
+ * HatsQuestModule ABI slice the bot calls.
+ *
+ * Only `submitCompletion` (proxy submission) is needed for writes; the
+ * `questAgentHatId` getter is included for completeness / diagnostics. The
+ * selector for `submitCompletion(address,uint256,uint256)` is `0x947ec45f`
+ * — keep `turnkey/policy.json` in sync if this signature ever changes.
+ */
+export const HATS_QUEST_MODULE_ABI = [
+  {
+    type: "function",
+    name: "submitCompletion",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "submitter", type: "address" },
+      { name: "questId", type: "uint256" },
+      { name: "membershipHatId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "questAgentHatId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+/**
+ * MVP `/thx` sends `relatedRoles = []`. `mintableAmount(owner, [])` falls
+ * back to the address-coefficient cap (see ThanksToken.sol), which is the
+ * defensive boundary we want until role-context plumbing arrives.
+ */
+export const EMPTY_RELATED_ROLES: readonly {
+  hatId: bigint;
+  wearer: `0x${string}`;
+}[] = [];
+
+export function getChain(env: Env) {
+  const id = Number(env.CHAIN_ID);
+  if (id === base.id) return base;
+  if (id === sepolia.id) return sepolia;
+  // Allow exotic / local chains without crashing.
+  return defineChain({
+    id,
+    name: `chain-${id}`,
+    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+    rpcUrls: { default: { http: [env.RPC_URL] } },
+  });
+}
+
+export function getPublicClient(env: Env): PublicClient {
+  // viem narrows the return type by chain; widen back to the generic
+  // PublicClient so the rest of the package doesn't have to thread
+  // chain generics through every call site.
+  return createPublicClient({
+    chain: getChain(env),
+    transport: http(env.RPC_URL),
+  }) as unknown as PublicClient;
+}
+
+/**
+ * Resolve a workspace's current ThanksToken address from Goldsky.
+ *
+ * Each workspace owns its own ThanksToken clone (and may switch to a
+ * fresh contract via `BigBang.switchThanksToken`), so we never hardcode
+ * a single address. The subgraph's `Workspace.thanksToken.id` is the
+ * authoritative source.
+ *
+ * Returns `null` when the workspace isn't indexed yet or has no
+ * ThanksToken associated. Callers should treat that as a user-facing
+ * error ("workspace not initialised").
+ */
+export async function resolveThanksTokenAddress(
+  env: Env,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Hex | null> {
+  const endpoint = env.GOLDSKY_GRAPHQL_ENDPOINT;
+  if (!endpoint) {
+    throw new Error("GOLDSKY_GRAPHQL_ENDPOINT is not configured");
+  }
+  const res = await fetchImpl(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: "query($id: ID!) { workspace(id: $id) { thanksToken { id } } }",
+      variables: { id: treeId },
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `subgraph workspace lookup failed: ${res.status} ${res.statusText}`,
+    );
+  }
+  const body = (await res.json()) as {
+    data?: { workspace?: { thanksToken?: { id?: string } | null } | null };
+    errors?: Array<{ message: string }>;
+  };
+  if (body.errors?.length) {
+    throw new Error(
+      `subgraph workspace lookup errored: ${body.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  const id = body.data?.workspace?.thanksToken?.id;
+  return id ? (id as Hex) : null;
+}
+
+/**
+ * The Hats subgraph stores tree IDs as 8-hex-digit, 0x-prefixed strings
+ * ("0x00000bba" for decimal 3002). The Toban subgraph uses the decimal
+ * form. This helper converts the decimal treeId we get from
+ * platform_links to the hex form the Hats subgraph expects.
+ */
+function treeIdToHatsHex(treeId: string): string {
+  const decimal = BigInt(treeId);
+  return `0x${decimal.toString(16).padStart(8, "0")}`;
+}
+
+/**
+ * POST a GraphQL `query` to `endpoint` and return its `data`, applying the
+ * env guard, `res.ok` check, and `errors[]` handling every resolver in this
+ * module shares. Centralised so a fix to error handling lives in one place
+ * (this replaced three hand-repeated copies — see issue #531 review).
+ */
+async function postGraphQL<T>(
+  endpoint: string | undefined,
+  envVarName: string,
+  query: string,
+  variables: Record<string, unknown>,
+  fetchImpl: typeof fetch,
+  label: string,
+): Promise<T> {
+  if (!endpoint) {
+    throw new Error(`${envVarName} is not configured`);
+  }
+  const res = await fetchImpl(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) {
+    throw new Error(`${label} failed: ${res.status} ${res.statusText}`);
+  }
+  const body = (await res.json()) as {
+    data?: T;
+    errors?: Array<{ message: string }>;
+  };
+  if (body.errors?.length) {
+    throw new Error(
+      `${label} errored: ${body.errors.map((e) => e.message).join("; ")}`,
+    );
+  }
+  return body.data as T;
+}
+
+/**
+ * Returns true iff `wallet` wears any hat in the workspace tree identified by
+ * `treeId`. Used by `/toban-link` to gate bindings to members of the workspace
+ * (not strictly admins — see issue #509: any member-Hat is sufficient).
+ *
+ * Thin wrapper over {@link resolveMembershipHatId} so the two share one query.
+ */
+export async function wearsAnyHatInTree(
+  env: Env,
+  wallet: Address,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
+  return (
+    (await resolveMembershipHatId(env, wallet, treeId, fetchImpl)) !== null
+  );
+}
+
+/**
+ * Resolve the role-context array required by ThanksToken's
+ * `mintableAmount` / `mintFrom`. The contract sums up
+ * `(wearingTime/10min) * shareBalance / shareTotalSupply` across each
+ * (hatId, wearer) pair plus a flat 10% of the sender's THX balance.
+ *
+ * Mirrors `frontend/hooks/useThanksToken`: combine
+ *   (a) FractionToken balances the sender owns (Toban subgraph),
+ *   (b) hats the sender wears in this workspace (Hats subgraph).
+ * (b) is necessary because freshly-minted hats are not always indexed
+ * promptly in (a); the on-chain FractionToken balance still resolves
+ * correctly when passed (hatId, wearer=self).
+ */
+export async function resolveRelatedRoles(
+  env: Env,
+  owner: Address,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<readonly { hatId: bigint; wearer: Address }[]> {
+  if (!env.GOLDSKY_GRAPHQL_ENDPOINT) {
+    throw new Error("GOLDSKY_GRAPHQL_ENDPOINT is not configured");
+  }
+  if (!env.HATS_GRAPHQL_ENDPOINT) {
+    throw new Error("HATS_GRAPHQL_ENDPOINT is not configured");
+  }
+
+  const ownerLower = owner.toLowerCase();
+
+  // (a) FractionToken balances from the Toban subgraph.
+  const fetchFractionRows = async (): Promise<
+    Array<{ hatId: string; wearer: string }>
+  > => {
+    const tobanRes = await fetchImpl(env.GOLDSKY_GRAPHQL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query:
+          "query($owner: String!, $workspaceId: String!) {" +
+          " balanceOfFractionTokens(where: {owner: $owner, workspaceId: $workspaceId}, first: 200) {" +
+          " hatId wearer } }",
+        variables: { owner: ownerLower, workspaceId: treeId },
+      }),
+    });
+    if (!tobanRes.ok) {
+      throw new Error(
+        `Toban subgraph relatedRoles lookup failed: ${tobanRes.status} ${tobanRes.statusText}`,
+      );
+    }
+    const tobanBody = (await tobanRes.json()) as {
+      data?: {
+        balanceOfFractionTokens?: Array<{ hatId: string; wearer: string }>;
+      };
+      errors?: Array<{ message: string }>;
+    };
+    if (tobanBody.errors?.length) {
+      throw new Error(
+        `Toban subgraph errored: ${tobanBody.errors.map((e) => e.message).join("; ")}`,
+      );
+    }
+    return tobanBody.data?.balanceOfFractionTokens ?? [];
+  };
+
+  // (b) Hats the user wears, from the Hats subgraph.
+  const fetchWornHats = async (): Promise<Array<{ id: string }>> => {
+    const hatsRes = await fetchImpl(env.HATS_GRAPHQL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query:
+          "query($treeId: ID!) {" +
+          " tree(id: $treeId) { hats { id wearers { id } } } }",
+        variables: { treeId: treeIdToHatsHex(treeId) },
+      }),
+    });
+    if (!hatsRes.ok) {
+      throw new Error(
+        `Hats subgraph lookup failed: ${hatsRes.status} ${hatsRes.statusText}`,
+      );
+    }
+    const hatsBody = (await hatsRes.json()) as {
+      data?: {
+        tree?: {
+          hats?: Array<{ id: string; wearers: Array<{ id: string }> }>;
+        } | null;
+      };
+      errors?: Array<{ message: string }>;
+    };
+    if (hatsBody.errors?.length) {
+      throw new Error(
+        `Hats subgraph errored: ${hatsBody.errors.map((e) => e.message).join("; ")}`,
+      );
+    }
+    return (hatsBody.data?.tree?.hats ?? []).filter((h) =>
+      h.wearers.some((w) => w.id.toLowerCase() === ownerLower),
+    );
+  };
+
+  // (a) and (b) hit different endpoints with independent inputs, so run
+  // them concurrently — this is on the `/balance` path which must answer
+  // inside Discord's 3s interaction ACK budget.
+  const [fractionRows, myHats] = await Promise.all([
+    fetchFractionRows(),
+    fetchWornHats(),
+  ]);
+
+  // Combine. De-duplicate by (hatId, wearer). The Toban subgraph returns
+  // hatId as a decimal string while the Hats subgraph returns it as a
+  // 0x-prefixed hex string, so a raw string key would never collide even
+  // for the same role — normalise both to a canonical hex form, otherwise
+  // the role is counted twice and `mintableAmount`'s cap silently doubles.
+  const keyFor = (hatId: string | bigint, wearer: string) =>
+    `${BigInt(hatId).toString(16)}:${wearer.toLowerCase()}`;
+  const map = new Map<string, { hatId: bigint; wearer: Address }>();
+  for (const r of fractionRows) {
+    map.set(keyFor(r.hatId, r.wearer), {
+      hatId: BigInt(r.hatId),
+      wearer: r.wearer as Address,
+    });
+  }
+  for (const h of myHats) {
+    map.set(keyFor(h.id, ownerLower), {
+      hatId: BigInt(h.id),
+      wearer: owner,
+    });
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Resolve a workspace's HatsQuestModule clone address from Goldsky.
+ *
+ * Each workspace owns its own quest module; the bot's proxy `submitCompletion`
+ * tx must target the right one. The subgraph's `Workspace.hatsQuestModule` is
+ * the authoritative source. Returns `null` when the workspace isn't indexed
+ * yet or has no quest module — callers treat that as user-facing error.
+ */
+export async function resolveQuestModuleAddress(
+  env: Env,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Hex | null> {
+  const data = await postGraphQL<{
+    workspace?: { hatsQuestModule?: string | null } | null;
+  }>(
+    env.GOLDSKY_GRAPHQL_ENDPOINT,
+    "GOLDSKY_GRAPHQL_ENDPOINT",
+    "query($id: ID!) { workspace(id: $id) { hatsQuestModule } }",
+    { id: treeId },
+    fetchImpl,
+    "subgraph quest-module lookup",
+  );
+  const addr = data.workspace?.hatsQuestModule;
+  return addr ? (addr as Hex) : null;
+}
+
+/**
+ * Resolve a hat the `wallet` wears in the workspace tree, returned as the
+ * 256-bit hat id `submitCompletion` expects for its `membershipHatId` proof.
+ *
+ * Returns `null` when the wallet wears no hat in the tree (i.e. it isn't a
+ * workspace member, so the proxy submission would revert anyway). Reads the
+ * Hats subgraph directly — same source as {@link wearsAnyHatInTree}.
+ */
+export async function resolveMembershipHatId(
+  env: Env,
+  wallet: Address,
+  treeId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<bigint | null> {
+  const expectedTreeHex = treeIdToHatsHex(treeId);
+  const data = await postGraphQL<{
+    wearer?: {
+      currentHats?: Array<{ id: string; tree?: { id: string } | null }>;
+    } | null;
+  }>(
+    env.HATS_GRAPHQL_ENDPOINT,
+    "HATS_GRAPHQL_ENDPOINT",
+    "query($wearer: ID!) {" +
+      " wearer(id: $wearer) { currentHats { id tree { id } } } }",
+    { wearer: wallet.toLowerCase() },
+    fetchImpl,
+    "Hats subgraph wearer lookup",
+  );
+  const hat = (data.wearer?.currentHats ?? []).find(
+    (h) => (h.tree?.id ?? "").toLowerCase() === expectedTreeHex,
+  );
+  return hat ? BigInt(hat.id) : null;
+}
+
+/** An Open quest the actor may submit completion for. */
+export interface SubmittableQuest {
+  questId: bigint;
+  /** Off-chain title (#532), or null when not yet indexed. */
+  title: string | null;
+}
+
+/**
+ * Resolve the workspace's Open quests that `actor` may submit — i.e. every
+ * Open quest the actor did not create. Membership is enforced separately via
+ * {@link resolveMembershipHatId}; the autocomplete handler short-circuits to
+ * an empty list when the actor wears no hat in the tree.
+ *
+ * Titles come from the indexed `QuestMetadata.title` (#532) so the
+ * autocomplete needs a single GraphQL round-trip and no per-quest IPFS fetch.
+ */
+export async function resolveSubmittableQuests(
+  env: Env,
+  treeId: string,
+  actor: Address,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SubmittableQuest[]> {
+  const data = await postGraphQL<{
+    workspace?: {
+      quests?: Array<{
+        questId: string;
+        creator: string;
+        metadata?: { title?: string | null } | null;
+      }>;
+    } | null;
+  }>(
+    env.GOLDSKY_GRAPHQL_ENDPOINT,
+    "GOLDSKY_GRAPHQL_ENDPOINT",
+    "query($id: ID!) {" +
+      " workspace(id: $id) {" +
+      " quests(where: {status: Open}, first: 100, orderBy: createdAt, orderDirection: desc) {" +
+      " questId creator metadata { title } } } }",
+    { id: treeId },
+    fetchImpl,
+    "subgraph quests lookup",
+  );
+  const actorLower = actor.toLowerCase();
+  return (data.workspace?.quests ?? [])
+    .filter((q) => q.creator.toLowerCase() !== actorLower)
+    .map((q) => ({
+      questId: BigInt(q.questId),
+      title: q.metadata?.title ?? null,
+    }));
+}

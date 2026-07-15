@@ -1,4 +1,4 @@
-specVersion: 0.0.1
+specVersion: 0.0.5
 description: Toban
 repository: https://github.com/hackdays-io/toban
 schema:
@@ -14,7 +14,7 @@ dataSources:
       startBlock: {{ startBlock }}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
         {{#entities}}
@@ -39,7 +39,7 @@ templates:
       abi: {{ file }}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
         {{#entities}}
@@ -55,3 +55,20 @@ templates:
         {{/handlers}}
       file: ./src/{{mappingFile}}.ts
   {{/templatesContracts}}
+  # File Data Source: resolves quest metadata JSON from IPFS at index time.
+  # Network-independent (no address), so declared statically outside the
+  # mustache loop. `handleQuestCreated` spawns one of these per quest via
+  # QuestMetadataTemplate.create(cid).
+  - kind: file/ipfs
+    name: QuestMetadata
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - QuestMetadata
+      abis:
+        - name: HatsQuestModule
+          file: ./abis/HatsQuestModule.json
+      handler: handleQuestMetadata
+      file: ./src/questMetadataMapping.ts

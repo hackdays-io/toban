@@ -1,0 +1,160 @@
+{
+  "_comment": [
+    "Turnkey policy attached to the bot's signing key. This file is the",
+    "source of truth — changes are PR-reviewed and applied to Turnkey via",
+    "`docs/turnkey-setup.md`.",
+    "",
+    "Turnkey's policy schema continues to evolve (selector / `from` set",
+    "matching in particular). The fields below reflect the model we",
+    "design against in code; the actual JSON you upload may need shape",
+    "adjustments. Read this as 'the rules we intend to enforce', not",
+    "'the literal Turnkey JSON'.",
+    "",
+    "The bot signs TWO distinct operations, so the policy is expressed as a",
+    "disjunction of two allow-branches. Each branch pins the selector, the",
+    "target-contract registry, the identity-bound actor argument, zero",
+    "value, and a rate limit. A tx must satisfy the common gates AND one",
+    "full branch."
+  ],
+  "policyName": "toban-discord-bot-proxy-writes",
+  "effect": "EFFECT_ALLOW",
+  "consensus": "approvers.any(user, user.tags.contains('toban-discord-bot'))",
+  "condition": "and(commonAll, or(mintFromBranch, submitCompletionBranch))",
+  "rules": {
+    "commonAll": [
+      {
+        "id": "activity-must-be-sign-transaction",
+        "_comment": [
+          "Hard gate: every branch rule below inspects `eth.tx.*`, which is",
+          "only populated for ACTIVITY_TYPE_SIGN_TRANSACTION_V2. A future",
+          "code path (or a stamper-key compromise) that calls",
+          "ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2 — i.e. `sign_raw_payload` for",
+          "signMessage / signTypedData — would bypass every eth.tx.* rule",
+          "because none of them reference the raw-hash surface. Pin the",
+          "policy to signTransaction so any future raw-payload signing",
+          "requires an explicit, PR-reviewed policy expansion."
+        ],
+        "expression": "activity.type == 'ACTIVITY_TYPE_SIGN_TRANSACTION_V2'"
+      },
+      {
+        "id": "spender-must-be-this-signer",
+        "_comment": [
+          "Defence in depth: the tx `from` (set by Turnkey to the signing",
+          "key's own address) is automatically this key, but we re-state it",
+          "here so a future change that splits signing across multiple keys",
+          "doesn't bypass it. Applies to both branches."
+        ],
+        "expression": "eth.tx.from == private_key.address"
+      },
+      {
+        "id": "value-must-be-zero",
+        "_comment": [
+          "Both mintFrom and submitCompletion are non-payable; reject any tx",
+          "that attaches ETH to avoid funding bugs from draining the gas",
+          "balance."
+        ],
+        "expression": "eth.tx.value == 0"
+      }
+    ],
+    "mintFromBranch": [
+      {
+        "id": "mintFrom-rate-limit",
+        "_comment": [
+          "Per-operation rate limit (NOT shared with submitCompletion): capping",
+          "the two features on one counter lets a /thx burst throttle /quest",
+          "submit and vice-versa. Each branch carries its own budget so the",
+          "coupling can't happen. Turnkey's rate-limit primitive may be named",
+          "differently or live outside policy — adjust when applying. Intent:",
+          "bound mintFrom rate per signer per minute to limit blast radius of a",
+          "stamper-key compromise. Ideally keyed on selector so the two counters",
+          "are truly independent."
+        ],
+        "expression": "rate(eth.tx.signCount, 60s) < 30"
+      },
+      {
+        "id": "to-must-be-registered-thanks-token",
+        "_comment": [
+          "Only allow txs whose `to` is a Toban-registered ThanksToken",
+          "contract. The registry is a Turnkey tag set kept in sync out of",
+          "band (see `_notes`)."
+        ],
+        "expression": "eth.tx.to in tag('toban-thanks-token-registry')"
+      },
+      {
+        "id": "selector-must-be-mintFrom",
+        "_comment": [
+          "Function selector for the ThanksToken mint primitive (#506):",
+          "  mintFrom(address,address,uint256,(uint256,address)[],bytes)",
+          "= keccak256(sig)[0:4] = 0x40062e89.",
+          "If the contract's `mintFrom` signature ever changes (including",
+          "the `RelatedRole` struct shape), recompute and update both this",
+          "selector and the matching ABI in `src/chain.ts`."
+        ],
+        "expression": "eth.tx.data.selector == '0x40062e89'"
+      },
+      {
+        "id": "mintFrom-from-must-be-known-wallet",
+        "_comment": [
+          "The decoded `from` argument of mintFrom (the token holder whose",
+          "allowance is being spent) must be a wallet known to the subgraph",
+          "as IdentityBound (Turnkey tag set updated by the sync cron)."
+        ],
+        "expression": "eth.tx.data.args[0] in tag('toban-identity-bound-wallets')"
+      }
+    ],
+    "submitCompletionBranch": [
+      {
+        "id": "submitCompletion-rate-limit",
+        "_comment": [
+          "Per-operation rate limit, independent of mintFrom's (see",
+          "mintFrom-rate-limit). Keeps a /quest submit burst from consuming the",
+          "/thx budget."
+        ],
+        "expression": "rate(eth.tx.signCount, 60s) < 30"
+      },
+      {
+        "id": "to-must-be-registered-quest-module",
+        "_comment": [
+          "Only allow txs whose `to` is a Toban-registered HatsQuestModule",
+          "clone. Each workspace deploys its own quest module; the tag set",
+          "'toban-quest-module-registry' enumerates the ones the bot may",
+          "submit to (kept in sync by the same subgraph cron)."
+        ],
+        "expression": "eth.tx.to in tag('toban-quest-module-registry')"
+      },
+      {
+        "id": "selector-must-be-submitCompletion",
+        "_comment": [
+          "Function selector for the quest proxy primitive (#531):",
+          "  submitCompletion(address,uint256,uint256)",
+          "= keccak256(sig)[0:4] = 0x947ec45f.",
+          "If the signature ever changes, recompute and update both this",
+          "selector and the matching ABI in `src/chain.ts`."
+        ],
+        "expression": "eth.tx.data.selector == '0x947ec45f'"
+      },
+      {
+        "id": "submitCompletion-submitter-must-be-known-wallet",
+        "_comment": [
+          "The decoded `submitter` argument (args[0]) is the member the bot",
+          "submits on behalf of. It must be an identity-bound wallet so the",
+          "bot can never attribute a submission to an arbitrary address —",
+          "same tag set the frontend/identity cron maintains."
+        ],
+        "expression": "eth.tx.data.args[0] in tag('toban-identity-bound-wallets')"
+      }
+    ]
+  },
+  "_notes": [
+    "Tag-based sets ('toban-thanks-token-registry',",
+    "'toban-quest-module-registry', 'toban-identity-bound-wallets') are",
+    "kept in sync by an out-of-band worker / cron that reads the Toban",
+    "subgraph and calls Turnkey's tag-update API. Until that cron exists,",
+    "we operate with an explicit allowlist per set.",
+    "",
+    "Selectors:",
+    "  0x40062e89 = mintFrom(address,address,uint256,(uint256,address)[],bytes)",
+    "  0x947ec45f = submitCompletion(address,uint256,uint256)",
+    "Both are bound to the matching ABI fragments in `src/chain.ts`."
+  ]
+}

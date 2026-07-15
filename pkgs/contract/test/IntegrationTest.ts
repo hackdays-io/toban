@@ -23,11 +23,13 @@ import {
   type HatsTimeFrameModule,
   type HatsHatCreatorModule,
   type HatsFractionTokenModule,
+  type HatsQuestModule,
   deployHatsHatCreatorModule,
   deployHatsModuleFactory,
   deployHatsProtocol,
   deployHatsTimeFrameModule,
   deployHatsFractionTokenModule,
+  deployHatsQuestModule,
 } from "../helpers/deploy/Hats";
 import {
   type PullSplitsFactory,
@@ -52,6 +54,7 @@ describe("IntegrationTest", () => {
   let HatsTimeFrameModule_IMPL: HatsTimeFrameModule;
   let HatsHatCreatorModule_IMPL: HatsHatCreatorModule;
   let HatsFractionTokenModule_IMPL: HatsFractionTokenModule;
+  let HatsQuestModule_IMPL: HatsQuestModule;
   let SplitsWarehouse: SplitsWarehouse;
   let PullSplitsFactory: PullSplitsFactory;
   let PushSplitsFactory: PushSplitsFactory;
@@ -109,6 +112,10 @@ describe("IntegrationTest", () => {
       await deployHatsFractionTokenModule("0.0.0", Create2Deployer.address);
     HatsFractionTokenModule_IMPL = _HatsFractionTokenModule_IMPL;
 
+    const { HatsQuestModule: _HatsQuestModule_IMPL } =
+      await deployHatsQuestModule("0.0.0", Create2Deployer.address);
+    HatsQuestModule_IMPL = _HatsQuestModule_IMPL;
+
     const {
       SplitsWarehouse: _SplitsWarehouse,
       PullSplitsFactory: _PullSplitsFactory,
@@ -159,6 +166,7 @@ describe("IntegrationTest", () => {
         hatsTimeFrameModule_impl: HatsTimeFrameModule_IMPL.address,
         hatsHatCreatorModule_impl: HatsHatCreatorModule_IMPL.address,
         hatsFractionTokenModule_impl: HatsFractionTokenModule_IMPL.address,
+        hatsQuestModule_impl: HatsQuestModule_IMPL.address,
         splitsCreatorFactoryAddress: SplitsCreatorFactory.address,
         splitsFactoryV2Address: PullSplitsFactory.address,
         thanksTokenFactoryAddress: ThanksTokenFactory.address,
@@ -213,6 +221,21 @@ describe("IntegrationTest", () => {
             decodedLog.args.hatsHatCreatorModule;
           const hatsFractionTokenModuleAddress =
             decodedLog.args.hatsFractionTokenModule;
+          const hatsQuestModuleAddress = decodedLog.args.hatsQuestModule;
+          expect(hatsQuestModuleAddress).to.match(/^0x[0-9a-fA-F]{40}$/);
+          expect(hatsQuestModuleAddress.toLowerCase()).to.not.equal(
+            "0x0000000000000000000000000000000000000000",
+          );
+
+          // Verify the deployed quest module is bound to the same fraction token
+          const hatsQuestModuleByBigBang = await viem.getContractAt(
+            "HatsQuestModule",
+            hatsQuestModuleAddress,
+          );
+          expect(
+            (await hatsQuestModuleByBigBang.read.FRACTION_TOKEN()).toLowerCase(),
+          ).to.equal(hatsFractionTokenModuleAddress.toLowerCase());
+
           const splitsCreatorAddress = decodedLog.args.splitCreator;
           const thanksTokenAddress = decodedLog.args.thanksToken;
 

@@ -1,6 +1,7 @@
 import { FRACTION_TOKEN_ABI } from "abi/fractiontoken";
 import { HATS_ABI } from "abi/hats";
 import { HATS_HAT_CREATOR_MODULE_ABI } from "abi/hatsHatCreatorModule";
+import { HATS_QUEST_MODULE_ABI } from "abi/hatsQuestModule";
 import { HATS_TIME_FRAME_MODULE_ABI } from "abi/hatsTimeFrameModule";
 import { THANKS_TOKEN_ABI } from "abi/thankstoken";
 import type { Address } from "viem";
@@ -11,6 +12,8 @@ export const FRACTION_TOKEN_ADDRESS = import.meta.env
   .VITE_FRACTION_TOKEN_ADDRESS;
 export const SPLITS_CREATOR_ADDRESS = import.meta.env
   .VITE_SPLITS_CREATOR_ADDRESS;
+export const SCHEDULED_DISTRIBUTOR_FACTORY_ADDRESS = import.meta.env
+  .VITE_SCHEDULED_DISTRIBUTOR_FACTORY_ADDRESS;
 
 export const hatsContractBaseConfig = {
   address: HATS_ADDRESS as Address,
@@ -29,6 +32,13 @@ export const hatsHatCreatorContractBaseConfig = (
 ) => ({
   address: hatsHatCreatorModuleAddress,
   abi: HATS_HAT_CREATOR_MODULE_ABI,
+});
+
+export const hatsQuestContractBaseConfig = (
+  hatsQuestModuleAddress: Address,
+) => ({
+  address: hatsQuestModuleAddress,
+  abi: HATS_QUEST_MODULE_ABI,
 });
 
 export const fractionTokenBaseConfig = (fractionTokenAddress: Address) => ({

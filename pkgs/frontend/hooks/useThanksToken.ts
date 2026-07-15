@@ -77,9 +77,7 @@ const allRecipientsIndexed = (
       .filter((m) => mintMatchesSend(m, criteria))
       .map((m) => m.to.toLowerCase()),
   );
-  return criteria.toAddresses.every((to) =>
-    indexedTos.has(to.toLowerCase()),
-  );
+  return criteria.toAddresses.every((to) => indexedTos.has(to.toLowerCase()));
 };
 
 /**

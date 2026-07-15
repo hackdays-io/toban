@@ -22,6 +22,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Heading } from "~/components/ui/heading";
 import { Icon } from "~/components/ui/icon";
+import { Textarea } from "~/components/ui/textarea";
 import { Typography } from "~/components/ui/typography";
 import { withBigIntJSON } from "~/lib/bigint-json";
 
@@ -43,6 +44,29 @@ function decodeVerifierClaims(token: string): VerifierClaims | null {
   } catch {
     return null;
   }
+}
+
+// Accepts what the user pastes when they arrive without a token in the URL
+// (e.g. from an in-app "Discord を連携" link that can't carry the credential):
+// either the full /toban-setup DM link (…/connect/discord#token=<jwt> or
+// ?token=<jwt>) or a bare verifier_token JWT. Returns the extracted token, or
+// null when nothing usable is found.
+function extractVerifierToken(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const inUrl = trimmed.match(/[#&?]token=([^&\s]+)/);
+  if (inUrl) {
+    try {
+      return decodeURIComponent(inUrl[1]);
+    } catch {
+      return inUrl[1];
+    }
+  }
+  // Bare JWT: three base64url segments separated by dots.
+  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
 }
 
 // Maps the stable ConnectErrorCode set returned by `@toban/identity`'s
@@ -108,8 +132,15 @@ const ConnectDiscord: FC = () => {
   // the wild.
   const tokenFromHash = useVerifierTokenFromHash();
   const tokenFromQuery = params.get("token");
-  const token = tokenFromHash ?? tokenFromQuery;
+  // Fallback for in-app entry points (e.g. a member's own profile) that link
+  // here but can't carry the verifier_token: the user pastes the DM link or the
+  // token itself and we promote it to the active token via `manualToken`.
+  const [manualToken, setManualToken] = useState<string | null>(null);
+  const token = tokenFromHash ?? tokenFromQuery ?? manualToken;
   const treeId = params.get("treeId");
+
+  const [pasteValue, setPasteValue] = useState("");
+  const [pasteError, setPasteError] = useState(false);
 
   const claims = useMemo(
     () => (token ? decodeVerifierClaims(token) : null),
@@ -272,15 +303,56 @@ const ConnectDiscord: FC = () => {
   if (!token) {
     return (
       <PageContainer className="flex flex-col gap-6 pt-8 pb-12 md:pt-12">
-        <Heading variant="h2" level={1}>
-          Discord 連携
-        </Heading>
+        <header className="flex flex-col gap-1">
+          <Typography variant="bodySm" tone="secondary">
+            外部サービス連携
+          </Typography>
+          <Heading variant="h2" level={1}>
+            Discord を連携
+          </Heading>
+        </header>
         <Card>
-          <CardContent>
-            <Typography variant="body" tone="danger">
-              URL に verifier_token が含まれていません。Discord で
-              `/toban-setup` を実行してから、案内された URL を開いてください。
+          <CardContent className="flex flex-col gap-4">
+            <Typography variant="bodySm" tone="secondary">
+              Discord で <code>/toban-setup</code> を実行すると、連携用リンクが
+              DM
+              で届きます。そのリンクを開くと、この画面に自動で読み込まれます。
             </Typography>
+            <Typography variant="bodySm" tone="secondary">
+              手動で進める場合は、DM に届いたリンク（または token
+              文字列）を下に貼り付けてください。
+            </Typography>
+            <Textarea
+              rows={3}
+              placeholder="https://…/connect/discord#token=… または token 文字列"
+              value={pasteValue}
+              onChange={(e) => {
+                setPasteValue(e.target.value);
+                if (pasteError) setPasteError(false);
+              }}
+            />
+            {pasteError && (
+              <Typography variant="caption" tone="danger">
+                token を読み取れませんでした。DM
+                のリンクをそのまま貼り付けてください。
+              </Typography>
+            )}
+            <Button
+              full
+              disabled={!pasteValue.trim()}
+              onClick={() => {
+                const extracted = extractVerifierToken(pasteValue);
+                if (!extracted) {
+                  setPasteError(true);
+                  return;
+                }
+                setManualToken(extracted);
+                setPasteError(false);
+              }}
+            >
+              続ける
+              <Icon name="arrow-right" size={18} />
+            </Button>
           </CardContent>
         </Card>
       </PageContainer>

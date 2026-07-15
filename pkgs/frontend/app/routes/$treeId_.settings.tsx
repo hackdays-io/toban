@@ -16,6 +16,7 @@ import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { LuCheck } from "react-icons/lu";
+import { SiDiscord } from "react-icons/si";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
@@ -349,6 +350,47 @@ const OtherSection: FC<OtherSectionProps> = ({ treeId }) => {
               />
             }
             onClick={handleCopyId}
+          />
+        </Card>
+      </div>
+    </>
+  );
+};
+
+interface ExternalIntegrationSectionProps {
+  treeId: string;
+}
+
+// Workspace-level external-service links. The Discord bot page needs only the
+// treeId (already in scope here), so it can be opened directly — no token /
+// query param to prompt for. The personal wallet↔account binding
+// (/connect/discord) lives on the member's own profile instead, since it needs
+// a per-user verifier_token this admin surface can't supply.
+const ExternalIntegrationSection: FC<ExternalIntegrationSectionProps> = ({
+  treeId,
+}) => {
+  const navigate = useNavigate();
+  return (
+    <>
+      <SectionLabel>外部サービス連携</SectionLabel>
+      <div className="px-4">
+        <Card className="gap-0 p-0">
+          <Row
+            left={
+              <span className="flex size-9 items-center justify-center rounded-full bg-[#F0EBE0]">
+                <SiDiscord size={18} className="text-[#5865F2]" />
+              </span>
+            }
+            title="Discord bot 連携"
+            subtitle="/thx の mint 許可・Quest 代理申請を設定"
+            right={
+              <Icon
+                name="chevron-right"
+                size={16}
+                className="text-text-secondary"
+              />
+            }
+            onClick={() => navigate(`/${treeId}/discord-bot`)}
           />
         </Card>
       </div>
@@ -786,6 +828,7 @@ const WorkspaceSettings: FC = () => {
       <div className="flex flex-col gap-2">
         <BasicInfoSection wallet={wallet} treeId={treeId} topHat={topHat} />
         <OtherSection treeId={treeId} />
+        <ExternalIntegrationSection treeId={treeId} />
         <AuthoritiesSection wallet={wallet} treeId={treeId} topHat={topHat} />
       </div>
     </div>

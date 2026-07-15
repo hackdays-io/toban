@@ -3,15 +3,18 @@
  *
  * Discord OAuth bot-install callback for the frontend-initiated install
  * flow ("Connect Discord" button on a workspace page). Steps:
- *   1. Verify the install-state JWT (issued by the frontend with
- *      `{ treeId, guild_id, jti }` claims and a pinned algorithm).
- *   2. Confirm the URL's `guild_id` matches the state JWT's `guild_id`.
- *   3. Single-use claim the JWT's `jti` so the state cannot replay.
- *   4. Exchange the OAuth `code` against Discord's token endpoint and
- *      confirm Discord returns the same `guild.id` we're binding to.
- *   5. `identity.upsertPlatformLink(...)` to persist guild_id -> tree_id.
- *   6. Register the slash commands on the new guild.
- *   7. Redirect the admin back to the workspace allowance page.
+ *   1. Verify the install-state JWT (issued by `/api/install/start` with
+ *      `{ treeId, jti }` claims and a pinned algorithm).
+ *   2. Single-use claim the JWT's `jti` so the state cannot replay.
+ *   3. Exchange the OAuth `code` against Discord's token endpoint and
+ *      confirm Discord returns the same `guild.id` present in the callback
+ *      query — this is the authoritative "the bot really landed on this
+ *      guild" signal. The state does NOT pin a guild: the admin picks the
+ *      target server on Discord's consent screen, so it's unknown when the
+ *      state is minted; we bind to whatever guild the grant actually names.
+ *   4. `identity.upsertPlatformLink(...)` to persist guild_id -> tree_id.
+ *   5. Register the slash commands on the new guild.
+ *   6. Redirect the admin back to the workspace allowance page.
  *
  * Discord-initiated installs (admin runs `/toban-link <workspace_url>`
  * in an already-invited server) bypass this handler and bind directly
@@ -102,7 +105,6 @@ const VALID_TREE_ID = /^[0-9]+$/;
 
 interface InstallStateClaims {
   treeId: string;
-  guildId: string;
   jti: string;
 }
 
@@ -129,18 +131,14 @@ async function verifyInstallState(
     requiredClaims: ["jti"],
   });
   const treeId = payload.treeId;
-  const guildId = payload.guild_id ?? payload.guildId;
   const jti = payload.jti;
   if (typeof treeId !== "string" || !VALID_TREE_ID.test(treeId)) {
     throw new Error("state.treeId is not a decimal tree id");
   }
-  if (typeof guildId !== "string" || guildId.length === 0) {
-    throw new Error("state.guild_id is missing");
-  }
   if (typeof jti !== "string" || jti.length === 0) {
     throw new Error("state.jti is missing");
   }
-  return { treeId, guildId, jti };
+  return { treeId, jti };
 }
 
 interface OAuthExchangeResult {
@@ -231,13 +229,6 @@ export async function handleInstallCallback(
     return new Response(`invalid state: ${(err as Error).message}`, {
       status: 400,
     });
-  }
-
-  // The JWT bound itself to a specific guild — refuse to bind anywhere
-  // else, even if Discord redirected with a guild_id of the attacker's
-  // choosing.
-  if (parsedState.guildId !== guildId) {
-    return new Response("guild_id does not match state", { status: 400 });
   }
 
   const identity = deps.identity ?? createIdentityClient(env);

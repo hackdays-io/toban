@@ -29,8 +29,8 @@ Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
 
 ```
 src/
-  index.ts                  Workers entry; routes /discord/interactions
-                            and /api/install/callback
+  index.ts                  Workers entry; routes /discord/interactions,
+                            /api/install/start and /api/install/callback
   env.ts                    Env / bindings type
   interactions/verify.ts    Ed25519 verification (crypto.subtle, no
                             tweetnacl)
@@ -45,7 +45,8 @@ src/
     thx.ts                  /thx end-to-end (resolve, check, sign, send)
     quest-submit.ts         /quest submit + `quest` autocomplete handler
     responses.ts            Discord response/followup helpers
-  api/install/callback.ts   OAuth bot-install callback
+  api/install/start.ts      frontend-initiated install entry (signs state)
+  api/install/callback.ts   OAuth bot-install callback (binds + registers cmds)
 turnkey/policy.json         Declarative policy stub (version-controlled)
 docs/
   turnkey-setup.md          dev/prod sub-org + stamper provisioning

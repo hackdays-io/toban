@@ -3,6 +3,7 @@
  *
  * Routes:
  *   POST /discord/interactions  -> Ed25519-verified Discord interaction
+ *   GET  /api/install/start     -> begin frontend-initiated bot install
  *   GET  /api/install/callback  -> OAuth bot-install callback
  *
  * Anything else returns 404.
@@ -15,6 +16,7 @@ import {
   InteractionType,
 } from "discord-api-types/v10";
 import { handleInstallCallback } from "./api/install/callback";
+import { handleInstallStart } from "./api/install/start";
 import { handleBalance } from "./commands/balance";
 import {
   executeQuestSubmit,
@@ -122,6 +124,9 @@ export default {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/discord/interactions") {
       return handleInteraction(env, ctx, request);
+    }
+    if (request.method === "GET" && url.pathname === "/api/install/start") {
+      return handleInstallStart(env, request);
     }
     if (request.method === "GET" && url.pathname === "/api/install/callback") {
       return handleInstallCallback(env, request);

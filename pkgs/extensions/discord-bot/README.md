@@ -36,9 +36,15 @@ admin が /toban-link <workspace-url>      →  guild ↔ workspace を bind
 
 ### 1. bot を Discord サーバーに招待する
 
-オーナーは Discord developer portal で生成した OAuth invite URL (scope: `bot` + `applications.commands`、permission: `Send Messages` 最小) を開き、対象サーバーを選んで認証します。この時点では bot は guild に存在しているだけで、どの Toban workspace に対応しているかはまだ知りません。
+導線は2つあります。
+
+**A. フロント起点 (推奨・自動)** — ワークスペースの `/<treeId>/discord-bot` 画面（管理者のみ表示）の「サーバーに追加」ボタンから。ボタンは bot Worker の `GET /api/install/start?treeId=<treeId>` に遷移し、Worker が `INSTALL_STATE_SECRET` で署名した短命の install-state JWT (`{ treeId, jti }`) を付けて Discord OAuth authorize へリダイレクトします。admin がサーバーを選んで認証すると Discord が `/api/install/callback` にリダイレクトし、callback が**ワークスペース紐付け (Step 2) とそのサーバーへの slash command 登録を自動で実行**します。`/toban-link` も手動 `register-commands` も不要。state はサーバーを事前に固定しません（admin が consent 画面で選ぶまで guild は不明なため）。callback は OAuth token 交換で Discord が返した guild をそのまま bind します。
+
+**B. 素の invite URL (手動)** — Discord developer portal で生成した OAuth invite URL (scope: `bot` + `applications.commands`、permission: `Send Messages` 最小) を開いて認証。この場合 bot は guild に居るだけで、slash command 登録 (前提条件の `register-commands`) と紐付け (Step 2 の `/toban-link`) は手動になります。
 
 ### 2. サーバーと Toban workspace を紐づける
+
+> フロント起点フロー (Step 1-A) を使った場合、この Step は callback が自動で済ませるので手動 `/toban-link` は不要です。
 
 サーバー内で admin が:
 
@@ -131,8 +137,9 @@ bot → identity の通信はすべて `env.IDENTITY.fetch(...)` (service bindin
 
 ```
 src/
-  index.ts                  Workers entry; /discord/interactions と
-                            /api/install/callback をルーティング
+  index.ts                  Workers entry; /discord/interactions,
+                            /api/install/start, /api/install/callback を
+                            ルーティング
   env.ts                    Env / bindings 型
   interactions/verify.ts    Ed25519 検証 (crypto.subtle、tweetnacl 不使用)
   verifier.ts               ES256 verifier_token issuer (/toban-setup 用)
@@ -148,7 +155,9 @@ src/
     balance.ts              mintAllowance + mintable budget (THX 単位) 表示
     thx.ts                  /thx の end-to-end (resolve, check, sign, send)
     responses.ts            Discord response / followup ヘルパー
-  api/install/callback.ts   OAuth bot-install callback (frontend 起点フロー)
+  api/install/start.ts      install-state JWT を署名し Discord OAuth へ
+                            リダイレクト (frontend 起点フローの入口)
+  api/install/callback.ts   OAuth bot-install callback: 紐付け + command 登録
 turnkey/policy.json         宣言的 policy stub (版管理)
 docs/
   turnkey-setup.md          dev / prod sub-org + stamper provisioning
@@ -214,7 +223,7 @@ Turnkey は bot の Ethereum 署名鍵を TEE 内に保持します。Worker は
 
 ### Step 4 — その他の周辺値
 
-- `INSTALL_STATE_SECRET` — `/toban-link` 発行 / `/api/install/callback` 消費 の install-state JWT 用 HMAC キー。新規生成:
+- `INSTALL_STATE_SECRET` — `/api/install/start` 署名 / `/api/install/callback` 検証 の install-state JWT 用 HMAC キー (同一 Worker が署名・検証するので対称 HMAC で十分)。新規生成:
   ```bash
   openssl rand -hex 32
   ```
@@ -313,7 +322,8 @@ Discord developer portal → **OAuth2** → **URL Generator** → scopes `bot` +
 ```bash
 # Worker が動いてる
 curl -i https://toban-discord-bot.<account>.workers.dev/anything
-#   → 404 (route は /discord/interactions と /api/install/callback だけ)
+#   → 404 (route は /discord/interactions, /api/install/start,
+#         /api/install/callback だけ)
 
 # identity 側の binding が見える
 pnpm --filter @toban/identity exec wrangler d1 execute toban-identity --remote \

@@ -172,12 +172,6 @@ const Login: FC = () => {
           description="Toban はコミュニティで起きた小さな貢献を、感謝として記録し、納得できる分配につなげるサービスです。"
         />
       }
-      footer={
-        <span>
-          続行することで Toban
-          の利用規約とプライバシーポリシーに同意したものとみなされます。
-        </span>
-      }
     >
       <Card className="w-full max-w-sm">
         <CardContent className="flex flex-col gap-3">

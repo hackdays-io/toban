@@ -32,12 +32,14 @@ function formatAllowance(value: bigint | undefined): string {
 interface QuestAgentSectionProps {
   /** questAgentHat id for this workspace, from the subgraph Workspace entity. */
   questAgentHatId: string | undefined;
-  /** Workspace owner = top-hat wearer (super-admin of every authority hat). */
-  owner: string | undefined;
-  /** operatorHat id — the direct admin of questAgentHat. */
-  operatorHatId: string | undefined;
   /** Bot signer address that should wear the questAgentHat when enabled. */
   botSigner: Address;
+  /**
+   * Whether the connected wallet may mint/revoke the questAgentHat (operatorHat
+   * wearer or workspace owner). Computed once at the page level so the whole
+   * admin surface can be gated on it; passed down here to disable the buttons.
+   */
+  canManage: boolean;
 }
 
 // Grants/revokes the questAgentHat to the Discord bot signer so it can submit
@@ -46,9 +48,8 @@ interface QuestAgentSectionProps {
 // specialised to the single, fixed bot address.
 const QuestAgentSection: FC<QuestAgentSectionProps> = ({
   questAgentHatId: questAgentHatIdStr,
-  owner,
-  operatorHatId,
   botSigner,
+  canManage,
 }) => {
   const { wallet } = useActiveWallet();
   const walletAddress = wallet?.account?.address as Address | undefined;
@@ -73,26 +74,6 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
       })) as boolean,
   });
   const isEnabled = statusQuery.data === true;
-
-  // Only the operatorHat wearer or the workspace owner (top hat) can mint/revoke
-  // the questAgentHat — gate the buttons so we don't prompt a doomed tx.
-  const canManageQuery = useTanstackQuery({
-    queryKey: ["quest-agent-admin", walletAddress, owner, operatorHatId],
-    enabled: !!walletAddress && (!!owner || !!operatorHatId),
-    queryFn: async (): Promise<boolean> => {
-      if (!walletAddress) return false;
-      if (owner && walletAddress.toLowerCase() === owner.toLowerCase()) {
-        return true;
-      }
-      if (!operatorHatId) return false;
-      return (await publicClient.readContract({
-        ...hatsContractBaseConfig,
-        functionName: "isWearerOfHat",
-        args: [walletAddress, BigInt(operatorHatId)],
-      })) as boolean;
-    },
-  });
-  const canManage = canManageQuery.data === true;
 
   const grant = async () => {
     if (!questAgentHatId) return;
@@ -188,6 +169,62 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
   );
 };
 
+interface DiscordInstallCardProps {
+  /** discord-bot Worker URL — from `VITE_BOT_WORKER_URL`. */
+  botWorkerUrl: string | undefined;
+  /** This workspace's tree id — passed to the install-start endpoint. */
+  treeId: string | undefined;
+}
+
+// "Add to server" button. Links to the discord-bot Worker's
+// `/api/install/start?treeId=…`, which signs the OAuth state (the secret can't
+// live in the browser) and redirects to Discord. After the admin picks a
+// server, `/api/install/callback` binds this workspace AND registers the slash
+// commands on the new guild, then redirects back here — no `/toban-link` step
+// and no per-guild manual command registration.
+const DiscordInstallCard: FC<DiscordInstallCardProps> = ({
+  botWorkerUrl,
+  treeId,
+}) => {
+  const installUrl = useMemo(() => {
+    if (!botWorkerUrl || !treeId) return undefined;
+    return `${botWorkerUrl.replace(/\/$/, "")}/api/install/start?treeId=${encodeURIComponent(treeId)}`;
+  }, [botWorkerUrl, treeId]);
+
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <Heading variant="h3" level={2}>
+            Discord サーバーに追加
+          </Heading>
+          <Typography variant="bodySm" tone="secondary">
+            Toban bot を Discord
+            サーバーに追加します。サーバーを選んで認証すると、
+            このワークスペースへの紐付けとスラッシュコマンドの登録まで自動で完了し、
+            この画面に戻ります。
+          </Typography>
+        </div>
+
+        {installUrl ? (
+          <Button asChild full>
+            <a href={installUrl} rel="noopener">
+              <SiDiscord size={18} />
+              サーバーに追加
+              <Icon name="arrow-right" size={16} />
+            </a>
+          </Button>
+        ) : (
+          <Typography variant="caption" tone="danger">
+            VITE_BOT_WORKER_URL
+            が未設定のため、インストールリンクを生成できません。
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const DiscordBotWorkspace: FC = () => {
   const { treeId } = useParams<{ treeId: string }>();
 
@@ -198,6 +235,9 @@ const DiscordBotWorkspace: FC = () => {
   const botSigner = import.meta.env.VITE_DISCORD_BOT_SIGNER_ADDRESS as
     | Address
     | undefined;
+  const botWorkerUrl = import.meta.env.VITE_BOT_WORKER_URL as
+    | string
+    | undefined;
 
   const { data: workspaceData } = useGetWorkspace({
     workspaceId: treeId ?? "",
@@ -205,6 +245,30 @@ const DiscordBotWorkspace: FC = () => {
   const thanksToken = workspaceData?.workspace?.thanksToken?.id as
     | Address
     | undefined;
+  const owner = workspaceData?.workspace?.owner ?? undefined;
+  const operatorHatId = workspaceData?.workspace?.operatorHatId ?? undefined;
+
+  // Admin = workspace owner (top hat) or operatorHat wearer. Computed here so
+  // the whole admin surface (server-install link + quest agent) can be gated on
+  // it, rather than each child re-deriving it. Same check the settings page's
+  // authority controls use.
+  const adminQuery = useTanstackQuery({
+    queryKey: ["workspace-admin", walletAddress, owner, operatorHatId],
+    enabled: !!walletAddress && (!!owner || !!operatorHatId),
+    queryFn: async (): Promise<boolean> => {
+      if (!walletAddress) return false;
+      if (owner && walletAddress.toLowerCase() === owner.toLowerCase()) {
+        return true;
+      }
+      if (!operatorHatId) return false;
+      return (await publicClient.readContract({
+        ...hatsContractBaseConfig,
+        functionName: "isWearerOfHat",
+        args: [walletAddress, BigInt(operatorHatId)],
+      })) as boolean;
+    },
+  });
+  const isAdmin = adminQuery.data === true;
 
   const allowanceQuery = useTanstackQuery({
     queryKey: ["discord-bot-allowance", thanksToken, walletAddress, botSigner],
@@ -322,12 +386,31 @@ const DiscordBotWorkspace: FC = () => {
         </CardContent>
       </Card>
 
-      <QuestAgentSection
-        questAgentHatId={workspaceData?.workspace?.questAgentHatId ?? undefined}
-        owner={workspaceData?.workspace?.owner ?? undefined}
-        operatorHatId={workspaceData?.workspace?.operatorHatId ?? undefined}
-        botSigner={botSigner}
-      />
+      {/* 管理者セクション — bot のサーバー追加と Quest 代理権限。owner /
+          operatorHat 保有者にのみ表示する。 */}
+      {isAdmin && (
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <Typography variant="label" tone="secondary">
+              管理者設定
+            </Typography>
+            <Typography variant="caption" tone="secondary">
+              ワークスペースの管理者（オーナー / operatorHat
+              保有者）のみが操作できます。
+            </Typography>
+          </div>
+
+          <DiscordInstallCard botWorkerUrl={botWorkerUrl} treeId={treeId} />
+
+          <QuestAgentSection
+            questAgentHatId={
+              workspaceData?.workspace?.questAgentHatId ?? undefined
+            }
+            botSigner={botSigner}
+            canManage={isAdmin}
+          />
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <Heading variant="h3" level={2}>

@@ -22,6 +22,9 @@ export default function PrivyAppRoot() {
       config={{
         embeddedWallets: {
           createOnLogin: "users-without-wallets",
+          // Suppress Privy's built-in signature/transaction confirmation modals
+          // for the embedded wallet — writes go through app-level UX instead.
+          showWalletUIs: false,
         },
         externalWallets: {
           coinbaseWallet: {

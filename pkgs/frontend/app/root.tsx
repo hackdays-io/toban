@@ -71,14 +71,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Canonical origin used to build absolute OGP/Twitter image URLs (crawlers
+// require absolute URLs). Production frontend is toban.xyz.
+const SITE_ORIGIN = "https://toban.xyz";
+const OGP_IMAGE = `${SITE_ORIGIN}/images/ogp.jpg`;
+const SITE_TITLE = "Toban -当番-";
+const SITE_DESCRIPTION =
+  "貢献してくれる人に報いて、長く続く活動をつくる。みんなの貢献を記録し、報酬として届ける。Toban は、動いた人が正しく報われるコミュニティをブロックチェーンで支えるアプリです。";
+
 export const meta = () => [
   { charSet: "utf-8" },
   { name: "viewport", content: "width=device-width, initial-scale=1" },
-  { title: "Toban -当番-" },
+  { title: SITE_TITLE },
+  { name: "description", content: SITE_DESCRIPTION },
   { name: "theme-color", content: THEME_COLOR },
   { name: "apple-mobile-web-app-capable", content: "yes" },
   { name: "apple-mobile-web-app-status-bar-style", content: "default" },
   { name: "apple-mobile-web-app-title", content: "Toban" },
+  // Open Graph — shared common image across the whole site.
+  { property: "og:type", content: "website" },
+  { property: "og:site_name", content: "Toban" },
+  { property: "og:title", content: SITE_TITLE },
+  { property: "og:description", content: SITE_DESCRIPTION },
+  { property: "og:url", content: SITE_ORIGIN },
+  { property: "og:image", content: OGP_IMAGE },
+  { property: "og:image:width", content: "1731" },
+  { property: "og:image:height", content: "909" },
+  // Twitter card.
+  { name: "twitter:card", content: "summary_large_image" },
+  { name: "twitter:title", content: SITE_TITLE },
+  { name: "twitter:description", content: SITE_DESCRIPTION },
+  { name: "twitter:image", content: OGP_IMAGE },
 ];
 
 export const links = () => [

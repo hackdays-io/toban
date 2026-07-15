@@ -7,6 +7,7 @@ import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useGetMintThanksTokens } from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, useMemo, useState } from "react";
+import { SiDiscord } from "react-icons/si";
 import { Link } from "react-router";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
@@ -181,16 +182,26 @@ export const MemberDetailContent: FC<MemberDetailContentProps> = ({
           </Typography>
         )}
         {isMe && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => setEditOpen(true)}
-            className="mt-1"
-          >
-            <Icon name="edit" size={14} />
-            プロフィールを編集
-          </Button>
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setEditOpen(true)}
+            >
+              <Icon name="edit" size={14} />
+              プロフィールを編集
+            </Button>
+            {/* Personal wallet↔Discord binding. The verifier_token can't be
+                carried in-app, so /connect/discord shows a paste field when it
+                arrives without one; treeId lets it route to the bot page after. */}
+            <Button asChild variant="secondary" size="sm">
+              <Link to={`/connect/discord?treeId=${treeId}`}>
+                <SiDiscord size={14} className="text-[#5865F2]" />
+                Discord を連携
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 

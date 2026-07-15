@@ -124,14 +124,8 @@ function TreatEmojiSlider({
     return true;
   }, [max, onChange]);
 
-  const decrementPress = useRepeatingPress(
-    decrement,
-    !disabled && value > 0,
-  );
-  const incrementPress = useRepeatingPress(
-    increment,
-    !disabled && value < max,
-  );
+  const decrementPress = useRepeatingPress(decrement, !disabled && value > 0);
+  const incrementPress = useRepeatingPress(increment, !disabled && value < max);
 
   const { index: emojiKey, emoji } = useMemo(
     () => getTreatEmojiByRatio(value, max),

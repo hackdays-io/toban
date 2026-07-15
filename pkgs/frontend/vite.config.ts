@@ -33,22 +33,25 @@ const ignoreWellKnown = (): Plugin => ({
 // Client polyfills inject `vite-plugin-node-polyfills/shims/*` imports (via
 // esbuild banner / dep optimizer). Those paths are not resolvable from
 // workspace packages during SSR — serve Node builtins instead.
+const ssrShimsById: Record<string, string> = {
+  "vite-plugin-node-polyfills/shims/buffer": ssrBufferShim,
+  "vite-plugin-node-polyfills/shims/process": ssrProcessShim,
+  "vite-plugin-node-polyfills/shims/global": ssrGlobalShim,
+};
+
+// Redirect the polyfill imports to Node-builtin-backed shims — but only in the
+// SSR build. `resolveId` is gated by `applyToEnvironment` (a `config()` alias
+// would not be), so the shim never leaks into the client/PWA build, where it
+// would pull in `node:buffer` → `__vite-browser-external` (no `Buffer` export)
+// and break the build.
 const ssrPolyfillShims = (): Plugin => ({
   name: "ssr-polyfill-shims",
   enforce: "pre",
   applyToEnvironment(env) {
     return env.name === "ssr";
   },
-  config() {
-    return {
-      resolve: {
-        alias: {
-          "vite-plugin-node-polyfills/shims/buffer": ssrBufferShim,
-          "vite-plugin-node-polyfills/shims/process": ssrProcessShim,
-          "vite-plugin-node-polyfills/shims/global": ssrGlobalShim,
-        },
-      },
-    };
+  resolveId(id) {
+    return ssrShimsById[id] ?? null;
   },
 });
 

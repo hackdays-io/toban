@@ -7,13 +7,11 @@ import {
 } from "react";
 import {
   LuArrowRight,
+  LuArrowUpRight,
   LuChartPie,
   LuEye,
   LuGithub,
-  LuHandshake,
   LuHeart,
-  LuPalette,
-  LuPlay,
   LuRefreshCw,
 } from "react-icons/lu";
 import { Link } from "react-router";
@@ -41,7 +39,6 @@ const FOOTER_LINKS = {
   document: "https://hackdays-io.github.io/toban/",
   slide:
     "https://www.canva.com/design/DAGOcvbwfFk/yKhJwHvZ9sC69AFEb0vnRg/view?utm_content=DAGOcvbwfFk&utm_campaign=designshare&utm_medium=link&utm_source=editor",
-  demoVideo: "https://www.youtube.com/watch?v=jFjxNSHiCBI",
 } as const;
 
 export default function Index() {
@@ -1039,40 +1036,45 @@ function StepVisualSplit() {
 
 /* ===================== USE CASES ===================== */
 
-// Placeholder copy — real case studies will replace title/body once
-// available. Tags/icons/colours are locked per spec.
+// Real case studies. Each links out to its source article; the thumbnail is
+// the article's OGP image, mirrored into /public/images/lp/cases/ so it keeps
+// working if the external host changes.
 const CASES = [
   {
-    tag: "OSS",
+    tag: "イベント運営",
     color: ACCENT.orange,
     soft: ACCENT.orangeSoft,
-    icon: LuGithub,
-    title: "事例タイトル 01",
-    body: "実際の利用事例の説明をここに入れてください。",
+    image: "/images/lp/cases/marche.png",
+    title: "2500人来場のマルシェでオペレーションを分散",
+    body: "塩尻大門マルシェで Toban の実証実験を実施。当番で運営を手分けし、当日の貢献をそのまま記録に残しました。",
+    href: "https://note.com/takerunakao/n/n9e49212963f5",
   },
   {
-    tag: "CivicTech",
-    color: ACCENT.blue,
-    soft: ACCENT.blueSoft,
-    icon: LuHandshake,
-    title: "事例タイトル 02",
-    body: "実際の利用事例の説明をここに入れてください。",
-  },
-  {
-    tag: "町内会・地域",
+    tag: "地域・自治",
     color: ACCENT.teal,
     soft: ACCENT.tealSoft,
-    icon: LuRefreshCw,
-    title: "事例タイトル 03",
-    body: "実際の利用事例の説明をここに入れてください。",
+    image: "/images/lp/cases/kuuvillage.jpg",
+    title: "1週間のポップアップビレッジで“自治”を実験",
+    body: "奈良の kuu village で、暮らしと協働・循環をローカルに試す実験。自律的なコミュニティ運営のツールとして活用されました。",
+    href: "https://greenz.jp/2025/12/01/kuuvillage/",
   },
   {
-    tag: "イベント運営",
+    tag: "DAO",
+    color: ACCENT.blue,
+    soft: ACCENT.blueSoft,
+    image: "/images/lp/cases/digdao.png",
+    title: "貢献の記録と報酬分配を簡単にするツールとして紹介",
+    body: "Dig DAO の YouTube Live に登壇。役割ごとの貢献記録と報酬計算を自動化する OSS ツールとして Toban を紹介しました。",
+    href: "https://note.com/takerunakao/n/nb32a8fc1d557",
+  },
+  {
+    tag: "地方創生",
     color: ACCENT.gold,
     soft: ACCENT.goldSoft,
-    icon: LuPalette,
-    title: "事例タイトル 04",
-    body: "実際の利用事例の説明をここに入れてください。",
+    image: "/images/lp/cases/daoday.jpeg",
+    title: "web3×地方創生フォーラム「渋谷DAODAY」に出展",
+    body: "web3 と地方創生をつなぐフォーラムにパネル展示で参加。コミュニティの貢献記録と報酬分配の仕組みを紹介しました。",
+    href: "https://note.com/takerunakao/n/n7c1257966855",
   },
 ] as const;
 
@@ -1110,24 +1112,36 @@ function UseCaseCard({
   tag,
   color,
   soft,
-  icon: IconCmp,
+  image,
   title,
   body,
+  href,
 }: {
   tag: string;
   color: string;
   soft: string;
-  icon: ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
+  image: string;
   title: string;
   body: string;
+  href: string;
 }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-md border border-border bg-surface transition-[transform,border-color,box-shadow] hover:-translate-y-1 hover:border-text-primary hover:shadow-3">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="group flex flex-col overflow-hidden rounded-md border border-border bg-surface transition-[transform,border-color,box-shadow] hover:-translate-y-1 hover:border-text-primary hover:shadow-3"
+    >
       <div
-        className="flex aspect-[4/3] w-full items-center justify-center"
+        className="aspect-[4/3] w-full overflow-hidden"
         style={{ backgroundColor: soft }}
       >
-        <IconCmp size={48} aria-hidden />
+        <img
+          src={image}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
       </div>
       <div className="flex flex-1 flex-col gap-2 px-5 py-5 md:px-6 md:py-6">
         <span
@@ -1140,8 +1154,18 @@ function UseCaseCard({
         <Typography variant="bodySm" tone="secondary">
           {body}
         </Typography>
+        <span
+          className="mt-1 inline-flex items-center gap-1 text-[13px] font-bold"
+          style={{ color }}
+        >
+          記事を読む
+          <LuArrowUpRight
+            aria-hidden
+            className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          />
+        </span>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -1170,9 +1194,6 @@ function SiteFooter() {
             <SocialLink href={FOOTER_LINKS.github} label="GitHub">
               <LuGithub size={16} aria-hidden />
             </SocialLink>
-            <SocialLink href={FOOTER_LINKS.demoVideo} label="Demo Video">
-              <LuPlay size={16} aria-hidden />
-            </SocialLink>
           </div>
         </div>
         <FooterColumn
@@ -1193,11 +1214,6 @@ function SiteFooter() {
               external: true,
             },
             { label: "Slide", href: FOOTER_LINKS.slide, external: true },
-            {
-              label: "Demo Video",
-              href: FOOTER_LINKS.demoVideo,
-              external: true,
-            },
             { label: "GitHub", href: FOOTER_LINKS.github, external: true },
           ]}
         />
@@ -1206,7 +1222,6 @@ function SiteFooter() {
           links={[
             { label: "ホーム", to: "/" },
             { label: "ログイン", to: "/login" },
-            { label: "ワークスペース作成", to: "/signup" },
           ]}
         />
       </div>

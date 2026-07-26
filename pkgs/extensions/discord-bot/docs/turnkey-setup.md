@@ -50,33 +50,56 @@ export TK_ORG=24cfae8c-aae0-4341-8492-295057f66bac
 export TK_ADMIN_KEY=toban-turnkey-admin   # §2 で作る管理用 API キーの名前
 ```
 
-CLI の鍵は **`~/.config/turnkey/keys/<key-name>.{public,private,meta}`** に置かれます
-（`--keys-folder` で変更可）。`-k/--key-name` でどの鍵で署名するかを選びます。
+### `-k` に渡す「鍵の名前」とは
 
-### 汎用リクエストヘルパ
+CLI の鍵は **`~/.config/turnkey/keys/<key-name>.{public,private,meta}`** の 3 ファイル一組です
+（`--keys-folder` で場所を変更可）。`-k/--key-name` に渡すのは **このファイル名**であって、
+Turnkey ダッシュボード上の表示名ではありません。
 
-CLI には `policy` / `users` サブコマンドがありません。それらは `turnkey request` で
-API を直接叩きます。`timestampMs` は毎回現在時刻である必要があるため、body は都度組み立てます。
+| ファイル | 中身 |
+|---|---|
+| `<name>.public` | 圧縮 P-256 公開鍵・66 hex（`02`/`03` 始まり）・改行なし |
+| `<name>.private` | `<64桁hex>:p256` |
+| `<name>.meta` | `{"name", "organizations":[...], "public_key", "scheme"}` |
 
-```bash
-# tkreq <api-path> <ACTIVITY_TYPE> <parameters-json>
-tkreq() {
-  turnkey request --path "$1" -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
-    --body "$(jq -n --arg t "$2" --arg org "$TK_ORG" --argjson p "$3" \
-      '{type:$t, timestampMs:(now*1000|floor|tostring), organizationId:$org, parameters:$p}')"
-}
-```
-
-読み取り系（`/public/v1/query/...`）は `parameters` を取らず、body が `{"organizationId": …}` だけです:
+このディレクトリが空だと `-k` に指定できる鍵がありません。その場合は §2 で発行します。
+**すでに秘密鍵（64 hex）を退避してあるなら**、上の 3 ファイルを手で置けばそのまま使えます:
 
 ```bash
-tkq() { turnkey request --path "$1" -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
-          --body "{\"organizationId\":\"$TK_ORG\"}"; }
-
-tkq /public/v1/query/list_policies
-tkq /public/v1/query/list_users
-tkq /public/v1/query/get_organization
+NAME=toban-turnkey-admin
+PRIV=<64桁hex>        # 退避してあった秘密鍵
+PUB=<66桁hex>         # 対応する圧縮公開鍵
+mkdir -p ~/.config/turnkey/keys
+printf '%s:p256' "$PRIV" > ~/.config/turnkey/keys/$NAME.private
+printf '%s'      "$PUB"  > ~/.config/turnkey/keys/$NAME.public
+printf '{"name":"%s","organizations":["%s"],"public_key":"%s","scheme":"SIGNATURE_SCHEME_TK_API_P256"}' \
+  "$NAME" "$TK_ORG" "$PUB" > ~/.config/turnkey/keys/$NAME.meta
+chmod 600 ~/.config/turnkey/keys/$NAME.private
 ```
+
+### API を直接叩くとき
+
+CLI には `policy` / `users` のサブコマンドがありません。それらは `turnkey request` で
+HTTP API を直接叩きます。書き込み系（`/public/v1/submit/...`）の body は
+
+```json
+{ "type": "<ACTIVITY_TYPE>", "timestampMs": "<現在時刻ミリ秒>",
+  "organizationId": "<org>", "parameters": { ... } }
+```
+
+という形で、**`timestampMs` は毎回現在時刻**である必要があります（固定値を書いたスニペットは
+使い回せません）。以降の各節では `jq -n` で組み立てた、そのまま実行できる形で載せます。
+
+読み取り系（`/public/v1/query/...`）は `parameters` も `timestampMs` も取らず、
+body は `{"organizationId": ...}` だけです:
+
+```bash
+turnkey request --path /public/v1/query/list_policies \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "{\"organizationId\":\"$TK_ORG\"}"
+```
+
+`list_policies` の部分を `list_users` / `get_organization` に差し替えれば同じ形で引けます。
 
 ---
 
@@ -98,10 +121,19 @@ cat ~/.config/turnkey/keys/$TK_ADMIN_KEY.public   # 66 文字の圧縮 P-256 公
 ダッシュボードの root ユーザー画面から公開鍵を貼って登録してください。2 本目以降は CLI で足せます:
 
 ```bash
-tkreq /public/v1/submit/create_api_keys ACTIVITY_TYPE_CREATE_API_KEYS_V2 "$(jq -n \
-  --arg pk "$(cat ~/.config/turnkey/keys/$TK_ADMIN_KEY.public)" \
-  '{userId:"f3ba9a88-9fbc-49a3-84dc-c048c5bf4b52",
-    apiKeys:[{apiKeyName:"toban-turnkey-admin", publicKey:$pk, curveType:"API_KEY_CURVE_P256"}]}')"
+turnkey request --path /public/v1/submit/create_api_keys \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "$(jq -n --arg org "$TK_ORG" \
+    --arg pk "$(cat ~/.config/turnkey/keys/$TK_ADMIN_KEY.public)" '{
+      type: "ACTIVITY_TYPE_CREATE_API_KEYS_V2",
+      timestampMs: (now * 1000 | floor | tostring),
+      organizationId: $org,
+      parameters: {
+        userId: "f3ba9a88-9fbc-49a3-84dc-c048c5bf4b52",
+        apiKeys: [{ apiKeyName: "toban-turnkey-admin", publicKey: $pk,
+                    curveType: "API_KEY_CURVE_P256" }]
+      }
+    }')"
 ```
 
 ---
@@ -156,26 +188,41 @@ rm -f $K.private $K.public $K.meta
 一切効きません。bot 専用の API-only ユーザーを作り、root quorum には入れないでください。
 
 ```bash
-tkreq /public/v1/submit/create_users ACTIVITY_TYPE_CREATE_USERS_V4 "$(jq -n \
-  --arg pk "$(cat ~/.config/turnkey/keys/toban-discord-bot-base.public)" \
-  '{users:[{
-      userName:"Toban Discord Bot",
-      apiKeys:[{apiKeyName:"toban-discord-bot", publicKey:$pk, curveType:"API_KEY_CURVE_P256"}],
-      authenticators:[], oauthProviders:[], userTags:[]
-   }]}')"
+turnkey request --path /public/v1/submit/create_users \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "$(jq -n --arg org "$TK_ORG" \
+    --arg pk "$(cat ~/.config/turnkey/keys/toban-discord-bot-base.public)" '{
+      type: "ACTIVITY_TYPE_CREATE_USERS_V4",
+      timestampMs: (now * 1000 | floor | tostring),
+      organizationId: $org,
+      parameters: {
+        users: [{
+          userName: "Toban Discord Bot",
+          apiKeys: [{ apiKeyName: "toban-discord-bot", publicKey: $pk,
+                      curveType: "API_KEY_CURVE_P256" }],
+          authenticators: [], oauthProviders: [], userTags: []
+        }]
+      }
+    }')"
 ```
 
 返ってきた `userId` を控えます。これが `turnkey/policy.json` の `consensus` に入る値です。
 後から引くには:
 
 ```bash
-tkq /public/v1/query/list_users | jq -r '.users[] | "\(.userId)\t\(.userName)"'
+turnkey request --path /public/v1/query/list_users \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "{\"organizationId\":\"$TK_ORG\"}" \
+  | jq -r '.users[] | "\(.userId)\t\(.userName)"'
 ```
 
 root quorum に入っていないことの確認:
 
 ```bash
-tkq /public/v1/query/get_organization | jq '.organizationData.rootQuorum'
+turnkey request --path /public/v1/query/get_organization \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "{\"organizationId\":\"$TK_ORG\"}" \
+  | jq '.organizationData.rootQuorum'
 ```
 
 ---
@@ -231,15 +278,29 @@ cd pkgs/extensions/discord-bot
 
 ```bash
 # 新規
-tkreq /public/v1/submit/create_policy ACTIVITY_TYPE_CREATE_POLICY_V3 \
-  "$(jq -c '.policies[]|select(.id=="base")|.parameters' turnkey/policy.json)"
+turnkey request --path /public/v1/submit/create_policy \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "$(jq -n --arg org "$TK_ORG" \
+    --argjson p "$(jq -c '.policies[]|select(.id=="base")|.parameters' turnkey/policy.json)" '{
+      type: "ACTIVITY_TYPE_CREATE_POLICY_V3",
+      timestampMs: (now * 1000 | floor | tostring),
+      organizationId: $org,
+      parameters: $p
+    }')"
 
-# 既存の書き換え（フィールド名が変わる）
-tkreq /public/v1/submit/update_policy ACTIVITY_TYPE_UPDATE_POLICY_V2 "$(jq -c \
-  '.policies[]|select(.id=="base")
-   | {policyId} + (.parameters
-     | {policyName, policyEffect:.effect, policyCondition:.condition,
-        policyConsensus:.consensus, policyNotes:.notes})' turnkey/policy.json)"
+# 既存の書き換え（create とはフィールド名が違う点に注意）
+turnkey request --path /public/v1/submit/update_policy \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" \
+  --body "$(jq -n --arg org "$TK_ORG" \
+    --argjson p "$(jq -c '.policies[]|select(.id=="base")
+      | {policyId} + (.parameters
+        | {policyName, policyEffect:.effect, policyCondition:.condition,
+           policyConsensus:.consensus, policyNotes:.notes})' turnkey/policy.json)" '{
+      type: "ACTIVITY_TYPE_UPDATE_POLICY_V2",
+      timestampMs: (now * 1000 | floor | tostring),
+      organizationId: $org,
+      parameters: $p
+    }')"
 ```
 
 ### ポリシー文法で使えるもの / 使えないもの
@@ -322,10 +383,14 @@ rm -f verifier.key.pem verifier.pub.pem     # 投入後はローカルから削�
 
 ```bash
 # 1. ポリシーが意図どおりか
-tkq /public/v1/query/list_policies | jq '.policies[] | {policyName, effect, condition, consensus}'
+turnkey request --path /public/v1/query/list_policies \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" --body "{\"organizationId\":\"$TK_ORG\"}" \
+  | jq '.policies[] | {policyName, effect, condition, consensus}'
 
 # 2. bot ユーザーが root quorum の外か
-tkq /public/v1/query/get_organization | jq '.organizationData.rootQuorum'
+turnkey request --path /public/v1/query/get_organization \
+  -k "$TK_ADMIN_KEY" --organization "$TK_ORG" --body "{\"organizationId\":\"$TK_ORG\"}" \
+  | jq '.organizationData.rootQuorum'
 
 # 3. Worker のログを見ながら Discord で実行
 pnpm --filter @toban/discord-bot exec wrangler tail --env base --format pretty

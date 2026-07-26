@@ -22,7 +22,7 @@ admin が /toban-link <workspace-url>      →  guild ↔ workspace を bind
 ### 0. 事前準備 (一度きり)
 
 - **Workspace が存在する**。bot は既存の Toban workspace を指す必要があるので、誰かが `pnpm contract bigbang` を (or frontend から) 実行済みで、`BigBang.Executed` event が出て Toban subgraph が `Workspace` エンティティ (`thanksToken` フィールド付き) として index していること。
-- **bot Worker がデプロイ済み**。`wrangler deploy` をこのパッケージから実行し、Cloudflare で secret がセット済みであること (Turnkey 側は [`docs/turnkey-setup.md`](docs/turnkey-setup.md) と [`docs/key-rotation.md`](docs/key-rotation.md)、必要な `[vars]` と `# secrets:` は `wrangler.toml` を参照)。
+- **bot Worker がデプロイ済み**。`pnpm --filter @toban/discord-bot deploy:sepolia`（本番は `deploy:base`）を実行し、Cloudflare で secret がセット済みであること (Turnkey 側は [`docs/turnkey-setup.md`](docs/turnkey-setup.md) と [`docs/key-rotation.md`](docs/key-rotation.md)、必要な `[vars]` と `# secrets:` は `wrangler.toml` を参照)。
 - **identity Worker がデプロイされていて、`IDENTITY` という名前の service binding で到達可能**であること (`wrangler.toml` 参照)。同一アカウントの Workers 同士は workers.dev 経由で fetch できない (Cloudflare error 1042)。service binding が唯一の正規経路。
 - **Discord application が developer portal で登録済み**:
   - `Interactions Endpoint URL` → `https://<bot-worker>/discord/interactions`
@@ -91,7 +91,7 @@ bind が成立すると frontend が `/<treeId>/discord-bot` に遷移させ、�
 
 bot は `mintFrom` 署名を **Turnkey が管理する Ethereum 秘密鍵** で行います。Worker は Turnkey の API stamper credentials (P-256 keypair) しか持ちません。運用ガイド:
 
-- [`docs/turnkey-setup.md`](docs/turnkey-setup.md) — sub-org / signing key / API stamper の発行、policy (`turnkey/policy.json`) の適用。
+- [`docs/turnkey-setup.md`](docs/turnkey-setup.md) — CLI での signing key / API stamper の発行と、policy (`turnkey/policy.json`) の適用。
 - [`docs/key-rotation.md`](docs/key-rotation.md) — 計画的 + 緊急ローテーションの runbook。
 
 `TURNKEY_BOT_SIGNER_ADDRESS` (= 生成された signer address) に少額のネイティブガスを入金します。あとはそこから流れます。
@@ -158,9 +158,11 @@ src/
   api/install/start.ts      install-state JWT を署名し Discord OAuth へ
                             リダイレクト (frontend 起点フローの入口)
   api/install/callback.ts   OAuth bot-install callback: 紐付け + command 登録
-turnkey/policy.json         宣言的 policy stub (版管理)
+turnkey/
+  policy.json               適用可能な policy 定義 (版管理・唯一の正)
+  apply-policy.sh           policy.json を Turnkey に冪等適用する
 docs/
-  turnkey-setup.md          dev / prod sub-org + stamper provisioning
+  turnkey-setup.md          CLI での signer / stamper / policy provisioning
   key-rotation.md           scheduled + emergency rotation runbook
 scripts/
   register-commands.ts      Discord slash command を 1 回登録する CLI
@@ -173,10 +175,15 @@ test/                       Vitest unit tests (network なし、chain なし)
 pnpm --filter @toban/discord-bot dev               # wrangler dev (local)
 pnpm --filter @toban/discord-bot test              # vitest run
 pnpm --filter @toban/discord-bot typecheck         # tsc --noEmit
-pnpm --filter @toban/discord-bot deploy            # wrangler deploy
-pnpm --filter @toban/discord-bot deploy:dry        # wrangler deploy --dry-run
+pnpm --filter @toban/discord-bot deploy:sepolia    # → toban-discord-bot       (top-level 設定)
+pnpm --filter @toban/discord-bot deploy:base       # → toban-discord-bot-base  (--env base)
+pnpm --filter @toban/discord-bot deploy:dry:sepolia
+pnpm --filter @toban/discord-bot deploy:dry:base
 pnpm --filter @toban/discord-bot register-commands <guild>
 ```
+
+> ⚠️ **素の `deploy` スクリプトはありません。** `pnpm --filter <pkg> deploy` は pnpm の
+> ビルトインと衝突して `ERR_PNPM_INVALID_DEPLOY_TARGET` になります。
 
 ## デプロイ手順
 
@@ -192,19 +199,36 @@ identity 側と同じ。すでに `wrangler login` 済みなら何もしなく�
 pnpm --filter @toban/discord-bot exec wrangler whoami
 ```
 
-### Step 2 — Turnkey: サインアップ + signing key + API stamper
+### Step 2 — Turnkey: signing key + API stamper + policy
 
-Turnkey は bot の Ethereum 署名鍵を TEE 内に保持します。Worker は API stamper の P-256 keypair しか持たず、policy engine で `mintFrom` 以外の呼び出しは構造的に拒否される設計です。
+Turnkey は bot の Ethereum 署名鍵を TEE 内に保持します。Worker は API stamper の P-256 keypair しか持たず、policy engine で 2 つの関数セレクタ以外の呼び出しは構造的に拒否される設計です。
 
-1. **アカウント作成** — https://app.turnkey.com。staging 用なら free tier で足ります。
-2. **organization ID を控える** — dashboard URL または settings で UUID 形式の値が見えます。`wrangler.toml` の `TURNKEY_ORGANIZATION_ID` に入れます。
-3. **signing wallet を作成** (bot が「from」として署名する Ethereum address):
-   - Dashboard → **Wallets** → **Create wallet** → 名前 (例: `toban-bot-staging`) → curve は **secp256k1**。
-   - 作成された wallet を開くと Ethereum address が表示される — これが `TURNKEY_BOT_SIGNER_ADDRESS`。対象 chain (staging: Sepolia) のネイティブガスを少額入金。
-4. **API stamper の keypair を作成** (Worker が Turnkey HTTP API に認証するために使う):
-   - Dashboard → **API Keys** → **Create API key** → curve は **P-256**。「Generate keypair in browser」を選び、Turnkey 側で生成して 1 度だけ秘密鍵を表示してもらう。
-   - 公開鍵と秘密鍵を **その場で両方** コピー。公開鍵は hex 66 文字 (prefix `02` / `03`、compressed SEC1)、秘密鍵は hex 64 文字または PEM PKCS8 — どちらも bot 側で受けます。
-5. **policy を API key に attach** — `turnkey/policy.json` を真実として、registered ThanksToken contract への `mintFrom` のみ許可するように。Turnkey UI の policy attach 画面はプランによって違うので、形は file 側に従ってください。詳細な wizard 手順は [`docs/turnkey-setup.md`](docs/turnkey-setup.md)、rotation runbook は [`docs/key-rotation.md`](docs/key-rotation.md)。
+> **Turnkey の操作は CLI で行います。** ダッシュボードを使うのは org の初回作成と root ユーザーの passkey 登録だけ。GUI で作業すると `turnkey/policy.json` と実態がずれます。
+> **手順の正は [`docs/turnkey-setup.md`](docs/turnkey-setup.md) です。** ここは流れの要約だけ。
+
+```bash
+brew install tkhq/tap/turnkey
+export TK_ORG=<organization-id>          # wrangler.toml の TURNKEY_ORGANIZATION_ID と同じ値
+export TK_ADMIN_KEY=toban-turnkey-admin  # root user に紐づく管理用 API キー
+
+# 1. 署名ウォレット（bot が from として署名するアドレス）
+turnkey wallets create --name "Toban Discord Bot Main" -k "$TK_ADMIN_KEY" --organization "$TK_ORG"
+turnkey wallets accounts create --wallet "Toban Discord Bot Main" \
+  --address-format ADDRESS_FORMAT_ETHEREUM -k "$TK_ADMIN_KEY" --organization "$TK_ORG"
+#    → 出たアドレスを wrangler.toml の TURNKEY_BOT_SIGNER_ADDRESS へ。ネイティブガスを入金。
+
+# 2. stamper の鍵ペア（形式変換は不要 — 圧縮 66hex と <64hex>:p256 がそのまま出る）
+turnkey generate api-key --organization "$TK_ORG" --key-name toban-discord-bot-base
+
+# 3. bot ユーザー（必ず non-root。root はポリシーをバイパスする）
+#    → turnkey-setup.md §4 の create_users
+
+# 4. ポリシー適用（冪等。create/update をスクリプトが選ぶ）
+./turnkey/apply-policy.sh base --dry-run
+./turnkey/apply-policy.sh base
+```
+
+`turnkey/policy.json` が許可内容の唯一の正です。ローテーション手順は [`docs/key-rotation.md`](docs/key-rotation.md)。
 
 ### Step 3 — Discord developer portal
 

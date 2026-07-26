@@ -1,160 +1,165 @@
 {
   "_comment": [
-    "Turnkey policy attached to the bot's signing key. This file is the",
-    "source of truth — changes are PR-reviewed and applied to Turnkey via",
-    "`docs/turnkey-setup.md`.",
+    "Turnkey policies for the Toban Discord bot signer. This file is the",
+    "source of truth: every change is PR-reviewed and then applied with the",
+    "Turnkey CLI as described in `docs/turnkey-setup.md` §5.",
     "",
-    "Turnkey's policy schema continues to evolve (selector / `from` set",
-    "matching in particular). The fields below reflect the model we",
-    "design against in code; the actual JSON you upload may need shape",
-    "adjustments. Read this as 'the rules we intend to enforce', not",
-    "'the literal Turnkey JSON'.",
+    "The objects under `policies[].parameters` are LITERAL Turnkey request",
+    "parameters for `POST /public/v1/submit/create_policy`",
+    "(ACTIVITY_TYPE_CREATE_POLICY_V3) — no placeholders, no invented",
+    "syntax. Extract one with jq and post it:",
     "",
-    "The bot signs TWO distinct operations, so the policy is expressed as a",
-    "disjunction of two allow-branches. Each branch pins the selector, the",
-    "target-contract registry, the identity-bound actor argument, zero",
-    "value, and a rate limit. A tx must satisfy the common gates AND one",
-    "full branch."
+    "  jq '.policies[] | select(.id==\"base\") | .parameters' turnkey/policy.json",
+    "",
+    "Everything outside `parameters` (`id`, `_applied`, `_intent`, `_gaps`)",
+    "is repo-only metadata and must NOT be sent to Turnkey.",
+    "",
+    "One Turnkey organization ('Toban') serves both chains. Sepolia and Base",
+    "are separated by SIGNING KEY and by one policy per chain —",
+    "`eth.tx.chain_id` is pinned in each condition, so a Base-only policy",
+    "cannot authorise a Sepolia signature and vice versa.",
+    "",
+    "`organizationId` below is an identifier, not a credential; the same value",
+    "is already in wrangler.toml's [vars]. Override it with $TK_ORG if you are",
+    "applying these policies to a different organization."
   ],
-  "policyName": "toban-discord-bot-proxy-writes",
-  "effect": "EFFECT_ALLOW",
-  "consensus": "approvers.any(user, user.tags.contains('toban-discord-bot'))",
-  "condition": "and(commonAll, or(mintFromBranch, submitCompletionBranch))",
-  "rules": {
-    "commonAll": [
-      {
-        "id": "activity-must-be-sign-transaction",
-        "_comment": [
-          "Hard gate: every branch rule below inspects `eth.tx.*`, which is",
-          "only populated for ACTIVITY_TYPE_SIGN_TRANSACTION_V2. A future",
-          "code path (or a stamper-key compromise) that calls",
-          "ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2 — i.e. `sign_raw_payload` for",
-          "signMessage / signTypedData — would bypass every eth.tx.* rule",
-          "because none of them reference the raw-hash surface. Pin the",
-          "policy to signTransaction so any future raw-payload signing",
-          "requires an explicit, PR-reviewed policy expansion."
-        ],
-        "expression": "activity.type == 'ACTIVITY_TYPE_SIGN_TRANSACTION_V2'"
-      },
-      {
-        "id": "spender-must-be-this-signer",
-        "_comment": [
-          "Defence in depth: the tx `from` (set by Turnkey to the signing",
-          "key's own address) is automatically this key, but we re-state it",
-          "here so a future change that splits signing across multiple keys",
-          "doesn't bypass it. Applies to both branches."
-        ],
-        "expression": "eth.tx.from == private_key.address"
-      },
-      {
-        "id": "value-must-be-zero",
-        "_comment": [
-          "Both mintFrom and submitCompletion are non-payable; reject any tx",
-          "that attaches ETH to avoid funding bugs from draining the gas",
-          "balance."
-        ],
-        "expression": "eth.tx.value == 0"
+  "organizationId": "24cfae8c-aae0-4341-8492-295057f66bac",
+  "policies": [
+    {
+      "id": "base",
+      "chainId": 8453,
+      "signer": "0xE21E99d384409e119cee731D368359BDc719a5f0",
+      "policyId": "f37e6551-2ef0-4436-927c-8b251cb8303d",
+      "_applied": [
+        "APPLIED — created 2026-06-03, last updated 2026-07-15, verified",
+        "2026-07-26 against `list_policies`.",
+        "The live copy is still named 'toban-discord-bot-mintFrom-only'.",
+        "`policyId` above is what makes the rename safe: apply-policy.sh",
+        "updates that id in place rather than matching on the (changed) name,",
+        "which would otherwise create a SECOND policy and leave the old,",
+        "broader one live. Once applied, the live name matches `policyName`",
+        "below — which is the accurate one, since the policy allows two",
+        "selectors, not just mintFrom."
+      ],
+      "_intent": [
+        "Allow the bot user to sign exactly two contract writes and nothing",
+        "else:",
+        "  /thx          -> mintFrom(address,address,uint256,(uint256,address)[],bytes)",
+        "                   selector 0x40062e89, on a ThanksToken clone",
+        "  /quest submit -> submitCompletion(address,uint256,uint256)",
+        "                   selector 0x947ec45f, on a HatsQuestModule clone",
+        "",
+        "The gates, and why each one is here:",
+        "  activity.type == SIGN_TRANSACTION_V2",
+        "      Every other gate reads `eth.tx.*`, which Turnkey only populates",
+        "      when the TEE parses a transaction. ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2",
+        "      (what viem's signMessage / signTypedData would use) exposes only an",
+        "      opaque 32-byte hash, so none of the gates below could apply. Pinning",
+        "      the activity type means any future raw-payload signing needs an",
+        "      explicit, PR-reviewed policy change. `signer/turnkey.ts` already",
+        "      routes production signing through sign_transaction for this reason.",
+        "  eth.tx.chain_id",
+        "      Confines this policy to one chain, so a leaked stamper cannot",
+        "      replay the same selectors against the other deployment.",
+        "  eth.tx.value == 0",
+        "      Both functions are non-payable; refusing value stops a bug or an",
+        "      attacker from draining the signer's gas balance.",
+        "  eth.tx.data[0..10]",
+        "      Function selector. `data[0..10]` is the documented Turnkey",
+        "      spelling (10 hex chars = '0x' + 4 bytes).",
+        "",
+        "If either selector ever changes — including a change to the RelatedRole",
+        "struct in mintFrom — recompute it and update BOTH this file and the ABI",
+        "fragment in `src/chain.ts`, which is this package's only ABI."
+      ],
+      "parameters": {
+        "policyName": "toban-discord-bot-proxy-writes-base",
+        "effect": "EFFECT_ALLOW",
+        "consensus": "approvers.any(user, user.id == 'd84edada-715b-4e5b-b49e-da56669aac82')",
+        "condition": "activity.type == 'ACTIVITY_TYPE_SIGN_TRANSACTION_V2' && eth.tx.chain_id == 8453 && eth.tx.value == 0 && (eth.tx.data[0..10] == '0x40062e89' || eth.tx.data[0..10] == '0x947ec45f')",
+        "notes": "Base production. Allows the Toban Discord bot user to sign ThanksToken.mintFrom (0x40062e89) and HatsQuestModule.submitCompletion (0x947ec45f) only, value 0, chain 8453. Source: pkgs/extensions/discord-bot/turnkey/policy.json"
       }
-    ],
-    "mintFromBranch": [
-      {
-        "id": "mintFrom-rate-limit",
-        "_comment": [
-          "Per-operation rate limit (NOT shared with submitCompletion): capping",
-          "the two features on one counter lets a /thx burst throttle /quest",
-          "submit and vice-versa. Each branch carries its own budget so the",
-          "coupling can't happen. Turnkey's rate-limit primitive may be named",
-          "differently or live outside policy — adjust when applying. Intent:",
-          "bound mintFrom rate per signer per minute to limit blast radius of a",
-          "stamper-key compromise. Ideally keyed on selector so the two counters",
-          "are truly independent."
-        ],
-        "expression": "rate(eth.tx.signCount, 60s) < 30"
-      },
-      {
-        "id": "to-must-be-registered-thanks-token",
-        "_comment": [
-          "Only allow txs whose `to` is a Toban-registered ThanksToken",
-          "contract. The registry is a Turnkey tag set kept in sync out of",
-          "band (see `_notes`)."
-        ],
-        "expression": "eth.tx.to in tag('toban-thanks-token-registry')"
-      },
-      {
-        "id": "selector-must-be-mintFrom",
-        "_comment": [
-          "Function selector for the ThanksToken mint primitive (#506):",
-          "  mintFrom(address,address,uint256,(uint256,address)[],bytes)",
-          "= keccak256(sig)[0:4] = 0x40062e89.",
-          "If the contract's `mintFrom` signature ever changes (including",
-          "the `RelatedRole` struct shape), recompute and update both this",
-          "selector and the matching ABI in `src/chain.ts`."
-        ],
-        "expression": "eth.tx.data.selector == '0x40062e89'"
-      },
-      {
-        "id": "mintFrom-from-must-be-known-wallet",
-        "_comment": [
-          "The decoded `from` argument of mintFrom (the token holder whose",
-          "allowance is being spent) must be a wallet known to the subgraph",
-          "as IdentityBound (Turnkey tag set updated by the sync cron)."
-        ],
-        "expression": "eth.tx.data.args[0] in tag('toban-identity-bound-wallets')"
+    },
+    {
+      "id": "sepolia",
+      "chainId": 11155111,
+      "signer": "0xae4E13De7C14Dff7ff296De69cADf3A7F5208461",
+      "policyId": null,
+      "_applied": [
+        "NOT APPLIED as of 2026-07-26 — `list_policies` returns the Base",
+        "policy only. Consequence: the bot user (non-root) cannot sign",
+        "anything on Sepolia; Turnkey answers 403 'No policies evaluated to",
+        "outcome: Allow'. If /thx does work on Sepolia today, the Sepolia",
+        "Worker's TURNKEY_API_* secrets belong to the ROOT user, which",
+        "bypasses the policy engine entirely — see docs/turnkey-setup.md §7.",
+        "",
+        "TO APPLY: `./turnkey/apply-policy.sh sepolia`, with $TK_ADMIN_KEY",
+        "pointing at the ROOT user's API key. Applying it with the bot's own",
+        "stamper fails 403 by design — the bot user is non-root and its only",
+        "grant is sign_transaction. That was confirmed by attempt on",
+        "2026-07-26; nothing was created.",
+        "",
+        "Then repoint the Sepolia stamper at the bot user. Note the Sepolia",
+        "Worker is also missing RPC_URL / LOOKUP_READ_SECRET /",
+        "PLATFORM_LINK_WRITE_SECRET, so it is not currently a working",
+        "deployment regardless of the policy."
+      ],
+      "_intent": [
+        "Same two selectors as Base, pinned to Sepolia's chain id and signed",
+        "by the Sepolia signing key. Kept as a separate policy rather than",
+        "widening the Base one with `eth.tx.chain_id in [8453, 11155111]`:",
+        "staging and production should fail independently, and deleting the",
+        "staging grant should never require touching the production policy."
+      ],
+      "parameters": {
+        "policyName": "toban-discord-bot-proxy-writes-sepolia",
+        "effect": "EFFECT_ALLOW",
+        "consensus": "approvers.any(user, user.id == 'd84edada-715b-4e5b-b49e-da56669aac82')",
+        "condition": "activity.type == 'ACTIVITY_TYPE_SIGN_TRANSACTION_V2' && eth.tx.chain_id == 11155111 && eth.tx.value == 0 && (eth.tx.data[0..10] == '0x40062e89' || eth.tx.data[0..10] == '0x947ec45f')",
+        "notes": "Sepolia staging. Allows the Toban Discord bot user to sign ThanksToken.mintFrom (0x40062e89) and HatsQuestModule.submitCompletion (0x947ec45f) only, value 0, chain 11155111. Source: pkgs/extensions/discord-bot/turnkey/policy.json"
       }
-    ],
-    "submitCompletionBranch": [
-      {
-        "id": "submitCompletion-rate-limit",
-        "_comment": [
-          "Per-operation rate limit, independent of mintFrom's (see",
-          "mintFrom-rate-limit). Keeps a /quest submit burst from consuming the",
-          "/thx budget."
-        ],
-        "expression": "rate(eth.tx.signCount, 60s) < 30"
-      },
-      {
-        "id": "to-must-be-registered-quest-module",
-        "_comment": [
-          "Only allow txs whose `to` is a Toban-registered HatsQuestModule",
-          "clone. Each workspace deploys its own quest module; the tag set",
-          "'toban-quest-module-registry' enumerates the ones the bot may",
-          "submit to (kept in sync by the same subgraph cron)."
-        ],
-        "expression": "eth.tx.to in tag('toban-quest-module-registry')"
-      },
-      {
-        "id": "selector-must-be-submitCompletion",
-        "_comment": [
-          "Function selector for the quest proxy primitive (#531):",
-          "  submitCompletion(address,uint256,uint256)",
-          "= keccak256(sig)[0:4] = 0x947ec45f.",
-          "If the signature ever changes, recompute and update both this",
-          "selector and the matching ABI in `src/chain.ts`."
-        ],
-        "expression": "eth.tx.data.selector == '0x947ec45f'"
-      },
-      {
-        "id": "submitCompletion-submitter-must-be-known-wallet",
-        "_comment": [
-          "The decoded `submitter` argument (args[0]) is the member the bot",
-          "submits on behalf of. It must be an identity-bound wallet so the",
-          "bot can never attribute a submission to an arbitrary address —",
-          "same tag set the frontend/identity cron maintains."
-        ],
-        "expression": "eth.tx.data.args[0] in tag('toban-identity-bound-wallets')"
-      }
-    ]
-  },
-  "_notes": [
-    "Tag-based sets ('toban-thanks-token-registry',",
-    "'toban-quest-module-registry', 'toban-identity-bound-wallets') are",
-    "kept in sync by an out-of-band worker / cron that reads the Toban",
-    "subgraph and calls Turnkey's tag-update API. Until that cron exists,",
-    "we operate with an explicit allowlist per set.",
+    }
+  ],
+  "_decisions": [
+    "DELIBERATE: `eth.tx.to` is not constrained. Decided 2026-07-26.",
     "",
-    "Selectors:",
-    "  0x40062e89 = mintFrom(address,address,uint256,(uint256,address)[],bytes)",
-    "  0x947ec45f = submitCompletion(address,uint256,uint256)",
-    "Both are bound to the matching ABI fragments in `src/chain.ts`."
+    "Toban deploys a ThanksToken and a HatsQuestModule clone PER WORKSPACE, so",
+    "the set of legitimate targets grows every time anyone creates a workspace.",
+    "Pinning `to` would mean an update_policy call on every workspace creation,",
+    "and Turnkey's policy language cannot reference an externally maintained",
+    "address set — there is no `tag()` function; user and private-key tags tag",
+    "Turnkey resources, not Ethereum addresses. A gate that has to be edited on",
+    "every workspace creation is a gate that will be wrong most of the time, so",
+    "the selector + value + chain_id gates carry the weight instead.",
+    "",
+    "Residual risk, stated so it is not mistaken for a guarantee: a leaked",
+    "stamper can invoke either selector against any contract on the pinned",
+    "chain. What still bounds it — `value == 0` stops the signer's gas balance",
+    "being drained; both calls revert on contracts that do not implement that",
+    "selector; and on a real ThanksToken the mint is capped per user by the",
+    "on-chain `mintAllowance` they granted. So the blast radius is 'mint or",
+    "submit against a Toban-shaped contract', not 'arbitrary transaction'.",
+    "",
+    "If this is ever revisited, the cheap version is routing both writes",
+    "through one per-chain Toban router contract and pinning `to` to it — one",
+    "static address instead of a growing set."
+  ],
+  "_gaps": [
+    "Known weaknesses of the policies above, recorded so they are not",
+    "mistaken for guarantees:",
+    "",
+    "1. The identity-bound-actor argument is NOT checked. Both functions take",
+    "   the acting member as argument 0, and the bot resolves it from the",
+    "   identity Worker before signing — but the TEE does not re-verify it.",
+    "   Turnkey can decode named arguments (`eth.tx.contract_call_args['…']`)",
+    "   once the contract ABI is uploaded to the organization; doing that for",
+    "   ThanksToken and HatsQuestModule would let the policy assert argument 0.",
+    "   Same growing-address-set problem as `eth.tx.to` if the assertion needs",
+    "   an allow-list, but an ABI upload alone would already let the policy",
+    "   check argument SHAPE.",
+    "",
+    "2. There is no rate limit. Turnkey's policy language has no rate",
+    "   primitive; throttling would have to live in the Worker or in a",
+    "   Cloudflare rate-limiting binding."
   ]
 }

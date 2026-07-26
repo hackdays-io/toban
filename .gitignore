@@ -5,3 +5,32 @@ node_modules
 .claude/worktrees/
 .claude/settings.local.json
 .worktree-setup.log
+
+# --- Key material ------------------------------------------------------------
+# The runbooks (DEPLOYMENT.md, pkgs/extensions/discord-bot/docs/turnkey-setup.md)
+# have you generate verifier / Turnkey stamper keys on disk inside a package
+# directory before pushing them into Workers Secrets. They are supposed to be
+# deleted right after, but a stray `git add -A` in between must never publish one.
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.der
+*.private
+*.jks
+*.keystore
+*.asc
+*.gpg
+id_rsa*
+id_ecdsa*
+id_ed25519*
+
+# Cloudflare Workers local secrets (`wrangler dev` reads these)
+**/.dev.vars
+**/.dev.vars.*
+
+# Every .env variant (.env.base, .env.local, .env.production, ...) except the
+# committed templates. Plain `**/.env` above does not match these suffixed forms.
+**/.env.*
+!**/.env.example

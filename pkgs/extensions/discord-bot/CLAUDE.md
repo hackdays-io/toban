@@ -17,13 +17,18 @@ Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
   (`IDENTITY_WORKER_URL` env), wrapped by `src/identity.ts`. Tests stub
   the `IdentityClient` interface — do not mock `fetch` for identity
   operations.
-- **`src/chain.ts` is the single source of truth for ABI.** Until #506
-  lands, `THANKS_TOKEN_ABI` is a placeholder fragment with TODO comments.
-  When you swap it for the real ABI, only this file should change.
+- **`src/chain.ts` is the single source of truth for ABI.** It carries
+  hand-maintained fragments (`THANKS_TOKEN_ABI`, `HATS_QUEST_MODULE_ABI`)
+  rather than importing from `pkgs/contract` — only the slice the bot
+  calls. A signature change there also changes the function selector, so
+  it must land together with a `turnkey/policy.json` update.
 - **`turnkey/policy.json` is the source of truth for the signer's
   allowed operations.** Code can break a policy intent in subtle ways —
   always update the policy file together with the code change that
-  changes what the bot can do on-chain.
+  changes what the bot can do on-chain. The file holds literal Turnkey
+  request parameters; apply it with `./turnkey/apply-policy.sh <base|sepolia>`,
+  which picks create vs update so a re-run cannot leave a second, looser
+  policy live. It is **not** applied automatically.
 
 ## Layout
 
@@ -47,9 +52,11 @@ src/
     responses.ts            Discord response/followup helpers
   api/install/start.ts      frontend-initiated install entry (signs state)
   api/install/callback.ts   OAuth bot-install callback (binds + registers cmds)
-turnkey/policy.json         Declarative policy stub (version-controlled)
+turnkey/
+  policy.json               Applicable policy definitions (version-controlled)
+  apply-policy.sh           Idempotently applies policy.json to Turnkey
 docs/
-  turnkey-setup.md          dev/prod sub-org + stamper provisioning
+  turnkey-setup.md          CLI-driven signer / stamper / policy provisioning
   key-rotation.md           scheduled + emergency rotation runbook
 test/                       Vitest unit tests (no network, no chain)
 ```
@@ -65,7 +72,7 @@ pnpm --filter @toban/discord-bot deploy:sepolia     # → toban-discord-bot     
 pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base  (--env base)
 ```
 
-**Deploying**: read `docs/deployment.md` (repo root) first. Non-obvious constraints:
+**Deploying**: read `DEPLOYMENT.md` (repo root) first. Non-obvious constraints:
 
 - **Sepolia is the wrangler top-level config** (worker `toban-discord-bot`); only Base is a named
   env. There is no `[env.sepolia]`.

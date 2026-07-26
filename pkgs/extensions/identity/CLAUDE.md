@@ -102,7 +102,7 @@ Tests live under `src/__tests__/`. They sign real ES256 JWTs and EIP-712 payload
 
 ## Deploying
 
-Read `docs/deployment.md` (repo root) — the full, order-dependent runbook.
+Read `DEPLOYMENT.md` (repo root) — the full, order-dependent runbook.
 
 ```
 pnpm --filter @toban/identity deploy:sepolia          # → toban-identity       (wrangler top-level)

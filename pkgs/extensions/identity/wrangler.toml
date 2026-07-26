@@ -4,7 +4,7 @@ compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # ---------------------------------------------------------------------------
-# Environments  (see docs/deployment.md for the full runbook)
+# Environments  (see DEPLOYMENT.md for the full runbook)
 # ---------------------------------------------------------------------------
 #   pnpm --filter @toban/identity deploy:sepolia   # → toban-identity       (top-level)
 #   pnpm --filter @toban/identity deploy:base      # → toban-identity-base  (--env base)

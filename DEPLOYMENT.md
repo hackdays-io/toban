@@ -4,13 +4,13 @@ Toban は **コントラクト → インデクサー → フロントエンド 
 が一列に依存する多層構成です。1レイヤーだけ更新すると簡単に壊れるため、このドキュメントを
 **唯一の正**として、依存順に沿って実施してください。
 
-- 個別の深掘り: [`pkgs/contract/README.md`](../pkgs/contract/README.md) /
-  [`pkgs/subgraph/README.md`](../pkgs/subgraph/README.md) /
-  [`pkgs/extensions/discord-bot/docs/turnkey-setup.md`](../pkgs/extensions/discord-bot/docs/turnkey-setup.md)
+- 個別の深掘り: [`pkgs/contract/README.md`](pkgs/contract/README.md) /
+  [`pkgs/subgraph/README.md`](pkgs/subgraph/README.md) /
+  [`pkgs/extensions/discord-bot/docs/turnkey-setup.md`](pkgs/extensions/discord-bot/docs/turnkey-setup.md)
 - **つまづきポイント集（症状→原因→対処）**:
-  [`pkgs/extensions/discord-bot/docs/deploy-base-production.md`](../pkgs/extensions/discord-bot/docs/deploy-base-production.md)
+  [`pkgs/extensions/discord-bot/docs/deploy-base-production.md`](pkgs/extensions/discord-bot/docs/deploy-base-production.md)
   ← 詰まったらまずここ
-- 鍵のローテーション: [`pkgs/extensions/discord-bot/docs/key-rotation.md`](../pkgs/extensions/discord-bot/docs/key-rotation.md)
+- 鍵のローテーション: [`pkgs/extensions/discord-bot/docs/key-rotation.md`](pkgs/extensions/discord-bot/docs/key-rotation.md)
 
 ---
 
@@ -80,7 +80,7 @@ Toban は **コントラクト → インデクサー → フロントエンド 
 **これは意図どおりです。** Base の Hats エンドポイントは The Graph Gateway の URL で
 **API キーを含むため secret** として投入しています。警告に従って `[env.base.vars]` に
 追記すると、**平文の var が secret を上書き**してしまい壊れます
-（[deploy-base-production.md §1](../pkgs/extensions/discord-bot/docs/deploy-base-production.md)）。
+（[deploy-base-production.md §1](pkgs/extensions/discord-bot/docs/deploy-base-production.md)）。
 
 ---
 
@@ -273,7 +273,7 @@ printf '%s' "$VALUE" | pnpm --filter @toban/discord-bot exec wrangler secret put
 
 > secret は投入即反映（再デプロイ不要）。`vars` とコード変更は再デプロイが必要。
 > 詳しい落とし穴は
-> [deploy-base-production.md](../pkgs/extensions/discord-bot/docs/deploy-base-production.md) 参照。
+> [deploy-base-production.md](pkgs/extensions/discord-bot/docs/deploy-base-production.md) 参照。
 
 ---
 
@@ -282,32 +282,59 @@ printf '%s' "$VALUE" | pnpm --filter @toban/discord-bot exec wrangler secret put
 `pkgs/extensions/discord-bot/turnkey/policy.json` は**リポジトリ内の source of truth であって、
 自動適用されません**。Turnkey org 側に反映する必要があります。
 
+**Turnkey の操作は CLI で行います。** ダッシュボードで触るのは org の初回作成と root ユーザーの
+passkey 登録だけです。手順の詳細は
+[turnkey-setup.md](pkgs/extensions/discord-bot/docs/turnkey-setup.md)。
+
 ### 7-1. bot が署名する操作（現在）
 
-| 操作 | selector | tx `to` |
-|---|---|---|
-| `/thx` → `mintFrom(address,address,uint256,(uint256,address)[],bytes)` | `0x40062e89` | ThanksToken クローン |
-| `/quest submit` → `submitCompletion(address,uint256,uint256)` | `0x947ec45f` | **HatsQuestModule クローン** |
+| 操作 | selector |
+|---|---|
+| `/thx` → `mintFrom(address,address,uint256,(uint256,address)[],bytes)` | `0x40062e89` |
+| `/quest submit` → `submitCompletion(address,uint256,uint256)` | `0x947ec45f` |
 
-### 7-2. 必要な作業
+セレクタが変わったら `turnkey/policy.json` と `src/chain.ts` の ABI フラグメントを
+**両方**更新してポリシーを再適用します。
 
-1. **ポリシーを適用**し、bot 署名鍵（**non-root** API user）にアタッチ
-   - `ACTIVITY_TYPE_SIGN_TRANSACTION_V2` に固定（raw payload 署名は不可）
-   - `eth.tx.chain_id`・`to`・selector・`value == 0` で制限
-2. **タグ集合をシード**（MVP は手動。subgraph 連動 cron は未実装）
-   - `toban-thanks-token-registry` ← ThanksToken クローンアドレス
-   - `toban-quest-module-registry` ← **HatsQuestModule クローンアドレス**（**impl ではない**）
-   - `toban-identity-bound-wallets` ← 申請者/送信者の連携ウォレット
-3. 新しいワークスペースを作るたびに、その **クローンアドレス** をレジストリタグに追加
+### 7-2. 構成（org は 1 つ・チェーンごとに 1 ポリシー）
 
-クローンアドレスは subgraph から取得できます:
+Sepolia と Base で sub-org は分けていません。分離しているのは**署名鍵と、
+`eth.tx.chain_id` を固定した 1 チェーン 1 本のポリシー**です。
+
+### 7-3. ポリシーを適用する
+
 ```bash
-curl -s -X POST "<GOLDSKY_ENDPOINT>" -H "content-type: application/json" \
-  -d '{"query":"{workspace(id:\"<treeId>\"){hatsQuestModule thanksToken{id}}}"}'
+cd pkgs/extensions/discord-bot
+export TK_ORG=24cfae8c-aae0-4341-8492-295057f66bac
+export TK_ADMIN_KEY=toban-turnkey-admin      # root user の API キー
+
+./turnkey/apply-policy.sh base --dry-run     # 送信内容と create/update の別を確認
+./turnkey/apply-policy.sh base
+```
+
+スクリプトが `policy.json` の `policyId` を見て `create_policy` / `update_policy` を選びます。
+`create` を手打ちすると**古い（たいてい緩い）ポリシーが残ったまま二重に許可されます**。
+
+適用結果の確認:
+```bash
+turnkey request --path /public/v1/query/list_policies -k "$TK_ADMIN_KEY" \
+  --organization "$TK_ORG" --body "{\"organizationId\":\"$TK_ORG\"}" \
+  | jq '.policies[] | {policyName, effect, condition}'
 ```
 
 > ⚠️ Turnkey の **root user はポリシーをバイパス**します。bot は必ず non-root の API user に。
-> セットアップ詳細: [turnkey-setup.md](../pkgs/extensions/discord-bot/docs/turnkey-setup.md)
+
+### 7-4. ⚠️ 現状のギャップ（2026-07 実機確認）
+
+- **Sepolia 用ポリシーが未適用**。適用済みは Base 用（`chain_id == 8453`）1 本だけです。
+  bot ユーザーは non-root なので、この状態では Sepolia の署名は必ず 403 になります。
+  Sepolia で `/thx` が通っているなら root の鍵で署名している＝ポリシーバイパスです。
+- **`eth.tx.to` を縛っていないのは意図的です**（ギャップではありません）。ワークスペースごとに
+  クローンが増えるため、正当な宛先の集合は作成のたびに増えます。毎回 `update_policy` が要る
+  ゲートは維持されないので、セレクタ・`value == 0`・`chain_id` に効かせています。
+  Turnkey には外部集合を参照する仕組み（`tag()` のようなもの）も**ありません**。
+- 判断の根拠と残存リスクは `turnkey/policy.json` の `_decisions`、未対応項目は同 `_gaps` と
+  [turnkey-setup.md §10](pkgs/extensions/discord-bot/docs/turnkey-setup.md) を参照。
 
 ---
 
@@ -357,6 +384,9 @@ pnpm --filter @toban/discord-bot exec wrangler tail --env base --format pretty
 #   → Discord でコマンドを実行し、console.* と未捕捉例外を確認
 
 # 6. Turnkey
+turnkey request --path /public/v1/query/list_policies -k "$TK_ADMIN_KEY" \
+  --organization "$TK_ORG" --body "{\"organizationId\":\"$TK_ORG\"}" \
+  | jq '.policies[] | {policyName, effect, condition}'   # 対象チェーンのポリシーがあるか
 #   → 実際に /thx と /quest submit を1回ずつ通す（ポリシー拒否は tail に出る）
 ```
 
@@ -370,5 +400,10 @@ pnpm --filter @toban/discord-bot exec wrangler tail --env base --format pretty
 | BigBang impl | `0xD91A21d104DB994572cEE83aD73cc745A4582f41` | 同左 |
 | HatsQuestModule impl | `0x84988CD2DdaC2137C9DF6b679341F0F180D9aaf2` | 同左 |
 | subgraph | `toban-sepolia/1.0.3` | `toban-base/0.0.1` |
+| Turnkey org | `Toban` / `24cfae8c-aae0-4341-8492-295057f66bac`（**両ネットワーク共通**） | 同左 |
+| Turnkey bot user | `d84edada-715b-4e5b-b49e-da56669aac82`（non-root） | 同左 |
+| Turnkey ポリシー | **未適用**（§7-4） | `f37e6551-2ef0-4436-927c-8b251cb8303d` |
 
-コントラクトアドレスの一次情報は `pkgs/contract/outputs/contracts-<net>.json` です。
+コントラクトアドレスの一次情報は `pkgs/contract/outputs/contracts-<net>.json`、
+Turnkey の一次情報は `turnkey request --path /public/v1/query/list_policies`（＝実機）で、
+リポジトリ側の正は `pkgs/extensions/discord-bot/turnkey/policy.json` です。

@@ -6,7 +6,7 @@
 
 [![Deploy document to GitHub Pages](https://github.com/hackdays-io/toban/actions/workflows/deploy-document.yml/badge.svg)](https://github.com/hackdays-io/toban/actions/workflows/deploy-document.yml)
 
-![](./docs/img/header.png)
+![](./assets/header.png)
 
 ## About This Project
 
@@ -66,7 +66,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 > **一次情報は `pkgs/contract/outputs/contracts-<net>.json`** です（デプロイスクリプトが自動更新）。
 > 下表は参考用のスナップショットで、デプロイのたびに古くなります。
-> デプロイ手順は **[docs/deployment.md](./docs/deployment.md)** を参照。
+> デプロイ手順は **[DEPLOYMENT.md](./DEPLOYMENT.md)** を参照。
 
 ### Sepolia
 
@@ -102,7 +102,7 @@ These solutions were combined with ideas from [Hats Protocol](https://www.hatspr
 
 コントラクト / インデクサー / フロントエンド / Cloudflare Workers / Turnkey / Discord は
 一列に依存しており、順序を間違えると壊れます。**必ず
-[docs/deployment.md](./docs/deployment.md)** の手順に従ってください。
+[DEPLOYMENT.md](./DEPLOYMENT.md)** の手順に従ってください。
 
 ```
 contract → sync:abis → subgraph → frontend(codegen)
@@ -110,7 +110,7 @@ contract → sync:abis → subgraph → frontend(codegen)
    Cloudflare: identity Worker → discord-bot Worker → Discord
 ```
 
-- 全レイヤーの手順書: **[docs/deployment.md](./docs/deployment.md)**
+- 全レイヤーの手順書: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 - つまづきポイント集: [deploy-base-production.md](./pkgs/extensions/discord-bot/docs/deploy-base-production.md)
 
 ## How to work

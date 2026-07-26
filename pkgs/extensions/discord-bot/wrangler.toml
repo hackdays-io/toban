@@ -12,7 +12,7 @@ enabled = true
 head_sampling_rate = 1
 
 # ---------------------------------------------------------------------------
-# Environments  (see docs/deployment.md for the full runbook)
+# Environments  (see DEPLOYMENT.md for the full runbook)
 # ---------------------------------------------------------------------------
 #   pnpm --filter @toban/discord-bot deploy:sepolia   # → toban-discord-bot       (top-level)
 #   pnpm --filter @toban/discord-bot deploy:base      # → toban-discord-bot-base  (--env base)

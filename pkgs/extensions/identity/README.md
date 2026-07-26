@@ -226,10 +226,13 @@ scripts/
 pnpm --filter @toban/identity dev              # wrangler dev (Miniflare)
 pnpm --filter @toban/identity test             # vitest run
 pnpm --filter @toban/identity typecheck        # tsc --noEmit
-pnpm --filter @toban/identity deploy           # wrangler deploy
-pnpm --filter @toban/identity deploy:dry       # wrangler deploy --dry-run
+pnpm --filter @toban/identity deploy:sepolia    # → toban-identity       (top-level 設定)
+pnpm --filter @toban/identity deploy:base       # → toban-identity-base  (--env base)
+pnpm --filter @toban/identity deploy:dry:sepolia
+pnpm --filter @toban/identity deploy:dry:base
 pnpm --filter @toban/identity db:migrate:local
-pnpm --filter @toban/identity db:migrate:remote
+pnpm --filter @toban/identity db:migrate:remote:sepolia
+pnpm --filter @toban/identity db:migrate:remote:base
 pnpm --filter @toban/identity dev-token --snowflake <id> --tree-id <tree>
 ```
 
@@ -319,8 +322,11 @@ echo -n "https://eth-sepolia.g.alchemy.com/v2/<key>" \
 ### Step 6 — デプロイ
 
 ```bash
-pnpm --filter @toban/identity deploy
+pnpm --filter @toban/identity deploy:sepolia   # 本番は deploy:base
 ```
+
+> 素の `deploy` は使えません（pnpm のビルトインと衝突して `ERR_PNPM_INVALID_DEPLOY_TARGET`）。
+> 詳細は [`../README.md`](../README.md)。
 
 出力にデプロイ先 URL (`https://toban-identity.<account>.workers.dev`) が出ます。動作確認:
 

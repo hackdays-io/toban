@@ -40,9 +40,36 @@ pnpm contract bigbang --owner <addr> --tophatdetails <uri> --network <net>
 pnpm contract mintHat --hatid <id> --wearer <addr> --module <addr> --network <net>
 ```
 
+## デプロイ方法の選び方
+
+変更内容によって「upgrade」と「新規デプロイ」を選びます。**BigBang のアドレスが変わるかどうか**が
+分岐点で、変わると subgraph の `config/<net>.json` とフロントの `VITE_BIGBANG_ADDRESS` も
+連動して直す必要があります。
+
+| 変更内容 | 手段 | BigBang アドレス |
+|---|---|---|
+| BigBang のロジック / イベントのみ | `upgrade:BigBang`（UUPS） | **据え置き** |
+| Hats モジュールの impl のみ（例: HatsQuestModule） | `scripts/deploy/swapQuestModuleImpl.ts` 等 | 据え置き |
+| 全部作り直したい / 既存を切り離したい | `deploy:all`（CREATE2） | **変わる** |
+
 `deploy:all` は CREATE2 なので、**bytecode が変わっていないコントラクトは既存アドレスを再利用**
 します（`already deployed at ...` と出てスキップ）。BigBang は impl が変わると proxy の initcode も
 変わるため**アドレスが変わります**。
+
+### 検証
+
+UUPS で upgrade した後は、proxy の implementation slot が新しい impl を指しているか必ず確認します。
+
+```
+slot: 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc
+```
+
+`upgrade:BigBang` は impl アドレスを `outputs/` に記録しないので、必要なら手で追記してください。
+
+### コスト目安
+
+Base は blob により L1 データ手数料がほぼ無料です。`deploy:all`（全 11 コントラクト、147KB）で
+**約 0.0002 ETH**。残高が数 mETH あれば足ります。
 
 ## ★ 変更したら `sync:abis`
 

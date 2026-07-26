@@ -55,19 +55,20 @@ Use `sonner` for toasts: `import { toast } from "sonner"` (matches the `toast.su
 ## Commands
 
 ```
-pnpm frontend dev          # react-router dev (uses .env.local)
+pnpm frontend dev          # react-router dev (uses .env)
 pnpm frontend dev:base     # uses .env.base — for Base mainnet config
 pnpm frontend build        # react-router build
 pnpm frontend start        # serve build/server/index.js
 pnpm frontend typecheck    # react-router typegen + tsc --noEmit
-pnpm frontend codegen      # GraphQL Codegen → ./gql/ (client preset)
+pnpm frontend codegen      # GraphQL Codegen → ./gql/ (client preset), reads .env
+pnpm frontend codegen:base # same, reads .env.base
 pnpm frontend ladle        # component preview
 pnpm frontend test:e2e:dev # cypress open
 ```
 
 `typecheck` runs `react-router typegen` first — that regenerates `.react-router/types/*.ts` from `app/routes.ts`. If you see "missing route export" type errors after editing routes, run typecheck.
 
-`codegen` reads from the **Base** Goldsky endpoint (hardcoded in `codegen.ts`) regardless of your local env. Output (`gql/`) is committed; re-run only when the subgraph schema actually changes.
+`codegen.ts` reads `VITE_GOLDSKY_GRAPHQL_ENDPOINT` from the environment — nothing is hardcoded, and it throws if the var is unset. `codegen` loads `.env` (Sepolia), `codegen:base` loads `.env.base`. It queries the **live** subgraph, so deploy the subgraph first. Output (`gql/`) is committed; re-run only when the subgraph schema actually changes.
 
 ## Routing conventions
 
@@ -87,7 +88,7 @@ Notable hooks: `useBigBang`, `useHats`, `useHatsTimeFrameModule`, `useHatsHatCre
 
 ## Environment
 
-Required `pkgs/frontend/.env.local` keys (see README for the canonical list): `VITE_CHAIN_ID`, `VITE_PRIVY_APP_ID`, `VITE_BIGBANG_ADDRESS`, `VITE_HATS_ADDRESS`, `VITE_FRACTION_TOKEN_ADDRESS`, `VITE_SPLITS_CREATOR_ADDRESS`, `VITE_PIMLICO_API_KEY`, `VITE_PINATA_*`, `VITE_NAMESTONE_API_KEY`, `VITE_GOLDSKY_GRAPHQL_ENDPOINT`, `VITE_ALCHEMY_KEY`. `.env.base` toggles to Base mainnet for `dev:base`.
+`pkgs/frontend/.env` (Sepolia) and `.env.base` (Base) — `.env.example` is the template. The canonical, grouped list is in the [README](./README.md#環境変数). `.env.base` toggles to Base mainnet for `dev:base` / `codegen:base`.
 
 ## Testing
 

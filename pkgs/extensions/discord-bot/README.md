@@ -27,12 +27,16 @@ admin が /toban-link <workspace-url>      →  guild ↔ workspace を bind
 - **Discord application が developer portal で登録済み**:
   - `Interactions Endpoint URL` → `https://<bot-worker>/discord/interactions`
   - `OAuth2 Redirects` → `https://<bot-worker>/api/install/callback`
-- **対象 guild に slash command が登録済み**:
+- **対象 guild に slash command が登録済み**。フロント起点の「サーバーに追加」（Step 1-A）を
+  使ったなら**自動で登録されている**ので何もしなくて構いません。素の invite URL で入れた場合だけ、
+  手動で登録します:
   ```bash
   DISCORD_APP_ID=… DISCORD_BOT_TOKEN=… \
     pnpm --filter @toban/discord-bot register-commands <guild-id>
   ```
-  `scripts/register-commands.ts` がコマンド仕様の真実です。
+  コマンド仕様は **`scripts/register-commands.ts` と `src/api/install/callback.ts` の
+  `COMMANDS_PAYLOAD` の 2 箇所**にあり、**常に一致させる必要があります**（前者は手動登録、
+  後者はインストール時の自動登録に使われます）。
 
 ### 1. bot を Discord サーバーに招待する
 
@@ -233,7 +237,7 @@ turnkey generate api-key --organization "$TK_ORG" --key-name toban-discord-bot-b
 ### Step 3 — Discord developer portal
 
 1. https://discord.com/developers/applications → **New Application** → 名前を入力。dashboard に以下が出ます:
-   - **Application ID** → `DISCORD_APP_ID` (`wrangler.toml` var)
+   - **Application ID** → `DISCORD_APP_ID` (secret)
    - **Public Key** → `DISCORD_PUBLIC_KEY` (secret) — `interactions/verify.ts` の Ed25519 署名検証で使う
 2. 左メニュー → **Bot** → **Reset Token** → コピー。これが `DISCORD_BOT_TOKEN` (secret)。Discord は 1 度しか見せてくれません。
    - Privileged Gateway Intents: **OFF** のままで OK。bot は interactions のみで、gateway event は使いません。
@@ -311,8 +315,12 @@ service = "toban-identity"     # identity の wrangler.toml の `name =` と一�
 ### Step 7 — デプロイ
 
 ```bash
-pnpm --filter @toban/discord-bot deploy
+pnpm --filter @toban/discord-bot deploy:sepolia   # 本番は deploy:base
 ```
+
+> 素の `deploy` は使えません（pnpm のビルトインと衝突して `ERR_PNPM_INVALID_DEPLOY_TARGET`）。
+> **identity Worker を先にデプロイしてください**（service binding）。詳細は
+> [`../README.md`](../README.md)。
 
 出力に worker URL (`https://toban-discord-bot.<account>.workers.dev`) が出ます。`wrangler.toml` の `BOT_WORKER_URL` と一致しているか確認してください (一致しないと Discord OAuth redirect で蹴られます)。
 
@@ -334,6 +342,23 @@ DISCORD_APP_ID=<id> DISCORD_BOT_TOKEN=<token> \
 ```
 
 (token を shell history に残さないために `read -p` / `read -s -p` を使う) これは guild 限定の登録で即時反映。production で複数 guild にロールアウトしたいときは `scripts/register-commands.ts` から `--guild` セグメントを外して global 登録に切り替え (反映に 1 時間程度)。
+
+> フロント起点の install（Step 1-A）を使う場合、この Step は callback が自動で実行するので不要です。
+
+### コマンドを追加・変更したときの反映
+
+1. **`scripts/register-commands.ts` と `src/api/install/callback.ts` の `COMMANDS_PAYLOAD` の
+   両方**に同じ定義を追加します。片方だけだと、手動登録とインストール時登録で内容がずれます。
+2. Worker を deploy します（`COMMANDS_PAYLOAD` はコードなので**再デプロイが必要**です。
+   secret と違って即時反映されません）。
+3. **既存ギルドへの反映**は、どちらかで行います。どちらも
+   `PUT /applications/{app}/guilds/{guild}/commands` による**全置換**なので、何度実行しても安全です。
+   - admin に `/<treeId>/discord-bot` の「サーバーに追加」を再実行してもらう
+     （`upsertPlatformLink` は upsert、コマンド登録は無条件に走るので、再認可で最新化されます）
+   - 運用側で `register-commands <guild-id>` を叩く（admin の操作が不要）
+
+   **既にインストール済みのギルドに、新しいコマンドが自動で降ってくることはありません。**
+   上のどちらかを実行するまで、そのギルドでは古いコマンド一覧のままです。
 
 ### Step 10 — bot をサーバーに招待
 

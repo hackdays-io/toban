@@ -19,7 +19,7 @@ Guidance for the Toban web app. The repo-root `CLAUDE.md` covers monorepo-wide c
 
 `app/components/ui/`, `app/components/composite/`, and `app/components/layout/` together **are** the design system. Routes/pages should be assembled from these — do not introduce new ad-hoc layout/typography/styling at the page level.
 
-- **`app/components/ui/`** — shadcn-vendored primitives (`new-york` style): `button`, `card`, `dialog`, `dropdown-menu`, `input`, `textarea`, `tabs`, `sheet`, `popover`, `tooltip`, `avatar`, `badge`, `checkbox`, `switch`, `radio-group`, `skeleton`, `sonner`, `field`, `label`, `menu`, `icon`, plus the Toban-specific `heading` and `typography` (see Typography section below). These are the lowest level — keep them close to upstream shadcn so future updates merge cleanly. Edit only when a token/variant change is needed; otherwise build *on top* in `composite/`.
+- **`app/components/ui/`** — shadcn-vendored primitives (`new-york` style): `button`, `card`, `dialog`, `dropdown-menu`, `input`, `textarea`, `tabs`, `sheet`, `popover`, `tooltip`, `avatar`, `badge`, `checkbox`, `switch`, `radio-group`, `skeleton`, `sonner`, `calendar`, `spinner`, `label`, `menu`, `icon`, plus the Toban-specific `heading` and `typography` (see Typography section below). These are the lowest level — keep them close to upstream shadcn so future updates merge cleanly. Edit only when a token/variant change is needed; otherwise build *on top* in `composite/`.
 - **`app/components/composite/`** — Toban-specific patterns built from primitives: `chip`, `divider`, `empty-state`, `field-label`, `row`, `section-label`, `segmented`, `stat-card`, `step-bar`, `summary-row`, `toggle-row`, `weight-bar`. Use these for any list-row / form-row / status-card shape that already exists.
 - **`app/components/layout/`** — page chrome: `AppShell`, `AppHeader`, `TopBar`, `BottomNav`, `Sidebar`, `PageContainer`, `ScreenHeader`, `MasterDetailLayout`. Routes should wrap their content in these instead of hand-rolling headers/containers.
 
@@ -76,7 +76,7 @@ Routes are flat files in `app/routes/` with `$param` for segments and `_` for in
 
 - `$treeId._index.tsx` — workspace home
 - `$treeId_.$hatId.tsx` — role detail (note `_` after `$treeId` to break out of nesting)
-- `$treeId_.$hatId_.$address_.assistcredit.send.tsx` — deeply scoped action
+- `$treeId_.$hatId_.$address_.quest.new.tsx` — deeply scoped action
 
 `treeId` (a Hats tree id) and `hatId` (256-bit hat identifier as decimal string) are the primary URL parameters. When you need a contract for a workspace, derive its addresses from the workspace's BigBang execution — see `useWorkspace` and `useContracts` hooks.
 

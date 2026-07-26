@@ -101,5 +101,5 @@ ABI を手書きで直さず、必ず `sync:abis` を使ってください。
 ## デプロイ済みアドレス
 
 一次情報は `outputs/contracts-<net>.json`（デプロイスクリプトが自動生成）。
-**手で編集しないでください。** スナップショットはルートの `README.md` と
-[`DEPLOYMENT.md` §10](../../DEPLOYMENT.md) にあります。
+**手で編集しないでください。** 参考用のスナップショットはルートの
+[`README.md`](../../README.md#related-contract-addresses) にあります（デプロイのたびに古くなります）。

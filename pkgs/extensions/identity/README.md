@@ -1,6 +1,6 @@
 # `@toban/identity`
 
-Toban における **「この Web2 アカウントはこの wallet に属する」** という off-chain な紐づけを管理する Cloudflare Worker です。4 つの HTTP エンドポイントを公開し、状態は Cloudflare D1 に保存します。provider 抽象化されているので、Slack / GitHub などの追加連携を connect フロー本体に触れずに増やせる構造になっています。
+Toban における **「この Web2 アカウントはこの wallet に属する」** という off-chain な紐づけを管理する Cloudflare Worker です。5 つの HTTP エンドポイントを公開し、状態は Cloudflare D1 に保存します。provider 抽象化されているので、Slack / GitHub などの追加連携を connect フロー本体に触れずに増やせる構造になっています。
 
 この Worker が一次情報になるのは 2 種類のレコードです:
 
@@ -142,9 +142,16 @@ GET /api/platform-link?provider=discord&platform_id=<guild_id>
 | `/api/lookup` | GET | `?provider&account_id` (もしくは `accountId`) | 200 `{ wallet, metadata? }` / 404 `{ error: "not_found" }` | `handlers/lookup.ts` |
 | `/api/platform-link` | GET | `?provider&platform_id` (もしくは `platformId`) | 200 `{ provider, platformId, treeId, installedBy, metadata? }` / 404 | `handlers/platform-link.ts` |
 | `/api/platform-link` | POST | `{ provider, platformId, treeId, installedBy, metadata? }` | 200 `{ ok: true }` | `handlers/platform-link.ts` |
+| `/api/install-state/claim-jti` | POST | `{ jti }` | 200 `{ ok: true }` / 409（使用済み） | `handlers/install-state.ts` |
 | `/health` | GET | — | 200 `{ ok: true }` | `worker.ts` |
 
-CORS は `/api/*` で全 origin 許可。認証は同一オリジンポリシーではなく、リクエスト本文に含まれる暗号証明 (JWT + EIP-712) で行います。
+CORS は `/api/*` で全 origin 許可。認証は**エンドポイントによって 2 系統**あります:
+
+- **暗号証明** — `/api/connect` はリクエスト本文の EIP-712 署名と ES256 の verifier_token を検証します。
+- **共有シークレット** — `/api/lookup` は `x-toban-lookup-secret`（= `LOOKUP_READ_SECRET`）または
+  Bearer の verifier JWT、`POST /api/platform-link` と `/api/install-state/claim-jti` は
+  `x-toban-platform-link-secret`（= `PLATFORM_LINK_WRITE_SECRET`）を要求します。
+  **未設定・不一致だと 401** になり、`/toban-link` と `/thx` が全滅します。
 
 ## D1 スキーマ
 
@@ -178,9 +185,16 @@ CREATE TABLE used_binding_nonces (
   nonce        BLOB PRIMARY KEY,
   used_at      INTEGER NOT NULL
 );
+
+-- OAuth install-state (JWT) の single-use 消し込み。
+-- /api/install-state/claim-jti が使用済み jti を記録し、2 回目は 409 を返す。
+CREATE TABLE used_install_state_jtis (
+  jti          TEXT PRIMARY KEY,
+  used_at      INTEGER NOT NULL
+);
 ```
 
-`pnpm --filter @toban/identity db:migrate:local` (Miniflare のローカル D1) または `db:migrate:remote` (deploy 済み D1) で適用します。
+`pnpm --filter @toban/identity db:migrate:local` (Miniflare のローカル D1) または `db:migrate:remote:sepolia` / `db:migrate:remote:base` (deploy 済み D1) で適用します。
 
 ## 構成
 
@@ -264,10 +278,10 @@ pnpm --filter @toban/identity exec wrangler d1 create toban-identity
 スキーマを適用:
 
 ```bash
-pnpm --filter @toban/identity db:migrate:remote
+pnpm --filter @toban/identity db:migrate:remote:sepolia   # 本番は db:migrate:remote:base
 ```
 
-(動作確認: `wrangler d1 execute toban-identity --remote --command="SELECT name FROM sqlite_master WHERE type='table'"` で `identities` / `platform_links` / `used_binding_nonces` の 3 つが見えれば成功)
+(動作確認: `wrangler d1 execute toban-identity --remote --command="SELECT name FROM sqlite_master WHERE type='table'"` で `identities` / `platform_links` / `used_binding_nonces` / `used_install_state_jtis` の 4 つが見えれば成功)
 
 ### Step 3 — Ethereum RPC URL を取得
 
@@ -315,9 +329,27 @@ pnpm exec wrangler secret put DISCORD_BOT_VERIFIER_PUBLIC_KEY \
 **RPC URL (単一行)**:
 
 ```bash
-echo -n "https://eth-sepolia.g.alchemy.com/v2/<key>" \
+printf '%s' "https://eth-sepolia.g.alchemy.com/v2/<key>" \
   | pnpm --filter @toban/identity exec wrangler secret put RPC_URL
 ```
+
+**共有シークレット 2 本** — discord-bot Worker と**同じ値**を入れます。片方だけ、あるいは値が
+ずれていると `/api/lookup` と `POST /api/platform-link` が 401 を返し、`/toban-link` と `/thx` が
+動きません。
+
+```bash
+SHARED_LOOKUP=$(openssl rand -hex 32)
+SHARED_WRITE=$(openssl rand -hex 32)
+
+for pkg in @toban/identity @toban/discord-bot; do
+  printf '%s' "$SHARED_LOOKUP" | pnpm --filter $pkg exec wrangler secret put LOOKUP_READ_SECRET
+  printf '%s' "$SHARED_WRITE"  | pnpm --filter $pkg exec wrangler secret put PLATFORM_LINK_WRITE_SECRET
+done
+```
+
+この Worker に必要な secret は `DISCORD_BOT_VERIFIER_PUBLIC_KEY` / `RPC_URL` /
+`LOOKUP_READ_SECRET` / `PLATFORM_LINK_WRITE_SECRET` の **4 本**です
+（一覧は [`DEPLOYMENT.md` §6-2](../../../DEPLOYMENT.md#6-2-secret-一覧)）。
 
 ### Step 6 — デプロイ
 
@@ -351,9 +383,17 @@ service = "toban-identity"
 
 bot 側にも上で設定した公開鍵に対応する `VERIFIER_PRIVATE_KEY` を投入する必要があります — 対称の手順が [discord-bot README: デプロイ手順](../discord-bot/README.md#デプロイ手順) にあります。
 
-### 環境を増やすとき
+### 環境の分かれ方
 
-`wrangler.toml` には 1 つの `[[d1_databases]]` ブロックしかありません。staging vs production を分けたいときは `[env.staging]` / `[env.production]` セクションを使うのが Cloudflare 公式パターンです ("Wrangler environments" 参照)。MVP の今は 1 環境で足りるので、Base mainnet 移行時にあらためて検討してください。
+staging（Sepolia）と production（Base）は**すでに分離済み**です。Sepolia は wrangler の
+**top-level 設定**（worker `toban-identity`、D1 `toban-identity`）、Base は `[env.base]`
+（worker `toban-identity-base`、D1 `toban-identity-base`）で、`[env.sepolia]` は存在しません。
+**同一 Cloudflare アカウント**内で worker 名と D1 によって分けています。
+
+D1 を共有していないのは、`platform_links` が guild → treeId を持ち、treeId がチェーン固有だからです。
+共有すると Sepolia のテストデータが Base 本番に混ざります。
+
+共通の作法は [`../README.md`](../README.md) を参照してください。
 
 ## 新しい provider を追加する
 

@@ -1,9 +1,13 @@
 /**
  * Worker bindings: Cloudflare Workers env shape.
  *
- * All `*_PRIVATE_KEY` / `*_TOKEN` / `*_SECRET` fields are Workers Secrets
- * (`wrangler secret put <NAME>`), never committed to source. Plain `string`
- * fields are `[vars]` in `wrangler.toml` and may be public.
+ * Whether a field is a Workers Secret or a `[vars]` entry is NOT inferable
+ * from its name: `RPC_URL` embeds an Alchemy key and `HATS_GRAPHQL_ENDPOINT`
+ * embeds a Graph key on Base, so both are Secrets despite the plain names.
+ * The authoritative split is the secrets comment at the bottom of
+ * `wrangler.toml` and the table in `DEPLOYMENT.md` §6-2. A value that lives
+ * in `[vars]` **overrides** a Secret of the same name at deploy time, so
+ * never list a Secret's name in a `vars` block.
  *
  * NOTE: This Worker holds NO Ethereum private key. The bot's signing key
  * lives in Turnkey's TEE; the Worker only holds the Turnkey API stamper
@@ -59,7 +63,11 @@ export interface Env {
   MAINNET_RPC_URL?: string;
   /** Turnkey HTTP API base URL (e.g. https://api.turnkey.com). */
   TURNKEY_API_BASE_URL: string;
-  /** Turnkey sub-organization id that owns the bot signing key. */
+  /**
+   * Turnkey organization id that owns the bot signing key. One organization
+   * serves both chains — Sepolia and Base are separated by signing key and by
+   * a per-chain policy, not by sub-organization.
+   */
   TURNKEY_ORGANIZATION_ID: string;
   /**
    * Ethereum address of the Turnkey-managed bot signer. Used as the
@@ -79,9 +87,18 @@ export interface Env {
   DISCORD_BOT_TOKEN: string;
   DISCORD_APP_ID: string;
   DISCORD_CLIENT_SECRET: string;
-  /** Turnkey API stamper public key (P-256, hex/uncompressed). */
+  /**
+   * Turnkey API stamper public key: P-256 **compressed** hex, 66 chars
+   * starting `02`/`03` — exactly what `turnkey generate api-key` writes to
+   * `<key-name>.public`. Turnkey rejects the uncompressed form.
+   */
   TURNKEY_API_PUBLIC_KEY: string;
-  /** Turnkey API stamper private key (P-256, PEM PKCS8). */
+  /**
+   * Turnkey API stamper private key. The CLI writes `<64-hex>:p256` to
+   * `<key-name>.private`; strip the `:p256` suffix before storing it here.
+   * `importStamperKey` accepts exactly-64-hex (optionally `0x`-prefixed) or a
+   * PKCS#8 PEM — the `:p256` form matches neither.
+   */
   TURNKEY_API_PRIVATE_KEY: string;
   /** ES256 private key (PEM PKCS8) used to sign verifier_token JWTs. */
   VERIFIER_PRIVATE_KEY: string;

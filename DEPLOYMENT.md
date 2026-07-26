@@ -35,11 +35,6 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 `TURNKEY_BOT_SIGNER_ADDRESS`（var）に入るためです。var はデプロイ時に焼き込まれるので、
 後から入れると再デプロイが必要になります。
 
-**Discord 側にデプロイ作業はありません。** スラッシュコマンドの登録は、フロントの
-「サーバーに追加」から走る OAuth コールバックが `PUT .../commands` で毎回全置換します。
-新しいコマンドを追加したときの既存ギルドへの反映も含め、詳細は
-[`discord-bot/README.md`](pkgs/extensions/discord-bot/README.md)。
-
 ---
 
 ## 環境
@@ -146,17 +141,14 @@ turnkey generate api-key --organization "$TK_ORG" --key-name <stamper-key-name>
 
 # (c) bot ユーザー（必ず non-root）を作り、(b) の公開鍵を紐づける
 #     → turnkey-setup.md §4。返ってきた userId を turnkey/policy.json の consensus に記入
-
-# (d) stamper 鍵を Worker secret に投入（§6 の secret 表も参照）
-K=~/.config/turnkey/keys/<stamper-key-name>
-printf '%s' "$(cat $K.public)" \
-  | pnpm --filter @toban/discord-bot exec wrangler secret put TURNKEY_API_PUBLIC_KEY --env base
-printf '%s' "$(cut -d: -f1 $K.private)" \
-  | pnpm --filter @toban/discord-bot exec wrangler secret put TURNKEY_API_PRIVATE_KEY --env base
-rm -f $K.private $K.public $K.meta        # 投入後はローカルから削除
 ```
 
-`.private` は `<64桁hex>:p256` 形式なので、**`:p256` を落として**投入します（`cut -d: -f1`）。
+(b) で生成した鍵ファイルは**この時点では消さないでください**。Worker への投入は
+[§6-3](#6-3-secret-の投入) で、**Worker をデプロイした後**に行います。
+
+このうち **deploy 前に必要なのは (a) のアドレスだけ**です。`TURNKEY_BOT_SIGNER_ADDRESS` は
+`wrangler.toml` の `[vars]` にあり、var はデプロイ時に焼き込まれるためです。
+stamper 鍵は secret なので、デプロイ後にいつでも入れられます（投入即反映）。
 
 ### 5-2. ポリシーの適用（初回 + セレクタを変えたとき）
 
@@ -172,6 +164,7 @@ rm -f $K.private $K.public $K.meta        # 投入後はローカルから削除
 ## 6. Cloudflare Workers
 
 **identity → discord-bot の順**に deploy します（bot が identity を service binding で参照）。
+**secret は deploy の後**に入れます（理由は §6-3）。
 
 ```bash
 # 初回のみ
@@ -180,6 +173,9 @@ pnpm --filter @toban/identity db:migrate:remote:<sepolia|base>
 pnpm --filter @toban/identity    deploy:<sepolia|base>
 pnpm --filter @toban/discord-bot deploy:<sepolia|base>
 ```
+
+secret が未投入でも deploy は成功します（実行時に落ちるだけ）。逆に `[vars]` の値は
+デプロイ時に焼き込まれるので、**var は deploy 前に `wrangler.toml` へ書いておく**必要があります。
 
 ### 6-1. 自分で生成する値
 
@@ -224,14 +220,22 @@ openssl pkey -in verifier.key.pem -pubout -out verifier.pub.pem                 
 
 共有シークレット 2 本がずれると `/balance` などが 401 になります。
 
-### 6-3. 投入コマンド
+### 6-3. secret の投入
 
-改行が混ざると壊れるので、プロンプトに貼らず `printf` かファイルリダイレクトで流し込みます。
+**Worker をデプロイした後**に実行します。改行が混ざると壊れるので、プロンプトに貼らず
+`printf` かファイルリダイレクトで流し込みます。
 
 ```bash
 # 1 行の値
 printf '%s' "$VALUE" \
   | pnpm --filter @toban/discord-bot exec wrangler secret put LOOKUP_READ_SECRET --env base
+
+# Turnkey stamper（§5-1(b) で生成した鍵。.private は `:p256` を落として投入する）
+K=~/.config/turnkey/keys/<stamper-key-name>
+printf '%s' "$(cat $K.public)" \
+  | pnpm --filter @toban/discord-bot exec wrangler secret put TURNKEY_API_PUBLIC_KEY --env base
+printf '%s' "$(cut -d: -f1 $K.private)" \
+  | pnpm --filter @toban/discord-bot exec wrangler secret put TURNKEY_API_PRIVATE_KEY --env base
 
 # 複数行の PEM
 pnpm --filter @toban/discord-bot exec wrangler secret put VERIFIER_PRIVATE_KEY --env base < verifier.key.pem
@@ -241,7 +245,14 @@ pnpm --filter @toban/identity    exec wrangler secret put DISCORD_BOT_VERIFIER_P
 pnpm --filter @toban/discord-bot exec wrangler secret list --env base
 ```
 
-投入が終わったら、生成した鍵ファイルは**ローカルから削除**してください。
+投入が終わったら、生成した鍵ファイル（stamper と verifier）は**ローカルから削除**してください。
+
+> ⚠️ **デプロイ前に `secret put` しないでください。** 対象 Worker がまだ存在しない場合、wrangler は
+> 「その名前の Worker を作って secret を付けるか？」と聞き、**中身が
+> `export default { fetch() {} }` だけ・bindings が全て空のプレースホルダ Worker を作成**します。
+> しかもこの確認は**非対話環境では自動的に「はい」**に倒れる実装なので、worker 名を打ち間違えると
+> 気づかないままゴミの Worker がアカウントに増えます。
+> deploy を先に済ませておけば、この分岐自体に入りません。
 
 ---
 

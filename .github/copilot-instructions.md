@@ -7,14 +7,14 @@ Toban is a role-based rewards distribution system built on blockchain technology
 
 ### Monorepo Structure (pnpm workspace)
 - `pkgs/contract/` - Solidity smart contracts (Hardhat)
-- `pkgs/frontend/` - React app (Remix + Vite + Chakra UI)
+- `pkgs/frontend/` - React app (React Router v7 + Vite + Tailwind v4 + shadcn/ui)
+- `pkgs/extensions/` - Cloudflare Workers integrations (`identity`, `discord-bot`)
 - `pkgs/subgraph/` - The Graph Protocol indexing
-- `pkgs/cli/` - TypeScript CLI tools
 - `pkgs/document/` - Docusaurus documentation
 
 ### Key Technologies
 - **Smart Contracts**: Solidity ^0.8.24, Hardhat, OpenZeppelin
-- **Frontend**: React, Remix, Vite, Chakra UI, Privy (Web3 auth)
+- **Frontend**: React, React Router v7 (the Remix successor), Vite, Tailwind CSS v4, shadcn/ui, Privy (Web3 auth)
 - **Backend**: The Graph Protocol, Apollo Client (GraphQL)
 - **Deployment**: Sepolia (testnet), Base (mainnet)
 
@@ -34,11 +34,11 @@ Toban is a role-based rewards distribution system built on blockchain technology
 - Use **Hardhat** tasks for contract interactions
 
 ### Frontend Development
-- Use **Chakra UI** components consistently
+- Compose from the design system in `app/components/{ui,composite,layout}/` (shadcn/ui based). **Chakra UI is not used.**
 - Implement **responsive design** patterns
 - Handle **Web3 connection states** properly with Privy
 - Use **Apollo Client** for GraphQL queries
-- Follow **Remix** conventions for routing and data loading
+- Follow **React Router v7** file-route conventions for routing and data loading
 
 ### Key Smart Contracts
 - `BigBang.sol` - Main project initialization contract
@@ -71,7 +71,7 @@ pnpm biome:check
 - **New contract**: Create in appropriate `/contracts/` subdirectory with tests
 - **Frontend components**: Place in `/app/components/` with proper typing
 - **GraphQL queries**: Use codegen with `pnpm frontend codegen`
-- **Documentation**: Update relevant `/docs/` files
+- **Documentation**: update the affected package's `README.md` / `CLAUDE.md`; deploy steps live in `DEPLOYMENT.md` at the repo root (there is no top-level `docs/` runbook)
 
 ## Important Patterns & Best Practices
 
@@ -122,6 +122,11 @@ pnpm biome:check
 - **Frontend**: https://toban.xyz
 
 ## Serena MCP Integration
+
+> **⚠️ 非推奨 / DEPRECATED.** このセクションは Serena MCP が設定されていた頃の名残です。
+> **Claude Code はこの指示に従いません**（リポジトリルートの `CLAUDE.md` で明示的に無効化済み）。
+> Serena をセットアップしていないツールでは、以下の `mcp_serena_*` 呼び出しはすべて失敗します。
+> 通常のファイル読み書き・検索ツールを使ってください。
 
 ### Project Management with Serena
 This project uses **Serena MCP** for enhanced development workflow and project management:

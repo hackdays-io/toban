@@ -9,7 +9,6 @@ Each workspace package has its own `CLAUDE.md` with package-specific architectur
 - `pkgs/frontend/CLAUDE.md` — React Router v7 (Remix) app, Tailwind v4, shadcn/ui, Privy, viem, Goldsky/Apollo
 - `pkgs/contract/CLAUDE.md` — Hardhat + UUPS upgradeable Solidity, Hats Protocol / Splits integration
 - `pkgs/subgraph/CLAUDE.md` — Goldsky-deployed The Graph subgraph
-- `pkgs/cli/CLAUDE.md` — Commander-based TypeScript CLI
 - `pkgs/document/CLAUDE.md` — Docusaurus documentation site
 - `pkgs/extensions/*/CLAUDE.md` — External-service integrations (`identity`, `discord-bot`, ...). Cloudflare Workers + D1 runtime. Each extension imports `@toban/identity` for account ↔ wallet binding.
 
@@ -18,11 +17,12 @@ Each workspace package has its own `CLAUDE.md` with package-specific architectur
 pnpm workspace (`pnpm-workspace.yaml` → `pkgs/*`). Node `>=20`, package manager pinned to `pnpm@10.15.0`. Workspace scripts at the root delegate via `pnpm --filter`:
 
 ```
-pnpm frontend <script>   # → pkgs/frontend
-pnpm contract <script>   # → pkgs/contract
-pnpm subgraph <script>   # → pkgs/subgraph
-pnpm cli <script>        # → pkgs/cli
-pnpm document <script>   # → pkgs/document
+pnpm frontend <script>     # → pkgs/frontend
+pnpm contract <script>     # → pkgs/contract
+pnpm subgraph <script>     # → pkgs/subgraph
+pnpm document <script>     # → pkgs/document
+pnpm identity <script>     # → pkgs/extensions/identity     (@toban/identity)
+pnpm discord-bot <script>  # → pkgs/extensions/discord-bot  (@toban/discord-bot)
 ```
 
 Always run from the repo root using these aliases rather than `cd`-ing into a package.
@@ -58,7 +58,7 @@ order-dependent and quietly break each other — read it before touching a deplo
 - Contract change → **always** `pnpm contract sync:abis`. A stale `pkgs/frontend/abi/bigbang.ts` changes `Executed`'s topic0 and silently breaks *all* workspace creation.
 - Subgraph must be deployed **before** `pnpm frontend codegen` (gql types come from the live schema).
 - Cloudflare: **identity Worker before discord-bot** (service binding, else Cloudflare error 10143).
-- Sepolia = wrangler *top-level* config; Base = `--env base` **on a different Cloudflare account**.
+- Sepolia = wrangler *top-level* config; Base = `--env base`. **Both live in the same Cloudflare account**, separated by worker name and D1 — not by account.
 - `pnpm --filter <pkg> deploy` collides with pnpm's builtin — use `deploy:sepolia` / `deploy:base`.
 - Turnkey's `policy.json` is **not** auto-applied; new bot-signed selectors need a manual policy update. All Turnkey ops go through the `turnkey` CLI (`./turnkey/apply-policy.sh <base|sepolia>`), not the dashboard.
 

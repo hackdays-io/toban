@@ -20,9 +20,11 @@ pnpm contract coverage           # solidity-coverage
 pnpm contract clean              # hardhat clean
 pnpm contract lint               # solhint --fix
 pnpm contract local              # local hardhat node
+pnpm contract sync:abis          # ★ regenerate pkgs/frontend/abi/ + pkgs/subgraph/abis/ — run after ANY contract change
 pnpm contract deploy:all --network <net>          # CREATE2 deploy of all impls + factories
 pnpm contract upgrade:BigBang --network <net>
 pnpm contract upgrade:FractionToken --network <net>
+pnpm contract upgrade:ThanksTokenImpl --network <net>
 ```
 
 Hardhat tasks (registered in `tasks/index.ts`) are exposed as scripts:
@@ -60,12 +62,14 @@ Etherscan/Basescan keys are split between `ETHERSCAN_API_KEY` (Sepolia/Holesky) 
   - `fractiontoken/HatsFractionTokenModule.sol` — per-role share token (the v3 module form of the old standalone FractionToken).
   - `quest/HatsQuestModule.sol` — quest issuance, integrates with Splits.
 - `splitscreator/` — `SplitsCreatorFactory` deploys per-workspace `SplitsCreator` contracts that compute splits from time-weighted role wear. `ISplitsCreator.sol` defines the interface.
+- `splits/` — 0xSplits interfaces/wrappers the creator builds on.
+- `scheduleddistributor/` — `ScheduledDistributorFactory` + per-workspace `ScheduledDistributor` (recurring distributions). Indexed by the subgraph as both a seed contract and a template.
 - `thankstoken/` — standalone `ThanksToken` + factory (P2P transferable assist credit). Note the README's terminology overlap: `FractionToken` (standalone, legacy), `HatsFractionTokenModule` (current per-role share), and `ThanksToken` are distinct contracts that have all been called "Thanks Token" / "Assist Credit" / "Role Share" at various points.
 - `utils/` — shared libraries.
 
 ## Deployment pipeline (`scripts/deploy/create2.ts`)
 
-`deploy:all` performs a CREATE2-style deterministic deploy of every implementation and factory in one script, then writes addresses to `outputs/contracts.json` via `helpers/deploy/contractsJsonHelper.ts`. Helpers in `helpers/deploy/` (one per contract group: `BigBang`, `Hats`, `Splits`, `ThanksToken`) encapsulate the actual `deployProxy` / `deployContract` calls — extend those rather than inlining new logic in scripts.
+`deploy:all` performs a CREATE2-style deterministic deploy of every implementation and factory in one script, then writes addresses to **`outputs/contracts-<network>.json`** (`contracts-sepolia.json` / `contracts-base.json` / `contracts-holesky.json`) via `helpers/deploy/contractsJsonHelper.ts`. Helpers in `helpers/deploy/` (one per contract group: `BigBang`, `Hats`, `Splits`, `ThanksToken`, `ScheduledDistributor`, `Create2Factory`, `Upgradeable`) encapsulate the actual `deployProxy` / `deployContract` calls — extend those rather than inlining new logic in scripts.
 
 Per-workspace deployment (deploying a `BigBang` *invocation*) goes through `pnpm contract bigbang` — that's the on-chain bootstrap path users hit.
 

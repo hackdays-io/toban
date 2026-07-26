@@ -119,49 +119,38 @@ contract → sync:abis → subgraph → frontend(codegen)
 
   - #### **frontend**
 
-    You must set some ENVs
+    `pkgs/frontend/.env`（Sepolia）を `.env.example` からコピーして値を埋めます。
+    Base で動かす場合は `.env.base`（`pnpm frontend dev:base` が読みます）。
 
-    1. create `pkgs/frontend/.env.local`
+    ```bash
+    cp pkgs/frontend/.env.example pkgs/frontend/.env
+    ```
 
-    2. set below values
+    **コントラクトアドレスは上の [Related Contract Addresses](#related-contract-addresses)
+    ではなく、`pkgs/contract/outputs/contracts-<net>.json` を一次情報として埋めてください。**
+    変数の一覧と役割は [`pkgs/frontend/README.md`](./pkgs/frontend/README.md#環境変数) にあります。
 
-       ```txt
-        VITE_CHAIN_ID=11155111
-        VITE_PRIVY_APP_ID=
-        VITE_BIGBANG_ADDRESS=0x08B4c53b98f46B14E2AD00189C2Aa3b9F3d0c8f3
-        VITE_HATS_ADDRESS=0x3bc1A0Ad72417f2d411118085256fC53CBdDd137
-        VITE_FRACTION_TOKEN_ADDRESS=0xd921517fdF141d97C289bDb9686f51A1375dCc69
-        VITE_SPLITS_CREATOR_ADDRESS=0x6b5d2e27ff74e9adf4d23aebb9efb52867823583
-        VITE_PIMLICO_API_KEY=
+  - #### **smartcontract**
 
-        // You need to get pinata jwt, gateway domain and gateway token by yourself.
-        VITE_PINATA_JWT=
-        VITE_PINATA_GATEWAY=
-        VITE_PINATA_GATEWAY_TOKEN=
+    `pkgs/contract/.env` を `.env.example` からコピーして値を埋めます。
+    **テストネットと本番で鍵が別**である点に注意してください。
 
-        VITE_NAMESTONE_API_KEY=
-        VITE_GOLDSKY_GRAPHQL_ENDPOINT=
-        VITE_ALCHEMY_KEY=
-       ```
+    ```bash
+    cp pkgs/contract/.env.example pkgs/contract/.env
+    ```
 
-  - #### **smartconract**
-
-    You must set some ENVs
-
-    1. create `pkgs/contact/.env`
-
-    2. set below values
-
-       ```txt
-        PRIVATE_KEY=""
-        ETHERSCAN_API_KEY=""
-        ALCHEMY_API_KEY=""
-        GAS_REPORT=
-        COINMARKETCAP_API_KEY=""
-        HATS_ADDRESS=""
-        HATS_MODULE_FACTORY_ADDRESS=""
-        PULL_SPLITS_FACTORY_ADDRESS=""
-       ```
+    ```txt
+     PRIVATE_KEY=""             # Sepolia / Holesky
+     PRODUCTION_PRIVATE_KEY=""  # Base（本番・別鍵）
+     ALCHEMY_API_KEY=""
+     ETHERSCAN_API_KEY=""       # Sepolia / Holesky
+     BASESCAN_API_KEY=""        # Base
+     COINMARKETCAP_API_KEY=""
+     GAS_REPORT=
+     HATS_ADDRESS=""
+     HATS_MODULE_FACTORY_ADDRESS=""
+     PULL_SPLITS_FACTORY_ADDRESS=""
+    ```
 
   - #### **install**
 
@@ -273,7 +262,7 @@ contract → sync:abis → subgraph → frontend(codegen)
   - #### **get deployed contract address**
 
     ```bash
-    pnpm contract getContractAddress --contract Lock --network sepolia
+    pnpm contract getContractAddress --contract BigBang --network sepolia
     ```
 
   - #### **resiger new subdomain to `toban.eth`**
@@ -343,7 +332,7 @@ claude --worktree issue/xxx
 `WorktreeCreate` フックが `scripts/claude-worktree-create.sh` を起動し、以下を実行します:
 
 1. `.claude/worktrees/issue/xxx/` に worktree を作成 (ブランチ名: `worktree-issue/xxx`)
-2. `pkgs/{cli,contract,frontend}/.env` を main repo からコピー
+2. `pkgs/{contract,frontend}/.env` を main repo からコピー
 3. `pnpm install --frozen-lockfile`
 4. `pnpm contract compile` (hardhat compile)
 

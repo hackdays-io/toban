@@ -6,12 +6,18 @@
  * as positional argv. Re-running with the same guild PUTs an idempotent
  * replacement of the command set (overwrites previous registrations).
  *
+ * The command definitions live in `src/commands/payload.ts` so this script
+ * and the frontend-initiated install flow (`src/api/install/callback.ts`)
+ * always register the identical set.
+ *
  * Usage:
  *   read -p "App ID: " DISCORD_APP_ID
  *   read -s -p "Bot Token: " DISCORD_BOT_TOKEN; echo
  *   DISCORD_APP_ID=$DISCORD_APP_ID DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN \
  *     pnpm --filter @toban/discord-bot register-commands <guild-id>
  */
+import { COMMANDS_PAYLOAD } from "../src/commands/payload";
+
 const APP_ID = process.env.DISCORD_APP_ID;
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = process.argv[2];
@@ -28,88 +34,7 @@ if (!GUILD_ID) {
   process.exit(1);
 }
 
-// Type 1 = CHAT_INPUT (slash). Option types: 3=STRING, 4=INTEGER, 6=USER.
-const commands = [
-  {
-    name: "toban-setup",
-    description: "Issue a link to connect your wallet to your Discord account",
-    type: 1,
-  },
-  {
-    name: "toban-link",
-    description: "(admin) Link this server to a Toban workspace",
-    type: 1,
-    options: [
-      {
-        name: "workspace_url",
-        description: "Toban workspace URL (e.g. https://toban.xyz/3002)",
-        type: 3,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "thx",
-    description: "Send THX to another member",
-    type: 1,
-    options: [
-      // Discord requires `required: true` options to come before optional
-      // ones, so amount sits at the top.
-      {
-        name: "amount",
-        description: "Amount of THX (positive integer)",
-        type: 4,
-        required: true,
-        min_value: 1,
-      },
-      {
-        name: "user",
-        description: "Recipient (pick from this server)",
-        type: 6,
-        required: true,
-      },
-      {
-        name: "address",
-        description:
-          "Override: send to this 0x address or ENS name instead of the user's linked wallet.",
-        type: 3,
-        required: false,
-      },
-      {
-        name: "message",
-        description: "Optional thank-you note",
-        type: 3,
-        required: false,
-      },
-    ],
-  },
-  {
-    name: "balance",
-    description: "Show your mintAllowance and mintable budget",
-    type: 1,
-  },
-  {
-    name: "quest",
-    description: "Quest actions",
-    type: 1,
-    options: [
-      {
-        name: "submit",
-        description: "Submit completion of a quest you can work on",
-        type: 1, // SUB_COMMAND
-        options: [
-          {
-            name: "quest",
-            description: "Pick a quest to submit",
-            type: 3, // STRING
-            required: true,
-            autocomplete: true,
-          },
-        ],
-      },
-    ],
-  },
-];
+const commands = COMMANDS_PAYLOAD;
 
 const url = `https://discord.com/api/v10/applications/${APP_ID}/guilds/${GUILD_ID}/commands`;
 

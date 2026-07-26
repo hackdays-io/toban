@@ -2,7 +2,7 @@
   "_comment": [
     "Turnkey policies for the Toban Discord bot signer. This file is the",
     "source of truth: every change is PR-reviewed and then applied with the",
-    "Turnkey CLI as described in `docs/turnkey-setup.md` §5.",
+    "Turnkey CLI as described in `docs/turnkey-setup.md` §6.",
     "",
     "The objects under `policies[].parameters` are LITERAL Turnkey request",
     "parameters for `POST /public/v1/submit/create_policy`",
@@ -91,7 +91,7 @@
         "anything on Sepolia; Turnkey answers 403 'No policies evaluated to",
         "outcome: Allow'. If /thx does work on Sepolia today, the Sepolia",
         "Worker's TURNKEY_API_* secrets belong to the ROOT user, which",
-        "bypasses the policy engine entirely — see docs/turnkey-setup.md §7.",
+        "bypasses the policy engine entirely — see docs/turnkey-setup.md §10.",
         "",
         "TO APPLY: `./turnkey/apply-policy.sh sepolia`, with $TK_ADMIN_KEY",
         "pointing at the ROOT user's API key. Applying it with the bot's own",

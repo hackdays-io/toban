@@ -1,6 +1,6 @@
 # `@toban/discord-bot`
 
-**Toban Discord bot** を動かす Cloudflare Worker です。Discord のスラッシュコマンド (`/toban-link`, `/toban-setup`, `/balance`, `/thx`) に応答し、呼び出し元に代わって ThanksToken の on-chain mint をトリガーします。Worker 自体には Ethereum の秘密鍵は **一切置きません** — `mintFrom` の署名は Turnkey の TEE 内で行われ、Turnkey の policy engine で関数選択子レベルに制限されています。
+**Toban Discord bot** を動かす Cloudflare Worker です。Discord のスラッシュコマンド (`/toban-link`, `/toban-setup`, `/balance`, `/thx`, `/quest submit`) に応答し、呼び出し元に代わって ThanksToken の mint とクエスト完了報告を on-chain で実行します。Worker 自体には Ethereum の秘密鍵は **一切置きません** — `mintFrom` の署名は Turnkey の TEE 内で行われ、Turnkey の policy engine で関数選択子レベルに制限されています。
 
 bot は [`@toban/identity`](../identity/README.md) と対になっています。identity 側は `(Discord snowflake) ↔ wallet` と `(Discord guild) ↔ Toban workspace` の bind を所有していて、この bot はその HTTP API を service binding 経由で叩きます。この README だけで bot を運用できますが、identity 側に依存するパートでは随所にリンクを置いています。
 
@@ -65,7 +65,14 @@ bot がやること:
 
 裏では identity Worker が `platform_links` 行を upsert します — wire 形式とテーブルスキーマは [identity README: サーバーと workspace の紐づけ](../identity/README.md#3-サーバーと-workspace-の紐づけ----toban-link--post-apiplatform-link) を参照。
 
-> **Admin Hat チェックは TODO**。現状は URL を渡せる人を信用しています。本番化版では caller の wallet が該当 workspace の admin Hat 保有者であることを on-chain で検証してから bind を書く予定。OAuth ベースの install パス (`/api/install/callback`) も同じ TODO を持っています。
+> **権限チェック**: `/toban-link` は、呼び出し元の identity-bound wallet が対象 tree の Hat を
+> **1 つ以上被っている**ことを Hats subgraph で検証してから bind します（`wearsAnyHatInTree`）。
+> admin Hat 限定ではなく member レベルのゲートです。
+>
+> 一方 **OAuth ベースの install パス (`/api/install/callback`) は未検証のまま**です。フロント起点の
+> フローでは admin の wallet が分からないため、`installed_by` にゼロアドレスを記録しています
+> （`callback.ts` の TODO）。Discord の「サーバーを管理」権限を持つ人しか OAuth 認可できない、
+> という Discord 側の制約が事実上のゲートになっています。
 
 ### 3. 各メンバーが Discord アカウントと wallet を結びつける
 
@@ -147,17 +154,19 @@ src/
   env.ts                    Env / bindings 型
   interactions/verify.ts    Ed25519 検証 (crypto.subtle、tweetnacl 不使用)
   verifier.ts               ES256 verifier_token issuer (/toban-setup 用)
-  chain.ts                  viem client + ThanksToken ABI fragment +
-                            subgraph resolver (workspace ごとの ThanksToken
-                            address、relatedRoles、ENS)
+  chain.ts                  viem client + ThanksToken / HatsQuestModule の
+                            ABI fragment + subgraph resolver (workspace ごとの
+                            ThanksToken address、relatedRoles、ENS)
   identity.ts               IdentityClient interface + service-binding HTTP
                             client
   signer/turnkey.ts         Turnkey API stamper 認証 + LocalAccount wrapper
   commands/
+    payload.ts              slash command 定義の唯一の正 (登録経路 2 つが共有)
     toban-setup.ts          verifier_token 発行 + DM リンク
     toban-link.ts           guild → tree_id を直接 bind
     balance.ts              mintAllowance + mintable budget (THX 単位) 表示
     thx.ts                  /thx の end-to-end (resolve, check, sign, send)
+    quest-submit.ts         /quest submit + quest の autocomplete
     responses.ts            Discord response / followup ヘルパー
   api/install/start.ts      install-state JWT を署名し Discord OAuth へ
                             リダイレクト (frontend 起点フローの入口)
@@ -169,7 +178,7 @@ docs/
   turnkey-setup.md          CLI での signer / stamper / policy provisioning
   key-rotation.md           scheduled + emergency rotation runbook
 scripts/
-  register-commands.ts      Discord slash command を 1 回登録する CLI
+  register-commands.ts      commands/payload.ts を guild に手動登録する CLI
 test/                       Vitest unit tests (network なし、chain なし)
 ```
 
@@ -263,39 +272,47 @@ turnkey generate api-key --organization "$TK_ORG" --key-name toban-discord-bot-b
 
 ### Step 5 — secret を投入する
 
-Cloudflare に。複数行 PEM は dashboard UI が一番安全 (Workers & Pages → toban-discord-bot → Settings → Variables and Secrets → Add → encrypted)。単一行は pipe でも:
+**投入する secret の一覧（12 本）と、それぞれの値の出どころは
+[`DEPLOYMENT.md` §6-2](../../../DEPLOYMENT.md#6-2-secret-一覧) が正**です。ここで二重に列挙すると
+片方が古くなるので載せません。以下は投入方法だけ。
+
+`--env` 無しが Sepolia、`--env base` が Base です。改行が混ざると壊れるので、プロンプトに
+貼らず `printf` かファイルリダイレクトで流し込みます。
 
 ```bash
 cd pkgs/extensions/discord-bot
 
-# Discord
-echo -n "<APP_ID>"           | pnpm exec wrangler secret put DISCORD_APP_ID
-echo -n "<PUBLIC_KEY hex>"   | pnpm exec wrangler secret put DISCORD_PUBLIC_KEY
-echo -n "<BOT_TOKEN>"        | pnpm exec wrangler secret put DISCORD_BOT_TOKEN
-echo -n "<CLIENT_SECRET>"    | pnpm exec wrangler secret put DISCORD_CLIENT_SECRET
+# 1 行の値（Discord 系、Turnkey stamper、共有シークレット、RPC_URL など）
+printf '%s' "<VALUE>" | pnpm exec wrangler secret put DISCORD_BOT_TOKEN
 
-# Turnkey
-echo -n "<API public hex>"   | pnpm exec wrangler secret put TURNKEY_API_PUBLIC_KEY
-echo -n "<API private hex>"  | pnpm exec wrangler secret put TURNKEY_API_PRIVATE_KEY
-# Verifier (PEM 形式の場合は dashboard UI で貼り付け):
-#   TURNKEY_API_PRIVATE_KEY も Turnkey が PEM PKCS8 を返してくる場合はそれを受け付けます。
-pnpm exec wrangler secret put VERIFIER_PRIVATE_KEY \
-  < ../identity/.dev-keys/verifier-private.pem   # 本番なら production PEM
+# Turnkey stamper は .private の `:p256` を落として投入する
+K=~/.config/turnkey/keys/<stamper-key-name>
+printf '%s' "$(cat $K.public)"          | pnpm exec wrangler secret put TURNKEY_API_PUBLIC_KEY
+printf '%s' "$(cut -d: -f1 $K.private)" | pnpm exec wrangler secret put TURNKEY_API_PRIVATE_KEY
 
-# Install state
+# 複数行の PEM（verifier 秘密鍵）
+pnpm exec wrangler secret put VERIFIER_PRIVATE_KEY < verifier.key.pem
+
+# 自分で生成する値
 openssl rand -hex 32 | pnpm exec wrangler secret put INSTALL_STATE_SECRET
 ```
+
+`LOOKUP_READ_SECRET` と `PLATFORM_LINK_WRITE_SECRET` は
+**identity Worker と同じ値**にしてください（ずれると `/balance` などが 401 になります）。
+
+投入済みの名前は `pnpm exec wrangler secret list [--env base]` で確認できます（値は見えません）。
 
 ### Step 6 — `wrangler.toml` の var を埋める
 
 `pkgs/extensions/discord-bot/wrangler.toml` を開いて:
 
+ここに入るのは**公開してよい値だけ**です。鍵を含む値は Step 5 の secret 側にあります。
+
 ```toml
 [vars]
 GOLDSKY_GRAPHQL_ENDPOINT   = "https://.../toban-<chain>/<version>/gn"
-HATS_GRAPHQL_ENDPOINT      = "https://.../hats-v1-<chain>/<version>/gn"
+HATS_GRAPHQL_ENDPOINT      = "https://.../hats-v1-sepolia/<version>/gn"  # Base では secret
 TOBAN_FRONTEND_URL         = "https://toban.xyz"     # dev は http://localhost:5173
-RPC_URL                    = "https://.../<chain>/<alchemy-key>"
 CHAIN_ID                   = "8453"                  # Sepolia なら 11155111
 MAINNET_RPC_URL            = "https://eth-mainnet.g.alchemy.com/v2/<key>"
 TURNKEY_API_BASE_URL       = "https://api.turnkey.com"

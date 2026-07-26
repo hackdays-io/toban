@@ -1,41 +1,37 @@
-# Website
+# `document` — Toban ドキュメントサイト
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+[Docusaurus](https://docusaurus.io/) で作られた利用者向けドキュメントサイトです。
+コンテンツは `docs/` 配下の Markdown / MDX。公開先は https://hackdays-io.github.io/toban/ 。
 
-### Installation
+構成と執筆規約は [`CLAUDE.md`](./CLAUDE.md) を参照。
 
-```
-$ yarn
-```
+## コマンド
 
-### Local Development
+リポジトリルートから `pnpm document <script>` で叩きます（`cd` しない）。
 
-```
-$ yarn start
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-### Build
-
-```
-$ yarn build
+```bash
+pnpm document start       # ローカル開発サーバー（ホットリロード）
+pnpm document build       # 静的サイトを build/ に生成
+pnpm document serve       # build/ の内容を配信して確認
+pnpm document typecheck   # tsc
+pnpm document clear       # Docusaurus のキャッシュ削除（MDX が固まったとき）
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+## デプロイ
 
-### Deployment
+**手動デプロイは不要です。** `main` への push で GitHub Actions
+（[`deploy-document.yml`](../../.github/workflows/deploy-document.yml)）が
+`pnpm document build` を実行し、成果物を GitHub Pages に公開します。
 
-Using SSH:
+`package.json` には Docusaurus 標準の `deploy` スクリプト（`gh-pages` ブランチへ直接 push する
+`USE_SSH=true yarn deploy` 相当）が残っていますが、**この運用では使いません**。手元から叩くと
+Actions が管理しているデプロイと競合します。
 
-```
-$ USE_SSH=true yarn deploy
-```
+## コンテンツを書くときの注意
 
-Not using SSH:
-
-```
-$ GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+- コントラクトアドレスやネットワーク情報を載せるページ（`docs/supportedNetworks.md` など）は、
+  デプロイのたびに古くなります。**一次情報は `pkgs/contract/outputs/contracts-<net>.json`** です。
+  ここは公開サイトなので、古い値を残すと外部の利用者が間違ったアドレスを使います。
+- 数式は `$...$`（インライン）/ `$$...$$`（ブロック）。`remark-math` / `rehype-katex` が設定済みです。
+- Biome は `**/docs` を除外しているので、Markdown の整形は手動です。
+- パッケージマネージャは **pnpm** です（ルートで `pnpm@10.15.0` に固定）。`yarn` は使いません。

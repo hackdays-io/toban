@@ -32,7 +32,6 @@ fi
 # replaces default git behavior, so handle it explicitly.
 log "Copying env files..."
 ENV_FILES=(
-  "pkgs/cli/.env"
   "pkgs/contract/.env"
   "pkgs/frontend/.env"
   "pkgs/frontend/.env.base"

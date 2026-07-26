@@ -64,10 +64,18 @@ Discord 連携の 3 つは**ネットワークごとに値が違います**。�
 
 ## ホスティング
 
-**このリポジトリにデプロイ設定は入っていません**（Vercel / wrangler などの設定ファイルなし）。
-本番 https://toban.xyz の配信はリポジトリ外で管理されています。CI
-（`.github/workflows/build-frontend.yml`）は main への push と PR で `pnpm frontend build` を
-回すだけです。
+デプロイ先は **Vercel** です。`react-router.config.ts` が `@vercel/react-router` の
+`vercelPreset()` を presets に登録しており、これがビルド成果物を Vercel の形に整えます。
+
+```ts
+// pkgs/frontend/react-router.config.ts
+export default { ssr: true, presets: [vercelPreset()] } satisfies Config;
+```
+
+**リポジトリに入っているのはこの preset だけ**です。プロジェクトの紐付け、本番の環境変数、
+ドメイン（https://toban.xyz）は Vercel 側で管理されており、`vercel.json` もリポジトリにはありません。
+GitHub Actions（`.github/workflows/build-frontend.yml`）は main への push と PR で
+`pnpm frontend build` を回してビルドが壊れていないか見るだけで、デプロイはしません。
 
 ビルド成果物は `build/client`（静的アセット）と `build/server`（SSR エントリ）です。
 

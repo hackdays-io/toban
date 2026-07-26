@@ -26,80 +26,9 @@
  */
 import { importPKCS8, jwtVerify } from "jose";
 import type { Address } from "viem";
+import { COMMANDS_PAYLOAD } from "../../commands/payload";
 import type { Env } from "../../env";
 import { type IdentityClient, createIdentityClient } from "../../identity";
-
-const COMMANDS_PAYLOAD = [
-  {
-    name: "toban-setup",
-    description: "Link your Discord account to a Toban wallet",
-    type: 1,
-  },
-  {
-    name: "toban-link",
-    description: "Link this Discord server to a Toban workspace (admin only)",
-    type: 1,
-    options: [
-      {
-        name: "workspace_url",
-        description: "Toban workspace URL",
-        type: 3, // STRING
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "balance",
-    description: "Show your allowance for the Toban bot",
-    type: 1,
-  },
-  {
-    name: "thx",
-    description: "Send Thanks tokens to another member",
-    type: 1,
-    options: [
-      {
-        name: "user",
-        description: "Recipient",
-        type: 6, // USER
-        required: true,
-      },
-      {
-        name: "amount",
-        description: "Amount of THX to send",
-        type: 4, // INTEGER
-        required: true,
-      },
-      {
-        name: "message",
-        description: "Optional message",
-        type: 3,
-        required: false,
-      },
-    ],
-  },
-  {
-    name: "quest",
-    description: "Quest actions",
-    type: 1, // CHAT_INPUT
-    options: [
-      {
-        name: "submit",
-        description: "Submit completion of a quest you can work on",
-        type: 1, // SUB_COMMAND
-        options: [
-          {
-            name: "quest",
-            description: "Pick a quest to submit",
-            type: 3, // STRING
-            required: true,
-            autocomplete: true,
-          },
-        ],
-      },
-    ],
-  },
-];
 
 const VALID_TREE_ID = /^[0-9]+$/;
 

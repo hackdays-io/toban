@@ -4,8 +4,9 @@
 #
 #   ./turnkey/apply-policy.sh <base|sepolia> [--dry-run]
 #
-# Idempotent: looks the policy up by `policyName` and issues update_policy if it
-# already exists, create_policy if it does not. It never deletes anything.
+# Idempotent: resolves the target by the `policyId` pinned in policy.json (falling
+# back to a `policyName` match when that is null), then issues update_policy if it
+# already exists and create_policy if it does not. It never deletes anything.
 #
 # Why a script rather than a documented curl: the request envelope has to carry a
 # fresh `timestampMs`, create and update spell the same fields differently

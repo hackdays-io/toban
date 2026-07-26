@@ -1,8 +1,8 @@
 # `@toban/subgraph`
 
 Toban のインデクサー（The Graph / AssemblyScript マッピング、**Goldsky** でホスティング）。
-`BigBang.Executed` を起点に、ワークスペースごとのモジュール（Hats モジュール / ThanksToken /
-SplitsCreator）を動的テンプレートとして追跡します。
+`BigBang.Executed` を起点に、ワークスペースごとのクローン（HatsFractionTokenModule /
+ThanksToken / ScheduledDistributor / HatsQuestModule）を動的テンプレートとして追跡します。
 
 - **デプロイ手順の正は [`DEPLOYMENT.md`](../../DEPLOYMENT.md)（リポジトリルート）です。**
   subgraph は **contract → sync:abis の後、frontend codegen の前**という順序に挟まれています。

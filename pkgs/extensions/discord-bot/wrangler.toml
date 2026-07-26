@@ -119,7 +119,10 @@ head_sampling_rate = 1
 #   DISCORD_APP_ID                - Discord application id
 #   DISCORD_CLIENT_SECRET         - OAuth bot-install callback
 #   TURNKEY_API_PUBLIC_KEY        - Turnkey API stamper public key (P-256, hex)
-#   TURNKEY_API_PRIVATE_KEY       - Turnkey API stamper private key (PEM PKCS8)
+#   TURNKEY_API_PRIVATE_KEY       - Turnkey API stamper private key. `turnkey
+#                                   generate api-key` writes `<64hex>:p256`;
+#                                   strip the `:p256` suffix. (PKCS8 PEM also
+#                                   works, but the CLI never emits it.)
 #   VERIFIER_PRIVATE_KEY          - ES256 (P-256) private key for verifier_token
 #                                   JWT signing (PEM PKCS8). Identity worker
 #                                   holds the matching public key.

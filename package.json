@@ -14,7 +14,6 @@
     "biome:check": "npx biome check --write .",
     "frontend": "pnpm --filter frontend",
     "contract": "pnpm --filter contract",
-    "cli": "pnpm --filter cli",
     "document": "pnpm --filter document",
     "subgraph": "pnpm --filter subgraph",
     "identity": "pnpm --filter @toban/identity",

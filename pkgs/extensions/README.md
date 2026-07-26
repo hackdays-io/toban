@@ -53,6 +53,12 @@ bot は `IDENTITY` service binding で identity Worker を**名前で**参照し
   `vars` / `d1_databases` / `services` を全部書き直す必要があります。実際に降りてくる値は
   `wrangler deploy --dry-run --env base` の `Vars:` 出力で確認できます。
 - **secret は投入即反映（再デプロイ不要）**。`vars` とコード変更は再デプロイが必要です。
+  裏を返すと **`vars` は deploy 前に書いておく必要があり、secret は deploy 後で構いません**。
+- **secret の投入は deploy の後に**。まだ存在しない Worker に `wrangler secret put` すると、
+  wrangler は「その名前の Worker を作って secret を付けるか？」と確認したうえで、中身が
+  `export default { fetch() {} }` だけ・**bindings が全て空のプレースホルダ Worker** を作ります。
+  この確認は**非対話環境では自動的に「はい」**に倒れる実装（`{ defaultValue: true, fallbackValue: true }`）
+  なので、worker 名を打ち間違えると気づかないままゴミの Worker が増えます。
 
 ### ⚠️ 無視してよい警告（直すと壊れる）
 

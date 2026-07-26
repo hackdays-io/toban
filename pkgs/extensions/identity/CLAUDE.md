@@ -6,7 +6,7 @@
 
 This package owns **only the binding declaration** ("this Web2 `(provider, account_id)` belongs to this wallet"). It does not own:
 
-- on-chain delegation / mint allowance (those live in the contract layer — `MintAllowanceModule`, issue #506)
+- on-chain delegation / mint allowance (that lives in the contract layer — `ThanksToken.approveMint` / `mintAllowance`; there is no separate allowance module)
 - discovery of which guild belongs to which workspace at runtime (consumer Workers do that lookup via `platform_links`)
 - frontend `/connect` UX (frontend issue, out of scope here)
 
@@ -22,11 +22,13 @@ The proof model is:
 
 ## Runtime
 
-Cloudflare Workers (no Node-only APIs). All persistence is via a D1 binding passed in from the consumer Worker. The library exposes pure `Request → Promise<Response>` handlers; mounting and routing is the consumer's responsibility.
+Cloudflare Workers (no Node-only APIs), and this package **is a deployed Worker of its own** — `src/worker.ts` is the `main` in `wrangler.toml`, and it owns the routing. (It started as a library of mountable handlers; `handlers/*` still export pure `Request → Promise<Response>` functions, and `src/index.ts` re-exports them, but the deployed entry point is `worker.ts`.) Persistence is the `DB` D1 binding.
+
+Routes served by `worker.ts`: `POST /api/connect`, `GET /api/lookup`, `POST /api/platform-link`, `POST /api/install-state/claim-jti`, `GET /health`.
 
 ## Stack
 
-- **viem** — `recoverTypedDataAddress`, `keccak256`, `toBytes`. Worker-safe.
+- **viem** — `publicClient.verifyTypedData` (EOA + EIP-1271 + ERC-6492), `recoverTypedDataAddress`, `keccak256`, `toBytes`. Worker-safe.
 - **jose** — ES256 (P-256 ECDSA) JWT verify via `importSPKI` + `jwtVerify`. Worker-safe.
 - **drizzle-orm/d1** — typed queries against D1. Schema lives in `src/schema.ts`; migrations in `migrations/`.
 - **vitest** — unit tests run against in-memory `better-sqlite3` using `drizzle-orm/better-sqlite3` (the dialect matches D1, so test queries are representative).
@@ -35,7 +37,10 @@ Cloudflare Workers (no Node-only APIs). All persistence is via a D1 binding pass
 
 ```
 src/
-  eip712/identity-binding.ts   # TypedData types + domain builder + verifierTokenHash helper
+  worker.ts                     # Workers entry: CORS + routing to the handlers below
+  eip712/
+    identity-binding.ts         # TypedData types + domain builder
+    hash-verifier-token.ts      # verifierTokenHash helper
   providers/
     types.ts                    # ProviderDefinition / Env contract
     discord.ts                  # ES256 JWT verify against DISCORD_BOT_VERIFIER_PUBLIC_KEY
@@ -43,12 +48,16 @@ src/
   handlers/
     connect.ts                  # POST /api/connect — full verification flow
     lookup.ts                   # GET  /api/lookup?provider=&account_id=
+    platform-link.ts            # POST /api/platform-link — guild -> treeId
+    install-state.ts            # POST /api/install-state/claim-jti — single-use OAuth state
   queries.ts                    # drizzle DB ops (getIdentity, upsertIdentity, ...)
-  schema.ts                     # Drizzle table definitions (identities, platformLinks, usedBindingNonces)
-  verify.ts                     # recoverIdentityBindingSigner + verifyJwtES256
+  schema.ts                     # Drizzle tables: identities, platformLinks, usedBindingNonces, usedInstallStateJtis
+  verify.ts                     # verifyIdentityBindingViaRpc + recoverIdentityBindingSigner + verifyJwtES256
   index.ts                      # named re-exports
 migrations/
   0001_init.sql                  # D1-compatible SQL matching schema.ts byte-for-byte
+scripts/
+  dev-token.ts                   # mints a dev verifier_token for local testing
 ```
 
 ## EIP-712 `IdentityBinding` (boundary contract — do not change without coordinating)
@@ -81,7 +90,7 @@ Every connect request must satisfy **all** of the following — any single failu
 2. `typedData.message.provider === provider` (request-level).
 3. `typedData.message.accountId === claims.accountId` (JWT-derived).
 4. `typedData.message.verifierTokenHash === keccak256(utf8Bytes(verifier_token))`.
-5. `recoverTypedDataAddress(typedData, signature)` (lowercased) === `typedData.message.wallet` (lowercased).
+5. `verifyIdentityBindingViaRpc(typedData, signature, wallet, RPC_URL)` returns true. This goes through viem's `publicClient.verifyTypedData`, so it accepts **EOA signatures, deployed smart wallets (EIP-1271 `isValidSignature`), and undeployed ones (ERC-6492)** uniformly — Privy smart wallets need this. It requires `RPC_URL` on the chain named in `typedData.domain.chainId`. (`recoverIdentityBindingSigner` still exists for EOA-only recovery, but `/api/connect` does not use it.)
 6. `typedData.message.expires > now`.
 7. `typedData.message.nonce` is not already in `used_binding_nonces`.
 
@@ -114,7 +123,9 @@ pnpm --filter @toban/identity db:migrate:remote:base  # first deploy to an env o
   deploying the bot against a missing identity worker fails with Cloudflare error 10143.
 - **Sepolia is the wrangler top-level config** (worker `toban-identity`); only Base is a named env.
   There is no `[env.sepolia]`.
-- **Base is a different Cloudflare account** than Sepolia — `wrangler whoami` before deploying.
+- **Both envs live in the same Cloudflare account**, separated by worker name (`toban-identity` /
+  `toban-identity-base`) and by D1 — not by account. The D1s are separate because `platform_links`
+  maps guild → treeId, and a treeId only exists on one chain.
 - No bare `deploy` script: `pnpm --filter <pkg> deploy` hits pnpm's builtin and errors with
   `ERR_PNPM_INVALID_DEPLOY_TARGET`.
 - `LOOKUP_READ_SECRET` / `PLATFORM_LINK_WRITE_SECRET` **must be identical** to the discord-bot

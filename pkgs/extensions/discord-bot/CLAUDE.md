@@ -8,15 +8,22 @@ Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
 - **No Ethereum private key lives in this Worker.** All on-chain signing
   goes through Turnkey (TEE, AWS Nitro Enclave). The Worker only holds
   Turnkey API stamper credentials (a P-256 key pair) which the Turnkey
-  policy engine constrains to two operations: ThanksToken `mintFrom`
-  (`/thx`) and HatsQuestModule `submitCompletion` (`/quest submit`) — each
-  gated to its own contract registry + identity-bound actor argument.
+  policy engine constrains to two function selectors: ThanksToken `mintFrom`
+  (`/thx`) and HatsQuestModule `submitCompletion` (`/quest submit`), with
+  `value == 0` on one pinned `chain_id`. Note what is **not** gated:
+  `eth.tx.to` is deliberately unconstrained (clones are per-workspace, so
+  the allow-list would need editing on every workspace creation), and the
+  identity-bound actor argument is not re-checked inside the TEE. See
+  `turnkey/policy.json` — `_decisions` for the reasoning, `_gaps` for what
+  that leaves open.
 - **D1 is shared with `@toban/identity`.** This package never writes
-  directly to `identity_bindings` / `platform_links`. All identity
-  reads + writes go through the identity Worker's HTTP API
-  (`IDENTITY_WORKER_URL` env), wrapped by `src/identity.ts`. Tests stub
-  the `IdentityClient` interface — do not mock `fetch` for identity
-  operations.
+  directly to `identities` / `platform_links`. All identity reads + writes
+  go through the identity Worker over the `IDENTITY` **service binding**
+  (`env.IDENTITY`), wrapped by `src/identity.ts` — same-account Workers
+  cannot reach each other over workers.dev (Cloudflare error 1042), so the
+  binding is the only route. `IDENTITY_WORKER_URL` is documentation-only.
+  Tests stub the `IdentityClient` interface — do not mock `fetch` for
+  identity operations.
 - **`src/chain.ts` is the single source of truth for ABI.** It carries
   hand-maintained fragments (`THANKS_TOKEN_ABI`, `HATS_QUEST_MODULE_ABI`)
   rather than importing from `pkgs/contract` — only the slice the bot

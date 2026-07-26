@@ -20,10 +20,11 @@
  * is error-prone enough to pull in the dep we already have.
  *
  * Result: a `viem`-compatible {@link LocalAccount}. `signTransaction` is
- * the only path used in production (we only ever broadcast `mintFrom`
- * txs). `signMessage` and `signTypedData` proxy to the same Turnkey
- * endpoint so the wrapper is complete; they may be useful for future
- * `EIP-712` flows.
+ * the only path used in production (the bot broadcasts exactly two calls:
+ * ThanksToken `mintFrom` and HatsQuestModule `submitCompletion`).
+ * `signMessage` and `signTypedData` proxy to the same Turnkey endpoint so
+ * the wrapper is complete, but they use `sign_raw_payload`, which the
+ * policy denies — see `turnkey/policy.json`.
  */
 import { importPKCS8 } from "jose";
 import {
@@ -245,9 +246,10 @@ async function signRawPayload(
 /**
  * POST to Turnkey's `sign_transaction` endpoint. Turnkey parses the
  * Ethereum transaction *inside the TEE*, so the `eth.tx.*` policy
- * (mintFrom-only: `to`, selector, `value`, `chain_id`) is enforced before
- * signing — unlike `sign_raw_payload`, which only sees an opaque hash and
- * cannot be policy-gated by transaction contents.
+ * (selector, `value`, `chain_id` — note `to` is deliberately unconstrained,
+ * see `turnkey/policy.json`) is enforced before signing — unlike
+ * `sign_raw_payload`, which only sees an opaque hash and cannot be
+ * policy-gated by transaction contents.
  *
  * Turnkey's wire convention is hex *without* the `0x` prefix for both the
  * unsigned input and the signed output; we strip/re-add it for viem, which
@@ -380,7 +382,7 @@ export function createTurnkeySigner(
     ): Promise<Hex> {
       const serializer = args?.serializer ?? serializeTransaction;
       // Hand the *unsigned* serialized tx to Turnkey's sign_transaction so
-      // the TEE parses it and the eth.tx.* policy (mintFrom-only) applies.
+      // the TEE parses it and the eth.tx.* selector policy applies.
       // Turnkey returns the fully serialized *signed* tx — exactly what viem
       // broadcasts via eth_sendRawTransaction.
       const unsigned = serializer(transaction);

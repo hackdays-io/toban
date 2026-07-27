@@ -74,7 +74,7 @@ export async function handleTobanLink(
 ): Promise<APIInteractionResponse> {
   const guildId = interaction.guild_id;
   if (!guildId) {
-    return ephemeral("This command must be run inside a server.");
+    return ephemeral("このコマンドはサーバー内で実行してください。");
   }
 
   const opts = interaction.data?.options ?? [];
@@ -88,27 +88,27 @@ export async function handleTobanLink(
   const frontendHost = normalizeHost(env.TOBAN_FRONTEND_URL);
   if (!frontendHost) {
     return ephemeral(
-      "The bot is misconfigured: TOBAN_FRONTEND_URL is not a valid URL. Please contact an operator.",
+      "Bot の設定に問題があります: TOBAN_FRONTEND_URL が有効な URL ではありません。運営にお問い合わせください。",
     );
   }
   const allowedHosts = new Set<string>([frontendHost]);
   const treeId = extractTreeId(workspaceUrl, allowedHosts);
   if (!treeId) {
     return ephemeral(
-      `Workspace URL must start with ${env.TOBAN_FRONTEND_URL} and include a tree id, e.g. ${env.TOBAN_FRONTEND_URL.replace(/\/$/, "")}/<treeId>`,
+      `ワークスペース URL は ${env.TOBAN_FRONTEND_URL} で始まり、tree ID を含む必要があります（例: ${env.TOBAN_FRONTEND_URL.replace(/\/$/, "")}/<treeId>）。`,
     );
   }
 
   const callerSnowflake = interaction.member?.user.id ?? interaction.user?.id;
   if (!callerSnowflake) {
-    return ephemeral("Could not read your Discord user id.");
+    return ephemeral("Discord のユーザー ID を取得できませんでした。");
   }
 
   const identity = deps.identity ?? createIdentityClient(env);
   const caller = await identity.getIdentity("discord", callerSnowflake);
   if (!caller) {
     return ephemeral(
-      "Run `/toban-setup` first so we know which wallet is requesting the link.",
+      "先に `/toban-setup` を実行してください。どのウォレットからの連携リクエストかを確認する必要があります。",
     );
   }
 
@@ -120,12 +120,12 @@ export async function handleTobanLink(
     isMember = await wearsHat(caller.wallet as Address, treeId);
   } catch (err) {
     return ephemeral(
-      `Could not verify workspace membership right now (${(err as Error).message}). Try again in a moment.`,
+      `ワークスペースのメンバーシップを確認できませんでした（${(err as Error).message}）。少し時間をおいて再度お試しください。`,
     );
   }
   if (!isMember) {
     return ephemeral(
-      "Your linked wallet doesn't wear any hat in this workspace. Only members of the workspace can link a Discord server to it.",
+      "連携済みのウォレットはこのワークスペースのロールを持っていません。Discord サーバーを連携できるのはワークスペースのメンバーのみです。",
     );
   }
 
@@ -137,6 +137,6 @@ export async function handleTobanLink(
   });
 
   return ephemeral(
-    `✅ Linked this server to Toban workspace \`${treeId}\`. Members can now run \`/toban-setup\` and \`/thx\`.`,
+    `✅ このサーバーを Toban ワークスペース \`${treeId}\` に連携しました。メンバーは \`/toban-setup\` と \`/thx\` を実行できます。`,
   );
 }

@@ -22,7 +22,7 @@ export async function handleTobanSetup(
   const snowflake = interaction.member?.user.id ?? interaction.user?.id;
   if (!snowflake) {
     return ephemeral(
-      "Could not read your Discord user id — please try again from a server channel.",
+      "Discord のユーザー ID を取得できませんでした。サーバーのチャンネルから再度お試しください。",
     );
   }
   const token = await issueVerifierToken(env.VERIFIER_PRIVATE_KEY, snowflake);
@@ -52,10 +52,10 @@ export async function handleTobanSetup(
   const url = `${base}/connect/discord${treeQuery}#token=${encodeURIComponent(token)}`;
   return ephemeral(
     [
-      "Open this link in your browser within 15 minutes to connect your wallet:",
+      "15 分以内にこのリンクをブラウザで開き、ウォレットを接続してください:",
       url,
       "",
-      "The link is for you only. Do not share it.",
+      "このリンクはあなた専用です。他の人と共有しないでください。",
     ].join("\n"),
   );
 }

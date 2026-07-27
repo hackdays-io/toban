@@ -61,7 +61,9 @@ export async function handleInstallStart(
   const url = new URL(request.url);
   const treeId = url.searchParams.get("treeId");
   if (!treeId || !VALID_TREE_ID.test(treeId)) {
-    return new Response("missing or invalid treeId", { status: 400 });
+    return new Response("treeId が指定されていないか、形式が正しくありません", {
+      status: 400,
+    });
   }
 
   const jti = crypto.randomUUID();

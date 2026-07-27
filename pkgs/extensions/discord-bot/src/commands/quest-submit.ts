@@ -12,7 +12,8 @@
  *     input. Must answer within Discord's 3s budget (no defer possible).
  *   - Command (interaction type 2): {@link executeQuestSubmit} runs after the
  *     caller deferred (ephemeral), resolves the actor + membership + quest
- *     module, signs via Turnkey, and reports the result as a followup.
+ *     module (plus the quest title, so the confirmation names the quest the
+ *     way the picker did), signs via Turnkey, and reports it as a followup.
  */
 import {
   type APIApplicationCommandAutocompleteInteraction,
@@ -64,11 +65,16 @@ function getSubmitOptions(
   return options ?? [];
 }
 
-/** Display label for a quest choice, clamped to Discord's 100-char limit. */
+/**
+ * Display label for a quest — the title alone, so both the autocomplete
+ * choice and the completion followup name the quest the way the workspace
+ * does. Falls back to the id only when the title isn't indexed yet.
+ * Clamped to Discord's 100-char autocomplete limit.
+ */
 export function questChoiceLabel(quest: SubmittableQuest): string {
   const base = quest.title?.trim()
-    ? `${quest.title.trim()} (#${quest.questId})`
-    : `Quest #${quest.questId}`;
+    ? quest.title.trim()
+    : `クエスト #${quest.questId}`;
   // Truncate by Unicode code point, not UTF-16 code unit: `String.slice` can
   // cut an emoji/astral char mid-surrogate, and the resulting lone surrogate
   // makes Discord reject the ENTIRE autocomplete response (400), so the user
@@ -195,12 +201,12 @@ export function parseQuestSubmitArgs(
       ? (opt.value as string | number | undefined)
       : undefined;
   if (raw === undefined || `${raw}`.length === 0) {
-    return { error: "`quest` is required." };
+    return { error: "`quest` は必須です。" };
   }
   try {
     return { questId: BigInt(raw) };
   } catch {
-    return { error: `Not a valid quest id: ${raw}` };
+    return { error: `クエスト ID の形式が正しくありません: ${raw}` };
   }
 }
 
@@ -212,15 +218,15 @@ export function parseQuestSubmitArgs(
  */
 export function describeSubmitRevert(short: string): string {
   if (short.includes("NotWorkspaceMember")) {
-    return "Your workspace membership couldn't be verified on-chain — your role may have changed since the quest list loaded. Ask an admin to check your role, then try again.";
+    return "ワークスペースのメンバーシップをオンチェーンで確認できませんでした。クエスト一覧を表示してからロールが変更された可能性があります。管理者にロールを確認してもらってから、再度お試しください。";
   }
   if (short.includes("InvalidStatus")) {
-    return "That quest is no longer open for submission (someone may have already submitted it, or it was cancelled). Pick another quest and try again.";
+    return "このクエストは完了報告できません（他の人が報告済み、またはキャンセルされた可能性があります）。別のクエストを選んで再度お試しください。";
   }
   if (short.includes("CannotSubmitOwnQuest")) {
-    return "You can't submit a quest you created.";
+    return "自分が作成したクエストには完了報告できません。";
   }
-  return `submitCompletion failed: ${short}`;
+  return `submitCompletion に失敗しました: ${short}`;
 }
 
 /**
@@ -242,7 +248,7 @@ export async function executeQuestSubmit(
       await followup(
         env.DISCORD_APP_ID,
         interaction.token,
-        "Something went wrong while processing /quest submit. Please try again in a moment.",
+        "`/quest submit` の処理中にエラーが発生しました。少し時間をおいて再度お試しください。",
       );
     } catch (followupErr) {
       console.error("quest-submit followup-after-error failed:", followupErr);
@@ -268,7 +274,7 @@ async function executeQuestSubmitInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "This command must be run inside a server.",
+      "このコマンドはサーバー内で実行してください。",
     );
     return;
   }
@@ -282,7 +288,7 @@ async function executeQuestSubmitInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "You haven't linked a wallet. Run `/toban-setup` first.",
+      "ウォレットが連携されていません。先に `/toban-setup` を実行してください。",
     );
     return;
   }
@@ -290,7 +296,7 @@ async function executeQuestSubmitInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "This server isn't linked to a Toban workspace yet. Ask an admin to run `/toban-link` first.",
+      "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
     );
     return;
   }
@@ -303,6 +309,9 @@ async function executeQuestSubmitInner(
   const resolveModule =
     deps.resolveQuestModule ??
     ((treeId: string) => resolveQuestModuleAddress(env, treeId));
+  const resolveQuests =
+    deps.resolveSubmittableQuests ??
+    ((treeId: string, a: Address) => resolveSubmittableQuests(env, treeId, a));
 
   const [membershipHatId, questModule] = await Promise.all([
     resolveMembership(actorWallet, platformLink.treeId),
@@ -312,7 +321,7 @@ async function executeQuestSubmitInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "You aren't a member of this workspace, so you can't submit a quest here.",
+      "このワークスペースのメンバーではないため、クエストの完了報告はできません。",
     );
     return;
   }
@@ -320,10 +329,22 @@ async function executeQuestSubmitInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `Could not resolve the workspace's quest module (tree ${platformLink.treeId}). Indexing may still be in progress.`,
+      `ワークスペースのクエストモジュールを取得できませんでした（tree ${platformLink.treeId}）。インデックス処理が完了していない可能性があります。`,
     );
     return;
   }
+
+  // The title only names the quest in the confirmation, so start the lookup
+  // here — after the gates that can reject, so failure paths cost no request —
+  // and let it overlap with the transaction. `.catch` is attached before any
+  // await, so it can never surface as an unhandled rejection, and a subgraph
+  // hiccup degrades to the id-only label instead of failing the submission.
+  const questsPromise = resolveQuests(platformLink.treeId, actorWallet).catch(
+    (err) => {
+      console.error("quest title lookup failed:", err);
+      return [] as SubmittableQuest[];
+    },
+  );
 
   const signer = deps.signer ?? createTurnkeySigner(env);
   const wallet = createWalletClient({
@@ -352,12 +373,19 @@ async function executeQuestSubmitInner(
     return;
   }
 
+  const quests = await questsPromise;
+  const questLabel = questChoiceLabel(
+    quests.find((q) => q.questId === parsed.questId) ?? {
+      questId: parsed.questId,
+      title: null,
+    },
+  );
   await followup(
     env.DISCORD_APP_ID,
     interaction.token,
     [
-      `Submitted completion for **Quest #${parsed.questId}**.`,
-      `Submitter: \`${actorWallet}\``,
+      `**${questLabel}** の完了を報告しました。`,
+      `報告者: \`${actorWallet}\``,
       `Tx: \`${txHash}\``,
     ].join("\n"),
   );

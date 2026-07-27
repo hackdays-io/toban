@@ -81,10 +81,10 @@ export function parseThxArgs(
   const haveAddress =
     typeof addressLiteral === "string" && addressLiteral.length > 0;
   if (!haveSnowflake) {
-    return { error: "`user` is required." };
+    return { error: "`user` は必須です。" };
   }
   if (amountRaw === undefined || amountRaw <= 0) {
-    return { error: "amount must be a positive integer" };
+    return { error: "amount には 1 以上の整数を指定してください。" };
   }
   return {
     // `address` overrides `user` when both are supplied. This lets the
@@ -138,7 +138,7 @@ async function resolveRecipientWallet(
     if (!rec) {
       return {
         error:
-          "The recipient hasn't linked a wallet yet. Ask them to run `/toban-setup`, or specify their address/ENS via the `address` option.",
+          "送り先のメンバーはまだウォレットを連携していません。`/toban-setup` の実行を依頼するか、`address` オプションでアドレス / ENS を直接指定してください。",
       };
     }
     return { wallet: rec.wallet as Address };
@@ -147,19 +147,19 @@ async function resolveRecipientWallet(
   const literal = recipient.value;
   if (literal.startsWith("0x")) {
     if (!isAddress(literal)) {
-      return { error: `Not a valid 0x address: ${literal}` };
+      return { error: `0x アドレスの形式が正しくありません: ${literal}` };
     }
     return { wallet: literal as Address };
   }
   if (literal.endsWith(".eth")) {
     const resolved = await resolveEns(literal);
     if (!resolved) {
-      return { error: `Could not resolve ENS name: ${literal}` };
+      return { error: `ENS 名を解決できませんでした: ${literal}` };
     }
     return { wallet: resolved };
   }
   return {
-    error: `Unsupported address format: ${literal}. Use 0x... or *.eth.`,
+    error: `対応していないアドレス形式です: ${literal}。\`0x...\` または \`*.eth\` を指定してください。`,
   };
 }
 
@@ -187,7 +187,7 @@ export async function executeThx(
       await followup(
         env.DISCORD_APP_ID,
         interaction.token,
-        "Something went wrong while processing /thx. The operators have been notified — please try again in a moment.",
+        "`/thx` の処理中にエラーが発生しました。運営に通知済みです。少し時間をおいて再度お試しください。",
       );
     } catch (followupErr) {
       console.error("executeThx followup-after-error failed:", followupErr);
@@ -213,7 +213,7 @@ async function executeThxInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "This command must be run inside a server.",
+      "このコマンドはサーバー内で実行してください。",
     );
     return;
   }
@@ -227,7 +227,7 @@ async function executeThxInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "You haven't linked a wallet. Run `/toban-setup` first.",
+      "ウォレットが連携されていません。先に `/toban-setup` を実行してください。",
     );
     return;
   }
@@ -235,7 +235,7 @@ async function executeThxInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      "This server isn't linked to a Toban workspace yet. Ask an admin to run `/toban-link` first.",
+      "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
     );
     return;
   }
@@ -274,7 +274,7 @@ async function executeThxInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `Could not resolve the workspace's ThanksToken (tree ${platformLink.treeId}). Indexing may still be in progress.`,
+      `ワークスペースの ThanksToken を取得できませんでした（tree ${platformLink.treeId}）。インデックス処理が完了していない可能性があります。`,
     );
     return;
   }
@@ -291,7 +291,7 @@ async function executeThxInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `Not enough allowance for the bot (have ${formatEther(allowance)} THX, need ${formatEther(parsed.amount)} THX). Increase it at ${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot`,
+      `Bot に許可された送信枠が足りません（現在 ${formatEther(allowance)} THX / 必要 ${formatEther(parsed.amount)} THX）。${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot で上限を引き上げてください。`,
     );
     return;
   }
@@ -336,7 +336,7 @@ async function executeThxInner(
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `mintFrom failed: ${short}`,
+      `mintFrom に失敗しました: ${short}`,
     );
     return;
   }
@@ -349,9 +349,9 @@ async function executeThxInner(
     env.DISCORD_APP_ID,
     interaction.token,
     [
-      `Sent **${formatEther(parsed.amount)}** THX to ${recipientLabel}.`,
+      `${recipientLabel} に **${formatEther(parsed.amount)}** THX を送りました。`,
       parsed.recipient.kind === "address"
-        ? `Address: \`${recipientWallet}\``
+        ? `アドレス: \`${recipientWallet}\``
         : null,
       parsed.message ? `> ${parsed.message}` : null,
       `Tx: \`${txHash}\``,

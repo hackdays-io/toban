@@ -81,7 +81,7 @@ async function handleInteraction(
     });
   }
   if (interaction.type !== InteractionType.ApplicationCommand) {
-    return jsonResponse(ephemeral("Unsupported interaction type"));
+    return jsonResponse(ephemeral("対応していない操作です。"));
   }
 
   const cmd = interaction as APIChatInputApplicationCommandInteraction;

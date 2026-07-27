@@ -165,14 +165,12 @@ const actor: IdentityRecord = {
 };
 
 describe("questChoiceLabel", () => {
-  it("uses the title with the id when present", () => {
-    expect(questChoiceLabel({ questId: 42n, title: "Design" })).toBe(
-      "Design (#42)",
-    );
+  it("uses the title alone when present", () => {
+    expect(questChoiceLabel({ questId: 42n, title: "Design" })).toBe("Design");
   });
 
   it("falls back to the bare id when untitled", () => {
-    expect(questChoiceLabel({ questId: 7n, title: null })).toBe("Quest #7");
+    expect(questChoiceLabel({ questId: 7n, title: null })).toBe("クエスト #7");
   });
 
   it("clamps to 100 chars", () => {
@@ -198,19 +196,19 @@ describe("questChoiceLabel", () => {
 describe("describeSubmitRevert", () => {
   it("translates NotWorkspaceMember into an actionable message", () => {
     expect(describeSubmitRevert("... NotWorkspaceMember()")).toContain(
-      "membership couldn't be verified",
+      "メンバーシップをオンチェーンで確認できませんでした",
     );
   });
 
-  it("translates InvalidStatus into a 'no longer open' message", () => {
+  it("translates InvalidStatus into a 'cannot submit' message", () => {
     expect(describeSubmitRevert("reverted: InvalidStatus()")).toContain(
-      "no longer open",
+      "このクエストは完了報告できません",
     );
   });
 
   it("passes through unrecognised reverts verbatim", () => {
     expect(describeSubmitRevert("some other error")).toBe(
-      "submitCompletion failed: some other error",
+      "submitCompletion に失敗しました: some other error",
     );
   });
 });
@@ -225,7 +223,7 @@ describe("buildQuestChoices", () => {
   it("returns all quests (mapped to id values) on empty query", () => {
     const choices = buildQuestChoices(quests, "");
     expect(choices).toHaveLength(3);
-    expect(choices[0]).toEqual({ name: "Design work (#1)", value: "1" });
+    expect(choices[0]).toEqual({ name: "Design work", value: "1" });
   });
 
   it("filters by title substring, case-insensitively", () => {
@@ -302,9 +300,7 @@ describe("handleQuestAutocomplete", () => {
         ],
       },
     );
-    expect(res.data.choices).toEqual([
-      { name: "Design work (#1)", value: "1" },
-    ]);
+    expect(res.data.choices).toEqual([{ name: "Design work", value: "1" }]);
   });
 });
 
@@ -317,7 +313,7 @@ describe("executeQuestSubmit", () => {
         messages.push(c);
       },
     });
-    expect(messages[0]).toContain("haven't linked");
+    expect(messages[0]).toContain("ウォレットが連携されていません");
   });
 
   it("messages the user if they aren't a workspace member", async () => {
@@ -330,7 +326,7 @@ describe("executeQuestSubmit", () => {
         messages.push(c);
       },
     });
-    expect(messages[0]).toContain("aren't a member");
+    expect(messages[0]).toContain("このワークスペースのメンバーではないため");
   });
 
   it("messages the user if the quest module can't be resolved", async () => {
@@ -343,6 +339,6 @@ describe("executeQuestSubmit", () => {
         messages.push(c);
       },
     });
-    expect(messages[0]).toContain("quest module");
+    expect(messages[0]).toContain("クエストモジュールを取得できませんでした");
   });
 });

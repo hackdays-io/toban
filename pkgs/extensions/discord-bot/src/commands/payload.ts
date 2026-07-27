@@ -26,17 +26,17 @@
 export const COMMANDS_PAYLOAD = [
   {
     name: "toban-setup",
-    description: "Issue a link to connect your wallet to your Discord account",
+    description: "ウォレットと Discord アカウントを連携するリンクを発行します",
     type: 1,
   },
   {
     name: "toban-link",
-    description: "(admin) Link this server to a Toban workspace",
+    description: "(管理者向け) このサーバーを Toban ワークスペースに連携します",
     type: 1,
     options: [
       {
         name: "workspace_url",
-        description: "Toban workspace URL (e.g. https://toban.xyz/3002)",
+        description: "Toban のワークスペース URL（例: https://toban.xyz/3002）",
         type: 3,
         required: true,
       },
@@ -44,39 +44,39 @@ export const COMMANDS_PAYLOAD = [
   },
   {
     name: "balance",
-    description: "Show your mintAllowance and mintable budget",
+    description: "Bot への許可枠と送信可能枠を表示します",
     type: 1,
   },
   {
     name: "thx",
-    description: "Send THX to another member",
+    description: "他のメンバーに THX を送ります",
     type: 1,
     options: [
       // Discord requires `required: true` options to come before optional
       // ones, so amount sits at the top.
       {
         name: "amount",
-        description: "Amount of THX (positive integer)",
+        description: "THX の量（1 以上の整数）",
         type: 4,
         required: true,
         min_value: 1,
       },
       {
         name: "user",
-        description: "Recipient (pick from this server)",
+        description: "送り先（このサーバーのメンバーから選択）",
         type: 6,
         required: true,
       },
       {
         name: "address",
         description:
-          "Override: send to this 0x address or ENS name instead of the user's linked wallet.",
+          "上書き指定: 連携済みウォレットの代わりに、この 0x アドレス / ENS 名へ送ります",
         type: 3,
         required: false,
       },
       {
         name: "message",
-        description: "Optional thank-you note",
+        description: "感謝のメッセージ（任意）",
         type: 3,
         required: false,
       },
@@ -84,17 +84,17 @@ export const COMMANDS_PAYLOAD = [
   },
   {
     name: "quest",
-    description: "Quest actions",
+    description: "クエスト関連の操作",
     type: 1,
     options: [
       {
         name: "submit",
-        description: "Submit completion of a quest you can work on",
+        description: "取り組めるクエストの完了を報告します",
         type: 1, // SUB_COMMAND
         options: [
           {
             name: "quest",
-            description: "Pick a quest to submit",
+            description: "完了報告するクエストを選択",
             type: 3, // STRING
             required: true,
             autocomplete: true,

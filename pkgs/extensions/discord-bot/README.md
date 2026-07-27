@@ -59,9 +59,9 @@ admin が /toban-link <workspace-url>      →  guild ↔ workspace を bind
 bot がやること:
 
 1. URL の `/<treeId>` セグメントから tree id を抽出。
-2. 呼び出し元の Discord snowflake を `IDENTITY.fetch('/api/lookup?provider=discord&account_id=…')` で wallet 解決。未 onboard なら `Run /toban-setup first` を返す (Step 3 へ)。
+2. 呼び出し元の Discord snowflake を `IDENTITY.fetch('/api/lookup?provider=discord&account_id=…')` で wallet 解決。未 onboard なら `先に /toban-setup を実行してください` を返す (Step 3 へ)。
 3. `(provider=discord, platform_id=guild_id, tree_id, installed_by=caller.wallet)` を `IDENTITY.fetch('/api/platform-link', { method: 'POST', body })` で POST。
-4. ephemeral で `✅ Linked this server to Toban workspace <tree>.` と返信。
+4. ephemeral で `✅ このサーバーを Toban ワークスペース <tree> に連携しました。` と返信。
 
 裏では identity Worker が `platform_links` 行を upsert します — wire 形式とテーブルスキーマは [identity README: サーバーと workspace の紐づけ](../identity/README.md#3-サーバーと-workspace-の紐づけ----toban-link--post-apiplatform-link) を参照。
 
@@ -115,8 +115,8 @@ bot は `mintFrom` 署名を **Turnkey が管理する Ethereum 秘密鍵** で�
 
 `amount` と `user` は必須、`address` を指定すると `user.wallet` を上書きします。これでまだ `/toban-setup` を済ませていない相手 (ENS 名所有者など) にも送れます。bot 内部の流れ (`src/commands/thx.ts`):
 
-1. **送信者の wallet を解決** — `IDENTITY.fetch('/api/lookup', …)` で snowflake → wallet。未 bind なら `Run /toban-setup first` を返して終了。
-2. **guild の workspace を解決** — 同じ identity API で `platform_links` を引く。未 link なら `Ask an admin to run /toban-link first` を返して終了。
+1. **送信者の wallet を解決** — `IDENTITY.fetch('/api/lookup', …)` で snowflake → wallet。未 bind なら `先に /toban-setup を実行してください` を返して終了。
+2. **guild の workspace を解決** — 同じ identity API で `platform_links` を引く。未 link なら `管理者に /toban-link の実行を依頼してください` を返して終了。
 3. **受信者の wallet を解決**:
    - `address` が `0x…` の場合: バリデートしてそのまま使用。
    - `address` が `*.eth` の場合: Ethereum mainnet (`env.MAINNET_RPC_URL`) で ENS を resolve — ENS レコードは mint 先 chain によらず mainnet にあるため。
@@ -399,7 +399,7 @@ pnpm --filter @toban/identity exec wrangler d1 execute toban-identity --remote \
 cast balance <TURNKEY_BOT_SIGNER_ADDRESS> --rpc-url <RPC_URL>
 ```
 
-もし `/thx` で「Not enough allowance for the bot」が出るのに approve 済みのつもりであれば、対象 workspace の ThanksToken が乗せ換えられた可能性があります — `https://<TOBAN_FRONTEND_URL>/<treeId>/discord-bot` で新 signer + 新 contract に対して approve し直すよう案内してください。
+もし `/thx` で「Bot に許可された送信枠が足りません」が出るのに approve 済みのつもりであれば、対象 workspace の ThanksToken が乗せ換えられた可能性があります — `https://<TOBAN_FRONTEND_URL>/<treeId>/discord-bot` で新 signer + 新 contract に対して approve し直すよう案内してください。
 
 ## 重要な不変条件
 

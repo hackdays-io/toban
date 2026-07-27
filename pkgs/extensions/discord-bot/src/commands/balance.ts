@@ -33,11 +33,12 @@ export async function handleBalance(
   deps: BalanceDeps = {},
 ): Promise<APIInteractionResponse> {
   const snowflake = interaction.member?.user.id ?? interaction.user?.id;
-  if (!snowflake) return ephemeral("Could not read your Discord user id.");
+  if (!snowflake)
+    return ephemeral("Discord のユーザー ID を取得できませんでした。");
 
   const guildId = interaction.guild_id;
   if (!guildId) {
-    return ephemeral("This command must be run inside a server.");
+    return ephemeral("このコマンドはサーバー内で実行してください。");
   }
 
   const identity = deps.identity ?? createIdentityClient(env);
@@ -47,12 +48,12 @@ export async function handleBalance(
   ]);
   if (!record) {
     return ephemeral(
-      "Your Discord account isn't linked yet. Run `/toban-setup` to connect a wallet.",
+      "Discord アカウントがまだ連携されていません。`/toban-setup` を実行してウォレットを接続してください。",
     );
   }
   if (!platformLink) {
     return ephemeral(
-      "This server isn't linked to a Toban workspace yet. Ask an admin to run `/toban-link` first.",
+      "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
     );
   }
 
@@ -72,7 +73,7 @@ export async function handleBalance(
   ]);
   if (!token) {
     return ephemeral(
-      `Could not resolve the workspace's ThanksToken (tree ${platformLink.treeId}).`,
+      `ワークスペースの ThanksToken を取得できませんでした（tree ${platformLink.treeId}）。`,
     );
   }
 
@@ -93,9 +94,9 @@ export async function handleBalance(
 
   return ephemeral(
     [
-      `Wallet: \`${owner}\``,
-      `Allowance for bot: **${formatEther(allowance as bigint)}** THX`,
-      `Mintable budget : **${formatEther(mintable as bigint)}** THX`,
+      `ウォレット: \`${owner}\``,
+      `Bot への許可枠: **${formatEther(allowance as bigint)}** THX`,
+      `送信可能枠: **${formatEther(mintable as bigint)}** THX`,
     ].join("\n"),
   );
 }

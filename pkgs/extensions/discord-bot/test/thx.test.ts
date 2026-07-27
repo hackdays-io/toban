@@ -150,7 +150,7 @@ describe("executeThx", () => {
         messages.push(content);
       },
     });
-    expect(messages[0]).toContain("haven't linked");
+    expect(messages[0]).toContain("ウォレットが連携されていません");
   });
 
   it("messages the user if the recipient isn't linked", async () => {
@@ -161,7 +161,9 @@ describe("executeThx", () => {
         messages.push(c);
       },
     });
-    expect(messages[0]).toContain("recipient hasn't linked");
+    expect(messages[0]).toContain(
+      "送り先のメンバーはまだウォレットを連携していません",
+    );
   });
 
   it("rejects when allowance is insufficient", async () => {
@@ -177,7 +179,7 @@ describe("executeThx", () => {
         messages.push(c);
       },
     });
-    expect(messages[0]).toContain("Not enough allowance");
+    expect(messages[0]).toContain("Bot に許可された送信枠が足りません");
   });
 
   it("happy path: signs and broadcasts then posts tx hash", async () => {
@@ -272,6 +274,8 @@ describe("executeThx", () => {
     // identity / allowance checks.
     expect(messages.length).toBe(1);
     const m = messages[0];
-    expect(m.includes(fakeHash) || m.startsWith("mintFrom failed")).toBe(true);
+    expect(
+      m.includes(fakeHash) || m.startsWith("mintFrom に失敗しました"),
+    ).toBe(true);
   });
 });

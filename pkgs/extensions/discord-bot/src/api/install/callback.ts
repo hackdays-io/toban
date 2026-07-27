@@ -148,16 +148,19 @@ export async function handleInstallCallback(
   const state = url.searchParams.get("state");
   const guildId = url.searchParams.get("guild_id");
   if (!code || !state || !guildId) {
-    return new Response("missing code/state/guild_id", { status: 400 });
+    return new Response("code / state / guild_id が不足しています", {
+      status: 400,
+    });
   }
 
   let parsedState: InstallStateClaims;
   try {
     parsedState = await verifyInstallState(env, state);
   } catch (err) {
-    return new Response(`invalid state: ${(err as Error).message}`, {
-      status: 400,
-    });
+    return new Response(
+      `インストール用の state が不正です: ${(err as Error).message}`,
+      { status: 400 },
+    );
   }
 
   const identity = deps.identity ?? createIdentityClient(env);
@@ -166,7 +169,10 @@ export async function handleInstallCallback(
   // before any side effect.
   const claim = await identity.claimInstallStateJti(parsedState.jti);
   if (!claim.ok) {
-    return new Response("install state already used", { status: 409 });
+    return new Response(
+      "このインストールリンクはすでに使用済みです。ワークスペースの画面からやり直してください。",
+      { status: 409 },
+    );
   }
 
   // Exchange the `code` against Discord so we know the install actually
@@ -177,13 +183,14 @@ export async function handleInstallCallback(
   try {
     exchangeResult = await exchange(env, code);
   } catch (err) {
-    return new Response(`oauth exchange failed: ${(err as Error).message}`, {
-      status: 400,
-    });
+    return new Response(
+      `Discord との認証に失敗しました: ${(err as Error).message}`,
+      { status: 400 },
+    );
   }
   if (exchangeResult.guildId !== guildId) {
     return new Response(
-      "discord granted bot install on a different guild than requested",
+      "Discord から許可されたサーバーが、リクエストしたサーバーと一致しません。",
       { status: 400 },
     );
   }

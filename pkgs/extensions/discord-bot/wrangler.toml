@@ -104,7 +104,7 @@ CHAIN_ID = "8453"
 MAINNET_RPC_URL = "https://rpc.ankr.com/eth"
 TURNKEY_API_BASE_URL = "https://api.turnkey.com"
 TURNKEY_ORGANIZATION_ID = "24cfae8c-aae0-4341-8492-295057f66bac"
-TURNKEY_BOT_SIGNER_ADDRESS = "0xE21E99d384409e119cee731D368359BDc719a5f0"
+TURNKEY_BOT_SIGNER_ADDRESS = "0x686B0B99768DE8EA34f63E890f7b9a2b7586D6e0"
 IDENTITY_WORKER_URL = "https://toban-identity-base.kawabeyuki23.workers.dev"
 
 [env.base.observability]

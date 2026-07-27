@@ -28,7 +28,7 @@
     {
       "id": "base",
       "chainId": 8453,
-      "signer": "0xE21E99d384409e119cee731D368359BDc719a5f0",
+      "signer": "0x686B0B99768DE8EA34f63E890f7b9a2b7586D6e0",
       "policyId": "f37e6551-2ef0-4436-927c-8b251cb8303d",
       "_applied": [
         "APPLIED — created 2026-06-03, last updated 2026-07-15, verified",
@@ -75,7 +75,7 @@
       "parameters": {
         "policyName": "toban-discord-bot-proxy-writes-base",
         "effect": "EFFECT_ALLOW",
-        "consensus": "approvers.any(user, user.id == 'd84edada-715b-4e5b-b49e-da56669aac82')",
+        "consensus": "approvers.any(user, user.id == '3e348a79-fc50-4ad5-994e-e517676d9ca6')",
         "condition": "activity.type == 'ACTIVITY_TYPE_SIGN_TRANSACTION_V2' && eth.tx.chain_id == 8453 && eth.tx.value == 0 && (eth.tx.data[0..10] == '0x40062e89' || eth.tx.data[0..10] == '0x947ec45f')",
         "notes": "Base production. Allows the Toban Discord bot user to sign ThanksToken.mintFrom (0x40062e89) and HatsQuestModule.submitCompletion (0x947ec45f) only, value 0, chain 8453. Source: pkgs/extensions/discord-bot/turnkey/policy.json"
       }

@@ -4,6 +4,8 @@ node_modules
 /build
 /.react-router
 /.ladle/build
+# Written by @vercel/react-router's build preset (and by the Vercel CLI).
+/.vercel
 .env
 
 .env.local

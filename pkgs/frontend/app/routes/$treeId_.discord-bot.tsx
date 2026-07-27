@@ -1,10 +1,11 @@
+import { hatIdDecimalToHex } from "@hatsprotocol/sdk-v1-core";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQuery as useTanstackQuery } from "@tanstack/react-query";
 import {
   hatsContractBaseConfig,
   thanksTokenBaseConfig,
 } from "hooks/useContracts";
-import { useHats } from "hooks/useHats";
+import { useHats, useTreeInfo } from "hooks/useHats";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -35,6 +36,13 @@ interface QuestAgentSectionProps {
   /** Bot signer address that should wear the questAgentHat when enabled. */
   botSigner: Address;
   /**
+   * The address currently wearing the questAgentHat, from the Hats subgraph.
+   * `undefined` while loading or when nobody wears it. This is NOT always
+   * `botSigner`: rotating the bot's Turnkey key changes the configured signer
+   * while the hat stays on the old address.
+   */
+  currentWearer: Address | undefined;
+  /**
    * Whether the connected wallet may mint/revoke the questAgentHat (operatorHat
    * wearer or workspace owner). Computed once at the page level so the whole
    * admin surface can be gated on it; passed down here to disable the buttons.
@@ -49,6 +57,7 @@ interface QuestAgentSectionProps {
 const QuestAgentSection: FC<QuestAgentSectionProps> = ({
   questAgentHatId: questAgentHatIdStr,
   botSigner,
+  currentWearer,
   canManage,
 }) => {
   const { wallet } = useActiveWallet();
@@ -75,6 +84,18 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
   });
   const isEnabled = statusQuery.data === true;
 
+  // The hat has maxSupply 1, so a wearer that isn't the configured signer
+  // blocks minting entirely (`AllHatsWorn`). That happens whenever the bot's
+  // Turnkey key is rotated: the new address is configured but the old one
+  // still wears the hat. Gate the buttons on who actually wears it, and
+  // revoke from that address rather than from `botSigner`.
+  const wornByOther =
+    !!currentWearer &&
+    !isEnabled &&
+    currentWearer.toLowerCase() !== botSigner.toLowerCase();
+  const revokeTarget = currentWearer ?? botSigner;
+  const hasWearer = isEnabled || wornByOther;
+
   const grant = async () => {
     if (!questAgentHatId) return;
     setPending("grant");
@@ -98,7 +119,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
       // signing wallet (it temporarily receives the hat before renouncing).
       await adminRevokeAuthorityHat({
         hatId: questAgentHatId,
-        from: botSigner,
+        from: revokeTarget,
         admin: walletAddress,
       });
       await statusQuery.refetch();
@@ -132,15 +153,37 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
           </Typography>
           <Typography
             variant="statMd"
-            tone={isEnabled ? "success" : "secondary"}
+            tone={isEnabled ? "success" : wornByOther ? "danger" : "secondary"}
           >
             {!questAgentHatId || statusQuery.isLoading
               ? "読み込み中…"
               : isEnabled
                 ? "有効"
-                : "無効"}
+                : wornByOther
+                  ? "別のアドレスが保持中"
+                  : "無効"}
           </Typography>
         </div>
+
+        <div className="flex flex-col gap-1">
+          <Typography variant="bodySm" tone="secondary">
+            代理申請アドレス（現在この権限を持つアドレス）
+          </Typography>
+          <Typography variant="mono" tone={wornByOther ? "danger" : undefined}>
+            {hasWearer ? revokeTarget : "（なし）"}
+          </Typography>
+        </div>
+
+        {wornByOther && (
+          <Typography variant="caption" tone="danger">
+            この権限は現在 Bot signer（<code>{botSigner}</code>
+            ）ではなく上記のアドレスが保持しています。Bot
+            の署名鍵をローテーションすると発生します。権限は 1
+            アドレスしか持てないため、
+            <strong>先に「無効化（剥奪）」で上記アドレスから外してから</strong>
+            、あらためて有効化してください。
+          </Typography>
+        )}
 
         {!canManage && walletAddress && (
           <Typography variant="caption" tone="secondary">
@@ -151,14 +194,14 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
 
         <div className="grid grid-cols-2 gap-2">
           <Button
-            disabled={!canManage || pending !== null || isEnabled}
+            disabled={!canManage || pending !== null || hasWearer}
             onClick={grant}
           >
             {pending === "grant" ? "送信中…" : "有効化（付与）"}
           </Button>
           <Button
             variant="danger"
-            disabled={!canManage || pending !== null || !isEnabled}
+            disabled={!canManage || pending !== null || !hasWearer}
             onClick={revoke}
           >
             {pending === "revoke" ? "送信中…" : "無効化（剥奪）"}
@@ -247,6 +290,21 @@ const DiscordBotWorkspace: FC = () => {
     | undefined;
   const owner = workspaceData?.workspace?.owner ?? undefined;
   const operatorHatId = workspaceData?.workspace?.operatorHatId ?? undefined;
+  const questAgentHatId =
+    workspaceData?.workspace?.questAgentHatId ?? undefined;
+
+  // Who actually wears the questAgentHat right now. The Hats subgraph is the
+  // only source for this — `isWearerOfHat` can only answer "does address X
+  // wear it", which is not enough once the configured bot signer and the
+  // actual wearer diverge (key rotation). Reuse the tree fetch the rest of the
+  // app already relies on rather than adding a second Apollo path.
+  const tree = useTreeInfo(Number(treeId));
+  const questAgentWearer = useMemo(() => {
+    if (!questAgentHatId || !tree?.hats) return undefined;
+    const hex = hatIdDecimalToHex(BigInt(questAgentHatId)).toLowerCase();
+    const hat = tree.hats.find((h) => h.id?.toLowerCase() === hex);
+    return hat?.wearers?.[0]?.id as Address | undefined;
+  }, [tree, questAgentHatId]);
 
   // Admin = workspace owner (top hat) or operatorHat wearer. Computed here so
   // the whole admin surface (server-install link + quest agent) can be gated on
@@ -403,10 +461,9 @@ const DiscordBotWorkspace: FC = () => {
           <DiscordInstallCard botWorkerUrl={botWorkerUrl} treeId={treeId} />
 
           <QuestAgentSection
-            questAgentHatId={
-              workspaceData?.workspace?.questAgentHatId ?? undefined
-            }
+            questAgentHatId={questAgentHatId}
             botSigner={botSigner}
+            currentWearer={questAgentWearer}
             canManage={isAdmin}
           />
         </section>

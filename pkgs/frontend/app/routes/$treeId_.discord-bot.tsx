@@ -1,11 +1,14 @@
 import { hatIdDecimalToHex } from "@hatsprotocol/sdk-v1-core";
 import { usePrivy } from "@privy-io/react-auth";
-import { useQuery as useTanstackQuery } from "@tanstack/react-query";
+import {
+  useQueryClient,
+  useQuery as useTanstackQuery,
+} from "@tanstack/react-query";
 import {
   hatsContractBaseConfig,
   thanksTokenBaseConfig,
 } from "hooks/useContracts";
-import { useHats, useTreeInfo } from "hooks/useHats";
+import { treeInfoQueryKey, useHats, useTreeInfo } from "hooks/useHats";
 import { publicClient } from "hooks/useViem";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -48,6 +51,13 @@ interface QuestAgentSectionProps {
    * admin surface can be gated on it; passed down here to disable the buttons.
    */
   canManage: boolean;
+  /**
+   * Invalidate the tree fetch that produced `currentWearer`. Called after a
+   * grant/revoke so the displayed address catches up — the on-chain reads
+   * refresh themselves, but the subgraph-backed wearer would otherwise stay
+   * stale until the next page load.
+   */
+  onWearerChanged: () => void;
 }
 
 // Grants/revokes the questAgentHat to the Discord bot signer so it can submit
@@ -59,6 +69,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
   botSigner,
   currentWearer,
   canManage,
+  onWearerChanged,
 }) => {
   const { wallet } = useActiveWallet();
   const walletAddress = wallet?.account?.address as Address | undefined;
@@ -72,29 +83,46 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
     [questAgentHatIdStr],
   );
 
+  // Two on-chain reads, both authoritative and updated the moment a tx lands:
+  //   isWearerOfHat → is the *configured* signer wearing it (i.e. "enabled")
+  //   hatSupply     → is *anyone* wearing it (maxSupply is 1, so >0 means the
+  //                   slot is taken and `mintHat` would revert AllHatsWorn)
+  // `currentWearer` comes from the Hats subgraph and is display-only: it is the
+  // only way to learn *which* address holds the hat, but it lags the chain by a
+  // few blocks, so it must not drive button state — right after a revoke it
+  // still reports the old wearer.
   const statusQuery = useTanstackQuery({
     queryKey: ["quest-agent-status", botSigner, questAgentHatId?.toString()],
     enabled: !!questAgentHatId && !!botSigner,
-    queryFn: async (): Promise<boolean> =>
-      (await publicClient.readContract({
-        ...hatsContractBaseConfig,
-        functionName: "isWearerOfHat",
-        args: [botSigner, questAgentHatId as bigint],
-      })) as boolean,
+    queryFn: async (): Promise<{ isWearer: boolean; supply: number }> => {
+      const [isWearer, supply] = await Promise.all([
+        publicClient.readContract({
+          ...hatsContractBaseConfig,
+          functionName: "isWearerOfHat",
+          args: [botSigner, questAgentHatId as bigint],
+        }) as Promise<boolean>,
+        publicClient.readContract({
+          ...hatsContractBaseConfig,
+          functionName: "hatSupply",
+          args: [questAgentHatId as bigint],
+        }) as Promise<number | bigint>,
+      ]);
+      return { isWearer, supply: Number(supply) };
+    },
   });
-  const isEnabled = statusQuery.data === true;
-
-  // The hat has maxSupply 1, so a wearer that isn't the configured signer
-  // blocks minting entirely (`AllHatsWorn`). That happens whenever the bot's
-  // Turnkey key is rotated: the new address is configured but the old one
-  // still wears the hat. Gate the buttons on who actually wears it, and
-  // revoke from that address rather than from `botSigner`.
-  const wornByOther =
-    !!currentWearer &&
-    !isEnabled &&
-    currentWearer.toLowerCase() !== botSigner.toLowerCase();
-  const revokeTarget = currentWearer ?? botSigner;
-  const hasWearer = isEnabled || wornByOther;
+  const isEnabled = statusQuery.data?.isWearer === true;
+  const hasWearer = (statusQuery.data?.supply ?? 0) > 0;
+  // Someone other than the configured signer holds the single slot — happens
+  // after a Turnkey key rotation. Minting is impossible until they're revoked.
+  const wornByOther = hasWearer && !isEnabled;
+  // Who `transferHat` should pull the hat off. When the configured signer wears
+  // it we know the answer on-chain; otherwise only the subgraph can name the
+  // holder, and until it catches up we have no valid target — revoking against
+  // the wrong address just reverts, so leave it undefined and disable the
+  // button rather than guess.
+  const revokeTarget: Address | undefined = isEnabled
+    ? botSigner
+    : currentWearer;
 
   const grant = async () => {
     if (!questAgentHatId) return;
@@ -102,6 +130,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
     try {
       await mintHat({ hatId: questAgentHatId, wearer: botSigner });
       await statusQuery.refetch();
+      onWearerChanged();
       toast.success("Bot に代理申請の権限を付与しました");
     } catch (e) {
       console.error(e);
@@ -112,7 +141,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
   };
 
   const revoke = async () => {
-    if (!questAgentHatId || !walletAddress) return;
+    if (!questAgentHatId || !walletAddress || !revokeTarget) return;
     setPending("revoke");
     try {
       // transferHat(from→signer)+renounce, so the admin param must be the
@@ -123,6 +152,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
         admin: walletAddress,
       });
       await statusQuery.refetch();
+      onWearerChanged();
       toast.success("Bot の代理申請の権限を剥奪しました");
     } catch (e) {
       console.error(e);
@@ -170,18 +200,22 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
             代理申請アドレス（現在この権限を持つアドレス）
           </Typography>
           <Typography variant="mono" tone={wornByOther ? "danger" : undefined}>
-            {hasWearer ? revokeTarget : "（なし）"}
+            {!hasWearer
+              ? "（なし）"
+              : (revokeTarget ?? "取得中…（インデックス待ち）")}
           </Typography>
         </div>
 
         {wornByOther && (
           <Typography variant="caption" tone="danger">
             この権限は現在 Bot signer（<code>{botSigner}</code>
-            ）ではなく上記のアドレスが保持しています。Bot
+            ）ではなく別のアドレスが保持しています。Bot
             の署名鍵をローテーションすると発生します。権限は 1
             アドレスしか持てないため、
-            <strong>先に「無効化（剥奪）」で上記アドレスから外してから</strong>
+            <strong>先に「無効化（剥奪）」で外してから</strong>
             、あらためて有効化してください。
+            {!revokeTarget &&
+              "（保持しているアドレスを Hats のインデックスから取得中です。数秒後に再読み込みしてください）"}
           </Typography>
         )}
 
@@ -201,7 +235,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
           </Button>
           <Button
             variant="danger"
-            disabled={!canManage || pending !== null || !hasWearer}
+            disabled={!canManage || pending !== null || !revokeTarget}
             onClick={revoke}
           >
             {pending === "revoke" ? "送信中…" : "無効化（剥奪）"}
@@ -298,6 +332,7 @@ const DiscordBotWorkspace: FC = () => {
   // wear it", which is not enough once the configured bot signer and the
   // actual wearer diverge (key rotation). Reuse the tree fetch the rest of the
   // app already relies on rather than adding a second Apollo path.
+  const queryClient = useQueryClient();
   const tree = useTreeInfo(Number(treeId));
   const questAgentWearer = useMemo(() => {
     if (!questAgentHatId || !tree?.hats) return undefined;
@@ -465,6 +500,11 @@ const DiscordBotWorkspace: FC = () => {
             botSigner={botSigner}
             currentWearer={questAgentWearer}
             canManage={isAdmin}
+            onWearerChanged={() =>
+              queryClient.invalidateQueries({
+                queryKey: treeInfoQueryKey(Number(treeId)),
+              })
+            }
           />
         </section>
       )}

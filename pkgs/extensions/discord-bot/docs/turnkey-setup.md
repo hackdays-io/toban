@@ -16,7 +16,7 @@ bot の Ethereum 署名鍵は Turnkey の TEE（AWS Nitro Enclave）内にあり
 
 ---
 
-## 0. 現在の構成（2026-07-26 時点 / CLI の `list_*` で実機確認）
+## 0. 現在の構成
 
 **org は 1 つだけです。** Sepolia と Base で sub-org は分けていません。分離しているのは
 **署名鍵（ウォレット）とポリシー**で、ポリシーは `eth.tx.chain_id` を固定しているため、
@@ -26,13 +26,28 @@ Base のポリシーで Sepolia の署名を通すことはできません。
 |---|---|
 | Organization | `Toban` / `24cfae8c-aae0-4341-8492-295057f66bac` |
 | Root user | `Root user` / `f3ba9a88-9fbc-49a3-84dc-c048c5bf4b52`（root quorum は threshold 1・このユーザーのみ） |
-| Bot user（**non-root**） | `Toban Discord Bot` / `d84edada-715b-4e5b-b49e-da56669aac82` |
-| Base 署名鍵 | `0xE21E99d384409e119cee731D368359BDc719a5f0`（wallet `Toban Discord Bot Main`, `m/44'/60'/0'/0/0`） |
+| Bot user（**non-root**・Base） | `3e348a79-fc50-4ad5-994e-e517676d9ca6` |
+| Base 署名鍵 | `0x686B0B99768DE8EA34f63E890f7b9a2b7586D6e0` |
 | Sepolia 署名鍵 | `0xae4E13De7C14Dff7ff296De69cADf3A7F5208461`（wallet `Toban Dev`, `m/44'/60'/0'/0/0`） |
-| ポリシー | Base 用 1 本のみ（`f37e6551-2ef0-4436-927c-8b251cb8303d`）。**Sepolia 用は未適用** — §9 参照 |
+| ポリシー | Base 用 1 本のみ（`f37e6551-2ef0-4436-927c-8b251cb8303d`）。**Sepolia 用は未適用** — §10 参照 |
 
-org id と署名鍵アドレスは `wrangler.toml` の `[vars]` にも入っています（**secret ではありません**）。
-両者がずれると `TURNKEY_BOT_SIGNER_ADDRESS` で署名しようとして Turnkey が 404 を返します。
+> **この表はリポジトリ側の値（`wrangler.toml` / `turnkey/policy.json`）を写したものです。**
+> Turnkey に実際に登録されている内容とずれることがあるので、疑わしいときは §9 の
+> `list_policies` / `list_users` で実機を確認してください。org・root user・Sepolia 署名鍵は
+> 2026-07-26 に実機確認済み、Base の bot user と署名鍵はその後の鍵ローテーションで
+> 差し替わった値です。
+
+**署名鍵を差し替えたら、同じ値を 3 箇所すべてで揃える必要があります。**
+
+| 置き場所 | 変数 | ずれたときの症状 |
+|---|---|---|
+| `wrangler.toml` の `[vars]` | `TURNKEY_BOT_SIGNER_ADDRESS` | bot が別アドレスで署名しようとして Turnkey が 404 |
+| `turnkey/policy.json` | `signer` / `consensus` の user id | 署名要求が 403（`No policies evaluated to outcome: Allow`） |
+| `pkgs/frontend/.env.base` | `VITE_DISCORD_BOT_SIGNER_ADDRESS` | questAgentHat と mint 許可が**旧アドレスに付いたまま**になり、`/quest submit` が `NotQuestAgent()`、`/thx` が allowance 不足で失敗 |
+
+フロントの `VITE_*` は**ビルド時に焼き込まれる**ので、変更後は再ビルド・再デプロイが必要です。
+questAgentHat は maxSupply 1 なので、新アドレスへ付与する前に
+`/<treeId>/discord-bot` で**旧アドレスから剥奪**してください（先に mint すると `AllHatsWorn`）。
 
 ---
 

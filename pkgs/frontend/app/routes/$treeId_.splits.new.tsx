@@ -17,6 +17,11 @@ import {
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { ipfs2https } from "utils/ipfs";
+import {
+  DEFAULT_MULTIPLIER,
+  isValidMultiplier,
+  packMultipliers,
+} from "utils/multiplier";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import {
@@ -31,6 +36,7 @@ import {
 import { SectionLabel } from "~/components/composite/section-label";
 import { StepBar } from "~/components/composite/step-bar";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
+import { RoleMultiplierField } from "~/components/splits/RoleMultiplierField";
 import { RuleCard, type WeightInfo } from "~/components/splits/RuleCard";
 import { SplitBreakdownCard } from "~/components/splits/SplitBreakdownCard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -61,7 +67,8 @@ const STEP_INDEX: Record<Step, number> = {
 interface RoleInput {
   hatId: Address;
   active: boolean;
-  multiplier: number;
+  /** Raw user input — packed into a contract fraction at submit time. */
+  multiplier: string;
   wearers: Address[];
 }
 
@@ -149,7 +156,7 @@ const SplitterNew: FC = () => {
           next[key] = {
             hatId: o.hatId,
             active: true,
-            multiplier: 1,
+            multiplier: DEFAULT_MULTIPLIER,
             wearers: o.wearers,
           };
           changed = true;
@@ -165,6 +172,15 @@ const SplitterNew: FC = () => {
       const existing = current[key];
       if (!existing) return current;
       return { ...current, [key]: { ...existing, active: !existing.active } };
+    });
+  };
+
+  const updateMultiplier = (hatId: Address, multiplier: string) => {
+    const key = hatId.toLowerCase();
+    setRoles((current) => {
+      const existing = current[key];
+      if (!existing) return current;
+      return { ...current, [key]: { ...existing, multiplier } };
     });
   };
 
@@ -258,44 +274,45 @@ const SplitterNew: FC = () => {
     [dutyWeight, recvWeight],
   );
 
-  const calcSplitsParams = useCallback(() => {
-    return Object.values(roles)
-      .filter((r) => r.active)
-      .map((r) => {
-        // Preserves the original multiplier-fraction packing: a non-integer
-        // multiplier becomes a `top/bottom` pair so the contract can use
-        // integer math.
-        const [multiplierTop, multiplierBottom] = r.multiplier
-          ? String(r.multiplier).includes(".")
-            ? [
-                BigInt(
-                  r.multiplier *
-                    10 ** String(r.multiplier).split(".")[1].length,
-                ),
-                BigInt(10 ** String(r.multiplier).split(".")[1].length),
-              ]
-            : [BigInt(r.multiplier), BigInt(1)]
-          : [BigInt(1), BigInt(1)];
-        return {
-          hatId: BigInt(r.hatId),
-          multiplierTop,
-          multiplierBottom,
-          wearers: r.wearers,
-        };
-      });
-  }, [roles]);
-
-  const selectedDutyCount = useMemo(
-    () => Object.values(roles).filter((r) => r.active).length,
+  const activeRoles = useMemo(
+    () => Object.values(roles).filter((r) => r.active),
     [roles],
   );
-  const isFormValid = !!splitterName && availableName && selectedDutyCount > 0;
+
+  // Multipliers are packed as one batch so their ratios survive the contract's
+  // integer division — see `utils/multiplier`. Returns null only when an input
+  // is invalid, which `isFormValid` already blocks.
+  const calcSplitsParams = useCallback(() => {
+    const fractions = packMultipliers(activeRoles.map((r) => r.multiplier));
+    if (!fractions) return null;
+    return activeRoles.map((r, i) => ({
+      hatId: BigInt(r.hatId),
+      multiplierTop: fractions[i].top,
+      multiplierBottom: fractions[i].bottom,
+      wearers: r.wearers,
+    }));
+  }, [activeRoles]);
+
+  const selectedDutyCount = activeRoles.length;
+  const hasInvalidMultiplier = useMemo(
+    () => activeRoles.some((r) => !isValidMultiplier(r.multiplier)),
+    [activeRoles],
+  );
+  const isFormValid =
+    !!splitterName &&
+    availableName &&
+    selectedDutyCount > 0 &&
+    !hasInvalidMultiplier;
 
   const handlePreview = useCallback(async () => {
     if (!isFormValid) return;
+    const splitsParams = calcSplitsParams();
+    if (!splitsParams) {
+      toast.error("分配係数の値を確認してください");
+      return;
+    }
     setIsPreviewing(true);
     try {
-      const splitsParams = calcSplitsParams();
       const res = await previewSplits([splitsParams, weightParams]);
       let totalOwnership = 0;
       const consolidated = res[0].reduce((acc, address, index) => {
@@ -354,8 +371,12 @@ const SplitterNew: FC = () => {
 
   const { setName } = useSetName();
   const handleCreate = useCallback(async () => {
+    const splitsParams = calcSplitsParams();
+    if (!splitsParams) {
+      toast.error("分配係数の値を確認してください");
+      return;
+    }
     try {
-      const splitsParams = calcSplitsParams();
       const res = await createSplits({ args: [splitsParams, weightParams] });
       const created = res?.find((r) => r.eventName === "SplitsCreated")?.args
         .split;
@@ -543,79 +564,95 @@ const SplitterNew: FC = () => {
                     <div
                       key={duty.hatId}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 transition-colors",
+                        "flex flex-col",
                         i > 0 && "border-t border-border",
-                        checked && "hover:bg-bg",
                       )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleRole(duty.hatId)}
-                        aria-pressed={checked}
-                        aria-label={`${duty.name}を${checked ? "外す" : "選ぶ"}`}
+                      <div
                         className={cn(
-                          "flex size-[22px] shrink-0 items-center justify-center rounded-[6px] border-[1.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                          checked
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-surface",
+                          "flex items-center gap-3 px-4 py-3 transition-colors",
+                          checked && "hover:bg-bg",
                         )}
                       >
-                        {checked && <Icon name="check" size={14} />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleRole(duty.hatId)}
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                      >
-                        <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[#F2EAD9]">
-                          {duty.imageUrl ? (
-                            <img
-                              src={duty.imageUrl}
-                              alt=""
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <Icon
-                              name="duty"
-                              size={18}
-                              className="text-[#7A5A2E]"
-                            />
+                        <button
+                          type="button"
+                          onClick={() => toggleRole(duty.hatId)}
+                          aria-pressed={checked}
+                          aria-label={`${duty.name}を${checked ? "外す" : "選ぶ"}`}
+                          className={cn(
+                            "flex size-[22px] shrink-0 items-center justify-center rounded-[6px] border-[1.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                            checked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-surface",
                           )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <Typography
-                            as="div"
-                            variant="bodySm"
-                            weight="semibold"
-                            truncate
-                          >
-                            {duty.name}
-                          </Typography>
-                          {totalWearers > 0 && (
+                        >
+                          {checked && <Icon name="check" size={14} />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleRole(duty.hatId)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[#F2EAD9]">
+                            {duty.imageUrl ? (
+                              <img
+                                src={duty.imageUrl}
+                                alt=""
+                                className="size-full object-cover"
+                              />
+                            ) : (
+                              <Icon
+                                name="duty"
+                                size={18}
+                                className="text-[#7A5A2E]"
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
                             <Typography
                               as="div"
-                              variant="micro"
-                              tone="secondary"
-                              className="mt-0.5"
+                              variant="bodySm"
+                              weight="semibold"
+                              truncate
                             >
-                              対象メンバー{" "}
-                              {allSelected
-                                ? `全${totalWearers}人`
-                                : `${selectedWearers} / ${totalWearers}人`}
+                              {duty.name}
                             </Typography>
-                          )}
-                        </div>
-                      </button>
-                      {totalWearers > 0 && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          disabled={!checked}
-                          onClick={() => setOpenDetailHatId(duty.hatId)}
-                        >
-                          詳細
-                        </Button>
+                            {totalWearers > 0 && (
+                              <Typography
+                                as="div"
+                                variant="micro"
+                                tone="secondary"
+                                className="mt-0.5"
+                              >
+                                対象メンバー{" "}
+                                {allSelected
+                                  ? `全${totalWearers}人`
+                                  : `${selectedWearers} / ${totalWearers}人`}
+                              </Typography>
+                            )}
+                          </div>
+                        </button>
+                        {totalWearers > 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={!checked}
+                            onClick={() => setOpenDetailHatId(duty.hatId)}
+                          >
+                            詳細
+                          </Button>
+                        )}
+                      </div>
+                      {checked && (
+                        <RoleMultiplierField
+                          id={`split-multiplier-${key}`}
+                          value={role?.multiplier ?? DEFAULT_MULTIPLIER}
+                          onChange={(value) =>
+                            updateMultiplier(duty.hatId, value)
+                          }
+                          className="px-4 pb-3 pl-[50px]"
+                        />
                       )}
                     </div>
                   );
@@ -788,9 +825,15 @@ const SplitterNew: FC = () => {
                 tone="secondary"
                 className="mt-0.5 leading-relaxed"
               >
-                {Object.values(roles)
-                  .filter((r) => r.active)
-                  .map((r) => dutyNameById.get(r.hatId.toLowerCase()) ?? "当番")
+                {activeRoles
+                  .map((r) => {
+                    const name =
+                      dutyNameById.get(r.hatId.toLowerCase()) ?? "当番";
+                    // Only annotate adjusted roles — "1倍" on every line is noise.
+                    return Number(r.multiplier) === 1
+                      ? name
+                      : `${name}（${r.multiplier.trim()}倍）`;
+                  })
                   .join("、")}
               </Typography>
             </Card>

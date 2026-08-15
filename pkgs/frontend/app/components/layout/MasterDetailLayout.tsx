@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { useDetailScrollReset } from "hooks/useScrollToTop";
 import { cn } from "~/lib/utils";
 
 interface MasterDetailLayoutProps extends React.ComponentProps<"div"> {
@@ -7,6 +8,8 @@ interface MasterDetailLayoutProps extends React.ComponentProps<"div"> {
   master: React.ReactNode;
   /** The flexible detail panel (right). */
   detail: React.ReactNode;
+  /** When this changes, the detail pane scrolls back to the top. */
+  detailScrollKey?: string | number;
 }
 
 // Toban desktop MasterDetailLayout — fixed-width master + fluid detail.
@@ -15,9 +18,12 @@ interface MasterDetailLayoutProps extends React.ComponentProps<"div"> {
 function MasterDetailLayout({
   master,
   detail,
+  detailScrollKey,
   className,
   ...rest
 }: MasterDetailLayoutProps) {
+  const detailRef = useDetailScrollReset(detailScrollKey ?? "static");
+
   return (
     <div
       data-slot="master-detail"
@@ -28,7 +34,9 @@ function MasterDetailLayout({
       {...rest}
     >
       <aside className="overflow-auto border-r bg-bg">{master}</aside>
-      <section className="overflow-auto p-7">{detail}</section>
+      <section ref={detailRef} className="overflow-auto p-7">
+        {detail}
+      </section>
     </div>
   );
 }

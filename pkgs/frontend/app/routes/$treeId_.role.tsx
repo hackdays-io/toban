@@ -6,6 +6,7 @@ import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
 import { useHasCreatorAuthority } from "hooks/useHatsHatCreatorModule";
 import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
@@ -178,8 +179,10 @@ const WorkspaceRoles: FC = () => {
     me,
   );
 
+  const rootRef = useScrollToTop([filter]);
+
   return (
-    <PageContainer className="pt-4 pb-8 md:pt-6">
+    <PageContainer ref={rootRef} className="pt-4 pb-8 md:pt-6">
       <Breadcrumb
         className="mb-3 px-1"
         items={[{ label: "ホーム", to: `/${treeId}` }, { label: "当番一覧" }]}
@@ -528,6 +531,7 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
     dutyHats.find((h) => h.id === selectedId) ??
     filteredDuties[0] ??
     dutyHats[0];
+  const detailRef = useScrollToTop([selectedHat?.id]);
 
   return (
     <div className="grid grid-cols-[320px_1fr] gap-6">
@@ -575,7 +579,10 @@ const DesktopRolesView: FC<DesktopRolesViewProps> = ({
       </aside>
 
       {/* Detail */}
-      <section>
+      <section
+        ref={detailRef}
+        className="max-h-[calc(100dvh-10rem)] overflow-auto"
+      >
         {selectedHat ? (
           <DutyDetailPreview
             hat={selectedHat}

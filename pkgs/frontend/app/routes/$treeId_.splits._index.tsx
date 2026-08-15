@@ -7,6 +7,7 @@ import {
   useSplitsCreatorRelatedSplits,
   useUserEarnings,
 } from "hooks/useSplitsCreator";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import type { NameData } from "namestone-sdk";
@@ -183,6 +184,7 @@ const SplitsIndex: FC = () => {
   }, [items, selectedAddress]);
 
   const goToDetail = (addr: string) => navigate(`/${treeId}/splits/${addr}`);
+  const detailRef = useScrollToTop([selectedItem?.split.address]);
 
   return (
     <PageContainer className="pt-4 pb-8 md:pt-6">
@@ -307,7 +309,10 @@ const SplitsIndex: FC = () => {
               </ul>
             )}
           </aside>
-          <section className="flex flex-col gap-5">
+          <section
+            ref={detailRef}
+            className="max-h-[calc(100dvh-10rem)] overflow-auto flex flex-col gap-5"
+          >
             {selectedItem ? (
               <DesktopDetailPreview
                 item={selectedItem}

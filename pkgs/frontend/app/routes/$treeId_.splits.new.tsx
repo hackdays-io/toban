@@ -363,7 +363,7 @@ const SplitterNew: FC = () => {
   // ───────── Step Done ─────────
   if (step === "done") {
     return (
-      <div className="flex min-h-dvh flex-col bg-bg pb-6">
+      <div ref={rootRef} className="flex min-h-dvh flex-col bg-bg pb-6">
         <div className="flex flex-col items-center gap-5 px-6 pt-12 text-center">
           <div
             aria-hidden

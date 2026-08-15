@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useTreeInfo } from "hooks/useHats";
+import { useAppShellScrollReset } from "hooks/useScrollToTop";
 import { useEffect, useMemo, useState } from "react";
 import {
   Outlet,
@@ -75,6 +76,8 @@ function ShellView({ treeId }: ShellViewProps) {
   const treeInfo = useTreeInfo(Number(treeId));
   const [workspaceName, setWorkspaceName] = useState<string>();
   const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  useAppShellScrollReset(location.pathname);
 
   // Resolve workspace metadata from the TopHat (level 0) details document —
   // ported verbatim from the legacy `app/components/Header.tsx` so the

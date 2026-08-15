@@ -8,6 +8,7 @@ import {
   readScheduledDistributorRule,
   useScheduledDistributorsByWorkspace,
 } from "hooks/useScheduledDistributor";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import type { NameData } from "namestone-sdk";
 import { type FC, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -185,6 +186,7 @@ const ScheduledIndex: FC = () => {
   const selectedRecipients = selectedRow
     ? (recipientsByRow.get(selectedRow.id) ?? [])
     : [];
+  const detailRef = useScrollToTop([selectedRow?.id]);
 
   const segmented = (
     <Segmented
@@ -294,7 +296,10 @@ const ScheduledIndex: FC = () => {
               </ul>
             )}
           </aside>
-          <section className="flex flex-col gap-5">
+          <section
+            ref={detailRef}
+            className="max-h-[calc(100dvh-10rem)] overflow-auto flex flex-col gap-5"
+          >
             {selectedRow ? (
               <DesktopDetailPreview
                 row={selectedRow}

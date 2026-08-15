@@ -6,6 +6,7 @@ import {
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo, useState } from "react";
 import { LuCheck } from "react-icons/lu";
@@ -209,6 +210,8 @@ const AssistCreditSendSheet: FC<AssistCreditSendSheetProps> = ({
     }
   };
 
+  const panelRef = useScrollToTop([step, open]);
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
@@ -238,6 +241,7 @@ const AssistCreditSendSheet: FC<AssistCreditSendSheetProps> = ({
           </div>
         </SheetHeader>
 
+        <div ref={panelRef} className="flex min-h-0 flex-1 flex-col">
         {step === "recipient" && (
           <RecipientPanel
             search={search}
@@ -283,6 +287,7 @@ const AssistCreditSendSheet: FC<AssistCreditSendSheetProps> = ({
             }}
           />
         )}
+        </div>
       </SheetContent>
     </Sheet>
   );

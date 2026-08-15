@@ -1,6 +1,7 @@
 import { MintThanksToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetMintThanksTokens } from "hooks/useThanksToken";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import type { NameData } from "namestone-sdk";
 import { type FC, type ReactNode, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
@@ -145,9 +146,10 @@ const ActivityScreen: FC = () => {
   }
 
   const initialLoading = loading && allMints.length === 0;
+  const rootRef = useScrollToTop([tab, friendSort]);
 
   return (
-    <PageContainer className="px-0 pt-2 pb-8">
+    <PageContainer ref={rootRef} className="px-0 pt-2 pb-8">
       <ScreenHeader
         title="アクティビティ"
         onBack={() => navigate(`/${treeId}`)}

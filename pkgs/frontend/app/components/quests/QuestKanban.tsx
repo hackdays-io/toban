@@ -1,5 +1,6 @@
 import type { Hat } from "@hatsprotocol/sdk-v1-subgraph";
 import type { QuestStatus } from "hooks/useQuests";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { type FC, useMemo, useState } from "react";
 
 import { Segmented } from "~/components/composite/segmented";
@@ -38,11 +39,12 @@ const QuestKanban: FC<QuestKanbanProps> = ({ treeId, dutyHats }) => {
 
   const [mobileStatus, setMobileStatus] = useState<QuestStatus>("Open");
   const mobileColumn = COLUMNS.find((c) => c.status === mobileStatus);
+  const mobileRef = useScrollToTop([mobileStatus]);
 
   return (
     <>
       {/* Mobile: pick one column at a time. */}
-      <div className="md:hidden">
+      <div ref={mobileRef} className="md:hidden">
         <div className="px-1 pb-3">
           <Segmented<QuestStatus>
             value={mobileStatus}

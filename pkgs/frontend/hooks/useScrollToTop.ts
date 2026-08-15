@@ -53,6 +53,65 @@ export function scrollAncestorToTop(fromEl: HTMLElement | null): void {
   document.body.scrollTop = 0;
 }
 
+/** Reset scrollTop on a single element when it is a vertical scroll container. */
+export function scrollElementToTop(el: HTMLElement | null): void {
+  if (!el) return;
+  if (isVerticalScrollContainer(el)) {
+    el.scrollTop = 0;
+  }
+}
+
+const runScrollReset = (fromEl: HTMLElement | null): (() => void) => {
+  scrollAncestorToTop(fromEl);
+  const frame = requestAnimationFrame(() => {
+    scrollAncestorToTop(fromEl);
+  });
+  return () => cancelAnimationFrame(frame);
+};
+
+/**
+ * Reset AppShell `<main>` (and window) scroll whenever the pathname changes.
+ * Mount this once in `AppShellLayout` so every in-shell route navigation
+ * lands at the top without per-route boilerplate.
+ *
+ * Wizard step changes within the same route are out of scope — those pages
+ * should still call `useScrollToTop([step])`.
+ */
+export function useAppShellScrollReset(pathname: string): void {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname drives route-change scroll reset
+  useLayoutEffect(() => {
+    return runScrollReset(null);
+  }, [pathname]);
+}
+
+/**
+ * Fire-and-forget scroll reset when `deps` change — no ref attachment needed.
+ */
+export function useScrollReset(deps: DependencyList): void {
+  useLayoutEffect(() => {
+    return runScrollReset(null);
+  }, deps);
+}
+
+/**
+ * Reset a detail pane's own scroll container when `key` changes. Pair with
+ * `overflow-auto` on the pane — used by desktop master-detail layouts.
+ */
+export function useDetailScrollReset(
+  key: unknown,
+): RefObject<HTMLElement> {
+  const ref = useRef<HTMLElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: key drives detail-pane scroll reset
+  useLayoutEffect(() => {
+    scrollElementToTop(ref.current);
+    const frame = requestAnimationFrame(() => {
+      scrollElementToTop(ref.current);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [key]);
+  return ref;
+}
+
 /**
  * Attach the returned ref to a page root and reset scroll when appropriate.
  *
@@ -63,14 +122,8 @@ export function useScrollToTop(
   deps?: DependencyList,
 ): RefObject<HTMLDivElement> {
   const rootRef = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: caller-supplied deps control when scroll resets
   useLayoutEffect(() => {
-    scrollAncestorToTop(rootRef.current);
-    // Step swaps can change layout after the first pass (shorter/longer panels).
-    const frame = requestAnimationFrame(() => {
-      scrollAncestorToTop(rootRef.current);
-    });
-    return () => cancelAnimationFrame(frame);
+    return runScrollReset(rootRef.current);
   }, deps ?? MOUNT_ONLY);
   return rootRef;
 }

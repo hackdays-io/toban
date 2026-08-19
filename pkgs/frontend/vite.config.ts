@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
-import { type Plugin, defineConfig } from "vite";
+import { type Plugin, defineConfig, loadEnv } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -138,43 +138,67 @@ const pwa = (): Plugin[] =>
     },
   }) as unknown as Plugin[];
 
-export default defineConfig({
-  plugins: [
-    ssrPolyfillShims(),
-    ...clientNodePolyfills(),
-    ignoreWellKnown(),
-    tailwindcss(),
-    reactRouter(),
-    tsconfigPaths(),
-    ...pwa(),
-  ],
-  server: {
-    allowedHosts: ["ubuntu", ".ts.net"],
-    warmup: {
-      clientFiles: [
-        "./app/entry.client.tsx",
-        "./app/root.tsx",
-        "./app/routes/**/*.tsx",
+// Secrets the server needs but the browser must never see, so they carry no
+// VITE_ prefix. Vite only surfaces VITE_* through `import.meta.env` and never
+// populates `process.env` from .env files, so mirror them across for the dev
+// server. In production the host (Vercel) injects them directly.
+const SERVER_ONLY_ENV_KEYS = [
+  "NAMESPACE_API_KEY",
+  "NAMESPACE_MODE",
+  "NAMESPACE_TIMEOUT_MS",
+  "ENS_PARENT_NAME",
+];
+
+const loadServerOnlyEnv = (mode: string) => {
+  const fileEnv = loadEnv(mode, process.cwd(), "");
+  for (const key of SERVER_ONLY_ENV_KEYS) {
+    if (process.env[key] === undefined && fileEnv[key] !== undefined) {
+      process.env[key] = fileEnv[key];
+    }
+  }
+};
+
+export default defineConfig(({ mode }) => {
+  loadServerOnlyEnv(mode);
+
+  return {
+    plugins: [
+      ssrPolyfillShims(),
+      ...clientNodePolyfills(),
+      ignoreWellKnown(),
+      tailwindcss(),
+      reactRouter(),
+      tsconfigPaths(),
+      ...pwa(),
+    ],
+    server: {
+      allowedHosts: ["ubuntu", ".ts.net"],
+      warmup: {
+        clientFiles: [
+          "./app/entry.client.tsx",
+          "./app/root.tsx",
+          "./app/routes/**/*.tsx",
+        ],
+      },
+    },
+    // `@toban/identity` ships TypeScript source (no build step), so SSR must
+    // transpile it rather than externalise it to Node's require.
+    ssr: {
+      noExternal: ["@toban/identity"],
+    },
+    optimizeDeps: {
+      include: [
+        "@privy-io/react-auth",
+        "react-i18next",
+        "@apollo/client",
+        "@tanstack/react-query",
+        "axios",
+        "viem",
+        "viem/account-abstraction",
+        "permissionless",
+        "permissionless/accounts",
+        "permissionless/clients/pimlico",
       ],
     },
-  },
-  // `@toban/identity` ships TypeScript source (no build step), so SSR must
-  // transpile it rather than externalise it to Node's require.
-  ssr: {
-    noExternal: ["@toban/identity"],
-  },
-  optimizeDeps: {
-    include: [
-      "@privy-io/react-auth",
-      "react-i18next",
-      "@apollo/client",
-      "@tanstack/react-query",
-      "axios",
-      "viem",
-      "viem/account-abstraction",
-      "permissionless",
-      "permissionless/accounts",
-      "permissionless/clients/pimlico",
-    ],
-  },
+  };
 });

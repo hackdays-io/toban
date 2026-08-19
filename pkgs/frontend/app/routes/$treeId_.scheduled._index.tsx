@@ -8,9 +8,9 @@ import {
   readScheduledDistributorRule,
   useScheduledDistributorsByWorkspace,
 } from "hooks/useScheduledDistributor";
-import type { NameData } from "namestone-sdk";
 import { type FC, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import type { NameData } from "types/ens";
 import { abbreviateAddress } from "utils/wallet";
 import { type Address, formatUnits } from "viem";
 import { Breadcrumb } from "~/components/composite/breadcrumb";

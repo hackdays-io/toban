@@ -9,10 +9,10 @@ import {
 } from "hooks/useSplitsCreator";
 import { publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import type { NameData } from "namestone-sdk";
 import { type FC, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
 import { Breadcrumb } from "~/components/composite/breadcrumb";

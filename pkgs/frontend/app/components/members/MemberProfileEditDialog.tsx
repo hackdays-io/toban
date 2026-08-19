@@ -1,8 +1,8 @@
 import { useAddressesByNames, useUpdateName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
-import type { NameData } from "namestone-sdk";
 import { type FC, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import { ipfs2https } from "utils/ipfs";
 import { FieldLabel } from "~/components/composite/field-label";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -61,7 +61,7 @@ export const MemberProfileEditDialog: FC<MemberProfileEditDialogProps> = ({
 
   const trimmedName = name.trim();
 
-  // Namestone name availability — a name is usable if nobody else holds it
+  // ENS name availability — a name is usable if nobody else holds it
   // (empty address list) or it is unchanged from the current profile.
   const lookupNames = useMemo(
     () => (trimmedName ? [trimmedName] : []),

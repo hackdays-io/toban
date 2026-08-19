@@ -8,9 +8,9 @@ import { useHasCreatorAuthority } from "hooks/useHatsHatCreatorModule";
 import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import type { NameData } from "namestone-sdk";
 import { type FC, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -135,7 +135,7 @@ const WorkspaceRoles: FC = () => {
   }, [balanceData, dutyHats]);
 
   // Resolve all unique member addresses (wearers + supporters) up-front so
-  // each DutyCard reuses the same Namestone batch instead of issuing one
+  // each DutyCard reuses the same ENS batch instead of issuing one
   // query per row.
   const memberAddresses = useMemo(() => {
     const set = new Set<string>();

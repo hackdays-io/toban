@@ -57,7 +57,7 @@ const QuestPanel: FC<QuestPanelProps> = ({
       </Button>
     ) : null;
 
-  // Resolve creator addresses to ENS / Namestone names in a single batch so
+  // Resolve creator addresses to ENS names in a single batch so
   // each row shows a human name instead of a 0x… stub. Submitters are
   // included on the same call since they share the same column in `questMeta`
   // and the lookup cost is dominated by the network round-trip, not by the

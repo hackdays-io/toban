@@ -7,9 +7,9 @@ import { useHasAuthority } from "hooks/useHatsTimeFrameModule";
 import { useQuests } from "hooks/useQuests";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo } from "react";
 import { Link, useParams } from "react-router";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -131,7 +131,7 @@ const DutyDetail: FC = () => {
   }, [balanceData, wearerSet]);
 
   // Pull name + avatar for every address that appears anywhere on the page
-  // in a single Namestone batch.
+  // in a single ENS batch.
   const allAddresses = useMemo(
     () => Array.from(new Set([...wearerAddresses, ...supporterAddresses])),
     [wearerAddresses, supporterAddresses],

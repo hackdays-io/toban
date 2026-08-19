@@ -11,9 +11,9 @@ import {
   useUserThanksTokenBalance,
 } from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
-import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { getTreatEmojiByAmount } from "utils/treatEmoji";

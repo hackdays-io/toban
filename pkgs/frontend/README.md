@@ -50,12 +50,19 @@ subgraph より先に走らせると、新しいフィールドが型に現れ�
 | コントラクト | `VITE_BIGBANG_ADDRESS` / `VITE_HATS_ADDRESS` / `VITE_FRACTION_TOKEN_ADDRESS` / `VITE_SPLITS_CREATOR_ADDRESS` / `VITE_SCHEDULED_DISTRIBUTOR_FACTORY_ADDRESS` |
 | インデクサー | `VITE_GOLDSKY_GRAPHQL_ENDPOINT` / `VITE_HATS_GRAPHQL_ENDPOINT` / `VITE_THEGRAPH_API_KEY` |
 | ウォレット / AA | `VITE_PRIVY_APP_ID` / `VITE_PIMLICO_API_KEY` |
-| ストレージ・名前解決 | `VITE_PINATA_JWT` / `VITE_PINATA_GATEWAY` / `VITE_PINATA_GATEWAY_TOKEN` / `VITE_NAMESTONE_API_KEY` |
+| ストレージ | `VITE_PINATA_JWT` / `VITE_PINATA_GATEWAY` / `VITE_PINATA_GATEWAY_TOKEN` |
+| ENS 名前解決（**サーバー専用**） | `NAMESPACE_API_KEY` / `NAMESPACE_MODE` / `ENS_PARENT_NAME` / `NAMESPACE_TIMEOUT_MS` |
 | Splits | `VITE_SPLITS_API_KEY` |
 | Discord 連携 | `VITE_IDENTITY_WORKER_URL` / `VITE_BOT_WORKER_URL` / `VITE_DISCORD_BOT_SIGNER_ADDRESS` |
 
 Discord 連携の 3 つは**ネットワークごとに値が違います**。未設定でもビルドは通り、該当 UI
 （「サーバーに追加」ボタンなど）が出ないだけなので、抜けに気づきにくい点に注意してください。
+
+`NAMESPACE_*` / `ENS_PARENT_NAME` に **`VITE_` を付けてはいけません**。これらはサーバー
+（loader / action）でしか読まれない値で、`VITE_` を付けるとクライアントバンドルに API キーが
+そのまま埋め込まれます。Vite は `.env` を `process.env` に流し込まないため、ローカル開発用に
+`vite.config.ts` の `loadServerOnlyEnv()` が `.env` から `process.env` へ橋渡ししています。
+本番（Vercel）ではプラットフォームの環境変数がそのまま使われます。
 
 > ⚠️ **`VITE_*` はビルド時にクライアントへ埋め込まれ、公開されます。** 秘密にできる値ではありません。
 > The Graph / Alchemy のキーは**ドメイン allowlist** で保護してください。

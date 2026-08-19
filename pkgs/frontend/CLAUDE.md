@@ -84,12 +84,32 @@ Routes are flat files in `app/routes/` with `$param` for segments and `_` for in
 
 One hook per contract / concern. These wrap viem `getContract` calls and are the **only** sanctioned way for routes to talk to chain. When adding a contract, follow the existing pattern: ABI in `pkgs/frontend/abi/`, hook in `hooks/`, optional Apollo query for indexed data.
 
-Notable hooks: `useBigBang`, `useHats`, `useHatsTimeFrameModule`, `useHatsHatCreatorModule`, `useFractionToken`, `useThanksToken`, `useSplitsCreator`, `useWorkspace`, `useWallet`, `useViem`, `useIpfs` (Pinata), `useENS` (Namestone).
+Notable hooks: `useBigBang`, `useHats`, `useHatsTimeFrameModule`, `useHatsHatCreatorModule`, `useFractionToken`, `useThanksToken`, `useSplitsCreator`, `useWorkspace`, `useWallet`, `useViem`, `useIpfs` (Pinata), `useENS` (ENS subnames via Namespace).
 
 ## Environment
 
 `pkgs/frontend/.env` (Sepolia) and `.env.base` (Base) — `.env.example` is the template. The canonical, grouped list is in the [README](./README.md#環境変数). `.env.base` toggles to Base mainnet for `dev:base` / `codegen:base`.
 
+## ENS names (`*.toban.eth`)
+
+Member display names, avatars, and bios are ENS **offchain subnames** of `toban.eth`, not chain state. NameStone hosted them until it ceased operations on 2026-08-03 (#555, taking every existing record with it); they now live in **Namespace** (`@thenamespace/offchain-manager`).
+
+The dependency is deliberately confined to two seams — keep it that way:
+
+- **`app/.server/ens/`** — `NameProvider` (the interface), `NamespaceProvider` (the implementation), and a lazily-built singleton. `.server/` is enforced by the React Router Vite plugin, so the API key can't leak into a client bundle.
+- **`app/routes/api.ens.$action.tsx`** — the only HTTP surface: `resolve-names`, `resolve-addresses` (GET), `set-name`, `update-name` (POST).
+- **`hooks/useENS.ts`** — the only client-side caller. Everything else consumes `NameData` / `TextRecords` from `types/ens` and never talks to a provider directly.
+
+Rules that are easy to get wrong:
+
+- **Writes go through `createSubname` only.** `POST /subnames` is an upsert, and every other SDK write helper (`updateSubname`, `addTextRecord`, `setDefaultEvmAddress`, …) rebuilds the record without `owner` and silently wipes ownership. Send the full record each time; an omitted text record is a deletion.
+- **Never `throw data(…)` from inside a `try`** in the API route. `data()` returns a `DataWithResponseInit`, so the route's own `catch` swallows it and re-reports a 500 — that was the original 409-becomes-500 bug. Throw `NameApiError(status, message)` and let the boundary translate it.
+- `getSingleSubname` does not return `null` on 404 despite its type; `NamespaceProvider` absorbs that.
+- Splits register dotted labels (`foo.split.toban.eth`). The provider derives the label from `fullName` rather than `dto.label` so re-parenting on the API side can't truncate it. **Nested labels are still unverified against a live Namespace tenant** — check this on Sepolia staging before trusting split names.
+
 ## Testing
 
-E2E only — Cypress under `cypress/`. There is no Vitest/Jest unit-test setup here; for non-trivial logic, prefer extracting to a pure module and exercising via Cypress component testing or Ladle.
+- **Unit** — Vitest (`pnpm frontend test`, `test:watch`). `vitest.config.ts` deliberately skips the app's plugin stack; tests live next to the module (`app/.server/ens/*.test.ts`). Files under `app/routes/` must not be named `*.test.ts` — `flatRoutes()` would turn them into routes.
+- **E2E** — Cypress under `cypress/`.
+
+For non-trivial logic, prefer extracting a pure module and unit-testing it.

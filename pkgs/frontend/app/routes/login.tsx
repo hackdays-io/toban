@@ -40,7 +40,7 @@ const Login: FC = () => {
   // Post-auth navigation. Routes returning users to /workspace and
   // brand-new accounts (no ENS name yet) to /signup. Fixes issue #504:
   //
-  // 1. Lookup races a 5 s timeout so a slow `/api/namestone/resolve-names`
+  // 1. Lookup races a 5 s timeout so a slow `/api/ens/resolve-names`
   //    can't leave the user stranded on the connecting card.
   // 2. For embedded wallets we must wait for the smart-wallet client
   //    because the user's profile is keyed by its address — falling back
@@ -54,7 +54,7 @@ const Login: FC = () => {
   // identity every render. Keying the effect on the object made it tear
   // down + re-run on each render while Privy provisioned a brand-new
   // account's smart wallet — clearing the 5 s timeout and aborting the
-  // namestone lookup before either could complete, leaving the user stuck
+  // ENS lookup before either could complete, leaving the user stuck
   // on "ワークスペースを準備しています…". The address string is stable
   // across those re-renders, so the effect now runs exactly once per real
   // address change.
@@ -67,7 +67,7 @@ const Login: FC = () => {
     const address = resolvedAddress;
     if (!address) return;
 
-    const NAMESTONE_TIMEOUT_MS = 5000;
+    const LOOKUP_TIMEOUT_MS = 5000;
     let cancelled = false;
     let navigated = false;
 
@@ -82,12 +82,16 @@ const Login: FC = () => {
       window.location.href = to;
     };
 
-    // Independent timer so a hanging /api/namestone/resolve-names request
-    // never blocks navigation — we just default to /signup after 5 s.
+    // Independent timer so a hanging /api/ens/resolve-names request never
+    // blocks navigation. Issue #527: default to /workspace, not /signup —
+    // /signup is a dead end for a returning user whose name we simply failed
+    // to read (they can't re-take a name they already hold), whereas
+    // /workspace is usable either way. Only a *successful* empty lookup is
+    // evidence that the account is genuinely new.
     const timeoutId = setTimeout(() => {
-      console.warn("namestone lookup timed out; routing to /signup");
-      safeNavigate("/signup");
-    }, NAMESTONE_TIMEOUT_MS);
+      console.warn("ENS lookup timed out; routing to /workspace");
+      safeNavigate("/workspace");
+    }, LOOKUP_TIMEOUT_MS);
 
     fetchNames([address])
       .then((names) => {
@@ -106,9 +110,12 @@ const Login: FC = () => {
           error instanceof Error &&
           (error.name === "AbortError" || error.name === "CanceledError");
         if (!isAbort) {
-          console.error("Failed to resolve names; routing to /signup", error);
+          console.error(
+            "Failed to resolve names; routing to /workspace",
+            error,
+          );
         }
-        safeNavigate("/signup");
+        safeNavigate("/workspace");
       });
 
     return () => {

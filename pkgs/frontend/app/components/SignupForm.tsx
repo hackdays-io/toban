@@ -1,9 +1,9 @@
 import { useAddressesByNames, useSetName } from "hooks/useENS";
 import { useUploadImageFileToIpfs } from "hooks/useIpfs";
 import { useActiveWallet } from "hooks/useWallet";
-import type { TextRecords } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { TextRecords } from "types/ens";
 import { FieldLabel } from "~/components/composite/field-label";
 import {
   Avatar,

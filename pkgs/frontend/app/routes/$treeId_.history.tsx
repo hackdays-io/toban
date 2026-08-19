@@ -1,10 +1,10 @@
 import { MintThanksToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetMintThanksTokens } from "hooks/useThanksToken";
-import type { NameData } from "namestone-sdk";
 import { type FC, type ReactNode, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { Link, useNavigate, useParams } from "react-router";
+import type { NameData } from "types/ens";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { hexToString } from "viem";
@@ -100,7 +100,7 @@ const ActivityScreen: FC = () => {
   }, [allMints, range]);
 
   // Resolve names once for every counter-party that appears in *any* period
-  // bucket — that way switching chips never re-fires Namestone lookups.
+  // bucket — that way switching chips never re-fires ENS lookups.
   const allAddresses = useMemo(() => {
     const set = new Set<string>();
     for (const m of allMints) {

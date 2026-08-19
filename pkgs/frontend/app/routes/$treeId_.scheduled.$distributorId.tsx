@@ -10,10 +10,10 @@ import {
   useScheduledDistributorDetail,
 } from "hooks/useScheduledDistributor";
 import { useActiveWallet } from "hooks/useWallet";
-import type { NameData } from "namestone-sdk";
 import { type FC, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
@@ -148,7 +148,7 @@ const ScheduledDetail: FC = () => {
     return m;
   }, [hats, hatDetailsQueries]);
 
-  // ── Wearer + preview-recipient name resolution (Namestone) ──
+  // ── Wearer + preview-recipient name resolution (ENS) ──
   const previewRecipientsRaw = previewQuery.data?.[0] ?? [];
   const allAddresses = useMemo(() => {
     const set = new Set<string>();

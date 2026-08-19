@@ -6,7 +6,6 @@ import {
   useGetMintThanksTokens,
   useThanksToken,
 } from "hooks/useThanksToken";
-import type { NameData } from "namestone-sdk";
 import {
   type FC,
   type ReactNode,
@@ -18,6 +17,7 @@ import {
 import { LuCheck } from "react-icons/lu";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import { goldskyClient } from "utils/apollo";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";

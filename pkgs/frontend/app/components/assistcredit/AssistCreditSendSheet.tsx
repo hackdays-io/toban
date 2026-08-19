@@ -6,10 +6,10 @@ import {
   useTransferFractionToken,
 } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
-import type { NameData } from "namestone-sdk";
 import { type FC, Fragment, useMemo, useState } from "react";
 import { LuCheck } from "react-icons/lu";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";

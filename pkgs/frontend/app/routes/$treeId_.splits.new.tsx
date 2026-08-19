@@ -186,7 +186,7 @@ const SplitterNew: FC = () => {
   };
 
   // Resolve display names + avatars for every wearer across every duty in one
-  // batched Namestone call so the per-duty detail dialog renders without an
+  // batched ENS call so the per-duty detail dialog renders without an
   // extra round-trip when opened.
   const allWearerAddresses = useMemo(() => {
     const set = new Set<string>();

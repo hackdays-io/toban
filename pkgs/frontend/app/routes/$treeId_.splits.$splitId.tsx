@@ -10,10 +10,10 @@ import {
 } from "hooks/useSplitsCreator";
 import { alchemyPublicClient, currentChain, publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import type { NameData } from "namestone-sdk";
 import { type FC, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import { type Address, decodeFunctionData } from "viem";
@@ -140,7 +140,7 @@ const SplitDetailPage: FC = () => {
 
   const recipients = useMemo(() => consolidateRecipients(split), [split]);
 
-  // Resolve names for split + recipients in a single Namestone batch.
+  // Resolve names for split + recipients in a single ENS batch.
   const splitAddrArray = useMemo(() => (split ? [split.address] : []), [split]);
   const recipientAddresses = useMemo(
     () => recipients.list.map((r) => r.address),

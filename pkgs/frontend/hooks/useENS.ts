@@ -4,12 +4,12 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import axios from "axios";
-import type { NameData, TextRecords } from "namestone-sdk";
 import { useCallback, useMemo, useState } from "react";
+import type { NameData, TextRecords } from "types/ens";
 import { useActiveWallet } from "./useWallet";
 
-const NAMES_QUERY_KEY = "namestone-names";
-const ADDRESSES_QUERY_KEY = "namestone-addresses";
+const NAMES_QUERY_KEY = "ens-names";
+const ADDRESSES_QUERY_KEY = "ens-addresses";
 const NAMES_STALE_TIME = 1000 * 60 * 10;
 const NAMES_GC_TIME = 1000 * 60 * 60;
 
@@ -38,10 +38,9 @@ const fetchNamesFromApi = async (
   addresses: string[],
 ): Promise<NameData[][]> => {
   if (addresses.length === 0) return [];
-  const { data } = await axios.get<NameData[][]>(
-    "/api/namestone/resolve-names",
-    { params: { addresses: addresses.join(",") } },
-  );
+  const { data } = await axios.get<NameData[][]>("/api/ens/resolve-names", {
+    params: { addresses: addresses.join(",") },
+  });
   return data;
 };
 
@@ -98,7 +97,7 @@ export const useActiveWalletIdentity = () => {
 
   // Surface the loading flag so callers can distinguish "still resolving"
   // from "resolved with no profile". Treat the pre-wallet state as
-  // loading too — without that, the namestone query is disabled and
+  // loading too — without that, the ENS query is disabled and
   // `isNamesLoading` reads false even though we haven't started.
   return { identity, isLoading: !wallet || isNamesLoading };
 };
@@ -186,10 +185,9 @@ const fetchAddressesFromApi = async (
   exactMatch?: boolean,
 ): Promise<NameData[][]> => {
   if (names.length === 0) return [];
-  const { data } = await axios.get<NameData[][]>(
-    "/api/namestone/resolve-addresses",
-    { params: { names: names.join(","), exact_match: exactMatch } },
-  );
+  const { data } = await axios.get<NameData[][]>("/api/ens/resolve-addresses", {
+    params: { names: names.join(","), exact_match: exactMatch },
+  });
   return data;
 };
 
@@ -248,7 +246,7 @@ export const useSetName = () => {
       if (!params.address || !params.name) return;
       setIsLoading(true);
       try {
-        await axios.post("/api/namestone/set-name", params);
+        await axios.post("/api/ens/set-name", params);
         await queryClient.invalidateQueries({ queryKey: [NAMES_QUERY_KEY] });
         await queryClient.invalidateQueries({
           queryKey: [ADDRESSES_QUERY_KEY],
@@ -281,7 +279,7 @@ export const useUpdateName = () => {
 
       setIsLoading(true);
       try {
-        const response = await axios.post("/api/namestone/update-name", params);
+        const response = await axios.post("/api/ens/update-name", params);
         console.log("API response:", {
           status: response.status,
           statusText: response.statusText,

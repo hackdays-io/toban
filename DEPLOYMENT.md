@@ -53,6 +53,7 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 | `pkgs/contract/.env` | `PRIVATE_KEY`（Sepolia） / `PRODUCTION_PRIVATE_KEY`（Base） / `ALCHEMY_API_KEY` / `ETHERSCAN_API_KEY` / `BASESCAN_API_KEY` |
 | `pkgs/subgraph/config/<net>.json` | `address`（BigBang） / `startBlock` |
 | `pkgs/frontend/.env`（Sepolia）<br>`pkgs/frontend/.env.base`（Base） | `VITE_BIGBANG_ADDRESS` ほか `VITE_*` / `VITE_GOLDSKY_GRAPHQL_ENDPOINT` |
+| Vercel の環境変数（**`VITE_` 無し = サーバー専用**） | `NAMESPACE_API_KEY` / `NAMESPACE_MODE` / `ENS_PARENT_NAME` / `NAMESPACE_TIMEOUT_MS` |
 | `pkgs/extensions/*/wrangler.toml` の `[vars]` | **公開値のみ**。`CHAIN_ID` / `GOLDSKY_GRAPHQL_ENDPOINT` / `TURNKEY_ORGANIZATION_ID` / `TURNKEY_BOT_SIGNER_ADDRESS` / `IDENTITY_WORKER_URL` / `BOT_WORKER_URL` など |
 | Worker secrets（`wrangler secret put`） | 鍵・トークンを含む値すべて → **[§6-2 の一覧](#6-2-secret-一覧)** |
 | shell（Turnkey 操作時） | `TK_ORG` / `TK_ADMIN_KEY` |
@@ -60,6 +61,11 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 `[vars]` は **named environment に継承されません**。Base 用は `[env.base.vars]` に書き直します。
 また、**同名の値が `[vars]` にあると deploy 時に secret を上書きします** — secret にする名前は
 `vars` から完全に削除してください。
+
+`NAMESPACE_API_KEY` は**フロントのビルド時ではなく Vercel の環境変数**に入れます（`VITE_` を
+付けるとクライアントバンドルに露出する）。ローカルでは `.env` / `.env.base` に `VITE_` 無しで
+書けば `vite.config.ts` が `process.env` に橋渡しします。未設定だと `/api/ens/*` が 503 を返し、
+名前・アバターが一切解決されません。
 
 ---
 

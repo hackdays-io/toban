@@ -13,12 +13,12 @@ import {
 import type { WalletType } from "hooks/useWallet";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import type { NameData } from "namestone-sdk";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { LuCheck } from "react-icons/lu";
 import { SiDiscord } from "react-icons/si";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";

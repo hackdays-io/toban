@@ -126,7 +126,7 @@ function AccountMenu({ variant = "compact", className }: AccountMenuProps) {
     );
   }
 
-  // Logged in but no namestone profile yet — fall through to the loading
+  // Logged in but no ENS profile yet — fall through to the loading
   // state above keeps us here only if identity already resolved.
   if (!identity) {
     return null;

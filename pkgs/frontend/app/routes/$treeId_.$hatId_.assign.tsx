@@ -4,7 +4,6 @@ import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { useGetHat, useTreeInfo } from "hooks/useHats";
 import { useMintHatFromTimeFrameModule } from "hooks/useHatsTimeFrameModule";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import type { NameData } from "namestone-sdk";
 import {
   type FC,
   useCallback,
@@ -15,6 +14,7 @@ import {
 } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
@@ -174,24 +174,24 @@ const AssignDuty: FC = () => {
     [memberNames],
   );
 
-  // Namestone forward lookup so a name typed in the search box can resolve to
+  // ENS forward lookup so a name typed in the search box can resolve to
   // addresses that are NOT yet in the workspace directory (`useNamesByAddresses`
   // above only resolves names for addresses we already know). Skip when the
   // input parses as a raw address — that path has its own dedicated branch.
-  const namestoneQuery = useMemo(
+  const ensQuery = useMemo(
     () => (trimmed && !isAddressInput ? [trimmed] : undefined),
     [trimmed, isAddressInput],
   );
-  const { addresses: namestoneHits, isLoading: isNamestoneLoading } =
-    useAddressesByNames(namestoneQuery);
+  const { addresses: ensHits, isLoading: isEnsLoading } =
+    useAddressesByNames(ensQuery);
 
-  // Flatten namestone hits into SelectedMember candidates, excluding anyone
+  // Flatten ENS hits into SelectedMember candidates, excluding anyone
   // already assigned to this duty and anyone we already have in `allMembers`.
-  const namestoneMembers = useMemo<SelectedMember[]>(() => {
+  const ensMembers = useMemo<SelectedMember[]>(() => {
     if (!trimmed || isAddressInput) return [];
     const seen = new Set(allMembers.map((m) => m.address.toLowerCase()));
     const out: SelectedMember[] = [];
-    for (const group of namestoneHits) {
+    for (const group of ensHits) {
       for (const u of group) {
         if (!u || !u.address) continue;
         const addr = u.address.toLowerCase();
@@ -206,9 +206,9 @@ const AssignDuty: FC = () => {
       }
     }
     return out;
-  }, [namestoneHits, allMembers, assignedAddresses, isAddressInput, trimmed]);
+  }, [ensHits, allMembers, assignedAddresses, isAddressInput, trimmed]);
 
-  // Client-side substring filter on existing members + namestone candidates.
+  // Client-side substring filter on existing members + ENS candidates.
   const visibleMembers = useMemo<SelectedMember[]>(() => {
     const q = trimmed.toLowerCase();
     if (!q) return allMembers;
@@ -217,16 +217,16 @@ const AssignDuty: FC = () => {
         m.name?.toLowerCase().includes(q) ||
         m.address.toLowerCase().includes(q),
     );
-    return [...localMatches, ...namestoneMembers];
-  }, [allMembers, trimmed, namestoneMembers]);
+    return [...localMatches, ...ensMembers];
+  }, [allMembers, trimmed, ensMembers]);
 
-  // Keep the in-workspace skeleton on first paint, then let namestone results
+  // Keep the in-workspace skeleton on first paint, then let ENS results
   // stream in below. We deliberately don't gate the whole list on
-  // `isNamestoneLoading` so local-only matches stay visible while the
-  // namestone request is in flight.
+  // `isEnsLoading` so local-only matches stay visible while the
+  // ENS request is in flight.
   const directoryLoading =
     !tree || (isMembersLoading && allMembers.length === 0);
-  const searchingNamestone = isNamestoneLoading && !!trimmed && !isAddressInput;
+  const searchingEns = isEnsLoading && !!trimmed && !isAddressInput;
 
   // When the user pastes a raw address, resolve it against the directory so a
   // known member still shows their name, while a non-member can be onboarded
@@ -396,7 +396,7 @@ const AssignDuty: FC = () => {
                 {directoryLoading ? (
                   <MemberListSkeleton />
                 ) : visibleMembers.length === 0 ? (
-                  searchingNamestone ? (
+                  searchingEns ? (
                     <Card className="gap-0 p-4">
                       <Typography variant="bodySm" tone="secondary">
                         検索中...
@@ -439,7 +439,7 @@ const AssignDuty: FC = () => {
                         </div>
                       ))}
                     </Card>
-                    {searchingNamestone && (
+                    {searchingEns && (
                       <Typography
                         as="div"
                         variant="caption"

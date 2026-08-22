@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { MintThanksToken_OrderBy, OrderDirection } from "gql/graphql";
 import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
 import { useQuestMetadata } from "hooks/useQuestMetadata";
 import { type Quest, useQuests } from "hooks/useQuests";
 import {
   HOME_ACTIVITY_MINTS_LIMIT,
+  useGetMintThanksTokens,
   useThanksToken,
   useThanksTokenActivity,
-  useUserThanksTokenBalance,
 } from "hooks/useThanksToken";
 import { useActiveWallet } from "hooks/useWallet";
 import { type FC, Fragment, useMemo } from "react";
@@ -33,6 +34,18 @@ import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 const WEEK_SEC = 7 * 24 * 60 * 60;
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+
+// `useGetMintThanksTokens` already runs amounts through `formatEther`, so they
+// arrive as decimal strings ("1.0"). Sum as floats, same as member detail.
+const sumMintAmounts = (mints?: { amount: unknown }[]): string => {
+  let total = 0;
+  for (const m of mints ?? []) {
+    const n = Number(m.amount);
+    if (Number.isFinite(n)) total += n;
+  }
+  return Math.floor(total).toLocaleString();
+};
 
 // Mirrors the "homma さんから / 2 時間前" cadence in the design source. Anything
 // older than five weeks falls back to a JP locale date so the row stays scannable.
@@ -106,7 +119,6 @@ const WorkspaceHome: FC = () => {
   }, [tree, me]);
 
   const { mintableAmount } = useThanksToken(treeId || "");
-  const { balance: receivedBalance } = useUserThanksTokenBalance(treeId);
   const { mints, isLoading: isActivityLoading } = useThanksTokenActivity(
     treeId,
     HOME_ACTIVITY_MINTS_LIMIT,
@@ -134,34 +146,28 @@ const WorkspaceHome: FC = () => {
     return map;
   }, [names]);
 
-  // Weekly stats are derived from the same `recentMints` slice; we don't issue
-  // an extra query. Per-user activity is "this week's outgoing thanks" and the
-  // delta is a coarse "% change in workspace-wide mints vs the prior week".
+  // The balance card's delta is derived from the same `recentMints` slice; we
+  // don't issue an extra query for it. It is a coarse "% change in
+  // workspace-wide mints vs the prior week".
   const nowMs = Date.now();
   const nowSec = Math.floor(nowMs / 1000);
-  const weeklyStats = useMemo(() => {
+  const weeklyDelta = useMemo(() => {
     let workspaceThisWeek = 0;
     let workspaceLastWeek = 0;
-    let myThisWeek = 0;
-    const meAddr = me?.toLowerCase();
     for (const m of recentMints) {
       const ts = Number(m.blockTimestamp);
       if (ts >= nowSec - WEEK_SEC) {
         workspaceThisWeek += 1;
-        if (meAddr && m.from?.toLowerCase() === meAddr) myThisWeek += 1;
       } else if (ts >= nowSec - 2 * WEEK_SEC) {
         workspaceLastWeek += 1;
       }
     }
-    let delta: string | undefined;
-    if (workspaceLastWeek > 0) {
-      const pct = Math.round(
-        ((workspaceThisWeek - workspaceLastWeek) / workspaceLastWeek) * 100,
-      );
-      if (pct > 0) delta = `+${pct}% 今週`;
-    }
-    return { workspaceThisWeek, myThisWeek, delta };
-  }, [recentMints, me, nowSec]);
+    if (workspaceLastWeek === 0) return undefined;
+    const pct = Math.round(
+      ((workspaceThisWeek - workspaceLastWeek) / workspaceLastWeek) * 100,
+    );
+    return pct > 0 ? `+${pct}% 今週` : undefined;
+  }, [recentMints, nowSec]);
 
   const { quests } = useQuests(treeId, {
     statuses: ["Open", "PendingReview"],
@@ -173,16 +179,58 @@ const WorkspaceHome: FC = () => {
       Math.floor(Number(formatEther(mintableAmount || 0n))).toLocaleString(),
     [mintableAmount],
   );
+
+  // Both stat cards cover "this calendar month" so they read at the same
+  // granularity. Only mints count — a mint is the act of thanking someone,
+  // which is what "送れるサンクス" above meters. Transfers of already-held
+  // tokens are a different motion and stay out of these totals.
+  //
+  // `new Date(y, m, 1)` is local midnight on the 1st, so the epoch seconds it
+  // yields line up with the JST month boundary the user expects. `nowMs` is a
+  // fresh `Date.now()` every render, but this reduces to a value that only
+  // moves at a month boundary — Apollo's variables stay equal, so the queries
+  // below don't refetch on every render.
+  const monthStartSec = useMemo(() => {
+    const now = new Date(nowMs);
+    return Math.floor(
+      new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000,
+    );
+  }, [nowMs]);
+  // Same guard as the send screen: an unresolved wallet must not fall through to
+  // an unfiltered `from`/`to`, which would total the whole workspace. The zero
+  // address matches nothing, so the cards read 0 until the wallet arrives.
+  const queryMeAddr = me?.toLowerCase() ?? ZERO_ADDR;
+  const monthlyMintQuery = {
+    orderBy: MintThanksToken_OrderBy.BlockTimestamp,
+    orderDirection: OrderDirection.Desc,
+    // Matches `MemberDetailContent`; a single member clearing 1000 mints in one
+    // month is not realistic, but past that the total silently under-reports.
+    first: 1000,
+  };
+  const { data: receivedThisMonth } = useGetMintThanksTokens({
+    where: {
+      workspaceId: treeId,
+      to: queryMeAddr,
+      blockTimestamp_gte: monthStartSec,
+    },
+    ...monthlyMintQuery,
+  });
+  const { data: sentThisMonth } = useGetMintThanksTokens({
+    where: {
+      workspaceId: treeId,
+      from: queryMeAddr,
+      blockTimestamp_gte: monthStartSec,
+    },
+    ...monthlyMintQuery,
+  });
   const receivedFormatted = useMemo(
-    () =>
-      Math.floor(Number(formatEther(BigInt(receivedBalance)))).toLocaleString(),
-    [receivedBalance],
+    () => sumMintAmounts(receivedThisMonth?.mintThanksTokens),
+    [receivedThisMonth],
   );
-  // Mock: workspace join day. `HatsTimeFrameModule.getWoreTime(wearer, hatId)`
-  // exists per-hat on-chain (see ThanksToken.mintableAmount), but no
-  // subgraph entity / aggregation hook surfaces a per-workspace join time.
-  // Tracked in issue #493.
-  const daysSinceJoin = 45;
+  const sentFormatted = useMemo(
+    () => sumMintAmounts(sentThisMonth?.mintThanksTokens),
+    [sentThisMonth],
+  );
 
   const activityItems = useMemo<ActivityItem[]>(() => {
     const resolveName = (addr: string) =>
@@ -241,29 +289,23 @@ const WorkspaceHome: FC = () => {
       <div className="flex flex-col gap-6 md:hidden">
         <WeeklyBalanceCard
           sendableAmount={sendableAmount}
-          deltaLabel={weeklyStats.delta}
+          deltaLabel={weeklyDelta}
           onSend={goSendThanks}
           className="mx-1"
         />
 
-        <div className="grid grid-cols-3 gap-2 px-1">
+        <div className="grid grid-cols-2 gap-2 px-1">
           <StatCard
-            label="受け取ったサンクス"
+            label="今月受け取ったサンクス"
             value={receivedFormatted}
             unit="THX"
             accent="var(--color-contrib)"
           />
           <StatCard
-            label="今週の貢献"
-            value={weeklyStats.myThisWeek}
-            unit="件"
+            label="今月送ったサンクス"
+            value={sentFormatted}
+            unit="THX"
             accent="var(--color-split)"
-          />
-          <StatCard
-            label="参加して"
-            value={daysSinceJoin}
-            unit="日目"
-            accent="var(--color-role)"
           />
         </div>
 
@@ -332,9 +374,9 @@ const WorkspaceHome: FC = () => {
       {/* Desktop layout — 2fr / 1fr grid. */}
       <div className="hidden gap-5 md:grid md:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <StatCard
-              label="受け取ったサンクス"
+              label="今月受け取ったサンクス"
               value={receivedFormatted}
               unit="THX"
               size="wide"
@@ -342,19 +384,11 @@ const WorkspaceHome: FC = () => {
               valueClassName="text-[26px]"
             />
             <StatCard
-              label="今週の貢献"
-              value={weeklyStats.myThisWeek}
-              unit="件"
+              label="今月送ったサンクス"
+              value={sentFormatted}
+              unit="THX"
               size="wide"
               accent="var(--color-split)"
-              valueClassName="text-[26px]"
-            />
-            <StatCard
-              label="参加して"
-              value={daysSinceJoin}
-              unit="日目"
-              size="wide"
-              accent="var(--color-role)"
               valueClassName="text-[26px]"
             />
           </div>
@@ -392,7 +426,7 @@ const WorkspaceHome: FC = () => {
         <div className="flex flex-col gap-5">
           <WeeklyBalanceCard
             sendableAmount={sendableAmount}
-            deltaLabel={weeklyStats.delta}
+            deltaLabel={weeklyDelta}
             onSend={goSendThanks}
           />
 

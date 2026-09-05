@@ -1,0 +1,22 @@
+{
+  "name": "@toban/openclaw",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "OpenClaw gateway on Fly.io — Toban の Discord エージェント。デプロイ設定と設定ファイルのレンダリングのみを持ち、アプリコードは持たない",
+  "scripts": {
+    "render:config": "tsx scripts/render-config.ts",
+    "push:config": "./scripts/push-config.sh",
+    "deploy:fly": "./scripts/deploy.sh",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.6"
+  }
+}

@@ -31,6 +31,13 @@ export interface PlatformLink {
   // Wallet that registered the workspace ↔ platform binding. Matches the
   // identity worker's `installed_by` column / `installedBy` JSON field.
   installedBy: Address;
+  /**
+   * 通知の投稿先チャンネル（`platform_links.metadata` の `notify.channelId`
+   * 由来）。**読み取り専用**で、GET のときだけ入る。設定は
+   * {@link IdentityClient.setNotifyChannelId} を使うこと —
+   * {@link IdentityClient.upsertPlatformLink} はこのフィールドを送らない。
+   */
+  notifyChannelId?: string | null;
 }
 
 export interface IdentityClient {
@@ -51,6 +58,29 @@ export interface IdentityClient {
    * OAuth callback after the admin Hat check passes.
    */
   upsertPlatformLink(link: PlatformLink): Promise<void>;
+
+  /**
+   * ギルドの通知チャンネルを読む。未設定なら `null`。
+   * platform link 自体が無いときも `null`。
+   */
+  getNotifyChannelId(
+    provider: ProviderId,
+    platformId: string,
+  ): Promise<string | null>;
+
+  /**
+   * ギルドの通知チャンネルを設定する。`null` で解除。
+   *
+   * identity Worker 側で read-modify-write されるので、`metadata` の他の
+   * キー（例: MCP トークンのバージョン）は保たれる。チャンネル ID の
+   * snowflake 検証も Worker 側で行われ、不正なら `invalid_channel_id` で
+   * 落ちる。platform link が存在しないギルドは `not_found`。
+   */
+  setNotifyChannelId(
+    provider: ProviderId,
+    platformId: string,
+    channelId: string | null,
+  ): Promise<void>;
 
   /**
    * Single-use claim for an OAuth-install state-JWT `jti`. Resolves
@@ -130,17 +160,50 @@ class IdentityFetchClient implements IdentityClient {
   }
 
   async upsertPlatformLink(link: PlatformLink): Promise<void> {
+    // `notifyChannelId` は読み取り専用の派生フィールドなので送らない。送ると
+    // Worker 側で無視されるだけだが、書き込み経路が 2 本あるように見えるのを
+    // 避ける（設定は setNotifyChannelId 一本）。また `metadata` キーを
+    // 含めないことで、Worker 側が既存の metadata を保持してくれる。
+    const { notifyChannelId: _ignored, ...body } = link;
     const res = await this.go("/api/platform-link", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         "x-toban-platform-link-secret": this.secrets.writeSecret,
       },
-      body: JSON.stringify(link),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       throw new Error(
         `platform-link upsert failed: ${res.status} ${await res.text()}`,
+      );
+    }
+  }
+
+  async getNotifyChannelId(
+    provider: ProviderId,
+    platformId: string,
+  ): Promise<string | null> {
+    const link = await this.getPlatformLink(provider, platformId);
+    return link?.notifyChannelId ?? null;
+  }
+
+  async setNotifyChannelId(
+    provider: ProviderId,
+    platformId: string,
+    channelId: string | null,
+  ): Promise<void> {
+    const res = await this.go("/api/platform-link/notify-channel", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-toban-platform-link-secret": this.secrets.writeSecret,
+      },
+      body: JSON.stringify({ provider, platformId, channelId }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `notify-channel update failed: ${res.status} ${await res.text()}`,
       );
     }
   }

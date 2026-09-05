@@ -106,6 +106,12 @@ class StubIdentity implements IdentityClient {
   async upsertPlatformLink() {
     /* no-op */
   }
+  async getNotifyChannelId() {
+    return this.link?.notifyChannelId ?? null;
+  }
+  async setNotifyChannelId() {
+    /* no-op */
+  }
   async claimInstallStateJti() {
     return { ok: true } as const;
   }

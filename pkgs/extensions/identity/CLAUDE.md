@@ -24,7 +24,7 @@ The proof model is:
 
 Cloudflare Workers (no Node-only APIs), and this package **is a deployed Worker of its own** — `src/worker.ts` is the `main` in `wrangler.toml`, and it owns the routing. (It started as a library of mountable handlers; `handlers/*` still export pure `Request → Promise<Response>` functions, and `src/index.ts` re-exports them, but the deployed entry point is `worker.ts`.) Persistence is the `DB` D1 binding.
 
-Routes served by `worker.ts`: `POST /api/connect`, `GET /api/lookup`, `POST /api/platform-link`, `POST /api/install-state/claim-jti`, `GET /health`.
+Routes served by `worker.ts`: `POST /api/connect`, `GET /api/lookup`, `GET`/`POST /api/platform-link`, `POST /api/platform-link/notify-channel`, `POST /api/install-state/claim-jti`, `GET /health`.
 
 ## Stack
 
@@ -50,6 +50,7 @@ src/
     lookup.ts                   # GET  /api/lookup?provider=&account_id=
     platform-link.ts            # POST /api/platform-link — guild -> treeId
     install-state.ts            # POST /api/install-state/claim-jti — single-use OAuth state
+  platform-link-metadata.ts     # `platform_links.metadata` の共有スキーマ + マージ
   queries.ts                    # drizzle DB ops (getIdentity, upsertIdentity, ...)
   schema.ts                     # Drizzle tables: identities, platformLinks, usedBindingNonces, usedInstallStateJtis
   verify.ts                     # verifyIdentityBindingViaRpc + recoverIdentityBindingSigner + verifyJwtES256
@@ -95,6 +96,50 @@ Every connect request must satisfy **all** of the following — any single failu
 7. `typedData.message.nonce` is not already in `used_binding_nonces`.
 
 The success path performs an atomic-feeling pair of writes (D1 transactions are not yet GA — we order them so that nonce insertion fails on conflict before identity upsert is observed by readers).
+
+## `platform_links.metadata` のスキーマ（boundary contract — 勝手に形を変えないこと）
+
+`platform_links.metadata` は provider 固有 JSON を入れる `TEXT` カラムで、**1 つの機能の
+持ち物ではない**。#575（通知チャンネル）に続いて #577（MCP トークンの guild 単位失効）も
+同じカラムを使うため、形をここで固定する。実装とその理由は
+`src/platform-link-metadata.ts` の冒頭コメントにある。
+
+```jsonc
+{
+  "v": 1,                         // スキーマバージョン（オブジェクト全体に 1 つ）
+  "notify": { "channelId": "…" }, // #575 が所有。Discord snowflake
+  "mcp":    { "tokenVersion": 1 } // #577 が所有（予定）
+}
+```
+
+決めたこと:
+
+- **トップレベルは機能ごとの名前空間オブジェクト**にする。フラットな `notifyChannelId` に
+  しないのは、機能が増えたときのキー衝突を人間の注意力で避ける形にしたくないから。
+  名前空間なら「部分更新の単位 = サブツリー = 所有者」が一致する。
+- **`v` はオブジェクト全体に 1 つだけ**。名前空間ごとに持たせると読み出し側が N 個の分岐を
+  抱える。後方互換な追加では上げず、**非互換な作り替えのときだけ**上げる。読み出し側は
+  未知の `v` でも既知のキーだけを見て動くこと。
+- **書き込みは必ず read-modify-write**。`mergePlatformLinkMetadata()` を通し、知らないキーは
+  素通しで保存する。素朴に上書きすると他機能の値が消える（テストで固定済み:
+  `src/__tests__/platform-link.test.ts`）。`updatePlatformLinkMetadata()` は受け取った文字列を
+  そのまま書くだけなので、**単体で呼ばないこと**。
+- **専用テーブルには切り出さない**（今は）。`(provider, platform_id)` に対する 1 行の属性
+  でしかなく、JOIN が要る形にする理由がない。「一覧・検索したくなる」規模になったら切り出す。
+- 値が空になった名前空間は落とし、`v` しか残らなければカラムを `NULL` に戻す
+  （未設定 == `NULL` を保つ）。
+
+新しい名前空間を足すときは:
+
+1. 名前空間名と型を `src/platform-link-metadata.ts` に足す。
+2. **専用の書き込みルートを 1 本足す**（`handlePlatformLinkNotifyChannel` を真似る）。
+   汎用の metadata PATCH エンドポイントは**用意しない** — 何でも入る書き込み口を開けると、
+   値のバリデーションに責任を持つ場所が無くなる。
+3. 既存キーの意味を変えるなら `v` を上げ、読み出し側に移行を書く。
+
+D1 にトランザクションが無いので read-modify-write は原子的ではない。今の書き込み頻度
+（人がボタンを押す）では後勝ちで実害が無いため素の実装にしている。秒間で競合する書き込みを
+足すときはこの前提を見直すこと。
 
 ## Adding a new provider
 

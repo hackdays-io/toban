@@ -24,7 +24,7 @@ The proof model is:
 
 Cloudflare Workers (no Node-only APIs), and this package **is a deployed Worker of its own** — `src/worker.ts` is the `main` in `wrangler.toml`, and it owns the routing. (It started as a library of mountable handlers; `handlers/*` still export pure `Request → Promise<Response>` functions, and `src/index.ts` re-exports them, but the deployed entry point is `worker.ts`.) Persistence is the `DB` D1 binding.
 
-Routes served by `worker.ts`: `POST /api/connect`, `GET /api/lookup`, `POST /api/platform-link`, `POST /api/install-state/claim-jti`, `GET /health`.
+Routes served by `worker.ts`: `POST /api/connect`, `GET /api/lookup`, `GET|POST /api/lookup/by-wallet`, `POST /api/platform-link`, `POST /api/install-state/claim-jti`, `GET /health`.
 
 ## Stack
 
@@ -48,6 +48,7 @@ src/
   handlers/
     connect.ts                  # POST /api/connect — full verification flow
     lookup.ts                   # GET  /api/lookup?provider=&account_id=
+    lookup-by-wallet.ts         # GET|POST /api/lookup/by-wallet — wallet -> identities[]（逆引き）
     platform-link.ts            # POST /api/platform-link — guild -> treeId
     install-state.ts            # POST /api/install-state/claim-jti — single-use OAuth state
   queries.ts                    # drizzle DB ops (getIdentity, upsertIdentity, ...)
@@ -95,6 +96,33 @@ Every connect request must satisfy **all** of the following — any single failu
 7. `typedData.message.nonce` is not already in `used_binding_nonces`.
 
 The success path performs an atomic-feeling pair of writes (D1 transactions are not yet GA — we order them so that nonce insertion fails on conflict before identity upsert is observed by readers).
+
+## Reverse lookup (`/api/lookup/by-wallet`)
+
+Wallet → Web2 account. Used by the notification automation, which only has
+subgraph addresses to work with (no "who ran the command" context).
+
+- **Server-to-server only.** Unlike `GET /api/lookup`, the verifier_token
+  Bearer mode is **not** accepted: a verifier_token proves ownership of a
+  snowflake, which cannot constrain a lookup keyed by address, and reverse
+  lookup leaks more than the forward direction ("know an address → learn who
+  it is"). `LOOKUP_READ_SECRET` unset closes the endpoint entirely (401) —
+  there is no fallback.
+- **Not found is 200 + `[]`, never 404.** "Not linked" is a normal case for
+  notifications.
+- Always an **array**: `identities`' PK is `(provider, account_id)`, so one
+  wallet can carry several accounts. Sorted newest-`updated_at` first.
+- **Address case is normalised on the query side.** `identities.wallet` is
+  stored checksummed (`connect.ts` runs `getAddress()`), while the subgraph
+  emits all-lowercase (`Address.toHex()`). `normalizeWallet()` in `queries.ts`
+  lowercases then re-checksums, so any casing resolves to the one canonical
+  key — and because it is a plain equality comparison (not `lower(wallet) = ?`),
+  `idx_identities_wallet` still applies. See the comment on `normalizeWallet`
+  for why this beats changing the storage format.
+- The batch POST chunks its `IN` clause at 90 addresses (D1 caps bound
+  parameters at 100) and accepts at most `MAX_WALLETS_PER_BATCH` (200) per
+  request. Malformed entries are returned in `invalid` rather than failing the
+  whole batch.
 
 ## Adding a new provider
 

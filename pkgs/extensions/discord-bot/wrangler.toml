@@ -127,6 +127,12 @@ head_sampling_rate = 1
 #                                   JWT signing (PEM PKCS8). Identity worker
 #                                   holds the matching public key.
 #   INSTALL_STATE_SECRET          - HMAC secret for OAuth install state JWT
+#   MCP_TOKEN_SECRET              - HMAC key behind the /mcp endpoint's
+#                                   guild-scoped bearer tokens. Mint one per
+#                                   guild with `pnpm discord-bot mint-mcp-token
+#                                   <guildId>`. Rotating it revokes every
+#                                   guild's token at once — that is currently
+#                                   the only revocation mechanism.
 #   LOOKUP_READ_SECRET            - shared secret for identity /api/lookup auth.
 #                                   MUST equal the identity worker's value (same
 #                                   env), else lookups return 401 unauthorized.

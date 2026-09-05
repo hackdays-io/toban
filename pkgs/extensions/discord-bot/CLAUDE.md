@@ -1,7 +1,9 @@
 # `@toban/discord-bot` (`pkgs/extensions/discord-bot`)
 
 Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
-`/thx`, `/balance`, and `/quest submit`.
+`/thx`, `/balance`, and `/quest submit`, plus an **MCP endpoint** (`POST /mcp`)
+so any MCP-speaking agent — ours, or a community's own OpenClaw — can drive
+Toban without ever holding a signing credential.
 
 ## Important invariants
 
@@ -16,6 +18,23 @@ Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
   identity-bound actor argument is not re-checked inside the TEE. See
   `turnkey/policy.json` — `_decisions` for the reasoning, `_gaps` for what
   that leaves open.
+- **An agent can only propose; a click signs.** The MCP write tools
+  (`toban_*_propose`) post a Discord message with a confirm button and stop.
+  Nothing reaches Turnkey until a human presses it, and the acting identity is
+  read from `interaction.member.user.id` on that **Discord-signed** component
+  interaction — never from anything the caller supplied. This is what makes it
+  safe to hand a guild token to an agent we do not run: a hostile proposal can
+  at worst show someone a button whose visible text says what pressing it does.
+  See `src/mcp/confirm.ts`.
+- **`performThx` / `performQuestSubmit` are the only paths to the chain.**
+  Both the slash commands and the confirm button go through them. There must
+  never be a second place that builds a `mintFrom` / `submitCompletion` call —
+  `turnkey/policy.json` gates those selectors, and two call sites would
+  eventually disagree about what gets signed.
+- **MCP tokens pin the guild.** `src/mcp/auth.ts` mints `HMAC(secret, guildId)`,
+  so the guild comes from the credential and never from the request body. A
+  token for guild A cannot read or propose for guild B whatever the model
+  emits. Revocation is currently all-or-nothing (rotate `MCP_TOKEN_SECRET`).
 - **D1 is shared with `@toban/identity`.** This package never writes
   directly to `identities` / `platform_links`. All identity reads + writes
   go through the identity Worker over the `IDENTITY` **service binding**
@@ -59,6 +78,14 @@ src/
     responses.ts            Discord response/followup helpers
   api/install/start.ts      frontend-initiated install entry (signs state)
   api/install/callback.ts   OAuth bot-install callback (binds + registers cmds)
+mcp/
+  index.ts                  POST /mcp entry (auth -> JSON-RPC -> tools)
+  auth.ts                   guild-scoped bearer tokens (stateless HMAC)
+  protocol.ts               minimal MCP over JSON-RPC 2.0 (no SSE)
+  tools.ts                  tool definitions + read/propose handlers
+  confirm.ts                proposal <-> embed payload, confirm message
+  button.ts                 the click: actor = clicker, then perform*
+  discord-rest.ts           bot-token REST calls (channel/message)
 turnkey/
   policy.json               Applicable policy definitions (version-controlled)
   apply-policy.sh           Idempotently applies policy.json to Turnkey
@@ -71,6 +98,7 @@ test/                       Vitest unit tests (no network, no chain)
 ## Commands
 
 ```
+pnpm discord-bot mint-mcp-token <guildId>           # MCP token for one guild
 pnpm --filter @toban/discord-bot dev                # wrangler dev
 pnpm --filter @toban/discord-bot test               # vitest run
 pnpm --filter @toban/discord-bot typecheck          # tsc --noEmit
@@ -109,6 +137,12 @@ pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base
 ## When making changes
 
 - Don't introduce a new private-key store. All signing is Turnkey.
+- Don't let an MCP tool sign. Writes go through a confirm button, always.
+- Don't read the acting user from tool arguments. Only a Discord-signed
+  interaction may decide who acts.
+- Adding an MCP tool → add it to `TOOL_DEFINITIONS` **and** `callTool`, and
+  say plainly in its `description` whether it acts or only proposes (the
+  description is the only thing a third-party agent reads).
 - Don't bypass the identity HTTP boundary by reaching into D1 directly.
 - Don't add Discord commands without registering them in the install
   callback (`api/install/callback.ts`).

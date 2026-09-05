@@ -256,49 +256,49 @@ export async function executeQuestSubmit(
   }
 }
 
-async function executeQuestSubmitInner(
+/** Everything `performQuestSubmit` needs, independent of how it was requested. */
+export interface QuestSubmitParams {
+  /** Discord snowflake of the person the submission is attributed to. */
+  actorSf: string;
+  guildId: string;
+  questId: bigint;
+}
+
+export type QuestSubmitOutcome =
+  | { ok: true; txHash: Hex; actorWallet: Address; questLabel: string }
+  | { ok: false; error: string };
+
+/**
+ * The `/quest submit` core: resolve identity + membership, sign, broadcast.
+ *
+ * Split out from the slash-command handler so the MCP confirm-button path
+ * (`src/mcp/`) reaches the chain through **exactly this function** — see the
+ * same note on {@link performThx}. `actorSf` must always come from something
+ * Discord signed, never from an agent-supplied value.
+ */
+export async function performQuestSubmit(
   env: Env,
-  interaction: APIChatInputApplicationCommandInteraction,
-  deps: QuestSubmitDeps,
-  followup: NonNullable<QuestSubmitDeps["followup"]>,
-): Promise<void> {
-  const actorSf = interaction.member?.user.id ?? interaction.user?.id ?? "";
-  const parsed = parseQuestSubmitArgs(interaction);
-  if ("error" in parsed) {
-    await followup(env.DISCORD_APP_ID, interaction.token, parsed.error);
-    return;
-  }
-
-  const guildId = interaction.guild_id;
-  if (!guildId) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "このコマンドはサーバー内で実行してください。",
-    );
-    return;
-  }
-
+  params: QuestSubmitParams,
+  deps: QuestSubmitDeps = {},
+): Promise<QuestSubmitOutcome> {
   const identity = deps.identity ?? createIdentityClient(env);
   const [actor, platformLink] = await Promise.all([
-    identity.getIdentity("discord", actorSf),
-    identity.getPlatformLink("discord", guildId),
+    identity.getIdentity("discord", params.actorSf),
+    identity.getPlatformLink("discord", params.guildId),
   ]);
   if (!actor) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "ウォレットが連携されていません。先に `/toban-setup` を実行してください。",
-    );
-    return;
+    return {
+      ok: false,
+      error:
+        "ウォレットが連携されていません。先に `/toban-setup` を実行してください。",
+    };
   }
   if (!platformLink) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
-    );
-    return;
+    return {
+      ok: false,
+      error:
+        "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
+    };
   }
 
   const actorWallet = actor.wallet as Address;
@@ -318,20 +318,17 @@ async function executeQuestSubmitInner(
     resolveModule(platformLink.treeId),
   ]);
   if (membershipHatId === null) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "このワークスペースのメンバーではないため、クエストの完了報告はできません。",
-    );
-    return;
+    return {
+      ok: false,
+      error:
+        "このワークスペースのメンバーではないため、クエストの完了報告はできません。",
+    };
   }
   if (!questModule) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      `ワークスペースのクエストモジュールを取得できませんでした（tree ${platformLink.treeId}）。インデックス処理が完了していない可能性があります。`,
-    );
-    return;
+    return {
+      ok: false,
+      error: `ワークスペースのクエストモジュールを取得できませんでした（tree ${platformLink.treeId}）。インデックス処理が完了していない可能性があります。`,
+    };
   }
 
   // The title only names the quest in the confirmation, so start the lookup
@@ -359,34 +356,71 @@ async function executeQuestSubmitInner(
       address: questModule,
       abi: HATS_QUEST_MODULE_ABI,
       functionName: "submitCompletion",
-      args: [actorWallet, parsed.questId, membershipHatId],
+      args: [actorWallet, params.questId, membershipHatId],
     });
   } catch (err) {
     console.error("submitCompletion failed:", err);
     const short =
       (err as { shortMessage?: string }).shortMessage ?? (err as Error).message;
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      describeSubmitRevert(short),
-    );
-    return;
+    return { ok: false, error: describeSubmitRevert(short) };
   }
 
   const quests = await questsPromise;
   const questLabel = questChoiceLabel(
-    quests.find((q) => q.questId === parsed.questId) ?? {
-      questId: parsed.questId,
+    quests.find((q) => q.questId === params.questId) ?? {
+      questId: params.questId,
       title: null,
     },
   );
+  return { ok: true, txHash, actorWallet, questLabel };
+}
+
+/** Render a successful {@link performQuestSubmit} into the user-facing summary. */
+export function formatQuestSubmitSuccess(
+  outcome: Extract<QuestSubmitOutcome, { ok: true }>,
+): string {
+  return [
+    `**${outcome.questLabel}** の完了を報告しました。`,
+    `報告者: \`${outcome.actorWallet}\``,
+    `Tx: \`${outcome.txHash}\``,
+  ].join("\n");
+}
+
+async function executeQuestSubmitInner(
+  env: Env,
+  interaction: APIChatInputApplicationCommandInteraction,
+  deps: QuestSubmitDeps,
+  followup: NonNullable<QuestSubmitDeps["followup"]>,
+): Promise<void> {
+  const actorSf = interaction.member?.user.id ?? interaction.user?.id ?? "";
+  const parsed = parseQuestSubmitArgs(interaction);
+  if ("error" in parsed) {
+    await followup(env.DISCORD_APP_ID, interaction.token, parsed.error);
+    return;
+  }
+
+  const guildId = interaction.guild_id;
+  if (!guildId) {
+    await followup(
+      env.DISCORD_APP_ID,
+      interaction.token,
+      "このコマンドはサーバー内で実行してください。",
+    );
+    return;
+  }
+
+  const outcome = await performQuestSubmit(
+    env,
+    { actorSf, guildId, questId: parsed.questId },
+    deps,
+  );
+  if (!outcome.ok) {
+    await followup(env.DISCORD_APP_ID, interaction.token, outcome.error);
+    return;
+  }
   await followup(
     env.DISCORD_APP_ID,
     interaction.token,
-    [
-      `**${questLabel}** の完了を報告しました。`,
-      `報告者: \`${actorWallet}\``,
-      `Tx: \`${txHash}\``,
-    ].join("\n"),
+    formatQuestSubmitSuccess(outcome),
   );
 }

@@ -40,6 +40,37 @@ export interface IdentityClient {
     accountId: string,
   ): Promise<IdentityRecord | null>;
 
+  /**
+   * 逆引き: `(provider, wallet) -> identities[]`。
+   *
+   * 通知処理は subgraph からアドレスしか得られない（「コマンドを実行した人」
+   * という文脈が無い）ので、Discord メンションに落とすには逆引きが要る。
+   *
+   * - 未連携はエラーではなく **空配列**。通知では正常系。
+   * - `identities` の PK は `(provider, account_id)` なので 1 ウォレットに
+   *   複数アカウントが紐づき得る。配列の先頭が最終更新の新しいものになる。
+   * - `wallet` の大文字小文字は identity Worker 側が吸収する。subgraph 由来の
+   *   全小文字アドレスをそのまま渡してよい。
+   */
+  getIdentitiesByWallet(
+    provider: ProviderId,
+    wallet: string,
+  ): Promise<IdentityRecord[]>;
+
+  /**
+   * 逆引きのバッチ版。1 回の通知で数十件のアドレスを引くので、1 件ずつ
+   * HTTP を叩くと automation の実行時間を食う。
+   *
+   * 戻り値のキーは **全小文字のアドレス**。subgraph が返すアドレスをそのまま
+   * キーに使えるようにするため（checksum 表記でキーにすると、呼び出し側が
+   * 毎回 `getAddress()` を通す羽目になる）。
+   * 引数に渡した有効なアドレスは、未連携でも空配列のエントリとして必ず入る。
+   */
+  getIdentitiesByWallets(
+    provider: ProviderId,
+    wallets: readonly string[],
+  ): Promise<Map<string, IdentityRecord[]>>;
+
   /** Resolve a Discord guild -> tree_id binding, or null if not linked. */
   getPlatformLink(
     provider: ProviderId,
@@ -112,6 +143,69 @@ class IdentityFetchClient implements IdentityClient {
     // IdentityRecord from the request context instead of lying with a cast.
     const body = (await res.json()) as { wallet: Address };
     return { provider, accountId, wallet: body.wallet };
+  }
+
+  async getIdentitiesByWallet(
+    provider: ProviderId,
+    wallet: string,
+  ): Promise<IdentityRecord[]> {
+    const path = `/api/lookup/by-wallet?provider=${encodeURIComponent(provider)}&wallet=${encodeURIComponent(wallet)}`;
+    const res = await this.go(path, {
+      headers: { "x-toban-lookup-secret": this.secrets.lookupSecret },
+    });
+    if (!res.ok) {
+      throw new Error(
+        `identity reverse lookup failed: ${res.status} ${await res.text()}`,
+      );
+    }
+    const body = (await res.json()) as {
+      wallet: Address;
+      identities: Array<{ accountId: string; wallet: Address }>;
+    };
+    return body.identities.map((i) => ({
+      provider,
+      accountId: i.accountId,
+      wallet: i.wallet,
+    }));
+  }
+
+  async getIdentitiesByWallets(
+    provider: ProviderId,
+    wallets: readonly string[],
+  ): Promise<Map<string, IdentityRecord[]>> {
+    const out = new Map<string, IdentityRecord[]>();
+    if (wallets.length === 0) return out;
+
+    const res = await this.go("/api/lookup/by-wallet", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-toban-lookup-secret": this.secrets.lookupSecret,
+      },
+      body: JSON.stringify({ provider, wallets }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `identity reverse lookup (batch) failed: ${res.status} ${await res.text()}`,
+      );
+    }
+    const body = (await res.json()) as {
+      results: Array<{
+        wallet: Address;
+        identities: Array<{ accountId: string; wallet: Address }>;
+      }>;
+    };
+    for (const r of body.results) {
+      out.set(
+        r.wallet.toLowerCase(),
+        r.identities.map((i) => ({
+          provider,
+          accountId: i.accountId,
+          wallet: i.wallet,
+        })),
+      );
+    }
+    return out;
   }
 
   async getPlatformLink(

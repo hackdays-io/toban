@@ -21,6 +21,7 @@ function baseTemplate(): JsonObject {
           workspace: "/data/workspace/{{label}}",
         },
         binding: {
+          type: "route",
           agentId: "{{agentId}}",
           match: { channel: "discord", guildId: "{{guildId}}" },
         },
@@ -38,7 +39,7 @@ function baseTemplate(): JsonObject {
     },
     channels: { discord: { commands: { native: false }, guilds: {} } },
     agents: { entries: {} },
-    multiAgent: { mode: "routing", bindings: [] },
+    bindings: [],
     mcp: { servers: {} },
   };
 }
@@ -84,14 +85,28 @@ describe("renderConfig", () => {
       "8453",
     );
 
-    expect((config.multiAgent as JsonObject).bindings).toEqual([
+    // bindings はルート直下（実機の `openclaw config schema` で確認済み）
+    expect(config.bindings).toEqual([
       {
+        type: "route",
         agentId: "toban-alpha",
         match: { channel: "discord", guildId: "111111111111111111" },
       },
       {
+        type: "route",
         agentId: "toban-beta",
         match: { channel: "discord", guildId: "333333333333333333" },
+      },
+    ]);
+  });
+
+  it("AGENTS.md の配置先が分かるよう agent マニフェストを返す", () => {
+    const { agents } = renderConfig(baseTemplate(), [guild()]);
+    expect(agents).toEqual([
+      {
+        agentId: "toban-alpha",
+        label: "alpha",
+        workspace: "/data/workspace/alpha",
       },
     ]);
   });

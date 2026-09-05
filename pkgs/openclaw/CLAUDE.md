@@ -44,12 +44,21 @@ MCP サーバー / 許可リストの**形**を持っている。`src/render-con
 写すと二重管理になる。テンプレートなら `openclaw config schema` で検証して直せる。
 **スキーマのキー名を変えたくなったら、テンプレートだけを直す。**
 
+実際、初回デプロイでドキュメントから推測したキーが 2 つ間違っていた
+（`agents.entries.<id>.instructions` は存在しない / `bindings` はルート直下で
+`multiAgent.bindings` ではない）。直したのはテンプレートと配置先の 1 行だけで済んだ。
+キー名は**必ず実機の `openclaw config schema` で確認する**こと。ドキュメントは信用しない。
+
+**指示書の渡し方**: `agents.entries.<id>` に instructions キーは無い。ワークスペース直下の
+`AGENTS.md` がシステムプロンプトへ注入されるので、`push-config.sh` が
+`instructions/TOBAN.md` を各ワークスペースへ `AGENTS.md` として置いている。
+
 配置先だけは `render-config.ts` が決めている:
 
 | `$toban.perGuild` | 配置先 |
 |---|---|
 | `agent` | `agents.entries[toban-<label>]` |
-| `binding` | `multiAgent.bindings[]` |
+| `binding` | ルート直下の `bindings[]`（要素に `type: "route"`） |
 | `mcpServer` | `mcp.servers[toban-<label>]` |
 | `discordGuild` | `channels.discord.guilds[<guildId>]` |
 
@@ -77,6 +86,8 @@ MCP サーバー / 許可リストの**形**を持っている。`src/render-con
 
 - 署名まわりの機能をここに足さない。`@toban/discord-bot` 側の MCP ツールとして足す
 - ギルドを増やすときは `config/guilds.json` に足すだけ。テンプレートは触らない
-- `instructions/` を変えたら **`deploy:fly`** が必要（イメージに焼き込まれている）。
-  `push:config` では反映されない
-- `Dockerfile` の `FROM` は必ずバージョン固定。`latest` / `main` / `extended-stable` は使わない
+- `instructions/` を変えたら **`push:config`**（イメージには焼き込まれていない）
+- `fly.toml` の `[build] image` は必ずバージョン固定。`latest` / `main` /
+  `extended-stable` は使わない。自前ビルドはしない（Dockerfile は持たない）
+- `fly.toml` の `--allow-unconfigured` を消さない。初回に「設定が無いと起動しない ↔
+  起動していないと設定を送れない」で詰む

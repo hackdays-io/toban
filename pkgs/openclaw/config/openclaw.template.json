@@ -10,11 +10,17 @@
       "",
       "配置先は src/render-config.ts が決める:",
       "  agent        -> agents.entries[{{agentId}}]",
-      "  binding      -> multiAgent.bindings[]",
+      "  binding      -> bindings[]（ルート直下）",
       "  mcpServer    -> mcp.servers[{{mcpServerId}}]",
       "  discordGuild -> channels.discord.guilds[{{guildId}}]",
       "",
-      "!! 初回デプロイ前に `openclaw config schema` で検証すること。",
+      "指示書はここでは指定しない。agents.entries.<id> に instructions キーは無く、",
+      "ワークスペース直下の AGENTS.md がシステムプロンプトに注入される。",
+      "push-config.sh が instructions/TOBAN.md を各ワークスペースへ AGENTS.md として置く。",
+      "",
+      "model は未指定 = 既定のプロバイダに従う。固定したいときはここに書く。",
+      "",
+      "!! キー名は実機の `openclaw config schema` で確認したもの（2026.9.1）。",
       "   OpenClaw の設定スキーマは本家の更新で変わる。ここが唯一のスキーマ定義なので、",
       "   キー名が変わったらこのファイルを直せば済む（TypeScript 側の修正は不要）。",
       "",
@@ -24,11 +30,10 @@
     "perGuild": {
       "agent": {
         "name": "Toban ({{label}})",
-        "model": "anthropic/claude-opus-5",
-        "workspace": "/data/workspace/{{label}}",
-        "instructions": "/opt/toban/instructions/TOBAN.md"
+        "workspace": "/data/workspace/{{label}}"
       },
       "binding": {
+        "type": "route",
         "agentId": "{{agentId}}",
         "match": {
           "channel": "discord",
@@ -74,10 +79,7 @@
     "entries": {}
   },
 
-  "multiAgent": {
-    "mode": "routing",
-    "bindings": []
-  },
+  "bindings": [],
 
   "mcp": {
     "servers": {}

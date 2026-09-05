@@ -32,10 +32,15 @@ MSG
 fi
 
 echo "→ 事前確認: secrets"
+SECRETS="$(fly secrets list --app "$APP" 2>/dev/null || true)"
 MISSING=""
-for name in OPENCLAW_GATEWAY_TOKEN ANTHROPIC_API_KEY DISCORD_BOT_TOKEN TOBAN_MCP_TOKEN; do
-  fly secrets list --app "$APP" 2>/dev/null | grep -q "^$name" || MISSING="$MISSING $name"
+for name in OPENCLAW_GATEWAY_TOKEN DISCORD_BOT_TOKEN TOBAN_MCP_TOKEN; do
+  echo "$SECRETS" | grep -q "$name" || MISSING="$MISSING $name"
 done
+# LLM プロバイダの鍵はどれか 1 つあればよい。
+if ! echo "$SECRETS" | grep -qE "ANTHROPIC_API_KEY|OPENROUTER_API_KEY|OPENAI_API_KEY"; then
+  MISSING="$MISSING <ANTHROPIC_API_KEY|OPENROUTER_API_KEY|OPENAI_API_KEY のいずれか>"
+fi
 if [ -n "$MISSING" ]; then
   echo "✗ 未設定の secret:$MISSING" >&2
   echo "  fly secrets set <NAME>=... --app $APP" >&2

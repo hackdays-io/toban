@@ -58,7 +58,7 @@ export interface TobanTemplateBlock {
   perGuild: {
     /** `agents.entries[<agentId>]` に置かれる。 */
     agent: JsonObject;
-    /** `multiAgent.bindings[]` に追加される。 */
+    /** ルート直下の `bindings[]` に追加される。 */
     binding: JsonObject;
     /** `mcp.servers[<mcpServerId>]` に置かれる。 */
     mcpServer: JsonObject;
@@ -256,10 +256,20 @@ function ensurePath(root: JsonObject, path: string[]): JsonObject {
   return node;
 }
 
+/** 生成した agent 1 件分。指示書（AGENTS.md）の配置先を知るために使う。 */
+export interface RenderedAgent {
+  agentId: string;
+  label: string;
+  /** 展開後の `agents.entries[agentId].workspace`。未設定なら null。 */
+  workspace: string | null;
+}
+
 export interface RenderResult {
   config: JsonObject;
   /** 生成した agent id（ギルド定義順）。 */
   agentIds: string[];
+  /** 生成した agent の一覧。`push-config.sh` が AGENTS.md の配置に使う。 */
+  agents: RenderedAgent[];
 }
 
 /**
@@ -309,17 +319,16 @@ export function renderConfig(
   }
   commands.native = false;
 
-  // bindings は `multiAgent.bindings`（設定リファレンスの multiAgent ブロック）。
-  const multiAgent = ensurePath(config, ["multiAgent"]);
-  const existingBindings = multiAgent.bindings;
+  // bindings はルート直下の配列（実機の `openclaw config schema` で確認済み。
+  // 設定リファレンスの multiAgent.bindings という記述は誤り）。
+  const existingBindings = config.bindings;
   if (existingBindings !== undefined && !Array.isArray(existingBindings)) {
-    throw new RenderConfigError(
-      "テンプレートの multiAgent.bindings が配列ではありません",
-    );
+    throw new RenderConfigError("テンプレートの bindings が配列ではありません");
   }
   const bindings: Json[] = existingBindings ? [...existingBindings] : [];
 
   const agentIds: string[] = [];
+  const rendered: RenderedAgent[] = [];
   for (const guild of guilds) {
     const agentId = `toban-${guild.label}`;
     const mcpServerId = `toban-${guild.label}`;
@@ -338,19 +347,26 @@ export function renderConfig(
     if (agents[agentId] !== undefined) {
       throw new RenderConfigError(`agent id が衝突しています: ${agentId}`);
     }
-    agents[agentId] = substitute(perGuild.agent, vars);
+    const agentEntry = substitute(perGuild.agent, vars);
+    agents[agentId] = agentEntry;
     mcpServers[mcpServerId] = substitute(perGuild.mcpServer, vars);
     discordGuilds[guild.guildId] = substitute(perGuild.discordGuild, vars);
     bindings.push(substitute(perGuild.binding, vars));
     agentIds.push(agentId);
+
+    const workspace =
+      isObject(agentEntry) && typeof agentEntry.workspace === "string"
+        ? agentEntry.workspace
+        : null;
+    rendered.push({ agentId, label: guild.label, workspace });
   }
 
-  multiAgent.bindings = bindings;
+  config.bindings = bindings;
 
   assertLeftovers(config);
   assertMcpUrls(mcpServers);
 
-  return { config, agentIds };
+  return { config, agentIds, agents: rendered };
 }
 
 function assertLeftovers(config: JsonObject): void {

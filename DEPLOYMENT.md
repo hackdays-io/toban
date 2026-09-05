@@ -290,10 +290,13 @@ Discord に常駐して会話し、15 分ごとに Goldsky を見て通知する
 **Fly**
 
 ```bash
-fly apps create toban-openclaw
+fly apps create tobanclaw
 # ボリュームが無いまま deploy すると、設定と automations の状態が再起動のたびに消えます
-fly volumes create openclaw_data --size 1 --region nrt --app toban-openclaw
+fly volumes create openclaw_data --size 1 --region nrt --app tobanclaw
 ```
+
+> ⚠️ **trial org ではデプロイできません。** リリース作成が 422 で拒否されます
+> (`This functionality is disabled for trial organizations`)。クレジットカードの登録が要ります。
 
 **secrets**
 
@@ -305,8 +308,11 @@ fly volumes create openclaw_data --size 1 --region nrt --app toban-openclaw
 | `TOBAN_MCP_TOKEN` | discord-bot Worker の MCP エンドポイントの認証 |
 
 ```bash
-fly secrets set OPENCLAW_GATEWAY_TOKEN=... --app toban-openclaw
+fly secrets set OPENCLAW_GATEWAY_TOKEN=... --app tobanclaw
 ```
+
+LLM プロバイダの鍵は `ANTHROPIC_API_KEY` / `OPENROUTER_API_KEY` / `OPENAI_API_KEY` の
+いずれか 1 つがあれば足ります。
 
 設定ファイルには秘密を書きません。`${TOBAN_MCP_TOKEN}` のような参照が実行時に解決されます。
 
@@ -330,23 +336,48 @@ pnpm openclaw push:config             # /data/openclaw.json を送って再起�
 ```
 
 **`fly deploy` は設定ファイルを入れ替えません。** 設定の実体はボリューム上の
-`/data/openclaw.json` なので、変えたときは `push:config` を別に流します。逆に
-`instructions/` はイメージに焼き込まれているので `deploy:fly` が必要です。
+`/data/openclaw.json` なので、変えたときは `push:config` を流します。`instructions/`
+も同じく `push:config` で各ワークスペースへ `AGENTS.md` として送られます
+（イメージには焼き込まれていません）。
 
-初回は、テンプレートのキー名を本家のスキーマと突き合わせてください。
+`push:config` は送信後・再起動前にリモートで `openclaw config validate` を通し、
+落ちたら退避した設定へ戻して中断します。**不正な設定のまま再起動すると gateway が
+exit 78 で再起動ループに入り、10 回でマシンが停止して ssh も入れなくなります。**
+
+テンプレートのキー名を本家のスキーマと突き合わせるとき:
 
 ```bash
-fly ssh console --app toban-openclaw -C "openclaw config schema"
+fly console --app tobanclaw -C "openclaw config schema"
 ```
 
-### 7-4. 確認
+### 7-4. 詰まったとき
+
+**不正な設定を置いてマシンが停止した場合**、gateway はボリューム上の設定を読んで即死する
+ため、通常の起動では ssh が間に合いません。プロセスコマンドを一時的に差し替えて掃除します。
 
 ```bash
-fly status --app toban-openclaw           # 1 台動いていること
-fly logs --app toban-openclaw
-fly ssh console --app toban-openclaw -C "openclaw automations list"
+# 引数を無視するエントリポイントに差し替えて起動（--entrypoint は既存 cmd の前に置かれる
+# ので、後続の引数を読み捨てる形にする必要があります）
+fly machine update <machine-id> -a tobanclaw --entrypoint "/bin/sh -c 'exec sleep 900' --" --yes
+fly machines start <machine-id> -a tobanclaw
+
+# flyctl はヘルスチェックが通っていないマシンを選ばないので --machine で名指しする
+fly ssh console -a tobanclaw --machine <machine-id> -C "rm -f /data/openclaw.json"
+
+# 元に戻す
+fly machine update <machine-id> -a tobanclaw --entrypoint "" --yes
+```
+
+### 7-5. 確認
+
+```bash
+fly status --app tobanclaw     # 1 台動いていて checks が passing
+fly logs --app tobanclaw
+fly ssh console --app tobanclaw -C "openclaw automations list"
 # Discord で話しかけて応答すること、スラッシュコマンドが消えていないこと
 ```
+
+ヘルスチェックは `/startupz` を見ていて、正常なら `{"ok":true,"status":"started"}` を返します。
 
 ---
 

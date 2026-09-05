@@ -4,11 +4,18 @@
 # 設定ファイル（/data/openclaw.json）はこの toml では作られない — ボリューム上に
 # 置かれるので `pnpm openclaw push:config` で送り込む。
 
-app = "toban-openclaw"
+app = "tobanclaw"
 primary_region = "nrt"
 
 [build]
-  dockerfile = "Dockerfile"
+  # 公式イメージをそのまま使う。自前ビルドは不要（指示書は push:config が
+  # ワークスペースへ AGENTS.md として送るので、イメージに焼き込む必要がない）。
+  #
+  # moving tag（latest / main / extended-stable）は使わない — デプロイのたびに
+  # 中身が変わるとロールバック先が特定できない。
+  # 2026.9.1 = 本家リリース v2026.9.1（2026-09-03）。上げるときは
+  # https://github.com/openclaw/openclaw/releases を見てからここを差し替える。
+  image = "ghcr.io/openclaw/openclaw:2026.9.1"
 
 [env]
   # 設定と状態（automations のスケジュール・実行履歴を含む SQLite）の置き場所。
@@ -16,7 +23,12 @@ primary_region = "nrt"
   OPENCLAW_STATE_DIR = "/data"
 
 [processes]
-  app = "openclaw gateway --bind lan --port 3000"
+  # --allow-unconfigured が要る。設定の実体はボリューム上の /data/openclaw.json で、
+  # それを送り込む push-config.sh は「動いているマシン」に fly ssh する。つまり
+  # 初回は「設定が無いと起動しない ↔ 起動していないと設定を送れない」で詰む
+  # （実際に詰んだ: gateway が exit 78 "Missing config" で 10 回再起動して停止）。
+  # このフラグは設定が無くても起動を許すだけで、あるときは通常どおり読み込む。
+  app = "openclaw gateway --bind lan --port 3000 --allow-unconfigured"
 
 [http_service]
   internal_port = 3000

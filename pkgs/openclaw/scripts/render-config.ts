@@ -55,10 +55,14 @@ function main(): void {
     throw new Error(`${guildsPath} は配列である必要があります`);
   }
 
-  const { config, agentIds } = renderConfig(template, guilds);
+  const { config, agentIds, agents } = renderConfig(template, guilds);
 
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  // push-config.sh が AGENTS.md の配置先を知るためのマニフェスト。
+  const manifestPath = resolve(dirname(outPath), "agents.json");
+  writeFileSync(manifestPath, `${JSON.stringify(agents, null, 2)}\n`, "utf8");
 
   console.log(`✓ ${outPath}`);
   console.log(

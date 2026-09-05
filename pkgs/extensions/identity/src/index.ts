@@ -54,10 +54,31 @@ export {
   getPlatformLink,
   isNonceUsed,
   markNonceUsed,
+  updatePlatformLinkMetadata,
   upsertIdentity,
   upsertPlatformLink,
 } from "./queries.js";
 export type { IdentityDb } from "./queries.js";
+
+export {
+  buildNotifyChannelPatch,
+  getNotifyChannelId,
+  isSnowflake,
+  mergePlatformLinkMetadata,
+  parsePlatformLinkMetadata,
+  PLATFORM_LINK_METADATA_VERSION,
+  serializePlatformLinkMetadata,
+} from "./platform-link-metadata.js";
+export type {
+  NotifyMetadata,
+  PlatformLinkMetadata,
+} from "./platform-link-metadata.js";
+
+export {
+  handlePlatformLink,
+  handlePlatformLinkNotifyChannel,
+} from "./handlers/platform-link.js";
+export type { PlatformLinkHandlerDeps } from "./handlers/platform-link.js";
 
 export { handleConnect } from "./handlers/connect.js";
 export type {

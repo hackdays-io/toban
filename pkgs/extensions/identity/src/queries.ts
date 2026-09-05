@@ -111,6 +111,35 @@ export async function upsertPlatformLink(
     });
 }
 
+/**
+ * `metadata` カラムだけを差し替える。
+ *
+ * **呼び出し側は必ず `mergePlatformLinkMetadata` で read-modify-write して
+ * から呼ぶこと。** ここは受け取った文字列をそのまま書くだけなので、素の
+ * オブジェクトを渡すと他の名前空間（例: #577 の `mcp`）が消える。
+ *
+ * D1 にトランザクションが無いので read と write の間に別の書き込みが挟まる
+ * 可能性は残る。通知チャンネルの設定は人がボタンを押す頻度でしか起きず、
+ * 衝突しても「後勝ち」で実害が無いためロックは入れていない。秒間で競合する
+ * ような書き込みをここに足すときは、この前提を見直すこと。
+ */
+export async function updatePlatformLinkMetadata(
+  db: IdentityDb,
+  provider: string,
+  platformId: string,
+  metadata: string | null,
+): Promise<void> {
+  await db
+    .update(platformLinks)
+    .set({ metadata })
+    .where(
+      and(
+        eq(platformLinks.provider, provider),
+        eq(platformLinks.platformId, platformId),
+      ),
+    );
+}
+
 /** Return `true` if the nonce has already been consumed. */
 export async function isNonceUsed(
   db: IdentityDb,

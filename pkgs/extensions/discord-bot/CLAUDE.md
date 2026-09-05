@@ -24,6 +24,13 @@ Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
   binding is the only route. `IDENTITY_WORKER_URL` is documentation-only.
   Tests stub the `IdentityClient` interface — do not mock `fetch` for
   identity operations.
+- **通知チャンネルの設定は `platform_links.metadata` に入る。**
+  `IdentityClient.getNotifyChannelId` / `setNotifyChannelId` を使うこと。
+  値の検証（snowflake か）と、他のキーを消さない read-modify-write は
+  identity Worker 側が持っている。`metadata` の共有スキーマは
+  `pkgs/extensions/identity/CLAUDE.md` の「`platform_links.metadata` のスキーマ」を参照。
+  `upsertPlatformLink` は `metadata` を送らないので、再インストールしても
+  通知設定は消えない。
 - **`src/chain.ts` is the single source of truth for ABI.** It carries
   hand-maintained fragments (`THANKS_TOKEN_ABI`, `HATS_QUEST_MODULE_ABI`)
   rather than importing from `pkgs/contract` — only the slice the bot

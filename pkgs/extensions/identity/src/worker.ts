@@ -6,6 +6,7 @@
  *   GET  /api/lookup          — (provider, account_id) -> wallet
  *   GET  /api/platform-link   — (provider, platform_id) -> tree_id binding
  *   POST /api/platform-link   — upsert a workspace ↔ platform binding
+ *   POST /api/platform-link/notify-channel — set/clear the notify channel
  *
  * D1 is bound as `DB`. Verifier JWT public keys are read from `env` per
  * provider (see `providers/`); for Discord the env var is
@@ -15,7 +16,10 @@ import { drizzle } from "drizzle-orm/d1";
 import { handleConnect } from "./handlers/connect.js";
 import { handleInstallStateClaim } from "./handlers/install-state.js";
 import { handleLookup } from "./handlers/lookup.js";
-import { handlePlatformLink } from "./handlers/platform-link.js";
+import {
+  handlePlatformLink,
+  handlePlatformLinkNotifyChannel,
+} from "./handlers/platform-link.js";
 import type { IdentityEnv } from "./providers/types.js";
 
 export interface WorkerEnv extends IdentityEnv {
@@ -71,6 +75,12 @@ export default {
           break;
         case "/api/platform-link":
           response = await handlePlatformLink(request, {
+            db,
+            writeSecret: env.PLATFORM_LINK_WRITE_SECRET,
+          });
+          break;
+        case "/api/platform-link/notify-channel":
+          response = await handlePlatformLinkNotifyChannel(request, {
             db,
             writeSecret: env.PLATFORM_LINK_WRITE_SECRET,
           });

@@ -2,7 +2,7 @@
   "name": "@toban/discord-bot",
   "version": "0.0.1",
   "private": true,
-  "description": "Toban Discord bot \u2014 Cloudflare Workers + D1, Turnkey-signed mintFrom",
+  "description": "Toban Discord bot — Cloudflare Workers + D1, Turnkey-signed mintFrom",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "register-commands": "tsx scripts/register-commands.ts"
+    "register-commands": "tsx scripts/register-commands.ts",
+    "mint-mcp-token": "tsx scripts/mint-mcp-token.ts"
   },
   "dependencies": {
     "discord-api-types": "^0.37.103",

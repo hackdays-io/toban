@@ -195,49 +195,63 @@ export async function executeThx(
   }
 }
 
-async function executeThxInner(
+/** Everything `performThx` needs, independent of how it was requested. */
+export interface ThxParams {
+  /** Discord snowflake of the person the mint is attributed to. */
+  actorSf: string;
+  guildId: string;
+  recipient: RecipientArg;
+  amount: bigint;
+  message: string;
+}
+
+export type ThxOutcome =
+  | {
+      ok: true;
+      txHash: Hex;
+      recipientWallet: Address;
+      recipientLabel: string;
+      amount: bigint;
+      message: string;
+    }
+  | { ok: false; error: string };
+
+/**
+ * The `/thx` core: resolve identities, check head-room, sign, broadcast.
+ *
+ * Split out from the slash-command handler so the MCP confirm-button path
+ * (`src/mcp/`) reaches the chain through **exactly this function**. There must
+ * be only one place that builds a `mintFrom` call — `turnkey/policy.json`
+ * gates the selector, and two divergent call sites would eventually disagree
+ * about what gets signed.
+ *
+ * `actorSf` is who the mint is attributed to. Callers must derive it from
+ * something Discord signed (a slash command's invoker, or a component
+ * interaction's clicker) — **never** from a value an agent supplied.
+ */
+export async function performThx(
   env: Env,
-  interaction: APIChatInputApplicationCommandInteraction,
-  deps: ThxDeps,
-  followup: NonNullable<ThxDeps["followup"]>,
-): Promise<void> {
-  const senderSf = interaction.member?.user.id ?? interaction.user?.id ?? "";
-  const parsed = parseThxArgs(interaction);
-  if ("error" in parsed) {
-    await followup(env.DISCORD_APP_ID, interaction.token, parsed.error);
-    return;
-  }
-
-  const guildId = interaction.guild_id;
-  if (!guildId) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "このコマンドはサーバー内で実行してください。",
-    );
-    return;
-  }
-
+  params: ThxParams,
+  deps: ThxDeps = {},
+): Promise<ThxOutcome> {
   const identity = deps.identity ?? createIdentityClient(env);
   const [sender, platformLink] = await Promise.all([
-    identity.getIdentity("discord", senderSf),
-    identity.getPlatformLink("discord", guildId),
+    identity.getIdentity("discord", params.actorSf),
+    identity.getPlatformLink("discord", params.guildId),
   ]);
   if (!sender) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "ウォレットが連携されていません。先に `/toban-setup` を実行してください。",
-    );
-    return;
+    return {
+      ok: false,
+      error:
+        "ウォレットが連携されていません。先に `/toban-setup` を実行してください。",
+    };
   }
   if (!platformLink) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
-    );
-    return;
+    return {
+      ok: false,
+      error:
+        "このサーバーはまだ Toban ワークスペースに連携されていません。管理者に `/toban-link` の実行を依頼してください。",
+    };
   }
 
   const resolveEns =
@@ -251,32 +265,25 @@ async function executeThxInner(
       return (await client.getEnsAddress({ name })) ?? null;
     });
   const recipientResolution = await resolveRecipientWallet(
-    parsed.recipient,
+    params.recipient,
     env,
     identity,
     resolveEns,
   );
   if ("error" in recipientResolution) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      recipientResolution.error,
-    );
-    return;
+    return { ok: false, error: recipientResolution.error };
   }
   const recipientWallet = recipientResolution.wallet;
 
   const resolveTokenAddress =
     deps.resolveTokenAddress ??
-    ((treeId) => resolveThanksTokenAddress(env, treeId));
+    ((treeId: string) => resolveThanksTokenAddress(env, treeId));
   const token = await resolveTokenAddress(platformLink.treeId);
   if (!token) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      `ワークスペースの ThanksToken を取得できませんでした（tree ${platformLink.treeId}）。インデックス処理が完了していない可能性があります。`,
-    );
-    return;
+    return {
+      ok: false,
+      error: `ワークスペースの ThanksToken を取得できませんでした（tree ${platformLink.treeId}）。インデックス処理が完了していない可能性があります。`,
+    };
   }
   const publicClient = deps.publicClient ?? getPublicClient(env);
   const botAddress = env.TURNKEY_BOT_SIGNER_ADDRESS as Hex;
@@ -287,13 +294,11 @@ async function executeThxInner(
     functionName: "mintAllowance",
     args: [sender.wallet as Address, botAddress],
   })) as bigint;
-  if (allowance < parsed.amount) {
-    await followup(
-      env.DISCORD_APP_ID,
-      interaction.token,
-      `Bot に許可された送信枠が足りません（現在 ${formatEther(allowance)} THX / 必要 ${formatEther(parsed.amount)} THX）。${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot で上限を引き上げてください。`,
-    );
-    return;
+  if (allowance < params.amount) {
+    return {
+      ok: false,
+      error: `Bot に許可された送信枠が足りません（現在 ${formatEther(allowance)} THX / 必要 ${formatEther(params.amount)} THX）。${env.TOBAN_FRONTEND_URL}/${platformLink.treeId}/discord-bot で上限を引き上げてください。`,
+    };
   }
 
   const fetchRelatedRoles =
@@ -321,9 +326,9 @@ async function executeThxInner(
       args: [
         sender.wallet as Address,
         recipientWallet,
-        parsed.amount,
+        params.amount,
         relatedRoles,
-        `0x${Buffer.from(parsed.message, "utf8").toString("hex")}` as Hex,
+        `0x${Buffer.from(params.message, "utf8").toString("hex")}` as Hex,
       ],
     });
   } catch (err) {
@@ -333,30 +338,80 @@ async function executeThxInner(
     console.error("mintFrom failed:", err);
     const short =
       (err as { shortMessage?: string }).shortMessage ?? (err as Error).message;
+    return { ok: false, error: `mintFrom に失敗しました: ${short}` };
+  }
+
+  return {
+    ok: true,
+    txHash,
+    recipientWallet,
+    recipientLabel:
+      params.recipient.kind === "snowflake"
+        ? `<@${params.recipient.value}>`
+        : params.recipient.value,
+    amount: params.amount,
+    message: params.message,
+  };
+}
+
+/** Render a successful {@link performThx} into the user-facing summary. */
+export function formatThxSuccess(
+  outcome: Extract<ThxOutcome, { ok: true }>,
+  opts: { showAddress: boolean },
+): string {
+  return [
+    `${outcome.recipientLabel} に **${formatEther(outcome.amount)}** THX を送りました。`,
+    opts.showAddress ? `アドレス: \`${outcome.recipientWallet}\`` : null,
+    outcome.message ? `> ${outcome.message}` : null,
+    `Tx: \`${outcome.txHash}\``,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function executeThxInner(
+  env: Env,
+  interaction: APIChatInputApplicationCommandInteraction,
+  deps: ThxDeps,
+  followup: NonNullable<ThxDeps["followup"]>,
+): Promise<void> {
+  const senderSf = interaction.member?.user.id ?? interaction.user?.id ?? "";
+  const parsed = parseThxArgs(interaction);
+  if ("error" in parsed) {
+    await followup(env.DISCORD_APP_ID, interaction.token, parsed.error);
+    return;
+  }
+
+  const guildId = interaction.guild_id;
+  if (!guildId) {
     await followup(
       env.DISCORD_APP_ID,
       interaction.token,
-      `mintFrom に失敗しました: ${short}`,
+      "このコマンドはサーバー内で実行してください。",
     );
     return;
   }
 
-  const recipientLabel =
-    parsed.recipient.kind === "snowflake"
-      ? `<@${parsed.recipient.value}>`
-      : parsed.recipient.value;
+  const outcome = await performThx(
+    env,
+    {
+      actorSf: senderSf,
+      guildId,
+      recipient: parsed.recipient,
+      amount: parsed.amount,
+      message: parsed.message,
+    },
+    deps,
+  );
+  if (!outcome.ok) {
+    await followup(env.DISCORD_APP_ID, interaction.token, outcome.error);
+    return;
+  }
   await followup(
     env.DISCORD_APP_ID,
     interaction.token,
-    [
-      `${recipientLabel} に **${formatEther(parsed.amount)}** THX を送りました。`,
-      parsed.recipient.kind === "address"
-        ? `アドレス: \`${recipientWallet}\``
-        : null,
-      parsed.message ? `> ${parsed.message}` : null,
-      `Tx: \`${txHash}\``,
-    ]
-      .filter(Boolean)
-      .join("\n"),
+    formatThxSuccess(outcome, {
+      showAddress: parsed.recipient.kind === "address",
+    }),
   );
 }

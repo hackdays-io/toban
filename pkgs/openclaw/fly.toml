@@ -1,0 +1,47 @@
+# Toban の OpenClaw ゲートウェイ。
+#
+# 手順は DEPLOYMENT.md §7、パッケージの詳細は pkgs/openclaw/README.md。
+# 設定ファイル（/data/openclaw.json）はこの toml では作られない — ボリューム上に
+# 置かれるので `pnpm openclaw push:config` で送り込む。
+
+app = "toban-openclaw"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # 設定と状態（automations のスケジュール・実行履歴を含む SQLite）の置き場所。
+  # これを /data にすることで、設定ファイルのパスが /data/openclaw.json になる。
+  OPENCLAW_STATE_DIR = "/data"
+
+[processes]
+  app = "openclaw gateway --bind lan --port 3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  processes = ["app"]
+
+  # automations（cron）は gateway プロセスの中で動く。マシンを止めると通知が
+  # 止まるので、auto stop / auto start は使わない。常時 1 台。
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/startupz"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 2
+  memory = "2gb"
+
+[mounts]
+  # 事前に作っておく: fly volumes create openclaw_data --size 1 --region nrt
+  source = "openclaw_data"
+  destination = "/data"

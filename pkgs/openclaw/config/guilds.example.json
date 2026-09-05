@@ -1,0 +1,11 @@
+[
+  {
+    "label": "community",
+    "guildId": "000000000000000000",
+    "treeId": "1",
+    "chainId": 8453,
+    "allowUsers": ["000000000000000001"],
+    "channels": [],
+    "mcpUrl": "https://toban-discord-bot-base.kawabeyuki23.workers.dev/mcp"
+  }
+]

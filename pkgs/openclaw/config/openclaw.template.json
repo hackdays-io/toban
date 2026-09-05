@@ -1,0 +1,85 @@
+{
+  "$toban": {
+    "notes": [
+      "このブロックはレンダリング時に取り除かれる。出力の /data/openclaw.json には残らない。",
+      "",
+      "perGuild はギルドごとに複製される雛形。使えるプレースホルダ:",
+      "  {{label}} {{guildId}} {{treeId}} {{chainId}} {{agentId}} {{mcpServerId}}",
+      "  {{allowUsers}} {{channels}}  ← 配列。値まるごとの置換なら配列のまま入る",
+      "  {{mcpUrl}}       ← ギルドごとの Toban MCP エンドポイント",
+      "",
+      "配置先は src/render-config.ts が決める:",
+      "  agent        -> agents.entries[{{agentId}}]",
+      "  binding      -> multiAgent.bindings[]",
+      "  mcpServer    -> mcp.servers[{{mcpServerId}}]",
+      "  discordGuild -> channels.discord.guilds[{{guildId}}]",
+      "",
+      "!! 初回デプロイ前に `openclaw config schema` で検証すること。",
+      "   OpenClaw の設定スキーマは本家の更新で変わる。ここが唯一のスキーマ定義なので、",
+      "   キー名が変わったらこのファイルを直せば済む（TypeScript 側の修正は不要）。",
+      "",
+      "秘密情報は絶対に直書きしない。OpenClaw は ${ENV_VAR} を実行時に解決するので、",
+      "MCP の Authorization ヘッダなどはそちらを使う。直書きは render-config が弾く。"
+    ],
+    "perGuild": {
+      "agent": {
+        "name": "Toban ({{label}})",
+        "model": "anthropic/claude-opus-5",
+        "workspace": "/data/workspace/{{label}}",
+        "instructions": "/opt/toban/instructions/TOBAN.md"
+      },
+      "binding": {
+        "agentId": "{{agentId}}",
+        "match": {
+          "channel": "discord",
+          "guildId": "{{guildId}}"
+        }
+      },
+      "mcpServer": {
+        "url": "{{mcpUrl}}",
+        "transport": "streamable-http",
+        "headers": {
+          "Authorization": "Bearer ${TOBAN_MCP_TOKEN}",
+          "x-toban-guild-id": "{{guildId}}",
+          "x-toban-chain-id": "{{chainId}}"
+        },
+        "requestTimeoutMs": 20000,
+        "toolFilter": {
+          "include": ["toban_*"]
+        },
+        "codex": {
+          "agents": ["{{agentId}}"]
+        }
+      },
+      "discordGuild": {
+        "requireMention": true,
+        "users": "{{allowUsers}}"
+      }
+    }
+  },
+
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist",
+      "dmPolicy": "allowlist",
+      "allowFrom": [],
+      "commands": {
+        "native": false
+      },
+      "guilds": {}
+    }
+  },
+
+  "agents": {
+    "entries": {}
+  },
+
+  "multiAgent": {
+    "mode": "routing",
+    "bindings": []
+  },
+
+  "mcp": {
+    "servers": {}
+  }
+}

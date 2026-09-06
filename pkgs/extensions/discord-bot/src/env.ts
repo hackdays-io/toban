@@ -54,6 +54,17 @@ export interface Env {
   RPC_URL: string;
   /** EVM chain id as a string (e.g. "8453"). */
   CHAIN_ID: string;
+
+  // -- secrets ------------------------------------------------------------
+  /**
+   * HMAC key behind the MCP endpoint's guild-scoped bearer tokens
+   * (`src/mcp/auth.ts`). A token is `HMAC(secret, guildId)`, so verification
+   * needs no storage — and rotating this secret revokes every guild's token
+   * at once, which is the only revocation we have today.
+   *
+   * Mint one with `pnpm --filter @toban/discord-bot mint-mcp-token <guildId>`.
+   */
+  MCP_TOKEN_SECRET?: string;
   /**
    * Ethereum mainnet JSON-RPC endpoint, used only for ENS resolution
    * (ENS records live on mainnet regardless of the chain the bot's

@@ -273,6 +273,25 @@ Discord に常駐して会話し、15 分ごとに Goldsky を見て通知する
 
 **Cloudflare Workers（§6）より後**にデプロイします。
 
+### 7-0. MCP エンドポイント（Toban 側）
+
+エージェントは `@toban/discord-bot` の `POST /mcp` 越しに Toban を触ります。**自前の
+OpenClaw でも、コミュニティが既に動かしている OpenClaw でも同じ**です。
+
+```bash
+# HMAC 鍵（1 回だけ生成して使い回す）
+openssl rand -base64 32 | pnpm --filter @toban/discord-bot exec wrangler secret put MCP_TOKEN_SECRET --env base
+
+# サーバーごとにトークンを発行して、そのサーバーの運用者に渡す
+MCP_TOKEN_SECRET='...' pnpm discord-bot mint-mcp-token <guildId>
+```
+
+トークンはギルド id を埋め込んだ HMAC なので、**他のサーバーの情報は取得できません**。
+書き込みは必ず確認ボタン経由なので、トークン単体では資産は動きません。
+
+> ⚠️ 失効は今のところ **`MCP_TOKEN_SECRET` のローテーション（＝全ギルド一括失効）**
+> しかありません。個別失効が要るようになったら platform_links 側にバージョンを持たせます。
+
 ### 7-1. 初回のみ
 
 **Discord Developer Portal** — 既存の Toban Bot と**同じアプリケーション・同じトークン**を

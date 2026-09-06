@@ -22,6 +22,7 @@ scripts/render-config.ts       上記の CLI
 scripts/push-config.sh         レンダリング結果を /data/openclaw.json へ送る
 scripts/deploy.sh              事前確認つきの fly deploy
 instructions/TOBAN.md          エージェントへの指示書（各ワークスペースへ AGENTS.md として配置）
+skills/toban/                  配布用スキル。他チームの OpenClaw に入れてもらう用
 ```
 
 ## なぜ設定がテンプレートなのか

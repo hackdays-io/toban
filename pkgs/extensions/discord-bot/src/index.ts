@@ -3,6 +3,7 @@
  *
  * Routes:
  *   POST /discord/interactions  -> Ed25519-verified Discord interaction
+ *   POST /mcp                   -> MCP endpoint (guild-scoped bearer token)
  *   GET  /api/install/start     -> begin frontend-initiated bot install
  *   GET  /api/install/callback  -> OAuth bot-install callback
  *
@@ -12,6 +13,7 @@ import {
   type APIApplicationCommandAutocompleteInteraction,
   type APIChatInputApplicationCommandInteraction,
   type APIInteraction,
+  type APIMessageComponentInteraction,
   InteractionResponseType,
   InteractionType,
 } from "discord-api-types/v10";
@@ -28,6 +30,8 @@ import { handleTobanLink } from "./commands/toban-link";
 import { handleTobanSetup } from "./commands/toban-setup";
 import type { Env } from "./env";
 import { verifyDiscordInteraction } from "./interactions/verify";
+import { handleConfirmButton, isConfirmComponent } from "./mcp/button";
+import { handleMcpRequest } from "./mcp/index";
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -80,6 +84,16 @@ async function handleInteraction(
       data: { choices: [] },
     });
   }
+  // Confirm buttons posted by the MCP propose tools. This is where an
+  // agent's proposal becomes a signed action — the actor is the clicker,
+  // taken from this Discord-signed payload. See src/mcp/confirm.ts.
+  if (interaction.type === InteractionType.MessageComponent) {
+    const component = interaction as APIMessageComponentInteraction;
+    if (isConfirmComponent(component.data.custom_id)) {
+      return jsonResponse(handleConfirmButton(env, ctx, component));
+    }
+    return jsonResponse(ephemeral("対応していない操作です。"));
+  }
   if (interaction.type !== InteractionType.ApplicationCommand) {
     return jsonResponse(ephemeral("対応していない操作です。"));
   }
@@ -124,6 +138,9 @@ export default {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/discord/interactions") {
       return handleInteraction(env, ctx, request);
+    }
+    if (request.method === "POST" && url.pathname === "/mcp") {
+      return handleMcpRequest(env, request);
     }
     if (request.method === "GET" && url.pathname === "/api/install/start") {
       return handleInstallStart(env, request);

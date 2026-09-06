@@ -64,8 +64,13 @@ function fakeEnv(): Env {
 
 const identityStub = (over: Partial<IdentityClient> = {}): IdentityClient => ({
   getIdentity: async () => null,
+  getIdentitiesByWallet: async () => [],
+  getIdentitiesByWallets: async (_provider, wallets) =>
+    new Map(wallets.map((w) => [w.toLowerCase(), []])),
   getPlatformLink: async () => link,
   upsertPlatformLink: async () => {},
+  getNotifyChannelId: async () => null,
+  setNotifyChannelId: async () => {},
   claimInstallStateJti: async () => ({ ok: true }),
   ...over,
 });

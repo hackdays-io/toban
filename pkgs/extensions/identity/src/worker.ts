@@ -4,6 +4,8 @@
  * Routes:
  *   POST /api/connect         — IdentityBinding verification + upsert
  *   GET  /api/lookup          — (provider, account_id) -> wallet
+ *   GET  /api/lookup/by-wallet  — wallet -> identities[]（逆引き・単体）
+ *   POST /api/lookup/by-wallet  — wallets[] -> identities[]（逆引き・バッチ）
  *   GET  /api/platform-link   — (provider, platform_id) -> tree_id binding
  *   POST /api/platform-link   — upsert a workspace ↔ platform binding
  *   POST /api/platform-link/notify-channel — set/clear the notify channel
@@ -15,6 +17,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import { handleConnect } from "./handlers/connect.js";
 import { handleInstallStateClaim } from "./handlers/install-state.js";
+import { handleLookupByWallet } from "./handlers/lookup-by-wallet.js";
 import { handleLookup } from "./handlers/lookup.js";
 import {
   handlePlatformLink,
@@ -72,6 +75,9 @@ export default {
           break;
         case "/api/lookup":
           response = await handleLookup(request, { db, env });
+          break;
+        case "/api/lookup/by-wallet":
+          response = await handleLookupByWallet(request, { db, env });
           break;
         case "/api/platform-link":
           response = await handlePlatformLink(request, {

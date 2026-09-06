@@ -460,6 +460,21 @@ importers:
         specifier: ^7.4.1
         version: 7.4.1
 
+  pkgs/openclaw:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.7.4
+        version: 22.15.24
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.1
+      typescript:
+        specifier: ^5.6.2
+        version: 5.6.3
+      vitest:
+        specifier: ^2.1.6
+        version: 2.1.9(@types/node@22.15.24)(lightningcss@1.32.0)(msw@2.14.5(@types/node@22.15.24)(typescript@5.6.3))(terser@5.40.0)
+
   pkgs/subgraph:
     dependencies:
       '@graphprotocol/graph-cli':

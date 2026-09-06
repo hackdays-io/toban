@@ -1,0 +1,4 @@
+dist/
+# 実運用のギルド一覧。config/guilds.example.json をコピーして作る。
+# 秘密ではないので、チームで共有するならコミットしてもよい（その場合はこの行を消す）。
+config/guilds.json

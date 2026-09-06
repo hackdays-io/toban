@@ -65,6 +65,21 @@ class StubIdentity implements IdentityClient {
   async getIdentity(_p: "discord", accountId: string) {
     return this.records[accountId] ?? null;
   }
+  async getIdentitiesByWallet(_p: "discord", wallet: string) {
+    return Object.values(this.records).filter(
+      (r) => r.wallet.toLowerCase() === wallet.toLowerCase(),
+    );
+  }
+  async getIdentitiesByWallets(
+    p: "discord",
+    wallets: readonly string[],
+  ): Promise<Map<string, IdentityRecord[]>> {
+    const out = new Map<string, IdentityRecord[]>();
+    for (const w of wallets) {
+      out.set(w.toLowerCase(), await this.getIdentitiesByWallet(p, w));
+    }
+    return out;
+  }
   async getPlatformLink() {
     return this.link;
   }

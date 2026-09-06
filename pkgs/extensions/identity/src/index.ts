@@ -50,10 +50,13 @@ export type {
 } from "./schema.js";
 
 export {
+  getIdentitiesByWallet,
+  getIdentitiesByWallets,
   getIdentity,
   getPlatformLink,
   isNonceUsed,
   markNonceUsed,
+  normalizeWallet,
   updatePlatformLinkMetadata,
   upsertIdentity,
   upsertPlatformLink,
@@ -89,3 +92,12 @@ export type {
 
 export { handleLookup } from "./handlers/lookup.js";
 export type { LookupHandlerDeps } from "./handlers/lookup.js";
+
+export {
+  handleLookupByWallet,
+  MAX_WALLETS_PER_BATCH,
+} from "./handlers/lookup-by-wallet.js";
+export type {
+  IdentityByWalletItem,
+  LookupByWalletHandlerDeps,
+} from "./handlers/lookup-by-wallet.js";

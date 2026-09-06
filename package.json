@@ -17,7 +17,8 @@
     "document": "pnpm --filter document",
     "subgraph": "pnpm --filter subgraph",
     "identity": "pnpm --filter @toban/identity",
-    "discord-bot": "pnpm --filter @toban/discord-bot"
+    "discord-bot": "pnpm --filter @toban/discord-bot",
+    "openclaw": "pnpm --filter @toban/openclaw"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -25,20 +25,40 @@ import {
   getPublicClient,
   resolveMembershipHatId,
   resolveRelatedRoles,
-  resolveSubmittableQuests,
   resolveThanksTokenAddress,
 } from "../chain";
-import { questChoiceLabel } from "../commands/quest-submit";
 import type { Env } from "../env";
-import { type IdentityClient, createIdentityClient } from "../identity";
+import {
+  type IdentityClient,
+  type IdentityRecord,
+  createIdentityClient,
+} from "../identity";
 import { buildConfirmMessage } from "./confirm";
 import { type DiscordRest, createDiscordRest } from "./discord-rest";
 import type { ToolDefinition, ToolResult } from "./protocol";
+import {
+  DISTRIBUTOR_STATUSES,
+  type DistributorStatus,
+  MAX_LIMIT,
+  QUEST_STATUSES,
+  type QuestStatus,
+  clampLimit,
+  resolveQuestDetail,
+  resolveQuests,
+  resolveRewardDistributions,
+  resolveThanksHistory,
+  resolveThanksTotals,
+  resolveWorkspaceOverview,
+  resolveWorkspaceRoles,
+  unitsFor,
+} from "./queries";
 
 export interface McpToolDeps {
   identity?: IdentityClient;
   rest?: DiscordRest;
   resolveTokenAddress?: (treeId: string) => Promise<Hex | null>;
+  /** Injected in tests so subgraph reads never hit the network. */
+  fetchImpl?: typeof fetch;
 }
 
 const snowflake = { type: "string", pattern: "^\\d+$" } as const;
@@ -57,7 +77,10 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "toban_member_status",
     description:
-      "指定した Discord ユーザーのウォレット連携状況と、サンクストークンの送信可能枠を返す。送付を提案する前に枠が足りるか確認するのに使う。",
+      "指定した Discord ユーザーのウォレット連携状況、サンクストークンの残高／送付累計、" +
+      "および送信可能枠を返す。送付を提案する前に枠が足りるか確認するのに使う。" +
+      "受け取った量（thxBalance）と、これから送れる枠（mintableThx / botAllowanceThx）は" +
+      "別物なので取り違えないこと。応答の `units` に各数量の単位が入る。合計・比較・割合を出す前に必ず読み、単位の違う値を混ぜないこと。",
     inputSchema: {
       type: "object",
       properties: {
@@ -73,16 +96,133 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "toban_open_quests",
     description:
-      "指定した Discord ユーザーが完了報告できるクエストの一覧を返す。",
+      "ワークスペースのクエスト一覧を返す（報酬シェア数・ステータス・説明・承認数つき）。" +
+      "既定では Open のものだけ。discordUserId を渡すと『その人が完了報告できるもの』" +
+      "に絞る（本人が作成したクエストは除外される）ため、その場合 status は Open のみ。" +
+      "個別のクエストの経緯（提出履歴・承認者）は toban_quest_detail を使う。" +
+      "応答の `units` に各数量の単位が入る。合計・比較・割合を出す前に必ず読み、単位の違う値を混ぜないこと。",
     inputSchema: {
       type: "object",
       properties: {
         discordUserId: {
           ...snowflake,
-          description: "対象の Discord ユーザー ID",
+          description:
+            "指定すると、この人が完了報告できる Open クエストだけに絞る（任意）",
+        },
+        status: {
+          type: "array",
+          items: { type: "string", enum: [...QUEST_STATUSES] },
+          description:
+            '絞り込むステータス。既定は ["Open"]。レビュー待ちは PendingReview',
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_LIMIT,
+          description: `返す最大件数（既定 20、上限 ${MAX_LIMIT}）`,
         },
       },
-      required: ["discordUserId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "toban_quest_detail",
+    description:
+      "クエスト 1 件の詳細を返す。説明文・報酬シェア数・IPFS メタデータ URI に加えて、" +
+      "提出の試行履歴（誰がいつ出して、取り下げ／却下／承認されたか）と承認者の一覧を含む。" +
+      "応答の `units` に各数量の単位が入る。合計・比較・割合を出す前に必ず読み、単位の違う値を混ぜないこと。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        questId: {
+          type: "string",
+          pattern: "^\\d+$",
+          description: "クエスト ID（10 進数の文字列）",
+        },
+      },
+      required: ["questId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "toban_thx_history",
+    description:
+      "サンクストークンの送付履歴（新しい順）を返す。添えられたメッセージも復元する。" +
+      "discordUserId を省くとワークスペース全体の履歴。誰が誰に贈ったかを振り返ったり、" +
+      "月次のまとめを作るのに使う。**これは読み取りだけで、何も送らない。**" +
+      "応答の `units` に各数量の単位が入る。合計・比較・割合を出す前に必ず読み、単位の違う値を混ぜないこと。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        discordUserId: {
+          ...snowflake,
+          description: "この人に関わる送付だけに絞る（任意）",
+        },
+        direction: {
+          type: "string",
+          enum: ["sent", "received", "any"],
+          description:
+            "discordUserId を指定したときの向き。既定は any（送受信の両方）",
+        },
+        sinceDays: {
+          type: "integer",
+          minimum: 1,
+          maximum: 365,
+          description: "何日前までを対象にするか（任意、既定は全期間）",
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_LIMIT,
+          description: `返す最大件数（既定 20、上限 ${MAX_LIMIT}）`,
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "toban_workspace_members",
+    description:
+      "ワークスペースのロールシェア保有状況を返す。誰がどのロール（hatId）のシェアを" +
+      "いくつ持っているか、および未受け取り（エスクロー中）のシェア。" +
+      "連携済みのウォレットには Discord ユーザー ID が付くのでメンションに使える。" +
+      "応答の `units` に各数量の単位が入る。合計・比較・割合を出す前に必ず読み、単位の違う値を混ぜないこと。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_LIMIT,
+          description: `返す最大件数（既定 50、上限 ${MAX_LIMIT}）`,
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "toban_reward_distributions",
+    description:
+      "報酬分配（ScheduledDistributor）の予定と実績を返す。分配予定日・対象トークン・" +
+      "入金額・実行済み／返却済みの額。金額は ERC-20 の生の単位で、小数桁は" +
+      "インデクサーが持っていないため換算していない。**円やドルに読み替えたり、" +
+      "THX の額と比べたりしてはいけない。**" +
+      "応答の `units` に各数量の単位が入る。合計・比較・割合を出す前に必ず読み、単位の違う値を混ぜないこと。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: {
+          type: "array",
+          items: { type: "string", enum: [...DISTRIBUTOR_STATUSES] },
+          description: "絞り込むステータス。既定は全部",
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_LIMIT,
+          description: `返す最大件数（既定 20、上限 ${MAX_LIMIT}）`,
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -160,6 +300,66 @@ function str(args: Record<string, unknown>, key: string): string | undefined {
 }
 
 /**
+ * Validate an enum-array argument.
+ *
+ * Three outcomes, kept distinct on purpose: `undefined` (not supplied — the
+ * caller picks its own default), `null` (supplied but not a valid member, so
+ * the tool must refuse rather than silently widen the query), or the values.
+ */
+function parseStatuses<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+): T[] | undefined | null {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length === 0) return null;
+  if (!value.every((v): v is T => allowed.includes(v as T))) return null;
+  return Array.from(new Set(value));
+}
+
+/** Quests report a role-share reward; the same block for every quest tool. */
+const QUEST_UNITS = unitsFor({ amountShares: "shares" });
+
+/** Attach the frontend permalink an agent can paste into Discord. */
+function withQuestUrl<T extends { questId: string }>(
+  env: Env,
+  treeId: string,
+  quest: T,
+): T & { url: string } {
+  return {
+    ...quest,
+    url: `${env.TOBAN_FRONTEND_URL}/${treeId}/quest/${quest.questId}`,
+  };
+}
+
+/**
+ * Reverse-resolve wallets to Discord user ids so a reading tool can hand the
+ * agent something mentionable. The subgraph only knows addresses.
+ *
+ * Keys are lowercased addresses (the identity worker's contract). A wallet
+ * with no binding maps to `null` — that is normal, not an error, and must not
+ * fail the whole tool call: an unlinked recipient still received the tokens.
+ */
+async function lookupDiscordIds(
+  identity: IdentityClient,
+  wallets: readonly string[],
+): Promise<Map<string, string | null>> {
+  const unique = Array.from(new Set(wallets.map((w) => w.toLowerCase())));
+  const out = new Map<string, string | null>();
+  if (unique.length === 0) return out;
+  let found: Map<string, IdentityRecord[]>;
+  try {
+    found = await identity.getIdentitiesByWallets("discord", unique);
+  } catch (err) {
+    console.error("MCP reverse lookup failed:", err);
+    return out;
+  }
+  for (const wallet of unique) {
+    out.set(wallet, found.get(wallet)?.[0]?.accountId ?? null);
+  }
+  return out;
+}
+
+/**
  * Dispatch one tool call.
  *
  * `guildId` comes from the bearer token, never from `args` — see `auth.ts`.
@@ -172,6 +372,7 @@ export async function callTool(
   deps: McpToolDeps = {},
 ): Promise<ToolResult> {
   const identity = deps.identity ?? createIdentityClient(env);
+  const fetchImpl = deps.fetchImpl ?? fetch;
   const link = await identity.getPlatformLink("discord", guildId);
   if (!link) {
     return fail(
@@ -180,14 +381,32 @@ export async function callTool(
   }
 
   switch (name) {
-    case "toban_workspace_info":
+    case "toban_workspace_info": {
+      const overview = await resolveWorkspaceOverview(
+        env,
+        link.treeId,
+        fetchImpl,
+      );
       return ok(
         JSON.stringify({
           treeId: link.treeId,
           chainId: Number(env.CHAIN_ID),
           url: `${env.TOBAN_FRONTEND_URL}/${link.treeId}`,
+          // Null when BigBang's `Executed` event is not indexed yet. The
+          // guild is still linked, so this is not an error — the workspace
+          // simply has nothing to report about itself.
+          ...(overview
+            ? {
+                createdAt: overview.createdAt,
+                creator: overview.creator,
+                owner: overview.owner,
+                hats: overview.hats,
+                modules: overview.modules,
+              }
+            : { indexed: false }),
         }),
       );
+    }
 
     case "toban_member_status": {
       const userId = str(args, "discordUserId");
@@ -205,9 +424,10 @@ export async function callTool(
       const resolveToken =
         deps.resolveTokenAddress ??
         ((treeId: string) => resolveThanksTokenAddress(env, treeId));
-      const [token, relatedRoles] = await Promise.all([
+      const [token, relatedRoles, totals] = await Promise.all([
         resolveToken(link.treeId),
         resolveRelatedRoles(env, owner, link.treeId),
+        resolveThanksTotals(env, link.treeId, owner, fetchImpl),
       ]);
       if (!token) {
         return fail(
@@ -233,21 +453,73 @@ export async function callTool(
         JSON.stringify({
           linked: true,
           wallet: owner,
+          // What they hold, from the indexer.
+          thxBalance: totals.balanceThx,
+          thxSentTotal: totals.sentTotalThx,
+          // What they may still give, read from the chain. Not the same
+          // number as the balance and not derivable from it: `mintableThx`
+          // is a cap computed from role wear-time, and `botAllowanceThx` is
+          // how much of that the bot is permitted to mint on their behalf.
           botAllowanceThx: formatEther(allowance as bigint),
           mintableThx: formatEther(mintable as bigint),
+          roles: relatedRoles.map((r) => ({
+            hatId: r.hatId.toString(),
+            wearer: r.wearer,
+          })),
+          units: unitsFor({
+            thxBalance: "thx",
+            thxSentTotal: "thx",
+            botAllowanceThx: "thx",
+            mintableThx: "thx",
+          }),
         }),
       );
     }
 
     case "toban_open_quests": {
+      const statuses = parseStatuses(args.status, QUEST_STATUSES);
+      if (statuses === null) {
+        return fail(
+          `status には ${QUEST_STATUSES.join(" / ")} のいずれかを指定してください。`,
+        );
+      }
+      const limit = clampLimit(args.limit, 20);
       const userId = str(args, "discordUserId");
-      if (!userId) return fail("discordUserId は必須です。");
+
+      // No user given: a plain listing of the workspace's quests.
+      if (!userId) {
+        const quests = await resolveQuests(
+          env,
+          link.treeId,
+          { statuses: statuses ?? ["Open"], limit },
+          fetchImpl,
+        );
+        return ok(
+          JSON.stringify({
+            quests: quests.map((q) => withQuestUrl(env, link.treeId, q)),
+            units: QUEST_UNITS,
+          }),
+        );
+      }
+
+      // A user given means "what can *they* submit", which only Open quests
+      // can answer. Refusing beats silently ignoring one of the two args.
+      if (statuses && (statuses.length !== 1 || statuses[0] !== "Open")) {
+        return fail(
+          "discordUserId を指定した場合、完了報告できるのは Open のクエストだけなので status は指定できません。",
+        );
+      }
       const record = await identity.getIdentity("discord", userId);
       if (!record) return ok(JSON.stringify({ linked: false, quests: [] }));
       const actor = record.wallet as Address;
       const [membership, quests] = await Promise.all([
-        resolveMembershipHatId(env, actor, link.treeId),
-        resolveSubmittableQuests(env, link.treeId, actor),
+        resolveMembershipHatId(env, actor, link.treeId, fetchImpl),
+        resolveQuests(
+          env,
+          link.treeId,
+          { statuses: ["Open"], limit },
+          fetchImpl,
+        ),
       ]);
       if (membership === null) {
         return ok(
@@ -259,14 +531,158 @@ export async function callTool(
           }),
         );
       }
+      const actorLower = actor.toLowerCase();
       return ok(
         JSON.stringify({
           linked: true,
           member: true,
-          quests: quests.map((q) => ({
-            questId: q.questId.toString(),
-            label: questChoiceLabel(q),
+          // You cannot report completion of a quest you created yourself.
+          quests: quests
+            .filter((q) => q.creator.toLowerCase() !== actorLower)
+            .map((q) => withQuestUrl(env, link.treeId, q)),
+          units: QUEST_UNITS,
+        }),
+      );
+    }
+
+    case "toban_quest_detail": {
+      const questId = str(args, "questId");
+      if (!questId || !/^\d+$/.test(questId)) {
+        return fail("questId には 10 進数の文字列を指定してください。");
+      }
+      const quest = await resolveQuestDetail(
+        env,
+        link.treeId,
+        questId,
+        fetchImpl,
+      );
+      if (!quest) {
+        return fail(
+          `クエスト #${questId} はこのワークスペースに見つかりませんでした。`,
+        );
+      }
+      return ok(
+        JSON.stringify({
+          ...withQuestUrl(env, link.treeId, quest),
+          units: QUEST_UNITS,
+        }),
+      );
+    }
+
+    case "toban_thx_history": {
+      const limit = clampLimit(args.limit, 20);
+      const direction = str(args, "direction") ?? "any";
+      if (!["sent", "received", "any"].includes(direction)) {
+        return fail(
+          "direction には sent / received / any を指定してください。",
+        );
+      }
+      const sinceDays = args.sinceDays;
+      if (
+        sinceDays !== undefined &&
+        (typeof sinceDays !== "number" ||
+          !Number.isInteger(sinceDays) ||
+          sinceDays <= 0)
+      ) {
+        return fail("sinceDays には 1 以上の整数を指定してください。");
+      }
+      const sinceUnix =
+        typeof sinceDays === "number"
+          ? Math.floor(Date.now() / 1000) - sinceDays * 86400
+          : undefined;
+
+      const userId = str(args, "discordUserId");
+      let wallet: Address | undefined;
+      if (userId) {
+        const record = await identity.getIdentity("discord", userId);
+        if (!record) {
+          return ok(
+            JSON.stringify({
+              linked: false,
+              mints: [],
+              hint: "このユーザーはまだウォレットを連携していません。",
+            }),
+          );
+        }
+        wallet = record.wallet as Address;
+      }
+
+      const mints = await resolveThanksHistory(
+        env,
+        link.treeId,
+        {
+          wallet,
+          direction: direction as "sent" | "received" | "any",
+          sinceUnix,
+          limit,
+        },
+        fetchImpl,
+      );
+      const byWallet = await lookupDiscordIds(
+        identity,
+        mints.flatMap((m) => [m.from, m.to]),
+      );
+      return ok(
+        JSON.stringify({
+          mints: mints.map((m) => ({
+            ...m,
+            fromDiscordUserId: byWallet.get(m.from.toLowerCase()) ?? null,
+            toDiscordUserId: byWallet.get(m.to.toLowerCase()) ?? null,
           })),
+          units: unitsFor({ amountThx: "thx" }),
+        }),
+      );
+    }
+
+    case "toban_workspace_members": {
+      const limit = clampLimit(args.limit, 50);
+      const roles = await resolveWorkspaceRoles(
+        env,
+        link.treeId,
+        limit,
+        fetchImpl,
+      );
+      const byWallet = await lookupDiscordIds(identity, [
+        ...roles.holders.flatMap((h) => [h.owner, h.wearer]),
+        ...roles.escrowed.map((e) => e.wearer),
+      ]);
+      return ok(
+        JSON.stringify({
+          holders: roles.holders.map((h) => ({
+            ...h,
+            ownerDiscordUserId: byWallet.get(h.owner.toLowerCase()) ?? null,
+            wearerDiscordUserId: byWallet.get(h.wearer.toLowerCase()) ?? null,
+          })),
+          escrowed: roles.escrowed.map((e) => ({
+            ...e,
+            wearerDiscordUserId: byWallet.get(e.wearer.toLowerCase()) ?? null,
+          })),
+          units: unitsFor({ shares: "shares" }),
+        }),
+      );
+    }
+
+    case "toban_reward_distributions": {
+      const statuses = parseStatuses(args.status, DISTRIBUTOR_STATUSES);
+      if (statuses === null) {
+        return fail(
+          `status には ${DISTRIBUTOR_STATUSES.join(" / ")} のいずれかを指定してください。`,
+        );
+      }
+      const distributions = await resolveRewardDistributions(
+        env,
+        link.treeId,
+        { statuses: statuses ?? undefined, limit: clampLimit(args.limit, 20) },
+        fetchImpl,
+      );
+      return ok(
+        JSON.stringify({
+          distributions,
+          units: unitsFor({
+            totalDepositedRaw: "raw",
+            executedAmountRaw: "raw",
+            reclaimedAmountRaw: "raw",
+          }),
         }),
       );
     }

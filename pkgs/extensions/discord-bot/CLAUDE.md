@@ -35,6 +35,27 @@ Toban without ever holding a signing credential.
   so the guild comes from the credential and never from the request body. A
   token for guild A cannot read or propose for guild B whatever the model
   emits. Revocation is currently all-or-nothing (rotate `MCP_TOKEN_SECRET`).
+- **The MCP read surface lives in `src/mcp/queries.ts`, not `chain.ts`.**
+  `chain.ts` holds the ABI slice and the resolvers the *write* paths depend
+  on, and stays small enough to audit next to `turnkey/policy.json`; the
+  read-only Goldsky queries behind `toban_thx_history`,
+  `toban_workspace_members` and friends belong in `queries.ts`. Two rules
+  there: every filter carries the `treeId` (the token pins the guild, the
+  guild pins the workspace — a tool must never be able to read another
+  one), and every list takes an explicit `first` (results land in a
+  third-party agent's context window; `MAX_LIMIT` caps it at 100).
+- **Amounts from the indexer are in three incompatible units.** THX is
+  18-decimal (`formatEther`, named `*Thx`); role shares are raw counts of a
+  fixed 10000-per-role supply (`*Shares`); ScheduledDistributor amounts are
+  arbitrary ERC-20 base units whose decimals the subgraph does not index
+  (`*Raw`). The suffixes are half the contract with the reading agent; the
+  other half is the `units` block every amount-bearing response carries
+  (`unitsFor()` in `queries.ts` — field → unit, plus the note for each unit
+  used, telling the reader what it may compute with it). **A new amount
+  field must be added to its tool's `unitsFor()` call in the same change**,
+  or the reader gets a number with no unit. Never "helpfully" divide a
+  `*Raw` value: the subgraph does not index ERC-20 decimals, so there is no
+  correct divisor to use.
 - **D1 is shared with `@toban/identity`.** This package never writes
   directly to `identities` / `platform_links`. All identity reads + writes
   go through the identity Worker over the `IDENTITY` **service binding**
@@ -90,6 +111,7 @@ mcp/
   auth.ts                   guild-scoped bearer tokens (stateless HMAC)
   protocol.ts               minimal MCP over JSON-RPC 2.0 (no SSE)
   tools.ts                  tool definitions + read/propose handlers
+  queries.ts                read-only Goldsky queries behind the read tools
   confirm.ts                proposal <-> embed payload, confirm message
   button.ts                 the click: actor = clicker, then perform*
   discord-rest.ts           bot-token REST calls (channel/message)

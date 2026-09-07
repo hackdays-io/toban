@@ -205,8 +205,12 @@ function treeIdToHatsHex(treeId: string): string {
  * env guard, `res.ok` check, and `errors[]` handling every resolver in this
  * module shares. Centralised so a fix to error handling lives in one place
  * (this replaced three hand-repeated copies — see issue #531 review).
+ *
+ * Exported for `src/mcp/queries.ts`, which owns the read-only subgraph
+ * surface behind the MCP read tools — error handling for every Goldsky
+ * call in this package must stay in one place.
  */
-async function postGraphQL<T>(
+export async function postGraphQL<T>(
   endpoint: string | undefined,
   envVarName: string,
   query: string,

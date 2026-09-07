@@ -18,6 +18,7 @@ import {
 } from "../src/mcp/confirm";
 import type { DiscordRest } from "../src/mcp/discord-rest";
 import { handleRpc } from "../src/mcp/protocol";
+import { decodeThanksMessage, unitsFor } from "../src/mcp/queries";
 import { TOOL_DEFINITIONS, callTool } from "../src/mcp/tools";
 
 const GUILD = "111111111111111111";
@@ -458,5 +459,623 @@ describe("confirm button", () => {
       encodePayload(payload),
     );
     expect(readPayload(interaction)).toEqual(payload);
+  });
+});
+
+// ------------------------------------------------------- subgraph reads
+
+const HATS_ENDPOINT = "https://hats.example.invalid/graphql";
+const WALLET_A = `0x${"a1".repeat(20)}`;
+const WALLET_B = `0x${"b2".repeat(20)}`;
+
+interface GraphCall {
+  endpoint: string;
+  query: string;
+  variables: Record<string, unknown>;
+}
+
+/**
+ * Route a stubbed GraphQL POST by the root field it selects. Every call is
+ * recorded so a test can assert what the tool actually asked the indexer —
+ * workspace scoping is a security property, not a formatting detail.
+ */
+function graphStub(responder: (call: GraphCall) => unknown): {
+  fetchImpl: typeof fetch;
+  calls: GraphCall[];
+} {
+  const calls: GraphCall[] = [];
+  const fetchImpl = (async (url: string, init: RequestInit) => {
+    const body = JSON.parse(String(init.body)) as {
+      query: string;
+      variables: Record<string, unknown>;
+    };
+    const call = {
+      endpoint: String(url),
+      query: body.query,
+      variables: body.variables,
+    };
+    calls.push(call);
+    return new Response(JSON.stringify({ data: responder(call) }), {
+      headers: { "content-type": "application/json" },
+    });
+  }) as unknown as typeof fetch;
+  return { fetchImpl, calls };
+}
+
+function quest(over: Record<string, unknown> = {}) {
+  return {
+    questId: "7",
+    hatId: "123",
+    wearer: WALLET_A,
+    creator: WALLET_B,
+    submitter: null,
+    amount: "2500",
+    status: "Open",
+    approvalCount: 0,
+    attemptCount: 0,
+    createdAt: "1700000000",
+    submittedAt: null,
+    completedAt: null,
+    cancelledAt: null,
+    metadata: { title: "掃除当番", description: "月曜の朝に" },
+    ...over,
+  };
+}
+
+function discordIdentity(accountId: string, wallet: string) {
+  return {
+    provider: "discord" as const,
+    accountId,
+    wallet: wallet as Address,
+  };
+}
+
+describe("workspace info", () => {
+  it("returns the indexed modules and hat ids", async () => {
+    const { fetchImpl } = graphStub(() => ({
+      workspace: {
+        creator: WALLET_A,
+        owner: WALLET_B,
+        topHatId: "1",
+        hatterHatId: "2",
+        memberHatId: "3",
+        operatorHatId: "4",
+        creatorHatId: "5",
+        minterHatId: "6",
+        questAgentHatId: "7",
+        hatsTimeFrameModule: "0xtime",
+        hatsHatCreatorModule: "0xcreator",
+        hatsQuestModule: "0xquest",
+        splitCreator: "0xsplits",
+        blockTimestamp: "1700000000",
+        thanksToken: { id: "0xthx" },
+        hatsFractionTokenModule: { id: "0xfraction" },
+      },
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_workspace_info",
+      {},
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.treeId).toBe("42");
+    expect(out.modules.thanksToken).toBe("0xthx");
+    expect(out.modules.hatsFractionTokenModule).toBe("0xfraction");
+    expect(out.hats.memberHatId).toBe("3");
+    expect(out.createdAt).toBe("2023-11-14T22:13:20.000Z");
+  });
+
+  it("says the workspace is not indexed yet instead of failing", async () => {
+    const { fetchImpl } = graphStub(() => ({ workspace: null }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_workspace_info",
+      {},
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(res.isError).toBeUndefined();
+    expect(JSON.parse(res.text)).toMatchObject({
+      treeId: "42",
+      indexed: false,
+    });
+  });
+});
+
+describe("quest reads", () => {
+  it("lists quests scoped to the token's workspace", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({
+      quests: [quest(), quest({ questId: "8", status: "PendingReview" })],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_open_quests",
+      { status: ["Open", "PendingReview"], limit: 5 },
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.quests).toHaveLength(2);
+    expect(out.quests[0]).toMatchObject({
+      questId: "7",
+      title: "掃除当番",
+      description: "月曜の朝に",
+      amountShares: "2500",
+      url: "https://toban.xyz/42/quest/7",
+    });
+    expect(calls[0].variables.where).toEqual({
+      workspace: "42",
+      status_in: ["Open", "PendingReview"],
+    });
+    expect(calls[0].variables.first).toBe(5);
+  });
+
+  it("rejects a status outside the schema's enum", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({ quests: [] }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_open_quests",
+      { status: ["Whatever"] },
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(res.isError).toBe(true);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("drops the actor's own quests when asked what they may submit", async () => {
+    const { fetchImpl } = graphStub((c) =>
+      c.endpoint === HATS_ENDPOINT
+        ? {
+            wearer: {
+              currentHats: [{ id: "0x99", tree: { id: "0x0000002a" } }],
+            },
+          }
+        : { quests: [quest({ creator: WALLET_A }), quest({ questId: "9" })] },
+    );
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_open_quests",
+      { discordUserId: ACTOR },
+      {
+        identity: identityStub({
+          getIdentity: async () => discordIdentity(ACTOR, WALLET_A),
+        }),
+        fetchImpl,
+      },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.member).toBe(true);
+    expect(out.quests.map((q: { questId: string }) => q.questId)).toEqual([
+      "9",
+    ]);
+  });
+
+  it("refuses to mix a user with a non-Open status", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({ quests: [] }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_open_quests",
+      { discordUserId: ACTOR, status: ["Completed"] },
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(res.isError).toBe(true);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("returns the review trail for one quest", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({
+      quests: [
+        {
+          ...quest({ status: "PendingReview", attemptCount: 2 }),
+          metadataUri: "ipfs://bafkrei",
+          questModule: "0xquest",
+          attempts: [
+            {
+              attemptIndex: 0,
+              submitter: WALLET_A,
+              outcome: "Rejected",
+              submittedAt: "1700000100",
+              withdrawnAt: null,
+              rejectedAt: "1700000200",
+              approvedAt: null,
+              approvals: [],
+            },
+            {
+              attemptIndex: 1,
+              submitter: WALLET_A,
+              outcome: "Pending",
+              submittedAt: "1700000300",
+              withdrawnAt: null,
+              rejectedAt: null,
+              approvedAt: null,
+              approvals: [{ approver: WALLET_B, approvedAt: "1700000400" }],
+            },
+          ],
+        },
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_quest_detail",
+      { questId: "7" },
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.metadataUri).toBe("ipfs://bafkrei");
+    expect(out.attempts).toHaveLength(2);
+    expect(out.attempts[0].outcome).toBe("Rejected");
+    expect(out.attempts[1].approvals[0].approver).toBe(WALLET_B);
+    expect(calls[0].variables.where).toEqual({ workspace: "42", questId: "7" });
+  });
+
+  it("reports a quest from another workspace as not found", async () => {
+    const { fetchImpl } = graphStub(() => ({ quests: [] }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_quest_detail",
+      { questId: "999" },
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe("thanks history", () => {
+  const mint = (
+    from: string,
+    to: string,
+    amount: string,
+    ts: string,
+    data: string,
+  ) => ({ from, to, amount, data, blockTimestamp: ts });
+
+  it("merges both directions, newest first, and decodes the message", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({
+      sent: [
+        mint(
+          WALLET_A,
+          WALLET_B,
+          "1000000000000000000",
+          "1700000100",
+          "0xe38182",
+        ),
+      ],
+      received: [
+        mint(WALLET_B, WALLET_A, "2000000000000000000", "1700000200", "0x"),
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_thx_history",
+      { discordUserId: ACTOR },
+      {
+        identity: identityStub({
+          getIdentity: async () => discordIdentity(ACTOR, WALLET_A),
+          getIdentitiesByWallets: async (_p, wallets) =>
+            new Map(
+              wallets.map((w) => [
+                w.toLowerCase(),
+                w.toLowerCase() === WALLET_A ? [discordIdentity(ACTOR, w)] : [],
+              ]),
+            ),
+        }),
+        fetchImpl,
+      },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.mints.map((m: { amountThx: string }) => m.amountThx)).toEqual([
+      "2",
+      "1",
+    ]);
+    expect(out.mints[1].message).toBe("あ");
+    expect(out.mints[0].toDiscordUserId).toBe(ACTOR);
+    expect(out.mints[0].fromDiscordUserId).toBeNull();
+    // Both aliases must carry the workspace scope.
+    expect(calls[0].variables.sent).toMatchObject({ workspaceId: "42" });
+    expect(calls[0].variables.received).toMatchObject({ workspaceId: "42" });
+  });
+
+  it("queries the whole workspace when no user is given", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({
+      all: [
+        mint(WALLET_A, WALLET_B, "1000000000000000000", "1700000100", "0x"),
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_thx_history",
+      { sinceDays: 7 },
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(JSON.parse(res.text).mints).toHaveLength(1);
+    const where = calls[0].variables.all as Record<string, unknown>;
+    expect(where.workspaceId).toBe("42");
+    expect(Number(where.blockTimestamp_gte)).toBeGreaterThan(0);
+  });
+
+  it("caps the merged list at the requested limit", async () => {
+    const rows = (n: number, base: number) =>
+      Array.from({ length: n }, (_, i) =>
+        mint(WALLET_A, WALLET_B, "1000000000000000000", String(base + i), "0x"),
+      );
+    const { fetchImpl } = graphStub(() => ({
+      sent: rows(3, 1700000000),
+      received: rows(3, 1700001000),
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_thx_history",
+      { discordUserId: ACTOR, limit: 4 },
+      {
+        identity: identityStub({
+          getIdentity: async () => discordIdentity(ACTOR, WALLET_A),
+        }),
+        fetchImpl,
+      },
+    );
+    expect(JSON.parse(res.text).mints).toHaveLength(4);
+  });
+
+  it("rejects a nonsense sinceDays instead of querying all of history", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({ all: [] }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_thx_history",
+      { sinceDays: 0 },
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(res.isError).toBe(true);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("still returns the mints when the reverse lookup is down", async () => {
+    const { fetchImpl } = graphStub(() => ({
+      all: [
+        mint(WALLET_A, WALLET_B, "1000000000000000000", "1700000100", "0x"),
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_thx_history",
+      {},
+      {
+        identity: identityStub({
+          getIdentitiesByWallets: async () => {
+            throw new Error("identity worker unreachable");
+          },
+        }),
+        fetchImpl,
+      },
+    );
+    expect(res.isError).toBeUndefined();
+    expect(JSON.parse(res.text).mints[0].fromDiscordUserId).toBeNull();
+  });
+});
+
+describe("members and distributions", () => {
+  it("returns role shares with mentionable ids", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({
+      balanceOfFractionTokens: [
+        {
+          owner: WALLET_A,
+          hatId: "123",
+          wearer: WALLET_B,
+          balance: "2500",
+          updatedAt: "1700000000",
+        },
+      ],
+      escrowedRoleShares: [
+        {
+          hatId: "123",
+          wearer: WALLET_B,
+          amount: "500",
+          creator: WALLET_A,
+          updatedAt: "1700000000",
+        },
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_workspace_members",
+      {},
+      {
+        identity: identityStub({
+          getIdentitiesByWallets: async (_p, wallets) =>
+            new Map(
+              wallets.map((w) => [
+                w.toLowerCase(),
+                [discordIdentity(RECIPIENT, w)],
+              ]),
+            ),
+        }),
+        fetchImpl,
+      },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.holders[0]).toMatchObject({
+      shares: "2500",
+      ownerDiscordUserId: RECIPIENT,
+    });
+    expect(out.escrowed[0].shares).toBe("500");
+    expect(calls[0].variables).toMatchObject({ ws: "42", wsStr: "42" });
+  });
+
+  it("returns distributor amounts raw, without pretending to know decimals", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({
+      scheduledDistributors: [
+        {
+          id: "0xdist",
+          scheduler: WALLET_A,
+          tokens: ["0xusdc"],
+          backupWallet: WALLET_B,
+          scheduledDate: "1700000000",
+          status: "Pending",
+          split: null,
+          executedAt: null,
+          reclaimedAt: null,
+          createdAt: "1699000000",
+          tokenBalances: [
+            {
+              token: "0xusdc",
+              totalDeposited: "1000000",
+              executedAmount: null,
+              reclaimedAmount: null,
+            },
+          ],
+        },
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_reward_distributions",
+      { status: ["Pending"] },
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.distributions[0]).toMatchObject({
+      address: "0xdist",
+      status: "Pending",
+      scheduledDate: "2023-11-14T22:13:20.000Z",
+    });
+    expect(out.distributions[0].balances[0].totalDepositedRaw).toBe("1000000");
+    expect(calls[0].variables.where).toEqual({
+      workspaceId: "42",
+      status_in: ["Pending"],
+    });
+  });
+
+  it("rejects an unknown distributor status", async () => {
+    const { fetchImpl, calls } = graphStub(() => ({}));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_reward_distributions",
+      { status: ["Paid"] },
+      { identity: identityStub(), fetchImpl },
+    );
+    expect(res.isError).toBe(true);
+    expect(calls).toHaveLength(0);
+  });
+});
+
+describe("thanks message decoding", () => {
+  it("round-trips what performThx encodes", () => {
+    const hex = `0x${Buffer.from("ありがとう🙏", "utf8").toString("hex")}`;
+    expect(decodeThanksMessage(hex)).toBe("ありがとう🙏");
+  });
+
+  it("returns empty for absent or unparseable bytes", () => {
+    expect(decodeThanksMessage("0x")).toBe("");
+    expect(decodeThanksMessage(null)).toBe("");
+  });
+
+  it("strips control characters from attacker-supplied bytes", () => {
+    const hex = `0x${Buffer.from("a\u0007b", "utf8").toString("hex")}`;
+    expect(decodeThanksMessage(hex)).toBe("ab");
+  });
+});
+
+describe("unit annotations", () => {
+  it("labels quest rewards as shares, not THX", async () => {
+    const { fetchImpl } = graphStub(() => ({ quests: [quest()] }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_open_quests",
+      {},
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.units.fields).toEqual({ amountShares: "shares" });
+    expect(out.units.notes.shares).toContain("10000");
+    // The THX note must not ride along on a response that carries no THX.
+    expect(out.units.notes.thx).toBeUndefined();
+  });
+
+  it("labels distributor amounts as raw and says they are unconverted", async () => {
+    const { fetchImpl } = graphStub(() => ({
+      scheduledDistributors: [
+        {
+          id: "0xdist",
+          scheduler: WALLET_A,
+          tokens: ["0xusdc"],
+          backupWallet: WALLET_B,
+          scheduledDate: "1700000000",
+          status: "Pending",
+          split: null,
+          executedAt: null,
+          reclaimedAt: null,
+          createdAt: "1699000000",
+          tokenBalances: [
+            {
+              token: "0xusdc",
+              totalDeposited: "1000000",
+              executedAmount: null,
+              reclaimedAmount: null,
+            },
+          ],
+        },
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_reward_distributions",
+      {},
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    expect(out.units.fields.totalDepositedRaw).toBe("raw");
+    expect(out.units.notes.raw).toContain("decimals");
+  });
+
+  it("labels every amount it returns", async () => {
+    const { fetchImpl } = graphStub(() => ({
+      all: [
+        {
+          from: WALLET_A,
+          to: WALLET_B,
+          amount: "1000000000000000000",
+          data: "0x",
+          blockTimestamp: "1700000100",
+        },
+      ],
+    }));
+    const res = await callTool(
+      fakeEnv(),
+      GUILD,
+      "toban_thx_history",
+      {},
+      { identity: identityStub(), fetchImpl },
+    );
+    const out = JSON.parse(res.text);
+    // Every amount-shaped key in the payload must appear in units.fields.
+    const amountKeys = Object.keys(out.mints[0]).filter((k) =>
+      /Thx$|Shares$|Raw$/.test(k),
+    );
+    expect(amountKeys).not.toHaveLength(0);
+    for (const key of amountKeys) {
+      expect(out.units.fields[key]).toBeDefined();
+    }
+  });
+
+  it("carries a note for each unit it uses, and no others", () => {
+    const block = unitsFor({ a: "thx", b: "shares", c: "thx" });
+    expect(Object.keys(block.notes).sort()).toEqual(["shares", "thx"]);
+    expect(block.notes.raw).toBeUndefined();
   });
 });

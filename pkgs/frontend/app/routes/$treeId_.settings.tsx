@@ -1,15 +1,19 @@
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useQueryClient,
   useQuery as useTanstackQuery,
 } from "@tanstack/react-query";
 import axios from "axios";
+import dayjs from "dayjs";
+import { hatsContractBaseConfig } from "hooks/useContracts";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { treeInfoQueryKey, useHats, useTreeInfo } from "hooks/useHats";
 import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
+import { currentChain, publicClient } from "hooks/useViem";
 import type { WalletType } from "hooks/useWallet";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -22,19 +26,33 @@ import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
-import type { Address } from "viem";
+import { type Address, type Hex, bytesToHex } from "viem";
 import { Divider } from "~/components/composite/divider";
 import { FieldLabel } from "~/components/composite/field-label";
 import { Row } from "~/components/composite/row";
 import { SectionLabel } from "~/components/composite/section-label";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Typography } from "~/components/ui/typography";
+import { withBigIntJSON } from "~/lib/bigint-json";
+import {
+  type IssuedMcpToken,
+  type McpTokenListAuth,
+  type McpTokenListItem,
+  buildMcpTokenIssueTypedData,
+  buildMcpTokenListTypedData,
+  buildMcpTokenRevokeTypedData,
+  fetchMcpTokenList,
+  isListAuthUsable,
+  postMcpTokenIssue,
+  postMcpTokenRevoke,
+} from "~/lib/mcp-tokens";
 
 interface BasicInfoSectionProps {
   wallet: WalletType;
@@ -393,6 +411,441 @@ const ExternalIntegrationSection: FC<ExternalIntegrationSectionProps> = ({
             onClick={() => navigate(`/${treeId}/discord-bot`)}
           />
         </Card>
+      </div>
+    </>
+  );
+};
+
+const mcpTokensQueryKey = (treeId: string) => ["mcp-tokens", treeId] as const;
+
+// How long a `McpTokenListRequest` signature stays reusable before the
+// section asks for a fresh one. Listing never burns its nonce (see
+// `pkgs/extensions/mcp/src/handlers/list.ts`), which is exactly what makes
+// reuse safe — the design constraint here is "don't ask for a wallet popup
+// just to open the settings page", so one signature should cover a whole
+// admin session rather than every render. 30 minutes balances that against
+// not holding a signature indefinitely if the tab is left open.
+const LIST_AUTH_TTL_SECONDS = 60 * 30;
+
+// Short expiry for issue/revoke signatures — each only authenticates the one
+// request (replay/nonce protection), unlike a list signature which is
+// reused for `LIST_AUTH_TTL_SECONDS`, or the token issuance produces, which
+// lives until revoked.
+const WRITE_AUTH_TTL_SECONDS = 60 * 10;
+
+function randomNonce(): Hex {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
+}
+
+// `mcp_tokens.created_at` / `revoked_at` are D1 integer columns (epoch
+// seconds), same convention as the subgraph's `blockTimestamp` fields
+// elsewhere on this page — hence the `* 1000` before handing to dayjs.
+function formatMcpDate(epochSeconds: number): string {
+  return dayjs(epochSeconds * 1000).format("YYYY/MM/DD HH:mm");
+}
+
+interface McpTokenSectionProps {
+  wallet: WalletType;
+  treeId: string;
+}
+
+// Lets a workspace admin self-issue an MCP token for an AI agent (OpenClaw,
+// etc.) without operator involvement — see docs/mcp-extraction.md §5. The
+// signature scheme mirrors connect.discord.tsx: sign an EIP-712 message with
+// the Privy wallet, POST { message, signature } to the MCP Worker, which
+// recovers the signer and re-derives admin status itself. `isAdmin` below is
+// UX-only — hiding the section for members who could never issue a token —
+// and carries no authority; skipping it client-side would still fail against
+// the Worker's own Hats-subgraph check.
+//
+// The token list is fetched by `POST /api/mcp-tokens/list` with a signed
+// `McpTokenListRequest` (`~/lib/mcp-tokens`), never by an unsigned GET — the
+// Worker never implemented a GET route for this (review finding: the old
+// code called one anyway and the list/revoke UI was dead as a result).
+// Fetching it is gated behind an explicit action (`handleRevealList`, the
+// "署名して一覧を表示" button below) rather than firing on mount: a wallet
+// popup must not appear just because someone opened the settings page. The
+// resulting signature (`listAuth`) is cached in state and reused for
+// `LIST_AUTH_TTL_SECONDS` — safe because listing never burns its EIP-712
+// nonce (see the Worker-side handler's doc comment) — so revoking a token,
+// or issuing another one, doesn't ask for a fresh wallet popup every time.
+const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
+  const { ready, authenticated, login } = usePrivy();
+  const walletAddress = wallet?.account.address as Address | undefined;
+
+  const mcpWorkerUrl = import.meta.env.VITE_MCP_WORKER_URL as
+    | string
+    | undefined;
+
+  const { data: workspaceData } = useGetWorkspace({ workspaceId: treeId });
+  const owner = workspaceData?.workspace?.owner ?? undefined;
+  const operatorHatId = workspaceData?.workspace?.operatorHatId ?? undefined;
+
+  // Same admin check as the Discord bot page's admin gate (owner or
+  // operatorHat wearer) — the design doc names this exact pair as what the
+  // Worker verifies against the Hats subgraph before issuing a token.
+  const adminQuery = useTanstackQuery({
+    queryKey: ["workspace-admin-mcp", walletAddress, owner, operatorHatId],
+    enabled: !!walletAddress && (!!owner || !!operatorHatId),
+    queryFn: async (): Promise<boolean> => {
+      if (!walletAddress) return false;
+      if (owner && walletAddress.toLowerCase() === owner.toLowerCase()) {
+        return true;
+      }
+      if (!operatorHatId) return false;
+      return (await publicClient.readContract({
+        ...hatsContractBaseConfig,
+        functionName: "isWearerOfHat",
+        args: [walletAddress, BigInt(operatorHatId)],
+      })) as boolean;
+    },
+  });
+  const isAdmin = adminQuery.data === true;
+  const queryClient = useQueryClient();
+
+  const [label, setLabel] = useState("");
+  const [issuing, setIssuing] = useState(false);
+  const [justIssued, setJustIssued] = useState<IssuedMcpToken | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  // Signed lazily — never on page load (design constraint from
+  // docs/mcp-extraction.md §5's review: a wallet popup must not appear just
+  // because someone opened the settings page). `handleRevealList` is the
+  // only thing that creates one, other than the "refresh after issuing"
+  // path below, which reuses a signature the admin already just produced
+  // for the issue call rather than asking again.
+  const [listAuth, setListAuth] = useState<McpTokenListAuth | null>(null);
+  const [listAuthLoading, setListAuthLoading] = useState(false);
+
+  const signListAuth =
+    useCallback(async (): Promise<McpTokenListAuth | null> => {
+      if (!wallet || !walletAddress) return null;
+      const nonce = randomNonce();
+      const typedData = buildMcpTokenListTypedData({
+        wallet: walletAddress,
+        treeId,
+        chainId: currentChain.id,
+        nonce,
+        ttlSeconds: LIST_AUTH_TTL_SECONDS,
+      });
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain: typedData.domain,
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: typedData.message,
+        }),
+      )) as Hex;
+      return { typedData, signature };
+    }, [wallet, walletAddress, treeId]);
+
+  const handleRevealList = async () => {
+    setListAuthLoading(true);
+    try {
+      const auth = await signListAuth();
+      if (auth) setListAuth(auth);
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "unknown error";
+      toast.error(`署名に失敗しました: ${message}`);
+    } finally {
+      setListAuthLoading(false);
+    }
+  };
+
+  const tokensQuery = useTanstackQuery({
+    queryKey: mcpTokensQueryKey(treeId),
+    enabled: !!mcpWorkerUrl && isAdmin && isListAuthUsable(listAuth),
+    queryFn: async (): Promise<McpTokenListItem[]> => {
+      if (!mcpWorkerUrl || !isListAuthUsable(listAuth)) return [];
+      return fetchMcpTokenList(mcpWorkerUrl, listAuth);
+    },
+  });
+
+  const handleIssue = async () => {
+    if (!wallet || !walletAddress || !mcpWorkerUrl) return;
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return;
+    setIssuing(true);
+    try {
+      const typedData = buildMcpTokenIssueTypedData({
+        wallet: walletAddress,
+        treeId,
+        label: trimmedLabel,
+        chainId: currentChain.id,
+        nonce: randomNonce(),
+        ttlSeconds: WRITE_AUTH_TTL_SECONDS,
+      });
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain: typedData.domain,
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: typedData.message,
+        }),
+      )) as Hex;
+
+      // Kept as its own try/catch (rather than folding into the outer one)
+      // so a Worker-side rejection reports its own reason
+      // (`postMcpTokenIssue`'s message) instead of being misreported as a
+      // signing failure by the catch below.
+      let issued: IssuedMcpToken;
+      try {
+        issued = await postMcpTokenIssue(mcpWorkerUrl, typedData, signature);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "発行に失敗しました");
+        return;
+      }
+
+      setJustIssued(issued);
+      setCopied(false);
+      setLabel("");
+
+      // Refresh the list right after issuing. This does not violate "never
+      // sign on page load": the admin just approved a wallet popup for the
+      // issue call above, so this is still inside that same user-initiated
+      // action, not a background/mount-triggered signature. Reuse an
+      // existing usable signature if we have one (e.g. the admin already
+      // revealed the list earlier in this session) instead of asking again.
+      try {
+        const auth = isListAuthUsable(listAuth)
+          ? listAuth
+          : await signListAuth();
+        if (auth && mcpWorkerUrl) {
+          if (auth !== listAuth) setListAuth(auth);
+          const tokens = await fetchMcpTokenList(mcpWorkerUrl, auth);
+          queryClient.setQueryData(mcpTokensQueryKey(treeId), tokens);
+        }
+      } catch (e) {
+        // The token itself was already issued successfully above — a
+        // failure here must not read as "issuing failed" to the admin, so
+        // it's logged rather than surfaced as an error toast. Worst case,
+        // the list stays showing the pre-issue state (or the reveal
+        // button, if it was never shown) until the admin refreshes it.
+        console.error("Failed to refresh MCP token list after issuing:", e);
+      }
+
+      toast.success("MCP トークンを発行しました");
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "unknown error";
+      toast.error(`署名に失敗しました: ${message}`);
+    } finally {
+      setIssuing(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!justIssued) return;
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+        toast.error("クリップボードを利用できません");
+        return;
+      }
+      await navigator.clipboard.writeText(justIssued.token);
+      setCopied(true);
+      toast.success("トークンをコピーしました");
+    } catch (error) {
+      console.error("Failed to copy MCP token:", error);
+      toast.error("クリップボードを利用できません");
+    }
+  };
+
+  const handleRevoke = async (tokenId: string) => {
+    if (!wallet || !walletAddress || !mcpWorkerUrl) return;
+    setRevokingId(tokenId);
+    try {
+      // `McpTokenRevokeRequest` names the specific `tokenId` being revoked
+      // inside the signed message itself (see `~/lib/mcp-tokens`'s
+      // `McpTokenRevokeTypedData` doc comment for why this field was moved
+      // here from a bare, unsigned request-body field: a signature that
+      // doesn't commit to *what* it authorises revoking can be replayed
+      // against any tokenId). The Worker still separately checks that the
+      // named token actually belongs to `treeId` before honouring the
+      // revoke.
+      const typedData = buildMcpTokenRevokeTypedData({
+        wallet: walletAddress,
+        treeId,
+        tokenId,
+        chainId: currentChain.id,
+        nonce: randomNonce(),
+        ttlSeconds: WRITE_AUTH_TTL_SECONDS,
+      });
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain: typedData.domain,
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: typedData.message,
+        }),
+      )) as Hex;
+
+      // Own try/catch for the same reason as `handleIssue`: a Worker-side
+      // rejection should report `postMcpTokenRevoke`'s own reason, not be
+      // misreported as a signing failure by the catch below.
+      try {
+        await postMcpTokenRevoke(mcpWorkerUrl, typedData, signature);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "失効に失敗しました");
+        return;
+      }
+
+      await tokensQuery.refetch();
+      toast.success("トークンを失効しました");
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "unknown error";
+      toast.error(`署名に失敗しました: ${message}`);
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
+  // UX-only gate (see the block comment above the component) — non-admins
+  // simply don't see the section rather than seeing a disabled one.
+  if (!isAdmin) return null;
+
+  return (
+    <>
+      <SectionLabel>MCP トークン</SectionLabel>
+      <div className="space-y-4 px-5">
+        <Typography as="div" variant="bodySm" tone="secondary">
+          AI エージェント（OpenClaw
+          など）にこのワークスペースへの読み取りアクセスと、
+          確認ボタン付きの提案投稿を許可するための鍵です。
+          <strong>パスワードと同じ扱いにしてください</strong>
+          。発行直後の一度しか平文は表示されません。
+        </Typography>
+
+        {!mcpWorkerUrl ? (
+          <Typography variant="caption" tone="danger">
+            VITE_MCP_WORKER_URL が未設定のため、MCP
+            トークン機能を利用できません。
+          </Typography>
+        ) : !ready ? (
+          <Button full disabled>
+            読み込み中…
+          </Button>
+        ) : !authenticated || !walletAddress ? (
+          <Button full onClick={login}>
+            <Icon name="wallet" size={18} />
+            ウォレットを接続
+          </Button>
+        ) : (
+          <>
+            <Card className="gap-4 py-4">
+              <div className="flex flex-col gap-2 px-4">
+                <FieldLabel htmlFor="mcp-token-label">ラベル</FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    id="mcp-token-label"
+                    placeholder="例：うちの OpenClaw"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                  />
+                  <Button
+                    disabled={!label.trim() || issuing}
+                    onClick={handleIssue}
+                  >
+                    {issuing ? "署名中…" : "発行"}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {justIssued && (
+              <Card className="gap-3 border-danger/40 py-4">
+                <div className="flex flex-col gap-2 px-4">
+                  <Typography variant="bodySm" weight="bold" tone="danger">
+                    この画面を離れると二度と表示できません。今すぐコピーしてください。
+                  </Typography>
+                  <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                    <Typography
+                      as="span"
+                      variant="mono"
+                      className="flex-1 break-all"
+                    >
+                      {justIssued.token}
+                    </Typography>
+                    <Button
+                      variant="secondary"
+                      size="icon-sm"
+                      onClick={handleCopyToken}
+                    >
+                      <Icon name={copied ? "check" : "copy"} size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <Card className="gap-0 p-0">
+              {!isListAuthUsable(listAuth) ? (
+                <div className="flex flex-col items-center gap-2 px-4 py-6">
+                  <Typography variant="caption" tone="secondary">
+                    発行済みトークンの一覧を見るには署名してください。
+                  </Typography>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={listAuthLoading}
+                    onClick={() => void handleRevealList()}
+                  >
+                    {listAuthLoading ? "署名中…" : "署名して一覧を表示"}
+                  </Button>
+                </div>
+              ) : tokensQuery.isLoading ? (
+                <Typography
+                  as="div"
+                  variant="caption"
+                  tone="secondary"
+                  className="px-4 py-3"
+                >
+                  読み込み中…
+                </Typography>
+              ) : (tokensQuery.data?.length ?? 0) === 0 ? (
+                <Typography
+                  as="div"
+                  variant="caption"
+                  tone="secondary"
+                  className="px-4 py-3"
+                >
+                  発行済みのトークンはありません
+                </Typography>
+              ) : (
+                tokensQuery.data?.map((t, i) => (
+                  <div key={t.tokenId}>
+                    {i > 0 && <Divider />}
+                    <Row
+                      title={t.label}
+                      subtitle={`発行日: ${formatMcpDate(t.createdAt)} / 発行者: ${abbreviateAddress(t.createdBy)}`}
+                      right={
+                        t.revokedAt ? (
+                          <Badge kind="danger">失効済み</Badge>
+                        ) : (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            disabled={revokingId === t.tokenId}
+                            onClick={() => handleRevoke(t.tokenId)}
+                          >
+                            {revokingId === t.tokenId ? "失効中…" : "失効"}
+                          </Button>
+                        )
+                      }
+                    />
+                  </div>
+                ))
+              )}
+            </Card>
+          </>
+        )}
       </div>
     </>
   );
@@ -829,6 +1282,7 @@ const WorkspaceSettings: FC = () => {
         <BasicInfoSection wallet={wallet} treeId={treeId} topHat={topHat} />
         <OtherSection treeId={treeId} />
         <ExternalIntegrationSection treeId={treeId} />
+        <McpTokenSection wallet={wallet} treeId={treeId} />
         <AuthoritiesSection wallet={wallet} treeId={treeId} topHat={topHat} />
       </div>
     </div>

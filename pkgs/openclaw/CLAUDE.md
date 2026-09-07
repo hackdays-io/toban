@@ -84,7 +84,8 @@ MCP サーバー / 許可リストの**形**を持っている。`src/render-con
 
 ## When making changes
 
-- 署名まわりの機能をここに足さない。`@toban/discord-bot` 側の MCP ツールとして足す
+- 署名まわりの機能をここに足さない。署名は `@toban/discord-bot` に残す
+  （MCP ツール自体は `@toban/mcp` へ切り出し済み。`docs/mcp-extraction.md` 参照）
 - ギルドを増やすときは `config/guilds.json` に足すだけ。テンプレートは触らない
 - `instructions/` を変えたら **`push:config`**（イメージには焼き込まれていない）
 - `fly.toml` の `[build] image` は必ずバージョン固定。`latest` / `main` /

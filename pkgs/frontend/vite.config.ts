@@ -181,10 +181,11 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-    // `@toban/identity` ships TypeScript source (no build step), so SSR must
-    // transpile it rather than externalise it to Node's require.
+    // `@toban/identity` and `@toban/mcp` ship TypeScript source (no build
+    // step), so SSR must transpile them rather than externalise to Node's
+    // require.
     ssr: {
-      noExternal: ["@toban/identity"],
+      noExternal: ["@toban/identity", "@toban/mcp"],
     },
     optimizeDeps: {
       include: [

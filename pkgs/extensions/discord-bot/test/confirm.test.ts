@@ -1,38 +1,38 @@
+/**
+ * Tests for what's left of `src/confirm/` (formerly `src/mcp/`) in this
+ * package after the MCP extraction (`docs/mcp-extraction.md`): `confirm.ts`
+ * and `button.ts`.
+ *
+ * Everything else that used to be tested here (guild-scoped token auth, the
+ * JSON-RPC protocol layer, the tool surface, the Goldsky read queries) moved
+ * to `@toban/mcp` — see that package's `test/mcp.test.ts`. The propose-tool
+ * request/response contract that used to live in `tools.ts`'s `proposeTool`
+ * is now `src/internal/propose.ts`'s `handleInternalPropose`, tested in
+ * `test/internal-propose.test.ts`.
+ */
 import type { APIMessageComponentInteraction } from "discord-api-types/v10";
 import type { Address, Hex } from "viem";
 import { describe, expect, it, vi } from "vitest";
-import type { Env } from "../src/env";
-import type { IdentityClient, PlatformLink } from "../src/identity";
-import { authenticate, issueGuildToken } from "../src/mcp/auth";
 import {
   handleConfirmButton,
   isConfirmComponent,
   readPayload,
-} from "../src/mcp/button";
+} from "../src/confirm/button";
 import {
   CANCEL_CUSTOM_ID,
   CONFIRM_CUSTOM_ID,
   buildConfirmMessage,
   decodePayload,
   encodePayload,
-} from "../src/mcp/confirm";
-import type { DiscordRest } from "../src/mcp/discord-rest";
-import { handleRpc } from "../src/mcp/protocol";
-import { TOOL_DEFINITIONS, callTool } from "../src/mcp/tools";
+} from "../src/confirm/confirm";
+import type { DiscordRest } from "../src/confirm/discord-rest";
+import type { Env } from "../src/env";
 
 const GUILD = "111111111111111111";
 const OTHER_GUILD = "222222222222222222";
 const CHANNEL = "333333333333333333";
 const ACTOR = "444444444444444444";
 const RECIPIENT = "555555555555555555";
-const SECRET = "test-secret";
-
-const link: PlatformLink = {
-  provider: "discord",
-  platformId: GUILD,
-  treeId: "42",
-  installedBy: `0x${"ad".repeat(20)}` as Address,
-};
 
 function fakeEnv(): Env {
   return {
@@ -58,22 +58,9 @@ function fakeEnv(): Env {
     INSTALL_STATE_SECRET: "",
     PLATFORM_LINK_WRITE_SECRET: "",
     LOOKUP_READ_SECRET: "",
-    MCP_TOKEN_SECRET: SECRET,
+    MCP_INTERNAL_PROPOSE_SECRET: "propose-secret",
   };
 }
-
-const identityStub = (over: Partial<IdentityClient> = {}): IdentityClient => ({
-  getIdentity: async () => null,
-  getIdentitiesByWallet: async () => [],
-  getIdentitiesByWallets: async (_provider, wallets) =>
-    new Map(wallets.map((w) => [w.toLowerCase(), []])),
-  getPlatformLink: async () => link,
-  upsertPlatformLink: async () => {},
-  getNotifyChannelId: async () => null,
-  setNotifyChannelId: async () => {},
-  claimInstallStateJti: async () => ({ ok: true }),
-  ...over,
-});
 
 function restStub(over: Partial<DiscordRest> = {}): DiscordRest {
   return {
@@ -83,99 +70,6 @@ function restStub(over: Partial<DiscordRest> = {}): DiscordRest {
     ...over,
   };
 }
-
-// ---------------------------------------------------------------- auth
-
-describe("guild-scoped tokens", () => {
-  it("round-trips and reports the guild the bearer may act for", async () => {
-    const token = await issueGuildToken(SECRET, GUILD);
-    const auth = await authenticate(SECRET, `Bearer ${token}`);
-    expect(auth).toEqual({ ok: true, guildId: GUILD });
-  });
-
-  it("rejects a token minted with a different secret", async () => {
-    const token = await issueGuildToken("other-secret", GUILD);
-    const auth = await authenticate(SECRET, `Bearer ${token}`);
-    expect(auth.ok).toBe(false);
-  });
-
-  it("rejects a token whose guild was swapped", async () => {
-    const token = await issueGuildToken(SECRET, GUILD);
-    const [prefix, , macPart] = token.split(".");
-    const forged = [prefix, OTHER_GUILD, macPart].join(".");
-    const auth = await authenticate(SECRET, `Bearer ${forged}`);
-    expect(auth.ok).toBe(false);
-  });
-
-  it("fails closed when the secret is unset", async () => {
-    const auth = await authenticate(undefined, "Bearer whatever");
-    expect(auth).toMatchObject({ ok: false, status: 500 });
-  });
-
-  it("rejects a missing or malformed header", async () => {
-    expect((await authenticate(SECRET, null)).ok).toBe(false);
-    expect((await authenticate(SECRET, "Bearer nope")).ok).toBe(false);
-  });
-});
-
-// ------------------------------------------------------------ protocol
-
-describe("MCP protocol", () => {
-  const deps = {
-    serverName: "toban",
-    serverVersion: "0.1.0",
-    tools: TOOL_DEFINITIONS,
-    callTool: async (name: string) =>
-      name === "boom" ? { text: "no", isError: true } : { text: "yes" },
-  };
-
-  it("echoes the client's protocol version on initialize", async () => {
-    const res = (await handleRpc(
-      {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "initialize",
-        params: { protocolVersion: "2024-11-05" },
-      },
-      deps,
-    )) as { result: { protocolVersion: string } };
-    expect(res.result.protocolVersion).toBe("2024-11-05");
-  });
-
-  it("lists tools", async () => {
-    const res = (await handleRpc(
-      { jsonrpc: "2.0", id: 2, method: "tools/list" },
-      deps,
-    )) as { result: { tools: { name: string }[] } };
-    expect(res.result.tools.map((t) => t.name)).toContain("toban_thx_propose");
-  });
-
-  it("returns a tool refusal as a successful result with isError", async () => {
-    const res = (await handleRpc(
-      { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "boom" } },
-      deps,
-    )) as { result: { isError: boolean } };
-    expect(res.result.isError).toBe(true);
-  });
-
-  it("answers notifications with nothing", async () => {
-    expect(
-      await handleRpc(
-        { jsonrpc: "2.0", method: "notifications/initialized" },
-        deps,
-      ),
-    ).toBeNull();
-  });
-
-  it("rejects non-JSON-RPC payloads and unknown methods", async () => {
-    expect(await handleRpc({ hello: "world" }, deps)).toMatchObject({
-      error: { code: -32600 },
-    });
-    expect(
-      await handleRpc({ jsonrpc: "2.0", id: 9, method: "nope" }, deps),
-    ).toMatchObject({ error: { code: -32601 } });
-  });
-});
 
 // ------------------------------------------------------------- confirm
 
@@ -211,91 +105,6 @@ describe("confirm payload", () => {
   });
 });
 
-// -------------------------------------------------------------- tools
-
-describe("propose tools", () => {
-  it("refuses a channel that belongs to another guild", async () => {
-    const res = await callTool(
-      fakeEnv(),
-      GUILD,
-      "toban_thx_propose",
-      {
-        channelId: CHANNEL,
-        forDiscordUserId: ACTOR,
-        toDiscordUserId: RECIPIENT,
-        amount: 5,
-      },
-      {
-        identity: identityStub(),
-        rest: restStub({ getChannelGuildId: async () => OTHER_GUILD }),
-      },
-    );
-    expect(res.isError).toBe(true);
-  });
-
-  it("posts a confirm message and says nothing was sent yet", async () => {
-    const posted: unknown[] = [];
-    const res = await callTool(
-      fakeEnv(),
-      GUILD,
-      "toban_thx_propose",
-      {
-        channelId: CHANNEL,
-        forDiscordUserId: ACTOR,
-        toDiscordUserId: RECIPIENT,
-        amount: 5,
-        message: "助かりました",
-      },
-      {
-        identity: identityStub(),
-        rest: restStub({
-          postMessage: async (_c, body) => {
-            posted.push(body);
-            return { id: "m1" };
-          },
-        }),
-      },
-    );
-    expect(res.isError).toBeUndefined();
-    expect(res.text).toContain("まだ何も送られていません");
-    const body = posted[0] as { embeds: { footer: { text: string } }[] };
-    expect(decodePayload(body.embeds[0].footer.text)).toMatchObject({
-      kind: "thx",
-      guildId: GUILD,
-      forUser: ACTOR,
-      amount: "5",
-    });
-  });
-
-  it("reports an unlinked guild instead of guessing a workspace", async () => {
-    const res = await callTool(
-      fakeEnv(),
-      GUILD,
-      "toban_workspace_info",
-      {},
-      { identity: identityStub({ getPlatformLink: async () => null }) },
-    );
-    expect(res.isError).toBe(true);
-    expect(res.text).toContain("連携されていません");
-  });
-
-  it("rejects a non-positive amount", async () => {
-    const res = await callTool(
-      fakeEnv(),
-      GUILD,
-      "toban_thx_propose",
-      {
-        channelId: CHANNEL,
-        forDiscordUserId: ACTOR,
-        toDiscordUserId: RECIPIENT,
-        amount: 0,
-      },
-      { identity: identityStub(), rest: restStub() },
-    );
-    expect(res.isError).toBe(true);
-  });
-});
-
 // ------------------------------------------------------------- button
 
 function fakeCtx(): ExecutionContext {
@@ -304,7 +113,6 @@ function fakeCtx(): ExecutionContext {
     waitUntil: (p: Promise<unknown>) => pending.push(p),
     passThroughOnException: () => {},
     props: {},
-    // exposed for the tests below
     _pending: pending,
   } as unknown as ExecutionContext;
 }

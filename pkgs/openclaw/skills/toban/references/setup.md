@@ -2,13 +2,18 @@
 
 このスキルは Toban の MCP サーバーが登録されていることを前提にします。
 
-## 1. トークンを受け取る
+## 1. トークンを発行する
 
-Toban の運営から、**あなたの Discord サーバー専用のトークン**を受け取ってください。
-形式は `tbn1.<guildId>.<...>` です。
+トークンは Toban の運営から受け取るのではなく、**ワークスペースの管理者
+（operator hat または top hat の保有者）が自分で発行します**。Toban の
+`https://toban.xyz/<treeId>/settings`（ワークスペース設定画面）の「MCP トークン」
+セクションで、ウォレット署名だけで発行できます。運営への問い合わせは不要です。
 
-トークンにはサーバー ID が埋め込まれており、**そのサーバーのワークスペースしか
-読めません**。他のサーバーの情報は、エージェントが何を出力しても取得できません。
+形式は `tbn2.<treeId>.<tokenId>.<mac>` です。`treeId` はこのトークンの home
+ワークスペースですが、これは既定値であって壁ではありません — 読み取りツールは
+`treeId` 引数を渡せば他のワークスペースの情報も返します（オンチェーン／Goldsky
+由来のデータは元々公開されているため）。Discord ユーザー ID の逆引きと、起案系
+ツール（`toban_thx_propose` 等）は home ワークスペースに限られます。
 
 前提として、そのサーバーに **Toban Bot が導入済み**である必要があります。確認ボタンを
 投稿し、押されたことを検証するのが Toban Bot だからです。
@@ -18,7 +23,7 @@ Toban の運営から、**あなたの Discord サーバー専用のトークン
 設定ファイルに直書きしないでください。OpenClaw は `${ENV_VAR}` を実行時に解決します。
 
 ```bash
-export TOBAN_MCP_TOKEN='tbn1....'
+export TOBAN_MCP_TOKEN='tbn2....'
 ```
 
 ## 3. `openclaw.json` に足す
@@ -28,7 +33,7 @@ export TOBAN_MCP_TOKEN='tbn1....'
   "mcp": {
     "servers": {
       "toban": {
-        "url": "https://toban-discord-bot-base.kawabeyuki23.workers.dev/mcp",
+        "url": "https://toban-mcp-base.kawabeyuki23.workers.dev/mcp",
         "transport": "streamable-http",
         "headers": { "Authorization": "Bearer ${TOBAN_MCP_TOKEN}" },
         "requestTimeoutMs": 20000,

@@ -36,9 +36,11 @@ export interface GuildEntry {
   /** ワークスペースが載っている EVM チェーン id。 */
   chainId: number;
   /**
-   * このギルドを担当する Toban MCP エンドポイント（discord-bot Worker）。
-   * ギルドごとに持つのは、`platform_links` がギルド単位でワークスペース＝チェーンを
-   * 決めており、チェーンが違えば Worker も違うため。
+   * このギルドを担当する Toban MCP エンドポイント（`@toban/mcp` Worker、
+   * `POST /mcp`）。ギルドごとに持つのは、`platform_links` がギルド単位で
+   * ワークスペース＝チェーンを決めており、チェーンが違えば Worker も違うため。
+   * （以前は discord-bot Worker が MCP エンドポイントを兼ねていたが、
+   * `docs/mcp-extraction.md` の切り出し後は `@toban/mcp` を指す。）
    */
   mcpUrl: string;
   /**

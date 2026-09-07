@@ -6,6 +6,6 @@
     "chainId": 8453,
     "allowUsers": ["000000000000000001"],
     "channels": [],
-    "mcpUrl": "https://toban-discord-bot-base.kawabeyuki23.workers.dev/mcp"
+    "mcpUrl": "https://toban-mcp-base.kawabeyuki23.workers.dev/mcp"
   }
 ]

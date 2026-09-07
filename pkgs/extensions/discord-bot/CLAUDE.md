@@ -1,9 +1,11 @@
 # `@toban/discord-bot` (`pkgs/extensions/discord-bot`)
 
 Cloudflare Workers + D1 Discord bot. Provides `/toban-link`, `/toban-setup`,
-`/thx`, `/balance`, and `/quest submit`, plus an **MCP endpoint** (`POST /mcp`)
-so any MCP-speaking agent — ours, or a community's own OpenClaw — can drive
-Toban without ever holding a signing credential.
+`/thx`, `/balance`, and `/quest submit`, plus **`POST /internal/propose`** —
+the one seam `@toban/mcp` crosses to reach this package. Discord is, by
+design, only a **confirm-button adapter**: `@toban/mcp` is the actual MCP
+server (`docs/mcp-extraction.md`), and it holds no signing credential of any
+kind. This package is where a proposal becomes a signed transaction.
 
 ## Important invariants
 
@@ -18,32 +20,43 @@ Toban without ever holding a signing credential.
   identity-bound actor argument is not re-checked inside the TEE. See
   `turnkey/policy.json` — `_decisions` for the reasoning, `_gaps` for what
   that leaves open.
-- **An agent can only propose; a click signs.** The MCP write tools
-  (`toban_*_propose`) post a Discord message with a confirm button and stop.
-  Nothing reaches Turnkey until a human presses it, and the acting identity is
-  read from `interaction.member.user.id` on that **Discord-signed** component
+- **An agent can only propose; a click signs.** `@toban/mcp`'s write tools
+  (`toban_*_propose`) call this Worker's `POST /internal/propose`, which posts
+  a Discord message with a confirm button and stops. Nothing reaches Turnkey
+  until a human presses it, and the acting identity is read from
+  `interaction.member.user.id` on that **Discord-signed** component
   interaction — never from anything the caller supplied. This is what makes it
-  safe to hand a guild token to an agent we do not run: a hostile proposal can
+  safe to hand an MCP token to an agent we do not run: a hostile proposal can
   at worst show someone a button whose visible text says what pressing it does.
-  See `src/mcp/confirm.ts`.
+  See `src/internal/propose.ts` and `src/mcp/confirm.ts`.
 - **`performThx` / `performQuestSubmit` are the only paths to the chain.**
   Both the slash commands and the confirm button go through them. There must
   never be a second place that builds a `mintFrom` / `submitCompletion` call —
   `turnkey/policy.json` gates those selectors, and two call sites would
   eventually disagree about what gets signed.
-- **MCP tokens pin the guild.** `src/mcp/auth.ts` mints `HMAC(secret, guildId)`,
-  so the guild comes from the credential and never from the request body. A
-  token for guild A cannot read or propose for guild B whatever the model
-  emits. Revocation is currently all-or-nothing (rotate `MCP_TOKEN_SECRET`).
-- **The MCP read surface lives in `src/mcp/queries.ts`, not `chain.ts`.**
-  `chain.ts` holds the ABI slice and the resolvers the *write* paths depend
-  on, and stays small enough to audit next to `turnkey/policy.json`; the
-  read-only Goldsky queries behind `toban_thx_history`,
-  `toban_workspace_members` and friends belong in `queries.ts`. Two rules
-  there: every filter carries the `treeId` (the token pins the guild, the
-  guild pins the workspace — a tool must never be able to read another
-  one), and every list takes an explicit `first` (results land in a
-  third-party agent's context window; `MAX_LIMIT` caps it at 100).
+- **`POST /internal/propose` is gated by a shared secret, not the MCP bearer
+  token.** `@toban/mcp` reaches this route over the `CONFIRM` service
+  binding, but a service binding does not stop the same route from also
+  being reachable at this Worker's public `workers.dev` URL — the
+  `x-toban-mcp-propose-secret` header (checked against
+  `MCP_INTERNAL_PROPOSE_SECRET`) is what actually closes that off. This is
+  the one secret `docs/mcp-extraction.md`'s migration table does not
+  mention; it was added because without it, anyone could post arbitrary
+  confirm buttons to any linked channel without ever holding a valid MCP
+  token. See `src/internal/propose.ts`'s module doc.
+- **The workspace check for `/internal/propose` is reversed from the old
+  guild-scoped design.** `@toban/mcp`'s tokens pin a `treeId` (home
+  workspace), not a `guildId`, so this endpoint resolves `channelId ->
+  guildId` (`discord-rest`) `-> treeId'` (`identity.getPlatformLink`) and
+  compares `treeId'` against the request's `treeId` — the same strength as
+  the old "token's guild == channel's guild" check, walked in the other
+  direction. `ConfirmPayload.guildId` is always the value this Worker
+  resolved itself, never one that arrived in the request body.
+- **The MCP read surface, the JSON-RPC protocol layer, and the tool
+  definitions all live in `@toban/mcp` now — not here.** This package's
+  `src/mcp/` holds exactly the pieces that touch `ConfirmPayload`:
+  `confirm.ts`, `button.ts`, `discord-rest.ts`. Anything that doesn't touch
+  `ConfirmPayload` left with the extraction (`docs/mcp-extraction.md`).
 - **Amounts from the indexer are in three incompatible units.** THX is
   18-decimal (`formatEther`, named `*Thx`); role shares are raw counts of a
   fixed 10000-per-role supply (`*Shares`); ScheduledDistributor amounts are
@@ -71,11 +84,16 @@ Toban without ever holding a signing credential.
   `pkgs/extensions/identity/CLAUDE.md` の「`platform_links.metadata` のスキーマ」を参照。
   `upsertPlatformLink` は `metadata` を送らないので、再インストールしても
   通知設定は消えない。
-- **`src/chain.ts` is the single source of truth for ABI.** It carries
-  hand-maintained fragments (`THANKS_TOKEN_ABI`, `HATS_QUEST_MODULE_ABI`)
-  rather than importing from `pkgs/contract` — only the slice the bot
-  calls. A signature change there also changes the function selector, so
-  it must land together with a `turnkey/policy.json` update.
+- **`src/chain.ts` is the single source of truth for *write* selectors.**
+  It carries hand-maintained fragments (`THANKS_TOKEN_ABI`,
+  `HATS_QUEST_MODULE_ABI`) rather than importing from `pkgs/contract` — only
+  the slice the bot calls. A signature change there also changes the
+  function selector, so it must land together with a `turnkey/policy.json`
+  update. (`@toban/mcp` keeps its own **view-only** copy of the
+  `mintAllowance` / `mintableAmount` fragment for `toban_member_status` — see
+  that package's `src/chain.ts`. This is a deliberate, accepted duplication;
+  `turnkey/policy.json` only ever gates state-changing selectors, so it does
+  not matter that a second Worker can read the same view functions.)
 - **`turnkey/policy.json` is the source of truth for the signer's
   allowed operations.** Code can break a policy intent in subtle ways —
   always update the policy file together with the code change that
@@ -106,12 +124,12 @@ src/
     responses.ts            Discord response/followup helpers
   api/install/start.ts      frontend-initiated install entry (signs state)
   api/install/callback.ts   OAuth bot-install callback (binds + registers cmds)
+internal/
+  propose.ts                POST /internal/propose — @toban/mcp's only seam
+                             into this package (shared-secret authenticated,
+                             reversed workspace check, builds the confirm
+                             message)
 mcp/
-  index.ts                  POST /mcp entry (auth -> JSON-RPC -> tools)
-  auth.ts                   guild-scoped bearer tokens (stateless HMAC)
-  protocol.ts               minimal MCP over JSON-RPC 2.0 (no SSE)
-  tools.ts                  tool definitions + read/propose handlers
-  queries.ts                read-only Goldsky queries behind the read tools
   confirm.ts                proposal <-> embed payload, confirm message
   button.ts                 the click: actor = clicker, then perform*
   discord-rest.ts           bot-token REST calls (channel/message)
@@ -127,7 +145,6 @@ test/                       Vitest unit tests (no network, no chain)
 ## Commands
 
 ```
-pnpm discord-bot mint-mcp-token <guildId>           # MCP token for one guild
 pnpm --filter @toban/discord-bot dev                # wrangler dev
 pnpm --filter @toban/discord-bot test               # vitest run
 pnpm --filter @toban/discord-bot typecheck          # tsc --noEmit
@@ -135,6 +152,9 @@ pnpm --filter @toban/discord-bot deploy:dry:sepolia # dry-run (top-level config)
 pnpm --filter @toban/discord-bot deploy:sepolia     # → toban-discord-bot       (top-level)
 pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base  (--env base)
 ```
+
+`mint-mcp-token` used to live here; it moved to `pnpm mcp mint-mcp-token` along
+with the rest of the MCP token machinery (`docs/mcp-extraction.md` §8).
 
 **Deploying**: read `DEPLOYMENT.md` (repo root) first. Non-obvious constraints:
 
@@ -145,6 +165,8 @@ pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base
   `platform_links` maps guild → treeId, and a treeId only exists on one chain.
 - **Deploy `@toban/identity` first** — this worker service-binds to it by name; a missing identity
   worker fails the bot deploy with Cloudflare error 10143.
+- **`@toban/mcp` must deploy *after* this worker** — it service-binds to
+  `toban-discord-bot` (the `CONFIRM` binding) to reach `/internal/propose`.
 - There is deliberately **no bare `deploy` script**: `pnpm --filter <pkg> deploy` is pnpm's builtin
   and errors with `ERR_PNPM_INVALID_DEPLOY_TARGET`.
 - Adding a command → register it in **both** `scripts/register-commands.ts` and
@@ -169,9 +191,11 @@ pnpm --filter @toban/discord-bot deploy:base        # → toban-discord-bot-base
 - Don't let an MCP tool sign. Writes go through a confirm button, always.
 - Don't read the acting user from tool arguments. Only a Discord-signed
   interaction may decide who acts.
-- Adding an MCP tool → add it to `TOOL_DEFINITIONS` **and** `callTool`, and
-  say plainly in its `description` whether it acts or only proposes (the
-  description is the only thing a third-party agent reads).
+- Adding an MCP tool → that happens in `@toban/mcp`, not here. This package
+  only grows when a *propose* tool needs a new field on
+  `InternalProposeRequest` (`src/internal/propose.ts`) — keep that type and
+  `@toban/mcp`'s `import type` of it in sync; a mismatch is a compile error
+  in `@toban/mcp`, not a silent bug.
 - Don't bypass the identity HTTP boundary by reaching into D1 directly.
 - Don't add Discord commands without registering them in the install
   callback (`api/install/callback.ts`).

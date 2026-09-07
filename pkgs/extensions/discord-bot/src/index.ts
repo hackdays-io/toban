@@ -3,9 +3,16 @@
  *
  * Routes:
  *   POST /discord/interactions  -> Ed25519-verified Discord interaction
- *   POST /mcp                   -> MCP endpoint (guild-scoped bearer token)
+ *   POST /internal/propose      -> `@toban/mcp`'s only seam into this Worker
+ *                                   (shared-secret authenticated; see
+ *                                   src/internal/propose.ts)
  *   GET  /api/install/start     -> begin frontend-initiated bot install
  *   GET  /api/install/callback  -> OAuth bot-install callback
+ *
+ * `POST /mcp` used to live here; it moved to `@toban/mcp` along with the
+ * rest of the MCP endpoint (`docs/mcp-extraction.md`). Discord is now only
+ * a confirm-button adapter for it, reached over the `CONFIRM` service
+ * binding at `/internal/propose`.
  *
  * Anything else returns 404.
  */
@@ -30,8 +37,8 @@ import { handleTobanLink } from "./commands/toban-link";
 import { handleTobanSetup } from "./commands/toban-setup";
 import type { Env } from "./env";
 import { verifyDiscordInteraction } from "./interactions/verify";
+import { handleInternalPropose } from "./internal/propose";
 import { handleConfirmButton, isConfirmComponent } from "./mcp/button";
-import { handleMcpRequest } from "./mcp/index";
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -139,8 +146,8 @@ export default {
     if (request.method === "POST" && url.pathname === "/discord/interactions") {
       return handleInteraction(env, ctx, request);
     }
-    if (request.method === "POST" && url.pathname === "/mcp") {
-      return handleMcpRequest(env, request);
+    if (request.method === "POST" && url.pathname === "/internal/propose") {
+      return handleInternalPropose(env, request);
     }
     if (request.method === "GET" && url.pathname === "/api/install/start") {
       return handleInstallStart(env, request);

@@ -1,0 +1,46 @@
+{
+  "name": "@toban/mcp",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Toban MCP server — Cloudflare Workers. Read-only workspace tools plus write proposals forwarded to @toban/discord-bot's confirm-button adapter over a service binding.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./eip712": "./src/eip712/mcp-token.ts"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy:sepolia": "wrangler deploy",
+    "deploy:base": "wrangler deploy --env base",
+    "deploy:dry:sepolia": "wrangler deploy --dry-run --outdir=dist",
+    "deploy:dry:base": "wrangler deploy --dry-run --outdir=dist --env base",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "drizzle:generate": "drizzle-kit generate",
+    "mint-mcp-token": "tsx scripts/mint-mcp-token.ts",
+    "db:migrate:local": "wrangler d1 execute toban-identity --local --file=./migrations/0001_init.sql",
+    "db:migrate:remote:sepolia": "wrangler d1 execute toban-identity --remote --file=./migrations/0001_init.sql",
+    "db:migrate:remote:base": "wrangler d1 execute toban-identity-base --remote --env base --file=./migrations/0001_init.sql"
+  },
+  "dependencies": {
+    "discord-api-types": "^0.37.103",
+    "drizzle-orm": "^0.36.0",
+    "viem": "^2.21.51"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@toban/discord-bot": "workspace:*",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.7.4",
+    "better-sqlite3": "^11.5.0",
+    "drizzle-kit": "^0.28.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.6",
+    "wrangler": "^3.78.10"
+  }
+}

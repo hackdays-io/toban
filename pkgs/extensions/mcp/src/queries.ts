@@ -1,16 +1,18 @@
 /**
  * Read-only Goldsky (Toban subgraph) queries behind the MCP read tools.
  *
- * Deliberately separate from `chain.ts`: that module holds the ABI slice and
- * the resolvers the **write** paths depend on (`/thx`, `/quest submit`), and
- * stays small so it can be audited next to `turnkey/policy.json`. Nothing in
- * this file can reach the chain — every function is a GraphQL read.
+ * Moved from `@toban/discord-bot`'s `src/mcp/queries.ts` as part of the MCP
+ * extraction (`docs/mcp-extraction.md` §3, §8) — Discord has no role in any
+ * function here.
  *
  * Two invariants every query here must keep:
  *
- * 1. **Workspace scoping is not optional.** The caller's MCP token pins a
- *    guild, which pins one `treeId`; every filter carries it, so a tool can
- *    never return another workspace's rows whatever the model emits.
+ * 1. **`treeId` is always explicit and always comes from the caller of this
+ *    module**, never invented here. `tools.ts` resolves it to either the
+ *    token's home workspace or an explicit `treeId` argument (reads may
+ *    cross workspaces on purpose — see §6 of the design doc; only identity
+ *    resolution stays home-only, and that restriction lives in `tools.ts`,
+ *    not here).
  * 2. **Every list is bounded.** Results land in a third-party agent's context
  *    window, so each query takes an explicit `first` — see {@link clampLimit}.
  *
@@ -23,8 +25,8 @@
  *     subgraph does not index → returned raw, and named `*Raw` to say so.
  */
 import { type Address, type Hex, formatEther, hexToString } from "viem";
-import { postGraphQL } from "../chain";
-import type { Env } from "../env";
+import { postGraphQL } from "./chain.js";
+import type { Env } from "./env.js";
 
 /**
  * The three units the indexer's amounts come in, and what a reader may do
@@ -40,7 +42,7 @@ import type { Env } from "../env";
 export const UNIT_NOTES = {
   thx: "サンクストークン。小数に換算済みなので、そのまま合計・比較・平均してよい。",
   shares:
-    "ロールシェアの個数（整数）。1 ロールあたりの総供給が 10000 なので、割合を出すなら 10000 を分母にする。THX とは別の単位なので、足したり大小を比べたりしてはいけない。",
+    "ロールシェアの個数(整数)。1 ロールあたりの総供給が 10000 なので、割合を出すなら 10000 を分母にする。THX とは別の単位なので、足したり大小を比べたりしてはいけない。",
   raw: "ERC-20 の最小単位そのまま。小数桁をインデクサーが持っていないため未換算。人間向けの金額にするにはそのトークンの decimals で割る必要があり、それが分からないうちは換算せず、生の値と『単位未確定』であることをそのまま伝える。",
 } as const;
 
@@ -99,9 +101,9 @@ export function toIso(seconds: string | null | undefined): string | null {
 /**
  * Decode a `MintThanksToken.data` blob back to the message the sender typed.
  *
- * `/thx` and the MCP confirm button both encode it as UTF-8 hex (see
- * `performThx`), but `mintFrom` is a public function — anyone can pass
- * arbitrary bytes, so this must never throw on garbage.
+ * `/thx` and the confirm button both encode it as UTF-8 hex (in
+ * `@toban/discord-bot`), but `mintFrom` is a public function — anyone can
+ * pass arbitrary bytes, so this must never throw on garbage.
  */
 export function decodeThanksMessage(data: string | null | undefined): string {
   if (!data || data === "0x") return "";
@@ -112,9 +114,16 @@ export function decodeThanksMessage(data: string | null | undefined): string {
     return "";
   }
   // Strip C0/C1 control bytes. `mintFrom` is public, so `data` is whatever
-  // the sender put on chain, and it ends up rendered into a Discord message.
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: that is the intent
-  return text.replace(/[\u0000-\u001f\u007f-\u009f]/g, "").trim();
+  // the sender put on chain, and it can end up rendered by an MCP client.
+  // Filtered by code point (rather than a regex literal) so no raw control
+  // byte has to live in this source file.
+  return Array.from(text)
+    .filter((ch) => {
+      const c = ch.codePointAt(0) ?? 0;
+      return !(c <= 0x1f || (c >= 0x7f && c <= 0x9f));
+    })
+    .join("")
+    .trim();
 }
 
 // -------------------------------------------------------------- workspace
@@ -143,7 +152,8 @@ export interface WorkspaceOverview {
 }
 
 /**
- * The whole `Workspace` row, for `toban_workspace_info`.
+ * The whole `Workspace` row, for `toban_workspace_info` and for token-issuance
+ * hat checks (`handlers/issue.ts` needs `hats.operatorHatId` / `hats.topHatId`).
  *
  * Returns `null` when the tree is not indexed yet — callers surface that as
  * "not initialised" rather than inventing addresses.

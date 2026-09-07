@@ -206,9 +206,12 @@ function treeIdToHatsHex(treeId: string): string {
  * module shares. Centralised so a fix to error handling lives in one place
  * (this replaced three hand-repeated copies — see issue #531 review).
  *
- * Exported for `src/mcp/queries.ts`, which owns the read-only subgraph
- * surface behind the MCP read tools — error handling for every Goldsky
- * call in this package must stay in one place.
+ * Used by every Goldsky resolver in this file (`resolveQuestModuleAddress`,
+ * `resolveMembershipHatId`, ...), which are the *write*-path resolvers that
+ * stayed in this package after the MCP extraction. `@toban/mcp` owns the
+ * read-only subgraph surface behind the MCP read tools now, with its own
+ * copy of this same helper (`docs/mcp-extraction.md` §8 — an accepted,
+ * deliberate duplication, not a shared import across the package boundary).
  */
 export async function postGraphQL<T>(
   endpoint: string | undefined,

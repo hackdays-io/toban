@@ -1,15 +1,34 @@
 import type { Hat, Tree } from "@hatsprotocol/sdk-v1-subgraph";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useQueryClient,
   useQuery as useTanstackQuery,
 } from "@tanstack/react-query";
+// EIP-712 McpTokenIssueRequest/McpTokenRevokeRequest boundary contract —
+// imported from `@toban/mcp` (mirrors `@toban/identity/eip712`, see
+// connect.discord.tsx) rather than redeclared here so the frontend and the
+// MCP Worker can never silently desync on field order / domain version.
+// (List signing is not wired up on this page yet — the workspace listing
+// above only reads the plaintext-free metadata; nothing here signs a
+// `McpTokenListRequest`, so its types are not imported.)
+import {
+  MCP_TOKEN_DOMAIN_NAME,
+  MCP_TOKEN_DOMAIN_VERSION,
+  MCP_TOKEN_ISSUE_PRIMARY_TYPE,
+  MCP_TOKEN_ISSUE_TYPES,
+  MCP_TOKEN_REVOKE_PRIMARY_TYPE,
+  MCP_TOKEN_REVOKE_TYPES,
+} from "@toban/mcp/eip712";
 import axios from "axios";
+import dayjs from "dayjs";
+import { hatsContractBaseConfig } from "hooks/useContracts";
 import { useAddressesByNames, useNamesByAddresses } from "hooks/useENS";
 import { treeInfoQueryKey, useHats, useTreeInfo } from "hooks/useHats";
 import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
+import { currentChain, publicClient } from "hooks/useViem";
 import type { WalletType } from "hooks/useWallet";
 import { useActiveWallet } from "hooks/useWallet";
 import { useGetWorkspace } from "hooks/useWorkspace";
@@ -22,19 +41,21 @@ import type { NameData } from "types/ens";
 import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
-import type { Address } from "viem";
+import { type Address, type Hex, bytesToHex } from "viem";
 import { Divider } from "~/components/composite/divider";
 import { FieldLabel } from "~/components/composite/field-label";
 import { Row } from "~/components/composite/row";
 import { SectionLabel } from "~/components/composite/section-label";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Typography } from "~/components/ui/typography";
+import { withBigIntJSON } from "~/lib/bigint-json";
 
 interface BasicInfoSectionProps {
   wallet: WalletType;
@@ -393,6 +414,413 @@ const ExternalIntegrationSection: FC<ExternalIntegrationSectionProps> = ({
             onClick={() => navigate(`/${treeId}/discord-bot`)}
           />
         </Card>
+      </div>
+    </>
+  );
+};
+
+type IssuedMcpToken = {
+  token: string;
+  tokenId: string;
+  treeId: string;
+  label: string;
+  createdAt: number;
+};
+
+type McpTokenListItem = {
+  tokenId: string;
+  treeId: string;
+  label: string;
+  createdBy: Address;
+  createdAt: number;
+  revokedAt: number | null;
+};
+
+const mcpTokensQueryKey = (treeId: string) => ["mcp-tokens", treeId] as const;
+
+// Shared EIP-712 domain for McpTokenIssueRequest, McpTokenListRequest, and
+// McpTokenRevokeRequest — same construction as `@toban/identity/eip712`'s
+// IdentityBinding domain, under the `@toban/mcp` boundary contract
+// (docs/mcp-extraction.md §5, `pkgs/extensions/mcp/src/eip712/mcp-token.ts`).
+// No `verifyingContract`: like IdentityBinding this is an off-chain
+// attestation the Worker recovers a signer from, not something a contract
+// checks.
+function mcpTokenDomain() {
+  return {
+    name: MCP_TOKEN_DOMAIN_NAME,
+    version: MCP_TOKEN_DOMAIN_VERSION,
+    chainId: currentChain.id,
+  } as const;
+}
+
+function randomNonce(): Hex {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
+}
+
+// `mcp_tokens.created_at` / `revoked_at` are D1 integer columns (epoch
+// seconds), same convention as the subgraph's `blockTimestamp` fields
+// elsewhere on this page — hence the `* 1000` before handing to dayjs.
+function formatMcpDate(epochSeconds: number): string {
+  return dayjs(epochSeconds * 1000).format("YYYY/MM/DD HH:mm");
+}
+
+interface McpTokenSectionProps {
+  wallet: WalletType;
+  treeId: string;
+}
+
+// Lets a workspace admin self-issue an MCP token for an AI agent (OpenClaw,
+// etc.) without operator involvement — see docs/mcp-extraction.md §5. The
+// signature scheme mirrors connect.discord.tsx: sign an EIP-712 message with
+// the Privy wallet, POST { message, signature } to the MCP Worker, which
+// recovers the signer and re-derives admin status itself. `isAdmin` below is
+// UX-only — hiding the section for members who could never issue a token —
+// and carries no authority; skipping it client-side would still fail against
+// the Worker's own Hats-subgraph check.
+const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
+  const { ready, authenticated, login } = usePrivy();
+  const walletAddress = wallet?.account.address as Address | undefined;
+
+  const mcpWorkerUrl = import.meta.env.VITE_MCP_WORKER_URL as
+    | string
+    | undefined;
+
+  const { data: workspaceData } = useGetWorkspace({ workspaceId: treeId });
+  const owner = workspaceData?.workspace?.owner ?? undefined;
+  const operatorHatId = workspaceData?.workspace?.operatorHatId ?? undefined;
+
+  // Same admin check as the Discord bot page's admin gate (owner or
+  // operatorHat wearer) — the design doc names this exact pair as what the
+  // Worker verifies against the Hats subgraph before issuing a token.
+  const adminQuery = useTanstackQuery({
+    queryKey: ["workspace-admin-mcp", walletAddress, owner, operatorHatId],
+    enabled: !!walletAddress && (!!owner || !!operatorHatId),
+    queryFn: async (): Promise<boolean> => {
+      if (!walletAddress) return false;
+      if (owner && walletAddress.toLowerCase() === owner.toLowerCase()) {
+        return true;
+      }
+      if (!operatorHatId) return false;
+      return (await publicClient.readContract({
+        ...hatsContractBaseConfig,
+        functionName: "isWearerOfHat",
+        args: [walletAddress, BigInt(operatorHatId)],
+      })) as boolean;
+    },
+  });
+  const isAdmin = adminQuery.data === true;
+
+  const [label, setLabel] = useState("");
+  const [issuing, setIssuing] = useState(false);
+  const [justIssued, setJustIssued] = useState<IssuedMcpToken | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  const tokensQuery = useTanstackQuery({
+    queryKey: mcpTokensQueryKey(treeId),
+    enabled: !!mcpWorkerUrl && isAdmin,
+    queryFn: async (): Promise<McpTokenListItem[]> => {
+      if (!mcpWorkerUrl) return [];
+      const url = `${mcpWorkerUrl.replace(/\/$/, "")}/api/mcp-tokens?treeId=${encodeURIComponent(treeId)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`一覧の取得に失敗しました (${res.status})`);
+      }
+      const body = (await res.json()) as { tokens: McpTokenListItem[] };
+      return body.tokens;
+    },
+  });
+
+  const handleIssue = async () => {
+    if (!wallet || !walletAddress || !mcpWorkerUrl) return;
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return;
+    setIssuing(true);
+    try {
+      // Short expiry — this signature only authenticates the one issue
+      // request (replay/nonce protection), unlike the token it produces,
+      // which lives until revoked.
+      const expires = BigInt(Math.floor(Date.now() / 1000) + 10 * 60);
+      const nonce = randomNonce();
+      const domain = mcpTokenDomain();
+      const message = {
+        wallet: walletAddress,
+        treeId,
+        label: trimmedLabel,
+        expires,
+        nonce,
+      };
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain,
+          types: MCP_TOKEN_ISSUE_TYPES,
+          primaryType: MCP_TOKEN_ISSUE_PRIMARY_TYPE,
+          message,
+        }),
+      )) as Hex;
+
+      const res = await fetch(
+        `${mcpWorkerUrl.replace(/\/$/, "")}/api/mcp-tokens`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            typedData: {
+              domain,
+              types: MCP_TOKEN_ISSUE_TYPES,
+              primaryType: MCP_TOKEN_ISSUE_PRIMARY_TYPE,
+              // uint256 as decimal string — JSON can't carry bigint; the
+              // Worker normalises via BigInt() the same way /api/connect
+              // does (see connect.discord.tsx).
+              message: { ...message, expires: expires.toString() },
+            },
+            signature,
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        toast.error(
+          body.error
+            ? `発行に失敗しました: ${body.error}`
+            : `発行に失敗しました (${res.status})`,
+        );
+        return;
+      }
+
+      const issued = (await res.json()) as IssuedMcpToken;
+      setJustIssued(issued);
+      setCopied(false);
+      setLabel("");
+      await tokensQuery.refetch();
+      toast.success("MCP トークンを発行しました");
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "unknown error";
+      toast.error(`署名に失敗しました: ${message}`);
+    } finally {
+      setIssuing(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!justIssued) return;
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+        toast.error("クリップボードを利用できません");
+        return;
+      }
+      await navigator.clipboard.writeText(justIssued.token);
+      setCopied(true);
+      toast.success("トークンをコピーしました");
+    } catch (error) {
+      console.error("Failed to copy MCP token:", error);
+      toast.error("クリップボードを利用できません");
+    }
+  };
+
+  const handleRevoke = async (tokenId: string) => {
+    if (!wallet || !walletAddress || !mcpWorkerUrl) return;
+    setRevokingId(tokenId);
+    try {
+      const expires = BigInt(Math.floor(Date.now() / 1000) + 10 * 60);
+      const nonce = randomNonce();
+      const domain = mcpTokenDomain();
+      // `McpTokenRevokeRequest` names the specific `tokenId` being revoked
+      // inside the signed message itself (see the boundary contract's doc
+      // comment for why this field was moved here from a bare, unsigned
+      // request-body field: a signature that doesn't commit to *what* it
+      // authorises revoking can be replayed against any tokenId). The
+      // Worker still separately checks that the named token actually
+      // belongs to `treeId` before honouring the revoke.
+      const message = {
+        wallet: walletAddress,
+        treeId,
+        tokenId,
+        expires,
+        nonce,
+      };
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain,
+          types: MCP_TOKEN_REVOKE_TYPES,
+          primaryType: MCP_TOKEN_REVOKE_PRIMARY_TYPE,
+          message,
+        }),
+      )) as Hex;
+
+      const res = await fetch(
+        `${mcpWorkerUrl.replace(/\/$/, "")}/api/mcp-tokens/revoke`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            typedData: {
+              domain,
+              types: MCP_TOKEN_REVOKE_TYPES,
+              primaryType: MCP_TOKEN_REVOKE_PRIMARY_TYPE,
+              message: { ...message, expires: expires.toString() },
+            },
+            signature,
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        toast.error(
+          body.error
+            ? `失効に失敗しました: ${body.error}`
+            : `失効に失敗しました (${res.status})`,
+        );
+        return;
+      }
+
+      await tokensQuery.refetch();
+      toast.success("トークンを失効しました");
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "unknown error";
+      toast.error(`署名に失敗しました: ${message}`);
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
+  // UX-only gate (see the block comment above the component) — non-admins
+  // simply don't see the section rather than seeing a disabled one.
+  if (!isAdmin) return null;
+
+  return (
+    <>
+      <SectionLabel>MCP トークン</SectionLabel>
+      <div className="space-y-4 px-5">
+        <Typography as="div" variant="bodySm" tone="secondary">
+          AI エージェント（OpenClaw
+          など）にこのワークスペースへの読み取りアクセスと、
+          確認ボタン付きの提案投稿を許可するための鍵です。
+          <strong>パスワードと同じ扱いにしてください</strong>
+          。発行直後の一度しか平文は表示されません。
+        </Typography>
+
+        {!mcpWorkerUrl ? (
+          <Typography variant="caption" tone="danger">
+            VITE_MCP_WORKER_URL が未設定のため、MCP
+            トークン機能を利用できません。
+          </Typography>
+        ) : !ready ? (
+          <Button full disabled>
+            読み込み中…
+          </Button>
+        ) : !authenticated || !walletAddress ? (
+          <Button full onClick={login}>
+            <Icon name="wallet" size={18} />
+            ウォレットを接続
+          </Button>
+        ) : (
+          <>
+            <Card className="gap-4 py-4">
+              <div className="flex flex-col gap-2 px-4">
+                <FieldLabel htmlFor="mcp-token-label">ラベル</FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    id="mcp-token-label"
+                    placeholder="例：うちの OpenClaw"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                  />
+                  <Button
+                    disabled={!label.trim() || issuing}
+                    onClick={handleIssue}
+                  >
+                    {issuing ? "署名中…" : "発行"}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {justIssued && (
+              <Card className="gap-3 border-danger/40 py-4">
+                <div className="flex flex-col gap-2 px-4">
+                  <Typography variant="bodySm" weight="bold" tone="danger">
+                    この画面を離れると二度と表示できません。今すぐコピーしてください。
+                  </Typography>
+                  <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                    <Typography
+                      as="span"
+                      variant="mono"
+                      className="flex-1 break-all"
+                    >
+                      {justIssued.token}
+                    </Typography>
+                    <Button
+                      variant="secondary"
+                      size="icon-sm"
+                      onClick={handleCopyToken}
+                    >
+                      <Icon name={copied ? "check" : "copy"} size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <Card className="gap-0 p-0">
+              {tokensQuery.isLoading ? (
+                <Typography
+                  as="div"
+                  variant="caption"
+                  tone="secondary"
+                  className="px-4 py-3"
+                >
+                  読み込み中…
+                </Typography>
+              ) : (tokensQuery.data?.length ?? 0) === 0 ? (
+                <Typography
+                  as="div"
+                  variant="caption"
+                  tone="secondary"
+                  className="px-4 py-3"
+                >
+                  発行済みのトークンはありません
+                </Typography>
+              ) : (
+                tokensQuery.data?.map((t, i) => (
+                  <div key={t.tokenId}>
+                    {i > 0 && <Divider />}
+                    <Row
+                      title={t.label}
+                      subtitle={`発行日: ${formatMcpDate(t.createdAt)} / 発行者: ${abbreviateAddress(t.createdBy)}`}
+                      right={
+                        t.revokedAt ? (
+                          <Badge kind="danger">失効済み</Badge>
+                        ) : (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            disabled={revokingId === t.tokenId}
+                            onClick={() => handleRevoke(t.tokenId)}
+                          >
+                            {revokingId === t.tokenId ? "失効中…" : "失効"}
+                          </Button>
+                        )
+                      }
+                    />
+                  </div>
+                ))
+              )}
+            </Card>
+          </>
+        )}
       </div>
     </>
   );
@@ -829,6 +1257,7 @@ const WorkspaceSettings: FC = () => {
         <BasicInfoSection wallet={wallet} treeId={treeId} topHat={topHat} />
         <OtherSection treeId={treeId} />
         <ExternalIntegrationSection treeId={treeId} />
+        <McpTokenSection wallet={wallet} treeId={treeId} />
         <AuthoritiesSection wallet={wallet} treeId={treeId} topHat={topHat} />
       </div>
     </div>

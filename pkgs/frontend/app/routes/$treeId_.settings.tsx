@@ -4,18 +4,18 @@ import {
   useQueryClient,
   useQuery as useTanstackQuery,
 } from "@tanstack/react-query";
-// EIP-712 McpTokenIssueRequest/McpTokenRevokeRequest boundary contract —
-// imported from `@toban/mcp` (mirrors `@toban/identity/eip712`, see
-// connect.discord.tsx) rather than redeclared here so the frontend and the
-// MCP Worker can never silently desync on field order / domain version.
-// (List signing is not wired up on this page yet — the workspace listing
-// above only reads the plaintext-free metadata; nothing here signs a
-// `McpTokenListRequest`, so its types are not imported.)
+// EIP-712 McpTokenIssueRequest/McpTokenRevokeRequest/McpTokenListRequest
+// boundary contract — imported from `@toban/mcp` (mirrors
+// `@toban/identity/eip712`, see connect.discord.tsx) rather than redeclared
+// here so the frontend and the MCP Worker can never silently desync on
+// field order / domain version.
 import {
   MCP_TOKEN_DOMAIN_NAME,
   MCP_TOKEN_DOMAIN_VERSION,
   MCP_TOKEN_ISSUE_PRIMARY_TYPE,
   MCP_TOKEN_ISSUE_TYPES,
+  MCP_TOKEN_LIST_PRIMARY_TYPE,
+  MCP_TOKEN_LIST_TYPES,
   MCP_TOKEN_REVOKE_PRIMARY_TYPE,
   MCP_TOKEN_REVOKE_TYPES,
 } from "@toban/mcp/eip712";
@@ -56,6 +56,13 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Typography } from "~/components/ui/typography";
 import { withBigIntJSON } from "~/lib/bigint-json";
+import {
+  type McpTokenListAuth,
+  type McpTokenListItem,
+  buildMcpTokenListTypedData,
+  fetchMcpTokenList,
+  isListAuthUsable,
+} from "~/lib/mcp-tokens";
 
 interface BasicInfoSectionProps {
   wallet: WalletType;
@@ -427,16 +434,16 @@ type IssuedMcpToken = {
   createdAt: number;
 };
 
-type McpTokenListItem = {
-  tokenId: string;
-  treeId: string;
-  label: string;
-  createdBy: Address;
-  createdAt: number;
-  revokedAt: number | null;
-};
-
 const mcpTokensQueryKey = (treeId: string) => ["mcp-tokens", treeId] as const;
+
+// How long a `McpTokenListRequest` signature stays reusable before the
+// section asks for a fresh one. Listing never burns its nonce (see
+// `pkgs/extensions/mcp/src/handlers/list.ts`), which is exactly what makes
+// reuse safe — the design constraint here is "don't ask for a wallet popup
+// just to open the settings page", so one signature should cover a whole
+// admin session rather than every render. 30 minutes balances that against
+// not holding a signature indefinitely if the tab is left open.
+const LIST_AUTH_TTL_SECONDS = 60 * 30;
 
 // Shared EIP-712 domain for McpTokenIssueRequest, McpTokenListRequest, and
 // McpTokenRevokeRequest — same construction as `@toban/identity/eip712`'s
@@ -479,6 +486,18 @@ interface McpTokenSectionProps {
 // UX-only — hiding the section for members who could never issue a token —
 // and carries no authority; skipping it client-side would still fail against
 // the Worker's own Hats-subgraph check.
+//
+// The token list is fetched by `POST /api/mcp-tokens/list` with a signed
+// `McpTokenListRequest` (`~/lib/mcp-tokens`), never by an unsigned GET — the
+// Worker never implemented a GET route for this (review finding: the old
+// code called one anyway and the list/revoke UI was dead as a result).
+// Fetching it is gated behind an explicit action (`handleRevealList`, the
+// "署名して一覧を表示" button below) rather than firing on mount: a wallet
+// popup must not appear just because someone opened the settings page. The
+// resulting signature (`listAuth`) is cached in state and reused for
+// `LIST_AUTH_TTL_SECONDS` — safe because listing never burns its EIP-712
+// nonce (see the Worker-side handler's doc comment) — so revoking a token,
+// or issuing another one, doesn't ask for a fresh wallet popup every time.
 const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
   const { ready, authenticated, login } = usePrivy();
   const walletAddress = wallet?.account.address as Address | undefined;
@@ -511,6 +530,7 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
     },
   });
   const isAdmin = adminQuery.data === true;
+  const queryClient = useQueryClient();
 
   const [label, setLabel] = useState("");
   const [issuing, setIssuing] = useState(false);
@@ -518,18 +538,58 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
   const [copied, setCopied] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
+  // Signed lazily — never on page load (design constraint from
+  // docs/mcp-extraction.md §5's review: a wallet popup must not appear just
+  // because someone opened the settings page). `handleRevealList` is the
+  // only thing that creates one, other than the "refresh after issuing"
+  // path below, which reuses a signature the admin already just produced
+  // for the issue call rather than asking again.
+  const [listAuth, setListAuth] = useState<McpTokenListAuth | null>(null);
+  const [listAuthLoading, setListAuthLoading] = useState(false);
+
+  const signListAuth =
+    useCallback(async (): Promise<McpTokenListAuth | null> => {
+      if (!wallet || !walletAddress) return null;
+      const nonce = randomNonce();
+      const typedData = buildMcpTokenListTypedData({
+        wallet: walletAddress,
+        treeId,
+        chainId: currentChain.id,
+        nonce,
+        ttlSeconds: LIST_AUTH_TTL_SECONDS,
+      });
+      const signature = (await withBigIntJSON(() =>
+        wallet.signTypedData({
+          account: walletAddress,
+          domain: typedData.domain,
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: typedData.message,
+        }),
+      )) as Hex;
+      return { typedData, signature };
+    }, [wallet, walletAddress, treeId]);
+
+  const handleRevealList = async () => {
+    setListAuthLoading(true);
+    try {
+      const auth = await signListAuth();
+      if (auth) setListAuth(auth);
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "unknown error";
+      toast.error(`署名に失敗しました: ${message}`);
+    } finally {
+      setListAuthLoading(false);
+    }
+  };
+
   const tokensQuery = useTanstackQuery({
     queryKey: mcpTokensQueryKey(treeId),
-    enabled: !!mcpWorkerUrl && isAdmin,
+    enabled: !!mcpWorkerUrl && isAdmin && isListAuthUsable(listAuth),
     queryFn: async (): Promise<McpTokenListItem[]> => {
-      if (!mcpWorkerUrl) return [];
-      const url = `${mcpWorkerUrl.replace(/\/$/, "")}/api/mcp-tokens?treeId=${encodeURIComponent(treeId)}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`一覧の取得に失敗しました (${res.status})`);
-      }
-      const body = (await res.json()) as { tokens: McpTokenListItem[] };
-      return body.tokens;
+      if (!mcpWorkerUrl || !isListAuthUsable(listAuth)) return [];
+      return fetchMcpTokenList(mcpWorkerUrl, listAuth);
     },
   });
 
@@ -598,7 +658,31 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
       setJustIssued(issued);
       setCopied(false);
       setLabel("");
-      await tokensQuery.refetch();
+
+      // Refresh the list right after issuing. This does not violate "never
+      // sign on page load": the admin just approved a wallet popup for the
+      // issue call above, so this is still inside that same user-initiated
+      // action, not a background/mount-triggered signature. Reuse an
+      // existing usable signature if we have one (e.g. the admin already
+      // revealed the list earlier in this session) instead of asking again.
+      try {
+        const auth = isListAuthUsable(listAuth)
+          ? listAuth
+          : await signListAuth();
+        if (auth && mcpWorkerUrl) {
+          if (auth !== listAuth) setListAuth(auth);
+          const tokens = await fetchMcpTokenList(mcpWorkerUrl, auth);
+          queryClient.setQueryData(mcpTokensQueryKey(treeId), tokens);
+        }
+      } catch (e) {
+        // The token itself was already issued successfully above — a
+        // failure here must not read as "issuing failed" to the admin, so
+        // it's logged rather than surfaced as an error toast. Worst case,
+        // the list stays showing the pre-issue state (or the reveal
+        // button, if it was never shown) until the admin refreshes it.
+        console.error("Failed to refresh MCP token list after issuing:", e);
+      }
+
       toast.success("MCP トークンを発行しました");
     } catch (e) {
       console.error(e);
@@ -775,7 +859,21 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
             )}
 
             <Card className="gap-0 p-0">
-              {tokensQuery.isLoading ? (
+              {!isListAuthUsable(listAuth) ? (
+                <div className="flex flex-col items-center gap-2 px-4 py-6">
+                  <Typography variant="caption" tone="secondary">
+                    発行済みトークンの一覧を見るには署名してください。
+                  </Typography>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={listAuthLoading}
+                    onClick={() => void handleRevealList()}
+                  >
+                    {listAuthLoading ? "署名中…" : "署名して一覧を表示"}
+                  </Button>
+                </div>
+              ) : tokensQuery.isLoading ? (
                 <Typography
                   as="div"
                   variant="caption"

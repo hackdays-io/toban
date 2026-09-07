@@ -207,6 +207,136 @@ describe("POST /api/mcp-tokens — issuance", () => {
     expect(await res.json()).toMatchObject({ error: "wallet_mismatch" });
   });
 
+  it("does NOT burn the nonce when the signature is invalid", async () => {
+    // The burn sits after signature verification on purpose. This endpoint is
+    // public — the settings page calls it straight from the browser — so if
+    // an unauthenticated request could burn a nonce, a stranger could insert
+    // one row per request into `used_mcp_auth_nonces` with nonces of their
+    // own choosing: unbounded growth on a table with no pruning path. An
+    // earlier revision of the ordering fix burned before verifying; this
+    // guards against that being reintroduced.
+    const { typedData, signature } = await buildSignedIssueRequest({
+      account,
+      chainId: CHAIN_ID,
+      treeId: TREE_ID,
+      label: "forged",
+    });
+    const forged = await handleIssueToken(
+      makeRequest({ typedData, signature }),
+      {
+        db: ctx.db,
+        env: ctx.env,
+        verifySignature: async () => false, // signature does not check out
+        checkHat: alwaysAuthorized,
+        fetchImpl: overviewFetchStub(),
+      },
+    );
+    expect(forged.status).toBe(400);
+    expect(await forged.json()).toMatchObject({ error: "wallet_mismatch" });
+
+    // The nonce must still be spendable: the rejected request never proved
+    // who it was, so it must not have been able to consume anything.
+    const honest = await handleIssueToken(
+      makeRequest({ typedData, signature }),
+      {
+        db: ctx.db,
+        env: ctx.env,
+        verifySignature: offlineIssueVerifier,
+        checkHat: alwaysAuthorized,
+        fetchImpl: overviewFetchStub(),
+      },
+    );
+    expect(honest.status).toBe(200);
+  });
+
+  it("burns the nonce even when a later check (hat ownership) rejects the request", async () => {
+    // Regression test for the nonce-ordering fix (review finding #4): the
+    // nonce must be spent as soon as it is read, not only on the success
+    // path, otherwise a rejected request's signature is still fresh and
+    // could be resubmitted.
+    const { typedData, signature } = await buildSignedIssueRequest({
+      account,
+      chainId: CHAIN_ID,
+      treeId: TREE_ID,
+      label: "will be rejected",
+    });
+    const rejected = await handleIssueToken(
+      makeRequest({ typedData, signature }),
+      {
+        db: ctx.db,
+        env: ctx.env,
+        verifySignature: offlineIssueVerifier,
+        checkHat: async () => false, // hat check fails, after the nonce burn
+        fetchImpl: overviewFetchStub(),
+      },
+    );
+    expect(rejected.status).toBe(403);
+    expect(await rejected.json()).toMatchObject({
+      error: "unauthorized_wallet",
+    });
+
+    // Replaying the exact same signed request — even against deps that
+    // would now authorise it — must fail on the already-burned nonce, not
+    // succeed. If the nonce were only burned on the success path (the old
+    // order), this second call would issue a token for a request that was
+    // already rejected once.
+    const replay = await handleIssueToken(
+      makeRequest({ typedData, signature }),
+      {
+        db: ctx.db,
+        env: ctx.env,
+        verifySignature: offlineIssueVerifier,
+        checkHat: alwaysAuthorized,
+        fetchImpl: overviewFetchStub(),
+      },
+    );
+    expect(replay.status).toBe(400);
+    expect(await replay.json()).toMatchObject({ error: "nonce_reused" });
+  });
+
+  it("lets only one of two concurrent replays of the same signed request mint a token", async () => {
+    // Regression test for review finding #4: before the fix, `isAuthNonceUsed`
+    // was a plain read performed well before the nonce was burned, so two
+    // concurrent replays of one captured, validly-signed request could both
+    // pass that read and each reach `insertToken`, minting two distinct
+    // tokens for a single signature. Burning the nonce first (this PR)
+    // makes the registry's PRIMARY KEY the actual mutual exclusion.
+    const { typedData, signature } = await buildSignedIssueRequest({
+      account,
+      chainId: CHAIN_ID,
+      treeId: TREE_ID,
+      label: "concurrent",
+    });
+    const deps = {
+      db: ctx.db,
+      env: ctx.env,
+      // A slight delay makes the two calls' signature-verification and
+      // hat-check steps genuinely overlap, rather than one call finishing
+      // its whole pipeline before the other starts.
+      verifySignature: async (
+        ...args: Parameters<typeof offlineIssueVerifier>
+      ) => {
+        await new Promise((r) => setTimeout(r, 5));
+        return offlineIssueVerifier(...args);
+      },
+      checkHat: alwaysAuthorized,
+      fetchImpl: overviewFetchStub(),
+    };
+
+    const [a, b] = await Promise.all([
+      handleIssueToken(makeRequest({ typedData, signature }), deps),
+      handleIssueToken(makeRequest({ typedData, signature }), deps),
+    ]);
+    const statuses = [a.status, b.status].sort();
+    // Exactly one winner (200) and one loser — and the loser must be a
+    // clean 400 `nonce_reused`, never a 500 from an unhandled constraint
+    // violation reaching `insertToken` after a duplicate token already
+    // exists (the old failure mode this finding described).
+    expect(statuses).toEqual([200, 400]);
+    const loser = a.status === 400 ? a : b;
+    expect(await loser.json()).toMatchObject({ error: "nonce_reused" });
+  });
+
   it("rejects a domain chainId that does not match the Worker's CHAIN_ID", async () => {
     const { typedData, signature } = await buildSignedIssueRequest({
       account,

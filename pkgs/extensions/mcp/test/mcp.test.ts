@@ -179,6 +179,12 @@ const HATS_ENDPOINT = "https://hats.example.invalid/graphql";
 const WALLET_A = `0x${"a1".repeat(20)}`;
 const WALLET_B = `0x${"b2".repeat(20)}`;
 
+/** A distinct, valid-shaped address per `n` — for tests that need many
+ *  unique wallets (e.g. exercising `lookupDiscordIds`'s chunking). */
+function nthAddress(n: number): Address {
+  return `0x${n.toString(16).padStart(40, "0")}` as Address;
+}
+
 interface GraphCall {
   endpoint: string;
   query: string;
@@ -441,6 +447,107 @@ describe("cross-workspace reads (§6)", () => {
     );
     const out = JSON.parse(res.text);
     expect(out.mints[0].fromDiscordUserId).toBe(ACTOR);
+  });
+
+  it("chunks reverse lookups above identity's per-request cap instead of one oversized call", async () => {
+    // 110 holders * (owner + wearer) = 220 unique addresses — comfortably
+    // above identity's MAX_WALLETS_PER_BATCH (200). This is the exact
+    // scenario from the finding: toban_workspace_members at MAX_LIMIT can
+    // reach up to 300 addresses in one reverse lookup.
+    const holderCount = 110;
+    const holders = Array.from({ length: holderCount }, (_, i) => ({
+      owner: nthAddress(i * 2 + 1),
+      hatId: "123",
+      wearer: nthAddress(i * 2 + 2),
+      balance: "2500",
+      updatedAt: "1700000000",
+    }));
+    const { fetchImpl } = graphStub(() => ({
+      balanceOfFractionTokens: holders,
+      escrowedRoleShares: [],
+    }));
+
+    const seenChunkSizes: number[] = [];
+    const res = await callTool(
+      fakeEnv(),
+      auth,
+      "toban_workspace_members",
+      { limit: 100 },
+      {
+        identity: identityStub({
+          getIdentitiesByWallets: async (_p, wallets) => {
+            seenChunkSizes.push(wallets.length);
+            return new Map(wallets.map((w) => [w.toLowerCase(), []]));
+          },
+        }),
+        fetchImpl,
+      },
+    );
+
+    expect(res.isError).toBeUndefined();
+    // More than one call was made, and none of them exceeded the cap — the
+    // bug was a single oversized call that identity rejected wholesale.
+    expect(seenChunkSizes.length).toBeGreaterThan(1);
+    for (const size of seenChunkSizes) {
+      expect(size).toBeLessThanOrEqual(200);
+    }
+    expect(seenChunkSizes.reduce((a, b) => a + b, 0)).toBe(holderCount * 2);
+    expect(JSON.parse(res.text).identityLookupDegraded).toBeUndefined();
+  });
+
+  it("surfaces a partial identity-lookup failure instead of reporting the whole workspace unlinked", async () => {
+    const holderCount = 110;
+    const holders = Array.from({ length: holderCount }, (_, i) => ({
+      owner: nthAddress(i * 2 + 1),
+      hatId: "123",
+      wearer: nthAddress(i * 2 + 2),
+      balance: "2500",
+      updatedAt: "1700000000",
+    }));
+    const lastWearer = holders[holderCount - 1].wearer;
+    const { fetchImpl } = graphStub(() => ({
+      balanceOfFractionTokens: holders,
+      escrowedRoleShares: [],
+    }));
+
+    let callCount = 0;
+    const res = await callTool(
+      fakeEnv(),
+      auth,
+      "toban_workspace_members",
+      { limit: 100 },
+      {
+        identity: identityStub({
+          getIdentitiesByWallets: async (_p, wallets) => {
+            callCount += 1;
+            // The first chunk hits a down identity worker; the second
+            // (which contains the last holder) succeeds.
+            if (callCount === 1) {
+              throw new Error("identity worker unavailable");
+            }
+            return new Map(
+              wallets.map((w) => [
+                w.toLowerCase(),
+                w.toLowerCase() === lastWearer.toLowerCase()
+                  ? [discordIdentity(ACTOR, w)]
+                  : [],
+              ]),
+            );
+          },
+        }),
+        fetchImpl,
+      },
+    );
+
+    expect(res.isError).toBeUndefined();
+    const out = JSON.parse(res.text);
+    // Before chunking, one thrown error emptied the whole map, so *every*
+    // holder looked unlinked. Here the second chunk's real result must
+    // still come through even though the first chunk failed.
+    expect(out.holders[holderCount - 1].wearerDiscordUserId).toBe(ACTOR);
+    // And the failure is surfaced rather than silently indistinguishable
+    // from "nobody in the first chunk linked a wallet".
+    expect(out.identityLookupDegraded).toBe(true);
   });
 
   it("rejects a malformed treeId argument", async () => {

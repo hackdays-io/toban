@@ -19,12 +19,7 @@ import {
 } from "../eip712/mcp-token.js";
 import type { Env } from "../env.js";
 import { resolveWorkspaceOverview } from "../queries.js";
-import {
-  type McpDb,
-  insertToken,
-  isAuthNonceUsed,
-  markAuthNonceUsed,
-} from "../registry.js";
+import { type McpDb, insertToken, markAuthNonceUsed } from "../registry.js";
 import { verifyMcpTokenAuthViaRpc } from "../verify.js";
 
 export type IssueVerifier = (
@@ -187,10 +182,6 @@ export async function handleIssueToken(
     return errorResponse(400, "expired", "message.expires is in the past");
   }
 
-  if (await isAuthNonceUsed(deps.db, msg.nonce)) {
-    return errorResponse(400, "nonce_reused");
-  }
-
   const verify = deps.verifySignature ?? defaultVerifier(deps.env);
   let signatureValid: boolean;
   try {
@@ -204,6 +195,55 @@ export async function handleIssueToken(
   }
   if (!signatureValid) {
     return errorResponse(400, "wallet_mismatch");
+  }
+
+  // Burn the nonce here: after the signature proves who is asking, but
+  // before the subgraph read, the hat check, and `insertToken`.
+  //
+  // Both boundaries matter.
+  //
+  // *After* the signature, because this is the handler's first write and the
+  // endpoint is public — the browser calls it directly. Burning any earlier
+  // would let an unauthenticated stranger insert a row per request into
+  // `used_mcp_auth_nonces` with a nonce of their choosing, which is
+  // unbounded storage growth on a table nobody can prune.
+  //
+  // *Before* `insertToken`, because the PRIMARY KEY on `nonce` is what makes
+  // replays mutually exclusive, and it can only do that if it is claimed
+  // before the token exists. This handler used to burn *after* the insert,
+  // with only a plain `isAuthNonceUsed` read up front: N concurrent replays
+  // of one captured, validly-signed request all passed that read, each
+  // minted its own distinct valid token, and the losers failed on the PK
+  // afterwards — by which point the duplicate tokens already existed. Now
+  // only the first request to reach this line gets past it.
+  //
+  // Trade-off: a request that burns its nonce here and then fails the hat
+  // check or finds the workspace unindexed leaves that nonce permanently
+  // spent with no token to show for it. That traps nobody, because the only
+  // real caller (`$treeId_.settings.tsx`) signs a fresh `{expires, nonce}`
+  // on every attempt — a retry is a new EIP-712 message, never a replay of
+  // the failed one. Note this is the opposite order from
+  // `@toban/identity`'s `connect.ts`, which persists before burning; it
+  // optimises for a different failure mode (there, losing the binding is
+  // worse than spending a nonce).
+  try {
+    await markAuthNonceUsed(deps.db, msg.nonce, now);
+  } catch (err) {
+    // Distinguish "another request already burned this nonce" (PRIMARY KEY
+    // violation — the concurrent-replay case this reordering defends
+    // against) from a genuine D1 failure, the same way
+    // `@toban/identity`'s `connect.ts` does for its own nonce table: both
+    // D1 and better-sqlite3 report a PK violation with a message containing
+    // "UNIQUE constraint failed".
+    const message = err instanceof Error ? err.message : String(err);
+    if (/UNIQUE constraint failed/i.test(message)) {
+      return errorResponse(400, "nonce_reused");
+    }
+    return errorResponse(
+      500,
+      "internal_error",
+      `mark nonce failed: ${message}`,
+    );
   }
 
   const fetchImpl = deps.fetchImpl ?? fetch;
@@ -259,7 +299,6 @@ export async function handleIssueToken(
     createdAt: now,
     revokedAt: null,
   });
-  await markAuthNonceUsed(deps.db, msg.nonce, now);
 
   return json(200, {
     token,

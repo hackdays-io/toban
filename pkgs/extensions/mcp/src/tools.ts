@@ -372,6 +372,28 @@ function withQuestUrl<T extends { questId: string }>(
 }
 
 /**
+ * Identity's own `MAX_WALLETS_PER_BATCH`
+ * (`pkgs/extensions/identity/src/handlers/lookup-by-wallet.ts`) — a batch
+ * above this is rejected with a 400 for the *entire* request, not just the
+ * overflow. Kept as a local literal rather than importing identity's
+ * source, since this package only ever talks to identity over HTTP
+ * (`docs/mcp-extraction.md` §6's boundary rule); a value drift between the
+ * two just costs an extra round trip, never a broken request.
+ */
+const IDENTITY_LOOKUP_CHUNK_SIZE = 200;
+
+/** Result of a (possibly chunked) reverse lookup — see `lookupDiscordIds`. */
+type DiscordIdLookupResult = {
+  byWallet: Map<string, string | null>;
+  /** True if at least one chunk failed. A `null` for a wallet whose chunk
+   *  failed is then indistinguishable, on its own, from "confirmed no
+   *  binding" — callers that resolve this into a tool response should
+   *  surface `degraded` so an agent doesn't report "workspace-wide
+   *  unlinked" off of what was actually an identity-worker outage. */
+  degraded: boolean;
+};
+
+/**
  * Reverse-resolve wallets to Discord user ids so a reading tool can hand the
  * agent something mentionable. The subgraph only knows addresses.
  *
@@ -382,25 +404,60 @@ function withQuestUrl<T extends { questId: string }>(
  * A wallet with no binding maps to `null` — that is normal, not an error,
  * and must not fail the whole tool call: an unlinked recipient still
  * received the tokens.
+ *
+ * **Chunked at `IDENTITY_LOOKUP_CHUNK_SIZE`.** `toban_workspace_members`
+ * alone can pass `holders * 2 + escrowed` distinct addresses, which at the
+ * advertised `MAX_LIMIT` (100) reaches 300 — above identity's cap. Before
+ * this chunking, that overflow made the *single* HTTP call 400, which
+ * `getIdentitiesByWallets` turned into a thrown error, which this function
+ * swallowed into an **empty map for the whole workspace** — every
+ * `*DiscordUserId` came back `null`, indistinguishable from "nobody linked a
+ * wallet". Chunking here protects every call site, not just the one that
+ * happened to be audited (`toban_thx_history` builds its address list from
+ * up to `limit` mints' `from`/`to`, which has the same exposure at scale).
  */
 async function lookupDiscordIds(
   identity: IdentityClient,
   wallets: readonly string[],
-): Promise<Map<string, string | null>> {
+): Promise<DiscordIdLookupResult> {
   const unique = Array.from(new Set(wallets.map((w) => w.toLowerCase())));
-  const out = new Map<string, string | null>();
-  if (unique.length === 0) return out;
-  let found: Map<string, IdentityRecord[]>;
-  try {
-    found = await identity.getIdentitiesByWallets("discord", unique);
-  } catch (err) {
-    console.error("MCP reverse lookup failed:", err);
-    return out;
+  const byWallet = new Map<string, string | null>();
+  if (unique.length === 0) return { byWallet, degraded: false };
+
+  let degraded = false;
+  for (let i = 0; i < unique.length; i += IDENTITY_LOOKUP_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + IDENTITY_LOOKUP_CHUNK_SIZE);
+    let found: Map<string, IdentityRecord[]>;
+    try {
+      found = await identity.getIdentitiesByWallets("discord", chunk);
+    } catch (err) {
+      // Keep the existing "identity down -> answer with what we have"
+      // behaviour instead of failing the whole tool call, but log per-chunk
+      // (not once for the whole request) so an operator can tell "identity
+      // was flaky for part of a large workspace" apart from "identity was
+      // fully down" in the logs.
+      console.error(
+        `MCP reverse lookup failed for a chunk of ${chunk.length} wallet(s):`,
+        err,
+      );
+      degraded = true;
+      continue;
+    }
+    for (const wallet of chunk) {
+      byWallet.set(wallet, found.get(wallet)?.[0]?.accountId ?? null);
+    }
   }
-  for (const wallet of unique) {
-    out.set(wallet, found.get(wallet)?.[0]?.accountId ?? null);
+  // Wallets from a failed chunk still need an entry (callers index this map
+  // unconditionally with `?? null`), but they are set only after the loop
+  // so a wallet that appears in both a failed and a succeeded chunk (it
+  // can't, chunks are disjoint, but this keeps the intent explicit) never
+  // has a real result overwritten by the degraded fallback.
+  if (degraded) {
+    for (const wallet of unique) {
+      if (!byWallet.has(wallet)) byWallet.set(wallet, null);
+    }
   }
-  return out;
+  return { byWallet, degraded };
 }
 
 /**
@@ -659,13 +716,13 @@ export async function callTool(
         fetchImpl,
       );
       // Reverse lookup is the identity boundary (§6) — only for home.
-      const byWallet =
+      const { byWallet, degraded } =
         treeId === home
           ? await lookupDiscordIds(
               identity,
               mints.flatMap((m) => [m.from, m.to]),
             )
-          : new Map<string, string | null>();
+          : { byWallet: new Map<string, string | null>(), degraded: false };
       return ok(
         JSON.stringify({
           mints: mints.map((m) => ({
@@ -674,6 +731,10 @@ export async function callTool(
             toDiscordUserId: byWallet.get(m.to.toLowerCase()) ?? null,
           })),
           units: unitsFor({ amountThx: "thx" }),
+          // Only present when true: a partial identity-lookup failure means
+          // some `*DiscordUserId: null` above may actually be "unknown", not
+          // "confirmed unlinked" — see `lookupDiscordIds`.
+          ...(degraded ? { identityLookupDegraded: true } : {}),
         }),
       );
     }
@@ -683,13 +744,13 @@ export async function callTool(
       if (treeId === null) return fail("treeId の形式が正しくありません。");
       const limit = clampLimit(args.limit, 50);
       const roles = await resolveWorkspaceRoles(env, treeId, limit, fetchImpl);
-      const byWallet =
+      const { byWallet, degraded } =
         treeId === home
           ? await lookupDiscordIds(identity, [
               ...roles.holders.flatMap((h) => [h.owner, h.wearer]),
               ...roles.escrowed.map((e) => e.wearer),
             ])
-          : new Map<string, string | null>();
+          : { byWallet: new Map<string, string | null>(), degraded: false };
       return ok(
         JSON.stringify({
           holders: roles.holders.map((h) => ({
@@ -702,6 +763,8 @@ export async function callTool(
             wearerDiscordUserId: byWallet.get(e.wearer.toLowerCase()) ?? null,
           })),
           units: unitsFor({ shares: "shares" }),
+          // Only present when true — see `toban_thx_history` above.
+          ...(degraded ? { identityLookupDegraded: true } : {}),
         }),
       );
     }

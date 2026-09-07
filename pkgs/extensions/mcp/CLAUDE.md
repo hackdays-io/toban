@@ -95,6 +95,48 @@ this file is the "moved here" summary the design doc pointed at.
   `getToken`/`treeId`-match check in `revoke.ts` still runs after that: the
   signature proves the wallet may act for the tree, the lookup proves the
   named token belongs to it.
+- **Issuance burns its EIP-712 nonce *after* signature verification but
+  *before* the subgraph read, the hat check, and `insertToken`. Both
+  boundaries are load-bearing; do not move it to either side.** After the
+  signature, because this is the handler's first write and the endpoint is
+  public (the browser posts to it directly) — burning any earlier lets an
+  unauthenticated stranger insert a row per request into
+  `used_mcp_auth_nonces` with nonces of their own choosing, which is
+  unbounded growth on a table with no pruning path. Before `insertToken`,
+  because the PRIMARY KEY on `used_mcp_auth_nonces.nonce` is only real
+  mutual exclusion for concurrent replays of one captured, validly-signed
+  `McpTokenIssueRequest` if it is claimed before the token exists; burning
+  after the insert left a window where N concurrent replays all passed a
+  plain `isAuthNonceUsed` read and each minted its own token, with only the
+  losers 500ing later on the PK. A request that burns its nonce and then
+  fails the hat check or finds the workspace unindexed leaves that nonce
+  permanently spent — fine, not a trap, because the only real caller signs
+  a fresh `{expires, nonce}` on every attempt, so a retry after failure is
+  never a replay of the failed request. Two tests pin this pair:
+  "burns the nonce even when a later check (hat ownership) rejects the
+  request" and "does NOT burn the nonce when the signature is invalid". See
+  `handlers/issue.ts`'s comment at the `markAuthNonceUsed` call for the
+  full reasoning, including why this is the *opposite* order from
+  `@toban/identity`'s `connect.ts` (which persists before burning, for a
+  different failure-mode trade-off — read that file's comment too before
+  "fixing" one to match the other).
+- **`lookupDiscordIds` (`tools.ts`) chunks its reverse-lookup batches at
+  `IDENTITY_LOOKUP_CHUNK_SIZE` (200), mirroring identity's own
+  `MAX_WALLETS_PER_BATCH`.** `toban_workspace_members` alone can pass up to
+  300 addresses at `MAX_LIMIT`; a single oversized call gets a 400 from
+  identity, which used to collapse into an empty map for every wallet in
+  the call — every `*DiscordUserId` came back `null`, indistinguishable
+  from "nobody linked a wallet". A chunk that still fails after chunking
+  sets `identityLookupDegraded: true` on the tool's JSON response instead
+  of letting its wallets' `null`s look like confirmed non-links.
+- **`verifyMcpTokenAuthViaRpc` (`verify.ts`) never trusts the caller-supplied
+  `typedData.types` / `typedData.domain` for the actual verification** —
+  it rebuilds the domain via `buildMcpTokenDomain(chainId)` and picks the
+  `MCP_TOKEN_*_TYPES` constant matching `primaryType`. A mismatched type or
+  domain was never exploitable (either one changes the digest, so a
+  captured signature already can't be replayed under a different shape),
+  but pinning removes the need to re-derive that argument every time this
+  function is touched.
 - **`src/chain.ts` holds a view-only ThanksToken ABI fragment, duplicated
   from `@toban/discord-bot`'s `chain.ts` on purpose.** `turnkey/policy.json`
   (in discord-bot) only ever gates *state-changing* selectors, so a second

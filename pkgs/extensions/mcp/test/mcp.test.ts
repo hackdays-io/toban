@@ -560,6 +560,56 @@ describe("cross-workspace reads (§6)", () => {
     );
     expect(res.isError).toBe(true);
   });
+
+  it("the identity choke point refuses discordUserId resolution AND reverse lookups for one explicit foreign treeId", async () => {
+    // Regression for the folded identity gate (`guardDiscordUserIdArg` +
+    // `lookupDiscordIds(treeId, home)` in tools.ts, replacing five
+    // near-identical `treeId === home` checks). One tool, one foreign
+    // treeId, both directions asserted in the same call so a future change
+    // that breaks either choke point fails here.
+    const forwardRes = await callTool(
+      fakeEnv(),
+      auth,
+      "toban_thx_history",
+      { treeId: OTHER_TREE_ID, discordUserId: ACTOR },
+      { identity: identityStub() },
+    );
+    expect(forwardRes.isError).toBe(true);
+    expect(forwardRes.text).toContain("discordUserId は解決できません");
+
+    const { fetchImpl } = graphStub(() => ({
+      all: [
+        {
+          from: WALLET_A,
+          to: WALLET_B,
+          amount: "1000000000000000000",
+          data: "0x",
+          blockTimestamp: "1700000100",
+        },
+      ],
+    }));
+    let reverseLookupCalled = false;
+    const reverseRes = await callTool(
+      fakeEnv(),
+      auth,
+      "toban_thx_history",
+      { treeId: OTHER_TREE_ID },
+      {
+        identity: identityStub({
+          getIdentitiesByWallets: async (_p, wallets) => {
+            reverseLookupCalled = true;
+            return new Map(wallets.map((w) => [w.toLowerCase(), []]));
+          },
+        }),
+        fetchImpl,
+      },
+    );
+    expect(reverseRes.isError).toBeUndefined();
+    expect(reverseLookupCalled).toBe(false);
+    const out = JSON.parse(reverseRes.text);
+    expect(out.mints[0].fromDiscordUserId).toBeNull();
+    expect(out.mints[0].toDiscordUserId).toBeNull();
+  });
 });
 
 describe("thanks message decoding", () => {

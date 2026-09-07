@@ -211,9 +211,10 @@ function treeIdToHatsHex(treeId: string): string {
  * stayed in this package after the MCP extraction. `@toban/mcp` owns the
  * read-only subgraph surface behind the MCP read tools now, with its own
  * copy of this same helper (`docs/mcp-extraction.md` §8 — an accepted,
- * deliberate duplication, not a shared import across the package boundary).
+ * deliberate duplication, not a shared import across the package boundary),
+ * so nothing outside this file needs to reach this one.
  */
-export async function postGraphQL<T>(
+async function postGraphQL<T>(
   endpoint: string | undefined,
   envVarName: string,
   query: string,

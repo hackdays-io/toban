@@ -320,3 +320,38 @@ identity → discord-bot → mcp → openclaw
   「**書き込み selector は** `chain.ts`」に書き換える必要がある
 - デプロイ順が 1 段増える（`DEPLOYMENT.md` は順序依存が壊れやすいと自ら警告している箇所）
 - secrets が一部二重管理になる（上表）
+- **discord-bot と `@toban/mcp` の間に、design doc が想定していなかった重複が
+  約 240 行ある。** レビューで見つかったもので、この branch では直さないと決めた
+  （直すには 5 つ目の共有パッケージを新設するか `@toban/identity` に新しい subpath を
+  足す必要があり、しかも discord-bot 側の既存コードを編集することになる。すでに
+  約 7.9k 行を追加している branch でそこまでやるのは過大、というのが tech lead の判断）。
+  内訳:
+  - `resolveRelatedRoles` / `resolveMembershipHatId` / `treeIdToHatsHex`
+    （インラインの GraphQL クエリ文字列込みで約 100 行）が両パッケージの
+    `chain.ts` にそのまま重複している。どちらも Discord に依存しないロジック。
+    直すなら、この部分だけを切り出した新しい共有パッケージに一本化するのが筋。
+    今のところは、subgraph スキーマ変更が起きたときに**両方のコピーを直すのを
+    忘れない**ことでしのぐしかない
+  - `IdentityFetchClient` の HTTP トランスポート（約 90 行）が両パッケージの
+    `identity.ts` に重複している。`@toban/identity` がこの契約の持ち主で、
+    すでに subpath export（`@toban/identity/eip712` 等）を公開しているので、
+    自然な直し方は `@toban/identity/client` のような新しい subpath を切って
+    そこに寄せること
+  - `pkgs/extensions/mcp/test/fixtures.ts` のテスト用足場（約 40 行）が
+    `pkgs/extensions/identity/src/__tests__/fixtures.ts` からの複製。ハードコードされた
+    テスト用秘密鍵が「正」として 2 箇所に宣言されている状態を含む
+  - `resolveChain`（9 行）が `pkgs/extensions/identity/src/verify.ts` からの複製
+
+  いずれも見落としではなく、直さないと決めたもの。次に触る人が再発見しなくて
+  済むよう、ここに書いておく。
+- **propose ツールの `inputSchema` は Discord のデータモデルを名前で埋め込んで
+  いる。** `CONFIRM` binding 自体は汎用的な名前で、discord-bot / `@toban/mcp` 両方の
+  CLAUDE.md も Discord を「アダプタであって requirement ではない」と書いているが、
+  サードパーティの MCP クライアントが実際に読む契約——propose 系ツールの
+  `inputSchema`——は `forDiscordUserId` / `toDiscordUserId` や、Discord のチャンネル
+  として説明された `channelId` など、Discord の語彙をそのまま使っている。アダプタが
+  Discord の 1 つしかない今の段階でこれを Discord 型のままにしておくのは正しい判断で、
+  変える予定もない。ただし 2 つ目のアダプタが増えるタイミングでは、汎用化には
+  「サードパーティが既に依存しているワイヤ契約をリネームする」か「アダプタごとに
+  ツール定義を複製する」のどちらかが要る、というトレードオフが発生する。今のうちに
+  書いておかないと、その時になって初めて気づくことになる

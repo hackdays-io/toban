@@ -35,10 +35,10 @@ import { deferredEphemeral, ephemeral, pong } from "./commands/responses";
 import { executeThx } from "./commands/thx";
 import { handleTobanLink } from "./commands/toban-link";
 import { handleTobanSetup } from "./commands/toban-setup";
+import { handleConfirmButton, isConfirmComponent } from "./confirm/button";
 import type { Env } from "./env";
 import { verifyDiscordInteraction } from "./interactions/verify";
 import { handleInternalPropose } from "./internal/propose";
-import { handleConfirmButton, isConfirmComponent } from "./mcp/button";
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -93,7 +93,7 @@ async function handleInteraction(
   }
   // Confirm buttons posted by the MCP propose tools. This is where an
   // agent's proposal becomes a signed action — the actor is the clicker,
-  // taken from this Discord-signed payload. See src/mcp/confirm.ts.
+  // taken from this Discord-signed payload. See src/confirm/confirm.ts.
   if (interaction.type === InteractionType.MessageComponent) {
     const component = interaction as APIMessageComponentInteraction;
     if (isConfirmComponent(component.data.custom_id)) {

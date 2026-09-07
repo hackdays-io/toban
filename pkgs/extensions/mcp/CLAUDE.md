@@ -39,10 +39,18 @@ this file is the "moved here" summary the design doc pointed at.
 - **Identity resolution (`discordUserId <-> wallet`) only ever runs for the
   token's home `treeId`.** Unlike subgraph data, `@toban/identity`'s tables
   are not public — resolving them cross-workspace would let a token from
-  community A build a Discord-ID↔wallet directory for community B. Every
-  call site that could resolve identity (forward or reverse) is gated on
-  `treeId === home` in `tools.ts`; grep for `CROSS_WORKSPACE_IDENTITY_NOTE`
-  before adding a new one.
+  community A build a Discord-ID↔wallet directory for community B. This is
+  enforced structurally in `tools.ts`, not by author discipline at each call
+  site: `guardDiscordUserIdArg(discordUserId, treeId, home)` is the one place
+  a `discordUserId` *argument* may be resolved (a read tool calls it and
+  returns early on a non-null result — it cannot forget to, since skipping it
+  is the whole bug), and `lookupDiscordIds(identity, wallets, treeId, home)`
+  is the one place a *reverse* wallet-to-Discord-id lookup happens — it
+  short-circuits internally to an empty, non-degraded result when
+  `treeId !== home`, so a new read tool gets the boundary for free just by
+  calling it instead of re-deriving a `treeId === home` ternary. Add a new
+  identity-resolving call site by calling one of these two, not by writing a
+  new `if`.
 - **`tbn2` tokens verify in two stages, and the order matters.** Stage 1
   (`auth.ts`) is a stateless HMAC check — no D1 read — so a flood of
   garbage bearer tokens costs nothing but CPU. Only a token that survives
@@ -76,18 +84,22 @@ this file is the "moved here" summary the design doc pointed at.
   as a bare, unsigned request-body field, so any signature an admin produced
   to list their tokens could be replayed against `/revoke` with an
   attacker-chosen `tokenId`. `eip712/mcp-token.ts`'s module doc has the full
-  writeup — do not reunify these two types. `handlers/list.ts`'s
-  `parseWalletTreeAuthRequest` / `verifyWalletTreeAuth` are parameterised by
-  the caller's expected `primaryType` and reject any envelope that doesn't
-  match it; that check is what makes the two operations' signatures mutually
-  unusable for each other.
-- **Listing does not burn its EIP-712 nonce; revocation does.** This is
-  intentional and, since the primaryType split above, safe: replaying a
+  writeup — do not reunify these two types. `handlers/auth.ts`'s
+  `parseWalletTreeAuthRequest` / `verifyWalletTreeAuth` (shared by all three
+  of `issue.ts`, `list.ts`, `revoke.ts`) are parameterised by the caller's
+  expected `primaryType` and reject any envelope that doesn't match it; that
+  check is what makes the three operations' signatures mutually unusable for
+  each other.
+- **Listing does not burn its EIP-712 nonce; issuance and revocation do, but
+  at different points in their handler.** Listing's non-burn is intentional
+  and, since the primaryType split above, safe: replaying a
   `McpTokenListRequest` signature within its `expires` window only lets the
   frontend reuse one signature for a settings-page session, and that
-  signature is not a valid `McpTokenRevokeRequest` signature no matter how
-  it's replayed. Revocation burns its nonce because it is a write, same as
-  issuance.
+  signature is not a valid `McpTokenIssueRequest` or `McpTokenRevokeRequest`
+  signature no matter how it's replayed. Issuance and revocation both burn
+  because both are writes, but **not at the same point** — see the two
+  invariants below for why each handler's placement is deliberate, and why
+  they differ from each other.
 - **A revoke request's `tokenId` comes from the verified, signed message,
   never from an unsigned body field.** `handlers/revoke.ts` reads
   `parsed.typedData.message.tokenId` — reintroducing a bare `tokenId` field
@@ -120,15 +132,36 @@ this file is the "moved here" summary the design doc pointed at.
   `@toban/identity`'s `connect.ts` (which persists before burning, for a
   different failure-mode trade-off — read that file's comment too before
   "fixing" one to match the other).
+- **Revocation burns its EIP-712 nonce at the very end — after the hat check
+  and after `revokeToken` — not right after signature verification like
+  issuance.** `handlers/revoke.ts` reads `isAuthNonceUsed` early (an
+  unauthenticated read, harmless) but only calls `markAuthNonceUsed` once the
+  token is actually revoked. This is deliberate, not an inconsistency to
+  "fix" into matching issuance: revocation is idempotent (`revokeToken`
+  no-ops on an already-revoked row), so issuance's problem — several
+  concurrent replays of one captured signature each minting a *distinct*
+  valid token — has no analogue here; two concurrent replays of a revoke
+  both just revoke the same token once, no early burn needed to serialise
+  them. Moving the burn earlier would only add a new bad outcome: a revoke
+  that fails after the burn (hat check, or a transient D1 error before
+  `revokeToken`) would permanently spend the nonce for a token that was
+  never actually revoked, with no way to retry using the same signature.
+  Burning at the end means only a request that actually completed the
+  revoke consumes its nonce.
 - **`lookupDiscordIds` (`tools.ts`) chunks its reverse-lookup batches at
-  `IDENTITY_LOOKUP_CHUNK_SIZE` (200), mirroring identity's own
-  `MAX_WALLETS_PER_BATCH`.** `toban_workspace_members` alone can pass up to
-  300 addresses at `MAX_LIMIT`; a single oversized call gets a 400 from
-  identity, which used to collapse into an empty map for every wallet in
-  the call — every `*DiscordUserId` came back `null`, indistinguishable
-  from "nobody linked a wallet". A chunk that still fails after chunking
-  sets `identityLookupDegraded: true` on the tool's JSON response instead
-  of letting its wallets' `null`s look like confirmed non-links.
+  `IDENTITY_LOOKUP_CHUNK_SIZE`, set to `@toban/identity`'s own
+  `MAX_WALLETS_PER_BATCH` (imported, not re-declared as a local `200`).**
+  `toban_workspace_members` alone can pass up to 300 addresses at
+  `MAX_LIMIT`; a single oversized call gets a 400 from identity, which used
+  to collapse into an empty map for every wallet in the call — every
+  `*DiscordUserId` came back `null`, indistinguishable from "nobody linked a
+  wallet". A chunk that still fails after chunking sets
+  `identityLookupDegraded: true` on the tool's JSON response instead of
+  letting its wallets' `null`s look like confirmed non-links. Importing the
+  constant (rather than a second literal) is what makes a future change to
+  identity's own limit fail this package's typecheck/build instead of
+  silently drifting back into the same "every wallet looks unlinked" failure
+  mode the chunking fixed.
 - **`verifyMcpTokenAuthViaRpc` (`verify.ts`) never trusts the caller-supplied
   `typedData.types` / `typedData.domain` for the actual verification** —
   it rebuilds the domain via `buildMcpTokenDomain(chainId)` and picks the
@@ -154,6 +187,7 @@ src/
   index.ts             POST /mcp — auth -> JSON-RPC -> tools
   env.ts               Env / bindings type
   auth.ts              tbn2 bearer tokens: stateless MAC + registry lookup
+  http.ts              the one json()/errorResponse() pair for this package
   protocol.ts          minimal MCP over JSON-RPC 2.0 (moved from discord-bot,
                        unchanged — it was already Discord-independent)
   tools.ts             tool definitions + read handlers + propose forwarders
@@ -170,11 +204,14 @@ src/
                        frontend can import it via the `@toban/mcp/eip712`
                        subpath (mirrors `@toban/identity/eip712` exactly)
   handlers/
+    auth.ts            shared "wallet speaks for treeId" auth: envelope
+                       parsing (`parseWalletTreeAuthRequest`) and the
+                       primaryType-parameterised verify flow
+                       (`verifyWalletTreeAuth`) used by all three of
+                       issue.ts/list.ts/revoke.ts (see CLAUDE.md invariants).
+                       Not the same thing as the top-level `auth.ts` above.
     issue.ts           POST /api/mcp-tokens        — issue a new token
-    list.ts            POST /api/mcp-tokens/list   — list a workspace's tokens;
-                       also owns `parseWalletTreeAuthRequest` /
-                       `verifyWalletTreeAuth`, the primaryType-parameterised
-                       auth shared with revoke.ts (see CLAUDE.md invariants)
+    list.ts            POST /api/mcp-tokens/list   — list a workspace's tokens
     revoke.ts          POST /api/mcp-tokens/revoke — revoke one token, whose
                        tokenId comes from the signed McpTokenRevokeRequest
                        message, never a bare body field

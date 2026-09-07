@@ -1,10 +1,10 @@
 import type { Address } from "viem";
 import { describe, expect, it } from "vitest";
+import { decodePayload } from "../src/confirm/confirm";
+import type { DiscordRest } from "../src/confirm/discord-rest";
 import type { Env } from "../src/env";
 import type { IdentityClient, PlatformLink } from "../src/identity";
 import { handleInternalPropose } from "../src/internal/propose";
-import { decodePayload } from "../src/mcp/confirm";
-import type { DiscordRest } from "../src/mcp/discord-rest";
 
 const GUILD = "111111111111111111";
 const OTHER_GUILD = "222222222222222222";

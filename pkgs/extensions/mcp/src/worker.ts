@@ -18,6 +18,7 @@ import type { Env } from "./env.js";
 import { handleIssueToken } from "./handlers/issue.js";
 import { handleListTokens } from "./handlers/list.js";
 import { handleRevokeToken } from "./handlers/revoke.js";
+import { json } from "./http.js";
 import { handleMcpRequest } from "./index.js";
 
 function corsHeaders(origin: string | null): HeadersInit {
@@ -53,8 +54,11 @@ export default {
     }
 
     const url = new URL(request.url);
-    const db = drizzle(env.DB);
 
+    // Built inline, per route, rather than once up front: `/mcp` builds its
+    // own instance inside `index.ts`, and `/health` / the 404 branch never
+    // touch D1 at all — a single shared instance built unconditionally here
+    // would be wasted work on every one of those requests.
     try {
       let response: Response;
       switch (url.pathname) {
@@ -62,37 +66,37 @@ export default {
           response = await handleMcpRequest(env, request);
           break;
         case "/api/mcp-tokens":
-          response = await handleIssueToken(request, { db, env });
-          break;
-        case "/api/mcp-tokens/list":
-          response = await handleListTokens(request, { db, env });
-          break;
-        case "/api/mcp-tokens/revoke":
-          response = await handleRevokeToken(request, { db, env });
-          break;
-        case "/health":
-          response = new Response(JSON.stringify({ ok: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
+          response = await handleIssueToken(request, {
+            db: drizzle(env.DB),
+            env,
           });
           break;
+        case "/api/mcp-tokens/list":
+          response = await handleListTokens(request, {
+            db: drizzle(env.DB),
+            env,
+          });
+          break;
+        case "/api/mcp-tokens/revoke":
+          response = await handleRevokeToken(request, {
+            db: drizzle(env.DB),
+            env,
+          });
+          break;
+        case "/health":
+          response = json(200, { ok: true });
+          break;
         default:
-          response = new Response(
-            JSON.stringify({ error: "not_found", details: url.pathname }),
-            { status: 404, headers: { "content-type": "application/json" } },
-          );
+          response = json(404, { error: "not_found", details: url.pathname });
       }
       return withCors(response, origin);
     } catch (err) {
       console.error("mcp worker error:", err);
       return withCors(
-        new Response(
-          JSON.stringify({
-            error: "internal_error",
-            details: err instanceof Error ? err.message : String(err),
-          }),
-          { status: 500, headers: { "content-type": "application/json" } },
-        ),
+        json(500, {
+          error: "internal_error",
+          details: err instanceof Error ? err.message : String(err),
+        }),
         origin,
       );
     }

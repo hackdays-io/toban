@@ -1,6 +1,7 @@
 /**
- * Tests for what's left of `src/mcp/` in this package after the MCP
- * extraction (`docs/mcp-extraction.md`): `confirm.ts` and `button.ts`.
+ * Tests for what's left of `src/confirm/` (formerly `src/mcp/`) in this
+ * package after the MCP extraction (`docs/mcp-extraction.md`): `confirm.ts`
+ * and `button.ts`.
  *
  * Everything else that used to be tested here (guild-scoped token auth, the
  * JSON-RPC protocol layer, the tool surface, the Goldsky read queries) moved
@@ -12,20 +13,20 @@
 import type { APIMessageComponentInteraction } from "discord-api-types/v10";
 import type { Address, Hex } from "viem";
 import { describe, expect, it, vi } from "vitest";
-import type { Env } from "../src/env";
 import {
   handleConfirmButton,
   isConfirmComponent,
   readPayload,
-} from "../src/mcp/button";
+} from "../src/confirm/button";
 import {
   CANCEL_CUSTOM_ID,
   CONFIRM_CUSTOM_ID,
   buildConfirmMessage,
   decodePayload,
   encodePayload,
-} from "../src/mcp/confirm";
-import type { DiscordRest } from "../src/mcp/discord-rest";
+} from "../src/confirm/confirm";
+import type { DiscordRest } from "../src/confirm/discord-rest";
+import type { Env } from "../src/env";
 
 const GUILD = "111111111111111111";
 const OTHER_GUILD = "222222222222222222";

@@ -229,38 +229,64 @@ export interface ThanksTotals {
   balanceUpdatedAt: string | null;
 }
 
+export interface MemberStatusGoldskyData {
+  /** Null when the tree isn't indexed yet — `toban_member_status` reports
+   *  that as a hard failure, since it cannot compute a mint allowance
+   *  without a token address. */
+  thanksTokenAddress: Hex | null;
+  /** Raw FractionToken rows for `wallet` in `treeId` — the Toban-subgraph
+   *  half of the role context `chain.ts`'s `mergeRelatedRoles` needs. The
+   *  Hats-subgraph half comes from `fetchWornHats`, a genuinely different
+   *  endpoint left as its own request. */
+  fractionRows: Array<{ hatId: string; wearer: string }>;
+  totals: ThanksTotals;
+}
+
 /**
- * Received balance + lifetime sent total for one wallet in one workspace.
- *
- * Distinct from the on-chain `mintAllowance` / `mintableAmount` reads in
- * `toban_member_status`: those are *capacity to send*, these are *history*.
- * Both are needed to answer "how much do I have / how much can I give".
+ * Everything `toban_member_status` needs from Goldsky, in **one** aliased
+ * query instead of three separate round-trips that all hit the same
+ * endpoint (workspace lookup, FractionToken balances, thanks totals) —
+ * this tool runs before every proposed send, so it is a hot path. Distinct
+ * from the on-chain `mintAllowance` / `mintableAmount` reads the caller
+ * makes afterwards: those are *capacity to send*, `totals` here is
+ * *history*. Both are needed to answer "how much do I have / how much can
+ * I give".
  */
-export async function resolveThanksTotals(
+export async function resolveMemberStatusGoldskyData(
   env: Env,
   treeId: string,
   wallet: Address,
   fetchImpl: typeof fetch = fetch,
-): Promise<ThanksTotals> {
+): Promise<MemberStatusGoldskyData> {
   const owner = wallet.toLowerCase();
   const data = await goldsky<{
+    workspace?: { thanksToken?: { id?: string } | null } | null;
+    balanceOfFractionTokens?: Array<{ hatId: string; wearer: string }>;
     balanceOfThanksTokens?: Array<{ balance: string; updatedAt: string }>;
     amountOfMintThanksTokens?: Array<{ amount: string }>;
   }>(
     env,
-    "query($ws: ID!, $owner: String!) {" +
+    "query($id: ID!, $ws: String!, $owner: String!) {" +
+      " workspace(id: $id) { thanksToken { id } }" +
+      " balanceOfFractionTokens(where: {owner: $owner, workspaceId: $ws}, first: 200) {" +
+      " hatId wearer }" +
       " balanceOfThanksTokens(where: {workspaceId: $ws, owner: $owner}, first: 1) { balance updatedAt }" +
       " amountOfMintThanksTokens(where: {workspaceId: $ws, sender: $owner}, first: 1) { amount } }",
-    { ws: treeId, owner },
+    { id: treeId, ws: treeId, owner },
     fetchImpl,
-    "subgraph thanks totals lookup",
+    "subgraph member status lookup",
   );
   const bal = data.balanceOfThanksTokens?.[0];
   const sent = data.amountOfMintThanksTokens?.[0];
+  const thanksTokenId = data.workspace?.thanksToken?.id;
   return {
-    balanceThx: formatEther(BigInt(bal?.balance ?? "0")),
-    sentTotalThx: formatEther(BigInt(sent?.amount ?? "0")),
-    balanceUpdatedAt: toIso(bal?.updatedAt),
+    thanksTokenAddress: thanksTokenId ? (thanksTokenId as Hex) : null,
+    fractionRows: data.balanceOfFractionTokens ?? [],
+    totals: {
+      balanceThx: formatEther(BigInt(bal?.balance ?? "0")),
+      sentTotalThx: formatEther(BigInt(sent?.amount ?? "0")),
+      balanceUpdatedAt: toIso(bal?.updatedAt),
+    },
   };
 }
 
@@ -575,10 +601,12 @@ export interface WorkspaceRoles {
  * Who holds which role shares in this workspace.
  *
  * Only the Toban subgraph is read here — deliberately not the Hats subgraph.
- * `resolveRelatedRoles` in `chain.ts` merges both because a freshly-minted hat
- * may not be indexed here yet and `mintableAmount` must not under-count. This
- * is a listing, not a cap calculation, so a role that appears a block late is
- * acceptable and the second endpoint is not worth the latency.
+ * `chain.ts`'s `mergeRelatedRoles` (fed by `resolveMemberStatusGoldskyData`'s
+ * FractionToken rows and `fetchWornHats`'s Hats-subgraph read) merges both
+ * because a freshly-minted hat may not be indexed here yet and
+ * `mintableAmount` must not under-count. This is a listing, not a cap
+ * calculation, so a role that appears a block late is acceptable and the
+ * second endpoint is not worth the latency.
  */
 export async function resolveWorkspaceRoles(
   env: Env,

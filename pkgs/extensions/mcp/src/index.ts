@@ -11,19 +11,13 @@
 import { drizzle } from "drizzle-orm/d1";
 import { authenticate } from "./auth.js";
 import type { Env } from "./env.js";
+import { json } from "./http.js";
 import { handleRpc } from "./protocol.js";
 import { getToken } from "./registry.js";
 import { TOOL_DEFINITIONS, callTool } from "./tools.js";
 
 const SERVER_NAME = "toban";
 const SERVER_VERSION = "0.2.0";
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
 
 export async function handleMcpRequest(
   env: Env,
@@ -40,21 +34,18 @@ export async function handleMcpRequest(
     },
   );
   if (!auth.ok) {
-    return json({ error: auth.message }, auth.status);
+    return json(auth.status, { error: auth.message });
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return json(
-      {
-        jsonrpc: "2.0",
-        id: null,
-        error: { code: -32700, message: "parse error" },
-      },
-      400,
-    );
+    return json(400, {
+      jsonrpc: "2.0",
+      id: null,
+      error: { code: -32700, message: "parse error" },
+    });
   }
 
   const deps = {
@@ -71,9 +62,11 @@ export async function handleMcpRequest(
     const answers = results.filter((r): r is object => r !== null);
     return answers.length === 0
       ? new Response(null, { status: 202 })
-      : json(answers);
+      : json(200, answers);
   }
 
   const answer = await handleRpc(body, deps);
-  return answer === null ? new Response(null, { status: 202 }) : json(answer);
+  return answer === null
+    ? new Response(null, { status: 202 })
+    : json(200, answer);
 }

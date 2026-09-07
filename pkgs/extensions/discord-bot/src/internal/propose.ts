@@ -5,8 +5,9 @@
  * This is the body of what used to be `proposeTool` in this package's own
  * `src/mcp/tools.ts` (now `@toban/mcp`'s `src/tools.ts`), moved here so that
  * `ConfirmPayload` — and everything
- * that touches it (`buildConfirmMessage`, `discord-rest`) — stays in one
- * package. `@toban/mcp`'s propose tools are thin forwarders that build an
+ * that touches it (`buildConfirmMessage`, `discord-rest`, now under
+ * `src/confirm/`) — stays in one package. `@toban/mcp`'s propose tools are
+ * thin forwarders that build an
  * `InternalProposeRequest` and call this endpoint over the `CONFIRM` service
  * binding; they never see a `ConfirmPayload`.
  *
@@ -34,10 +35,13 @@
  * secrets table — see this package's CLAUDE.md for why it was added.)
  */
 import { isAddress, parseEther } from "viem";
+import { buildConfirmMessage } from "../confirm/confirm.js";
+import {
+  type DiscordRest,
+  createDiscordRest,
+} from "../confirm/discord-rest.js";
 import type { Env } from "../env.js";
 import { type IdentityClient, createIdentityClient } from "../identity.js";
-import { buildConfirmMessage } from "../mcp/confirm.js";
-import { type DiscordRest, createDiscordRest } from "../mcp/discord-rest.js";
 
 export type InternalProposeRequest =
   | {

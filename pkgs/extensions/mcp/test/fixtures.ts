@@ -22,9 +22,12 @@ import {
   type McpTokenRevokeTypedData,
   buildMcpTokenDomain,
 } from "../src/eip712/mcp-token.js";
-import type { HatChecker } from "../src/handlers/issue.js";
-import type { IssueVerifier } from "../src/handlers/issue.js";
-import type { ListVerifier, RevokeVerifier } from "../src/handlers/list.js";
+import type {
+  HatChecker,
+  IssueVerifier,
+  ListVerifier,
+  RevokeVerifier,
+} from "../src/handlers/auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = join(__filename, "..");

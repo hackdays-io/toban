@@ -209,6 +209,9 @@ importers:
 
   pkgs/extensions/mcp:
     dependencies:
+      '@toban/identity':
+        specifier: workspace:*
+        version: link:../identity
       discord-api-types:
         specifier: ^0.37.103
         version: 0.37.120

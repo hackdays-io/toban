@@ -36,6 +36,7 @@ import type {
   InternalProposeRequest,
   InternalProposeResponse,
 } from "@toban/discord-bot/internal-propose";
+import { MAX_WALLETS_PER_BATCH } from "@toban/identity";
 import {
   type Address,
   type Hex,
@@ -46,10 +47,10 @@ import {
 import type { AuthResult } from "./auth.js";
 import {
   THANKS_TOKEN_ABI,
+  fetchWornHats,
   getPublicClient,
+  mergeRelatedRoles,
   resolveMembershipHatId,
-  resolveRelatedRoles,
-  resolveThanksTokenAddress,
 } from "./chain.js";
 import type { Env } from "./env.js";
 import {
@@ -65,11 +66,11 @@ import {
   QUEST_STATUSES,
   type QuestStatus,
   clampLimit,
+  resolveMemberStatusGoldskyData,
   resolveQuestDetail,
   resolveQuests,
   resolveRewardDistributions,
   resolveThanksHistory,
-  resolveThanksTotals,
   resolveWorkspaceOverview,
   resolveWorkspaceRoles,
   unitsFor,
@@ -87,7 +88,6 @@ export interface McpToolDeps {
    * never needs a real service binding.
    */
   proposeFetch?: typeof fetch;
-  resolveTokenAddress?: (treeId: string) => Promise<Hex | null>;
 }
 
 const snowflake = { type: "string", pattern: "^\\d+$" } as const;
@@ -340,6 +340,47 @@ function resolveTreeId(
 }
 
 /**
+ * `resolveTreeId(args, home)`, already turned into a tool failure on a bad
+ * shape. Every read tool that accepts a `treeId` argument repeated the same
+ * two lines (`resolveTreeId` + null check) identically; factored here so
+ * the refusal message only needs to change in one place. Callers narrow
+ * with `typeof treeId !== "string"` and return it directly on failure.
+ */
+function resolveTreeIdArg(
+  args: Record<string, unknown>,
+  home: string,
+): string | ToolResult {
+  const treeId = resolveTreeId(args, home);
+  return treeId ?? fail("treeId の形式が正しくありません。");
+}
+
+/**
+ * The identity boundary that stays a wall even though reads may cross
+ * workspaces (design doc §6): resolving a `discordUserId` *argument* into a
+ * wallet only ever runs for the token's home treeId, because identity's
+ * tables (unlike the subgraph) are not public — resolving them
+ * cross-workspace would let a token from one community build a
+ * Discord-id-to-wallet directory for another. Every read tool that accepts
+ * a `discordUserId` argument must route it through this guard rather than
+ * re-deriving the check, so the boundary lives in one choke point instead
+ * of one `if` per tool. The reverse direction (wallet -> Discord id) has its
+ * own choke point: `lookupDiscordIds` below takes `treeId`/`home` directly
+ * and refuses internally.
+ */
+function guardDiscordUserIdArg(
+  discordUserId: string | undefined,
+  treeId: string,
+  home: string,
+): ToolResult | null {
+  if (discordUserId && treeId !== home) {
+    return fail(
+      "他のワークスペースを指定した場合、discordUserId は解決できません。",
+    );
+  }
+  return null;
+}
+
+/**
  * Validate an enum-array argument.
  *
  * Three outcomes, kept distinct on purpose: `undefined` (not supplied — the
@@ -372,34 +413,44 @@ function withQuestUrl<T extends { questId: string }>(
 }
 
 /**
- * Identity's own `MAX_WALLETS_PER_BATCH`
- * (`pkgs/extensions/identity/src/handlers/lookup-by-wallet.ts`) — a batch
- * above this is rejected with a 400 for the *entire* request, not just the
- * overflow. Kept as a local literal rather than importing identity's
- * source, since this package only ever talks to identity over HTTP
- * (`docs/mcp-extraction.md` §6's boundary rule); a value drift between the
- * two just costs an extra round trip, never a broken request.
+ * Identity's own per-request cap on a reverse-lookup batch — a batch above
+ * this is rejected with a 400 for the *entire* request, not just the
+ * overflow. Imported from `@toban/identity`'s top-level export (not its
+ * `handlers/lookup-by-wallet.ts` source — this package still only ever
+ * *talks* to identity over HTTP, per `docs/mcp-extraction.md` §6's boundary
+ * rule) rather than re-declared as a local literal: a drifted local copy
+ * would make reverse lookups fail indistinguishably from "nobody linked a
+ * wallet" (see `lookupDiscordIds` below) instead of failing loudly at
+ * compile time when identity's own limit changes.
  */
-const IDENTITY_LOOKUP_CHUNK_SIZE = 200;
+const IDENTITY_LOOKUP_CHUNK_SIZE = MAX_WALLETS_PER_BATCH;
 
 /** Result of a (possibly chunked) reverse lookup — see `lookupDiscordIds`. */
 type DiscordIdLookupResult = {
   byWallet: Map<string, string | null>;
-  /** True if at least one chunk failed. A `null` for a wallet whose chunk
-   *  failed is then indistinguishable, on its own, from "confirmed no
-   *  binding" — callers that resolve this into a tool response should
-   *  surface `degraded` so an agent doesn't report "workspace-wide
-   *  unlinked" off of what was actually an identity-worker outage. */
-  degraded: boolean;
+  /** Spread directly into a tool's JSON response. Empty unless at least one
+   *  chunk failed, in which case it carries `identityLookupDegraded: true`.
+   *  Returned as a ready-to-spread fragment — not a bare `degraded` boolean
+   *  — so a caller can't build the response without surfacing a partial
+   *  lookup failure: a `null` for a wallet whose chunk failed is otherwise
+   *  indistinguishable from "confirmed no binding", and without this flag
+   *  an agent could report "workspace-wide unlinked" off of what was
+   *  actually an identity-worker outage. */
+  responseFragment: { identityLookupDegraded?: true };
 };
 
 /**
  * Reverse-resolve wallets to Discord user ids so a reading tool can hand the
  * agent something mentionable. The subgraph only knows addresses.
  *
- * **Callers must only invoke this when `treeId === home`** (see §6 of the
- * design doc) — it is the identity boundary that stays a wall even though
- * subgraph reads do not. Every call site below is gated on that check.
+ * **Only ever resolves when `treeId === home`** (design doc §6) — this is
+ * the identity boundary that stays a wall even though subgraph reads do
+ * not. That check used to live at each call site (three near-identical
+ * `treeId === home ? await lookupDiscordIds(...) : {...}` ternaries);
+ * folding it in here means a future read tool gets the boundary just by
+ * calling this function, instead of by remembering to re-derive it. See
+ * `guardDiscordUserIdArg` above for the forward-direction (argument)
+ * counterpart of this same rule.
  *
  * A wallet with no binding maps to `null` — that is normal, not an error,
  * and must not fail the whole tool call: an unlinked recipient still
@@ -419,10 +470,16 @@ type DiscordIdLookupResult = {
 async function lookupDiscordIds(
   identity: IdentityClient,
   wallets: readonly string[],
+  treeId: string,
+  home: string,
 ): Promise<DiscordIdLookupResult> {
+  if (treeId !== home) {
+    return { byWallet: new Map(), responseFragment: {} };
+  }
+
   const unique = Array.from(new Set(wallets.map((w) => w.toLowerCase())));
   const byWallet = new Map<string, string | null>();
-  if (unique.length === 0) return { byWallet, degraded: false };
+  if (unique.length === 0) return { byWallet, responseFragment: {} };
 
   let degraded = false;
   for (let i = 0; i < unique.length; i += IDENTITY_LOOKUP_CHUNK_SIZE) {
@@ -457,7 +514,10 @@ async function lookupDiscordIds(
       if (!byWallet.has(wallet)) byWallet.set(wallet, null);
     }
   }
-  return { byWallet, degraded };
+  return {
+    byWallet,
+    responseFragment: degraded ? { identityLookupDegraded: true } : {},
+  };
 }
 
 /**
@@ -465,8 +525,10 @@ async function lookupDiscordIds(
  *
  * `auth.treeId` is the token's home workspace, from `auth.ts` — never from
  * `args`. Read tools may look at another workspace via `args.treeId`, but
- * identity resolution (`discordUserId` args and reverse lookups) only ever
- * runs when the effective treeId equals the home.
+ * identity resolution only ever runs when the effective treeId equals the
+ * home — enforced structurally by `guardDiscordUserIdArg` (forward:
+ * `discordUserId` argument resolution) and `lookupDiscordIds` (reverse:
+ * wallet -> Discord id), not by a per-call-site convention.
  */
 export async function callTool(
   env: Env,
@@ -502,15 +564,12 @@ export async function callTool(
     }
 
     case "toban_member_status": {
-      const treeId = resolveTreeId(args, home);
-      if (treeId === null) return fail("treeId の形式が正しくありません。");
+      const treeId = resolveTreeIdArg(args, home);
+      if (typeof treeId !== "string") return treeId;
       const userId = str(args, "discordUserId");
       if (!userId) return fail("discordUserId は必須です。");
-      if (treeId !== home) {
-        return fail(
-          "他のワークスペースを指定した場合、discordUserId は解決できません。",
-        );
-      }
+      const scopeError = guardDiscordUserIdArg(userId, treeId, home);
+      if (scopeError) return scopeError;
       const record = await identity.getIdentity("discord", userId);
       if (!record) {
         return ok(
@@ -521,29 +580,35 @@ export async function callTool(
         );
       }
       const owner = record.wallet as Address;
-      const resolveToken =
-        deps.resolveTokenAddress ??
-        ((tid: string) => resolveThanksTokenAddress(env, tid));
-      const [token, relatedRoles, totals] = await Promise.all([
-        resolveToken(treeId),
-        resolveRelatedRoles(env, owner, treeId, fetchImpl),
-        resolveThanksTotals(env, treeId, owner, fetchImpl),
+      // One aliased Goldsky query (workspace + FractionToken balances +
+      // thanks totals) instead of three separate round-trips to the same
+      // endpoint, plus the Hats subgraph — a genuinely different endpoint —
+      // concurrently. This tool runs before every proposed send, so it is a
+      // hot path: 4 concurrent subrequests become 2.
+      const [memberData, wornHats] = await Promise.all([
+        resolveMemberStatusGoldskyData(env, treeId, owner, fetchImpl),
+        fetchWornHats(env, owner, treeId, fetchImpl),
       ]);
-      if (!token) {
+      if (!memberData.thanksTokenAddress) {
         return fail(
           `ワークスペースの ThanksToken を取得できませんでした(tree ${treeId})。`,
         );
       }
+      const relatedRoles = mergeRelatedRoles(
+        memberData.fractionRows,
+        wornHats,
+        owner,
+      );
       const client = getPublicClient(env);
       const [allowance, mintable] = await Promise.all([
         client.readContract({
-          address: token,
+          address: memberData.thanksTokenAddress,
           abi: THANKS_TOKEN_ABI,
           functionName: "mintAllowance",
           args: [owner, env.TURNKEY_BOT_SIGNER_ADDRESS as Hex],
         }),
         client.readContract({
-          address: token,
+          address: memberData.thanksTokenAddress,
           abi: THANKS_TOKEN_ABI,
           functionName: "mintableAmount",
           args: [owner, relatedRoles],
@@ -553,8 +618,8 @@ export async function callTool(
         JSON.stringify({
           linked: true,
           wallet: owner,
-          thxBalance: totals.balanceThx,
-          thxSentTotal: totals.sentTotalThx,
+          thxBalance: memberData.totals.balanceThx,
+          thxSentTotal: memberData.totals.sentTotalThx,
           botAllowanceThx: formatEther(allowance as bigint),
           mintableThx: formatEther(mintable as bigint),
           roles: relatedRoles.map((r) => ({
@@ -572,8 +637,8 @@ export async function callTool(
     }
 
     case "toban_open_quests": {
-      const treeId = resolveTreeId(args, home);
-      if (treeId === null) return fail("treeId の形式が正しくありません。");
+      const treeId = resolveTreeIdArg(args, home);
+      if (typeof treeId !== "string") return treeId;
       const statuses = parseStatuses(args.status, QUEST_STATUSES);
       if (statuses === null) {
         return fail(
@@ -582,6 +647,8 @@ export async function callTool(
       }
       const limit = clampLimit(args.limit, 20);
       const userId = str(args, "discordUserId");
+      const scopeError = guardDiscordUserIdArg(userId, treeId, home);
+      if (scopeError) return scopeError;
 
       if (!userId) {
         const quests = await resolveQuests(
@@ -598,11 +665,6 @@ export async function callTool(
         );
       }
 
-      if (treeId !== home) {
-        return fail(
-          "他のワークスペースを指定した場合、discordUserId は解決できません。",
-        );
-      }
       if (statuses && (statuses.length !== 1 || statuses[0] !== "Open")) {
         return fail(
           "discordUserId を指定した場合、完了報告できるのは Open のクエストだけなので status は指定できません。",
@@ -639,8 +701,8 @@ export async function callTool(
     }
 
     case "toban_quest_detail": {
-      const treeId = resolveTreeId(args, home);
-      if (treeId === null) return fail("treeId の形式が正しくありません。");
+      const treeId = resolveTreeIdArg(args, home);
+      if (typeof treeId !== "string") return treeId;
       const questId = str(args, "questId");
       if (!questId || !/^\d+$/.test(questId)) {
         return fail("questId には 10 進数の文字列を指定してください。");
@@ -660,8 +722,8 @@ export async function callTool(
     }
 
     case "toban_thx_history": {
-      const treeId = resolveTreeId(args, home);
-      if (treeId === null) return fail("treeId の形式が正しくありません。");
+      const treeId = resolveTreeIdArg(args, home);
+      if (typeof treeId !== "string") return treeId;
       const limit = clampLimit(args.limit, 20);
       const direction = str(args, "direction") ?? "any";
       if (!["sent", "received", "any"].includes(direction)) {
@@ -684,11 +746,8 @@ export async function callTool(
           : undefined;
 
       const userId = str(args, "discordUserId");
-      if (userId && treeId !== home) {
-        return fail(
-          "他のワークスペースを指定した場合、discordUserId は解決できません。",
-        );
-      }
+      const scopeError = guardDiscordUserIdArg(userId, treeId, home);
+      if (scopeError) return scopeError;
       let wallet: Address | undefined;
       if (userId) {
         const record = await identity.getIdentity("discord", userId);
@@ -715,14 +774,14 @@ export async function callTool(
         },
         fetchImpl,
       );
-      // Reverse lookup is the identity boundary (§6) — only for home.
-      const { byWallet, degraded } =
-        treeId === home
-          ? await lookupDiscordIds(
-              identity,
-              mints.flatMap((m) => [m.from, m.to]),
-            )
-          : { byWallet: new Map<string, string | null>(), degraded: false };
+      // Reverse lookup is the identity boundary (§6) — `lookupDiscordIds`
+      // refuses internally unless `treeId === home`.
+      const { byWallet, responseFragment } = await lookupDiscordIds(
+        identity,
+        mints.flatMap((m) => [m.from, m.to]),
+        treeId,
+        home,
+      );
       return ok(
         JSON.stringify({
           mints: mints.map((m) => ({
@@ -731,26 +790,25 @@ export async function callTool(
             toDiscordUserId: byWallet.get(m.to.toLowerCase()) ?? null,
           })),
           units: unitsFor({ amountThx: "thx" }),
-          // Only present when true: a partial identity-lookup failure means
-          // some `*DiscordUserId: null` above may actually be "unknown", not
-          // "confirmed unlinked" — see `lookupDiscordIds`.
-          ...(degraded ? { identityLookupDegraded: true } : {}),
+          ...responseFragment,
         }),
       );
     }
 
     case "toban_workspace_members": {
-      const treeId = resolveTreeId(args, home);
-      if (treeId === null) return fail("treeId の形式が正しくありません。");
+      const treeId = resolveTreeIdArg(args, home);
+      if (typeof treeId !== "string") return treeId;
       const limit = clampLimit(args.limit, 50);
       const roles = await resolveWorkspaceRoles(env, treeId, limit, fetchImpl);
-      const { byWallet, degraded } =
-        treeId === home
-          ? await lookupDiscordIds(identity, [
-              ...roles.holders.flatMap((h) => [h.owner, h.wearer]),
-              ...roles.escrowed.map((e) => e.wearer),
-            ])
-          : { byWallet: new Map<string, string | null>(), degraded: false };
+      const { byWallet, responseFragment } = await lookupDiscordIds(
+        identity,
+        [
+          ...roles.holders.flatMap((h) => [h.owner, h.wearer]),
+          ...roles.escrowed.map((e) => e.wearer),
+        ],
+        treeId,
+        home,
+      );
       return ok(
         JSON.stringify({
           holders: roles.holders.map((h) => ({
@@ -763,15 +821,14 @@ export async function callTool(
             wearerDiscordUserId: byWallet.get(e.wearer.toLowerCase()) ?? null,
           })),
           units: unitsFor({ shares: "shares" }),
-          // Only present when true — see `toban_thx_history` above.
-          ...(degraded ? { identityLookupDegraded: true } : {}),
+          ...responseFragment,
         }),
       );
     }
 
     case "toban_reward_distributions": {
-      const treeId = resolveTreeId(args, home);
-      if (treeId === null) return fail("treeId の形式が正しくありません。");
+      const treeId = resolveTreeIdArg(args, home);
+      if (typeof treeId !== "string") return treeId;
       const statuses = parseStatuses(args.status, DISTRIBUTOR_STATUSES);
       if (statuses === null) {
         return fail(

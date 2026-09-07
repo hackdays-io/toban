@@ -4,21 +4,6 @@ import {
   useQueryClient,
   useQuery as useTanstackQuery,
 } from "@tanstack/react-query";
-// EIP-712 McpTokenIssueRequest/McpTokenRevokeRequest/McpTokenListRequest
-// boundary contract — imported from `@toban/mcp` (mirrors
-// `@toban/identity/eip712`, see connect.discord.tsx) rather than redeclared
-// here so the frontend and the MCP Worker can never silently desync on
-// field order / domain version.
-import {
-  MCP_TOKEN_DOMAIN_NAME,
-  MCP_TOKEN_DOMAIN_VERSION,
-  MCP_TOKEN_ISSUE_PRIMARY_TYPE,
-  MCP_TOKEN_ISSUE_TYPES,
-  MCP_TOKEN_LIST_PRIMARY_TYPE,
-  MCP_TOKEN_LIST_TYPES,
-  MCP_TOKEN_REVOKE_PRIMARY_TYPE,
-  MCP_TOKEN_REVOKE_TYPES,
-} from "@toban/mcp/eip712";
 import axios from "axios";
 import dayjs from "dayjs";
 import { hatsContractBaseConfig } from "hooks/useContracts";
@@ -57,11 +42,16 @@ import { Textarea } from "~/components/ui/textarea";
 import { Typography } from "~/components/ui/typography";
 import { withBigIntJSON } from "~/lib/bigint-json";
 import {
+  type IssuedMcpToken,
   type McpTokenListAuth,
   type McpTokenListItem,
+  buildMcpTokenIssueTypedData,
   buildMcpTokenListTypedData,
+  buildMcpTokenRevokeTypedData,
   fetchMcpTokenList,
   isListAuthUsable,
+  postMcpTokenIssue,
+  postMcpTokenRevoke,
 } from "~/lib/mcp-tokens";
 
 interface BasicInfoSectionProps {
@@ -426,14 +416,6 @@ const ExternalIntegrationSection: FC<ExternalIntegrationSectionProps> = ({
   );
 };
 
-type IssuedMcpToken = {
-  token: string;
-  tokenId: string;
-  treeId: string;
-  label: string;
-  createdAt: number;
-};
-
 const mcpTokensQueryKey = (treeId: string) => ["mcp-tokens", treeId] as const;
 
 // How long a `McpTokenListRequest` signature stays reusable before the
@@ -445,20 +427,11 @@ const mcpTokensQueryKey = (treeId: string) => ["mcp-tokens", treeId] as const;
 // not holding a signature indefinitely if the tab is left open.
 const LIST_AUTH_TTL_SECONDS = 60 * 30;
 
-// Shared EIP-712 domain for McpTokenIssueRequest, McpTokenListRequest, and
-// McpTokenRevokeRequest — same construction as `@toban/identity/eip712`'s
-// IdentityBinding domain, under the `@toban/mcp` boundary contract
-// (docs/mcp-extraction.md §5, `pkgs/extensions/mcp/src/eip712/mcp-token.ts`).
-// No `verifyingContract`: like IdentityBinding this is an off-chain
-// attestation the Worker recovers a signer from, not something a contract
-// checks.
-function mcpTokenDomain() {
-  return {
-    name: MCP_TOKEN_DOMAIN_NAME,
-    version: MCP_TOKEN_DOMAIN_VERSION,
-    chainId: currentChain.id,
-  } as const;
-}
+// Short expiry for issue/revoke signatures — each only authenticates the one
+// request (replay/nonce protection), unlike a list signature which is
+// reused for `LIST_AUTH_TTL_SECONDS`, or the token issuance produces, which
+// lives until revoked.
+const WRITE_AUTH_TTL_SECONDS = 60 * 10;
 
 function randomNonce(): Hex {
   const bytes = new Uint8Array(32);
@@ -599,62 +572,36 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
     if (!trimmedLabel) return;
     setIssuing(true);
     try {
-      // Short expiry — this signature only authenticates the one issue
-      // request (replay/nonce protection), unlike the token it produces,
-      // which lives until revoked.
-      const expires = BigInt(Math.floor(Date.now() / 1000) + 10 * 60);
-      const nonce = randomNonce();
-      const domain = mcpTokenDomain();
-      const message = {
+      const typedData = buildMcpTokenIssueTypedData({
         wallet: walletAddress,
         treeId,
         label: trimmedLabel,
-        expires,
-        nonce,
-      };
+        chainId: currentChain.id,
+        nonce: randomNonce(),
+        ttlSeconds: WRITE_AUTH_TTL_SECONDS,
+      });
       const signature = (await withBigIntJSON(() =>
         wallet.signTypedData({
           account: walletAddress,
-          domain,
-          types: MCP_TOKEN_ISSUE_TYPES,
-          primaryType: MCP_TOKEN_ISSUE_PRIMARY_TYPE,
-          message,
+          domain: typedData.domain,
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: typedData.message,
         }),
       )) as Hex;
 
-      const res = await fetch(
-        `${mcpWorkerUrl.replace(/\/$/, "")}/api/mcp-tokens`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            typedData: {
-              domain,
-              types: MCP_TOKEN_ISSUE_TYPES,
-              primaryType: MCP_TOKEN_ISSUE_PRIMARY_TYPE,
-              // uint256 as decimal string — JSON can't carry bigint; the
-              // Worker normalises via BigInt() the same way /api/connect
-              // does (see connect.discord.tsx).
-              message: { ...message, expires: expires.toString() },
-            },
-            signature,
-          }),
-        },
-      );
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        toast.error(
-          body.error
-            ? `発行に失敗しました: ${body.error}`
-            : `発行に失敗しました (${res.status})`,
-        );
+      // Kept as its own try/catch (rather than folding into the outer one)
+      // so a Worker-side rejection reports its own reason
+      // (`postMcpTokenIssue`'s message) instead of being misreported as a
+      // signing failure by the catch below.
+      let issued: IssuedMcpToken;
+      try {
+        issued = await postMcpTokenIssue(mcpWorkerUrl, typedData, signature);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "発行に失敗しました");
         return;
       }
 
-      const issued = (await res.json()) as IssuedMcpToken;
       setJustIssued(issued);
       setCopied(false);
       setLabel("");
@@ -713,59 +660,39 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
     if (!wallet || !walletAddress || !mcpWorkerUrl) return;
     setRevokingId(tokenId);
     try {
-      const expires = BigInt(Math.floor(Date.now() / 1000) + 10 * 60);
-      const nonce = randomNonce();
-      const domain = mcpTokenDomain();
       // `McpTokenRevokeRequest` names the specific `tokenId` being revoked
-      // inside the signed message itself (see the boundary contract's doc
-      // comment for why this field was moved here from a bare, unsigned
-      // request-body field: a signature that doesn't commit to *what* it
-      // authorises revoking can be replayed against any tokenId). The
-      // Worker still separately checks that the named token actually
-      // belongs to `treeId` before honouring the revoke.
-      const message = {
+      // inside the signed message itself (see `~/lib/mcp-tokens`'s
+      // `McpTokenRevokeTypedData` doc comment for why this field was moved
+      // here from a bare, unsigned request-body field: a signature that
+      // doesn't commit to *what* it authorises revoking can be replayed
+      // against any tokenId). The Worker still separately checks that the
+      // named token actually belongs to `treeId` before honouring the
+      // revoke.
+      const typedData = buildMcpTokenRevokeTypedData({
         wallet: walletAddress,
         treeId,
         tokenId,
-        expires,
-        nonce,
-      };
+        chainId: currentChain.id,
+        nonce: randomNonce(),
+        ttlSeconds: WRITE_AUTH_TTL_SECONDS,
+      });
       const signature = (await withBigIntJSON(() =>
         wallet.signTypedData({
           account: walletAddress,
-          domain,
-          types: MCP_TOKEN_REVOKE_TYPES,
-          primaryType: MCP_TOKEN_REVOKE_PRIMARY_TYPE,
-          message,
+          domain: typedData.domain,
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: typedData.message,
         }),
       )) as Hex;
 
-      const res = await fetch(
-        `${mcpWorkerUrl.replace(/\/$/, "")}/api/mcp-tokens/revoke`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            typedData: {
-              domain,
-              types: MCP_TOKEN_REVOKE_TYPES,
-              primaryType: MCP_TOKEN_REVOKE_PRIMARY_TYPE,
-              message: { ...message, expires: expires.toString() },
-            },
-            signature,
-          }),
-        },
-      );
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        toast.error(
-          body.error
-            ? `失効に失敗しました: ${body.error}`
-            : `失効に失敗しました (${res.status})`,
-        );
+      // Own try/catch for the same reason as `handleIssue`: a Worker-side
+      // rejection should report `postMcpTokenRevoke`'s own reason, not be
+      // misreported as a signing failure by the catch below.
+      try {
+        await postMcpTokenRevoke(mcpWorkerUrl, typedData, signature);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "失効に失敗しました");
         return;
       }
 

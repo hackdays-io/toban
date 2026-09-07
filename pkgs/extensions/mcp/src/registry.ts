@@ -5,7 +5,7 @@
  * either a D1-backed database (Workers runtime) or a `better-sqlite3`-backed
  * one (tests), because both implement the same Drizzle SQLite query surface.
  */
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { toBytes } from "viem";
 import type { Hex } from "viem";
@@ -52,8 +52,9 @@ export async function listTokensByTree(
   const rows = await db
     .select()
     .from(mcpTokens)
-    .where(eq(mcpTokens.treeId, treeId));
-  return (rows as McpToken[]).sort((a, b) => b.createdAt - a.createdAt);
+    .where(eq(mcpTokens.treeId, treeId))
+    .orderBy(desc(mcpTokens.createdAt));
+  return rows as McpToken[];
 }
 
 /**

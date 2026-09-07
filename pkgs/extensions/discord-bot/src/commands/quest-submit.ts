@@ -272,7 +272,7 @@ export type QuestSubmitOutcome =
  * The `/quest submit` core: resolve identity + membership, sign, broadcast.
  *
  * Split out from the slash-command handler so the MCP confirm-button path
- * (`src/mcp/`) reaches the chain through **exactly this function** — see the
+ * (`src/confirm/`) reaches the chain through **exactly this function** — see the
  * same note on {@link performThx}. `actorSf` must always come from something
  * Discord signed, never from an agent-supplied value.
  */

@@ -17,7 +17,6 @@
 import {
   http,
   type Address,
-  type Hex,
   type PublicClient,
   createPublicClient,
   defineChain,
@@ -112,30 +111,6 @@ export async function postGraphQL<T>(
 }
 
 /**
- * Resolve a workspace's current ThanksToken address from Goldsky. Each
- * workspace owns its own clone (`BigBang.switchThanksToken`), so this is
- * never hardcoded. Returns `null` when the tree isn't indexed yet.
- */
-export async function resolveThanksTokenAddress(
-  env: Env,
-  treeId: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<Hex | null> {
-  const data = await postGraphQL<{
-    workspace?: { thanksToken?: { id?: string } | null } | null;
-  }>(
-    env.GOLDSKY_GRAPHQL_ENDPOINT,
-    "GOLDSKY_GRAPHQL_ENDPOINT",
-    "query($id: ID!) { workspace(id: $id) { thanksToken { id } } }",
-    { id: treeId },
-    fetchImpl,
-    "subgraph workspace lookup",
-  );
-  const id = data.workspace?.thanksToken?.id;
-  return id ? (id as Hex) : null;
-}
-
-/**
  * The Hats subgraph stores tree IDs as 8-hex-digit, 0x-prefixed strings
  * ("0x00000bba" for decimal 3002). The Toban subgraph uses the decimal
  * form. Identical helper to discord-bot's `treeIdToHatsHex`.
@@ -146,68 +121,58 @@ export function treeIdToHatsHex(treeId: string): string {
 }
 
 /**
- * Resolve the role-context array required by ThanksToken's
- * `mintableAmount`. Mirrors discord-bot's `resolveRelatedRoles` exactly
- * (combines FractionToken balances from the Toban subgraph with hats worn,
- * from the Hats subgraph, because a freshly-minted hat may not be indexed
- * in the former yet).
+ * Hats currently worn by `owner` in `treeId`, from the Hats subgraph — the
+ * second, genuinely-different endpoint `toban_member_status` needs. The
+ * Toban-subgraph half of the same role picture (FractionToken balances)
+ * used to be fetched here too (as `resolveRelatedRoles`), but that was a
+ * separate Goldsky round-trip alongside two others `toban_member_status`
+ * already made to the same endpoint; it now comes from
+ * `resolveMemberStatusGoldskyData` in `queries.ts`, which folds all three
+ * Goldsky reads into one aliased query. Merge the two halves with
+ * `mergeRelatedRoles` below.
  */
-export async function resolveRelatedRoles(
+export async function fetchWornHats(
   env: Env,
   owner: Address,
   treeId: string,
   fetchImpl: typeof fetch = fetch,
-): Promise<readonly { hatId: bigint; wearer: Address }[]> {
-  if (!env.GOLDSKY_GRAPHQL_ENDPOINT) {
-    throw new Error("GOLDSKY_GRAPHQL_ENDPOINT is not configured");
-  }
+): Promise<Array<{ id: string }>> {
   if (!env.HATS_GRAPHQL_ENDPOINT) {
     throw new Error("HATS_GRAPHQL_ENDPOINT is not configured");
   }
   const ownerLower = owner.toLowerCase();
+  const data = await postGraphQL<{
+    tree?: {
+      hats?: Array<{ id: string; wearers: Array<{ id: string }> }>;
+    } | null;
+  }>(
+    env.HATS_GRAPHQL_ENDPOINT,
+    "HATS_GRAPHQL_ENDPOINT",
+    "query($treeId: ID!) {" +
+      " tree(id: $treeId) { hats { id wearers { id } } } }",
+    { treeId: treeIdToHatsHex(treeId) },
+    fetchImpl,
+    "Hats subgraph lookup",
+  );
+  return (data.tree?.hats ?? []).filter((h) =>
+    h.wearers.some((w) => w.id.toLowerCase() === ownerLower),
+  );
+}
 
-  const fetchFractionRows = async (): Promise<
-    Array<{ hatId: string; wearer: string }>
-  > => {
-    const data = await postGraphQL<{
-      balanceOfFractionTokens?: Array<{ hatId: string; wearer: string }>;
-    }>(
-      env.GOLDSKY_GRAPHQL_ENDPOINT,
-      "GOLDSKY_GRAPHQL_ENDPOINT",
-      "query($owner: String!, $workspaceId: String!) {" +
-        " balanceOfFractionTokens(where: {owner: $owner, workspaceId: $workspaceId}, first: 200) {" +
-        " hatId wearer } }",
-      { owner: ownerLower, workspaceId: treeId },
-      fetchImpl,
-      "Toban subgraph relatedRoles lookup",
-    );
-    return data.balanceOfFractionTokens ?? [];
-  };
-
-  const fetchWornHats = async (): Promise<Array<{ id: string }>> => {
-    const data = await postGraphQL<{
-      tree?: {
-        hats?: Array<{ id: string; wearers: Array<{ id: string }> }>;
-      } | null;
-    }>(
-      env.HATS_GRAPHQL_ENDPOINT,
-      "HATS_GRAPHQL_ENDPOINT",
-      "query($treeId: ID!) {" +
-        " tree(id: $treeId) { hats { id wearers { id } } } }",
-      { treeId: treeIdToHatsHex(treeId) },
-      fetchImpl,
-      "Hats subgraph lookup",
-    );
-    return (data.tree?.hats ?? []).filter((h) =>
-      h.wearers.some((w) => w.id.toLowerCase() === ownerLower),
-    );
-  };
-
-  const [fractionRows, myHats] = await Promise.all([
-    fetchFractionRows(),
-    fetchWornHats(),
-  ]);
-
+/**
+ * Merge FractionToken balances (Toban subgraph) with hats currently worn
+ * (Hats subgraph, `fetchWornHats`) into the role-context array ThanksToken's
+ * `mintableAmount` requires. A freshly-minted hat may not be indexed by the
+ * Toban subgraph yet, so `mintableAmount` must not under-count — hence the
+ * merge rather than trusting either source alone. Pure (no I/O), so the
+ * caller can source `fractionRows` from whichever query already has them.
+ */
+export function mergeRelatedRoles(
+  fractionRows: readonly { hatId: string; wearer: string }[],
+  wornHats: readonly { id: string }[],
+  owner: Address,
+): readonly { hatId: bigint; wearer: Address }[] {
+  const ownerLower = owner.toLowerCase();
   const keyFor = (hatId: string | bigint, wearer: string) =>
     `${BigInt(hatId).toString(16)}:${wearer.toLowerCase()}`;
   const map = new Map<string, { hatId: bigint; wearer: Address }>();
@@ -217,7 +182,7 @@ export async function resolveRelatedRoles(
       wearer: r.wearer as Address,
     });
   }
-  for (const h of myHats) {
+  for (const h of wornHats) {
     map.set(keyFor(h.id, ownerLower), { hatId: BigInt(h.id), wearer: owner });
   }
   return Array.from(map.values());

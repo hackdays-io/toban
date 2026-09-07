@@ -28,7 +28,7 @@ kind. This package is where a proposal becomes a signed transaction.
   interaction — never from anything the caller supplied. This is what makes it
   safe to hand an MCP token to an agent we do not run: a hostile proposal can
   at worst show someone a button whose visible text says what pressing it does.
-  See `src/internal/propose.ts` and `src/mcp/confirm.ts`.
+  See `src/internal/propose.ts` and `src/confirm/confirm.ts`.
 - **`performThx` / `performQuestSubmit` are the only paths to the chain.**
   Both the slash commands and the confirm button go through them. There must
   never be a second place that builds a `mintFrom` / `submitCompletion` call —
@@ -54,7 +54,7 @@ kind. This package is where a proposal becomes a signed transaction.
   resolved itself, never one that arrived in the request body.
 - **The MCP read surface, the JSON-RPC protocol layer, and the tool
   definitions all live in `@toban/mcp` now — not here.** This package's
-  `src/mcp/` holds exactly the pieces that touch `ConfirmPayload`:
+  `src/confirm/` holds exactly the pieces that touch `ConfirmPayload`:
   `confirm.ts`, `button.ts`, `discord-rest.ts`. Anything that doesn't touch
   `ConfirmPayload` left with the extraction (`docs/mcp-extraction.md`).
 - **Amounts from the indexer are in three incompatible units.** THX is
@@ -129,7 +129,7 @@ internal/
                              into this package (shared-secret authenticated,
                              reversed workspace check, builds the confirm
                              message)
-mcp/
+confirm/
   confirm.ts                proposal <-> embed payload, confirm message
   button.ts                 the click: actor = clicker, then perform*
   discord-rest.ts           bot-token REST calls (channel/message)

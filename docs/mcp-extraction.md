@@ -164,6 +164,9 @@ identity Worker に逆引き API を足す必要はない。既にチャンネ�
 
 平文のトークンは保存しない（MAC で再計算できるので保存する必要がない）。
 
+Drizzle を使う。`pkgs/extensions/identity` と同じ作法（`src/schema.ts` +
+`drizzle.config.ts` + `migrations/*.sql`）。
+
 ## 5. 発行の導線
 
 `/$treeId/settings`（`pkgs/frontend/app/routes/$treeId_.settings.tsx`、既存）に
@@ -172,14 +175,28 @@ identity Worker に逆引き API を足す必要はない。既にチャンネ�
 
 ```
 1. /$treeId/settings で「MCP トークンを発行」、label を入力
-2. Privy のウォレットで認証
-3. POST /api/mcp-tokens { treeId, label }  → @toban/mcp
-     Worker: Privy の JWT を JWKS で検証 → wallet を確定
+2. Privy のウォレットで EIP-712 の McpTokenRequest に署名
+     { wallet, treeId, label, expires, nonce }
+3. POST /api/mcp-tokens { message, signature }  → @toban/mcp
+     Worker: 署名から wallet を復元（ERC-1271 も通るよう RPC 経由も試す）
+             expires / nonce を検証（使い捨て、リプレイ防止）
              Hats subgraph で wallet が treeId の operator/top hat を着ているか検証
              token_id を発行し登録簿に記録、トークンを組み立てて返す
 4. 平文を一度だけ表示（以後は再表示できない）
 5. 同じ画面に発行済み一覧（label / 発行日 / 発行者）と失効ボタン
 ```
+
+**認証は Privy の JWT ではなく EIP-712 のウォレット署名にする。** このリポジトリには既に
+オフチェーン EIP-712 の boundary contract の作法があり（`pkgs/extensions/identity/src/eip712/`
+と `src/verify.ts` の `recoverIdentityBindingSigner` / `verifyIdentityBindingViaRpc`）、
+そこに乗るのが自然。Privy JWT だと Worker に新しい secret と外部 JWKS への依存が増え、
+かつスマートコントラクトウォレットを扱えない。`verifyIdentityBindingViaRpc` と同じく
+ERC-1271 を RPC 経由で通す形にすれば Privy の embedded wallet でも smart wallet でも動く。
+
+型は `@toban/mcp/eip712` サブパスから **viem を import しない boundary contract モジュール**
+として公開し、フロントがそれを import する。`@toban/identity/eip712` と全く同じ構図
+（`pkgs/frontend/app/routes/connect.discord.tsx` が実例、`vite.config.ts` の SSR 設定も
+同様の扱いが必要）。
 
 **検証はフロントではなく Worker が行う。** フロントの hat 表示は UI の都合で、認可の
 根拠にはしない。

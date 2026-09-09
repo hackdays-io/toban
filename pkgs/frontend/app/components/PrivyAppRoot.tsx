@@ -1,6 +1,7 @@
 import { PrivyProvider } from "@privy-io/react-auth";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEnsureEmbeddedWallet } from "hooks/useEnsureEmbeddedWallet";
 import { privyChain } from "hooks/useViem";
 import { PWAUpdater } from "./PWAUpdater";
 import { SwitchNetwork } from "./SwitchNetwork";
@@ -13,7 +14,13 @@ const queryClient = new QueryClient();
 // `AccountMenu` shows a small inline spinner in the account area
 // (top-left on desktop, account icon slot on mobile) rather than the
 // previous full-screen blocker.
-const AppContent = () => <AppShellLayout />;
+//
+// `useEnsureEmbeddedWallet` lives here rather than in `login.tsx` so it covers
+// every entry point into an authenticated session, not just the login card.
+const AppContent = () => {
+  useEnsureEmbeddedWallet();
+  return <AppShellLayout />;
+};
 
 export default function PrivyAppRoot() {
   return (

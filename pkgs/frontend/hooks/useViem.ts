@@ -60,30 +60,33 @@ export const currentChainRPCBaseURL = [http(alchemyRpcUrl, HTTP_RETRY)];
  * given*, in this order: `rpcUrls.privyWalletOverride` → the SDK's internal
  * `rpcConfig` (not exposed on `PrivyProviderProps`, so we can't set it) →
  * `rpcUrls.privy` → `rpcUrls.public` → `rpcUrls.default`. viem's chains only
- * define `default`, and that client has no fallback transport — so whatever
- * `rpcUrls.default` points at is a single point of failure for smart-account
- * provisioning.
+ * define `default`, and that client has **no fallback transport** — so
+ * whatever `rpcUrls.default` points at is a single point of failure for
+ * smart-account provisioning. `toThirdwebSmartAccount` reads the account
+ * address off the factory while building the account, so a dead RPC there
+ * means no smart wallet and a login that never completes.
  *
- * viem's `sepolia.rpcUrls.default` is `https://sepolia.drpc.org`, which now
- * answers every request with HTTP 400 ("chain is not available on free plan,
- * please upgrade to paid plan"). That broke the factory `getAddress()` read
- * that `toThirdwebSmartAccount` issues while building the account, so Privy
- * never got a smart wallet client and never linked the smart wallet —
- * leaving brand-new Sepolia accounts stuck on /login with an embedded EOA and
- * no smart account. `publicClient` below survives the same outage only
- * because it falls through to publicnode.
+ * Both endpoints we would otherwise inherit have failed in production:
  *
- * Hand Privy Alchemy. It costs a couple of reads per session (the account
- * address and nonce; user-op gas pricing goes to Pimlico's bundler), which is
- * negligible next to a broken signup. Because this client can't fall back,
- * login now depends on the Alchemy app staying live — keep `VITE_ALCHEMY_KEY`
- * pointed at an active app per environment.
+ * - viem's `sepolia.rpcUrls.default` was `https://sepolia.drpc.org`, which
+ *   answers every request with HTTP 400 ("chain is not available on free
+ *   plan"). viem >= 2.43 moved it to thirdweb's RPC, but relying on whichever
+ *   endpoint viem happens to ship is what got us here.
+ * - Alchemy is not usable either: the Base app is inactive and answers 403
+ *   ("App is inactive"), and that error response carries no
+ *   `Access-Control-Allow-Origin`, so the browser surfaces it as a CORS
+ *   failure rather than a 403.
+ *
+ * So hand Privy publicnode — keyless, the middle tier `publicClient` already
+ * trusts, verified to serve the factory read on both Sepolia and Base with
+ * `Access-Control-Allow-Origin: *`. Login must not depend on a keyed app
+ * staying live, because this client cannot fall back.
  */
 export const privyChain = {
   ...currentChain,
   rpcUrls: {
     ...currentChain.rpcUrls,
-    default: { http: [alchemyRpcUrl] as [string] },
+    default: { http: [publicNodeRpcUrl] as [string] },
   },
 };
 

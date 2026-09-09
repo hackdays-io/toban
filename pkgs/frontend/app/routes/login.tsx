@@ -21,9 +21,10 @@ import { Typography } from "~/components/ui/typography";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_LENGTH = 6;
-// How long we wait for Privy to provision the embedded wallet's smart wallet
-// before giving up and showing an error instead of the spinner.
-const SMART_WALLET_TIMEOUT_MS = 20000;
+// How long we wait, after Privy reports the user as authenticated, for a
+// usable wallet address to appear before giving up and showing an error
+// instead of the spinner.
+const WALLET_READY_TIMEOUT_MS = 20000;
 
 const Login: FC = () => {
   const { authenticated, user } = usePrivy();
@@ -35,7 +36,7 @@ const Login: FC = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"input" | "otp">("input");
-  const [smartWalletFailed, setSmartWalletFailed] = useState(false);
+  const [walletSetupFailed, setWalletSetupFailed] = useState(false);
 
   const { sendCode, loginWithCode, state: emailState } = useLoginWithEmail();
   const { initOAuth, state: oauthState } = useLoginWithOAuth();
@@ -71,54 +72,51 @@ const Login: FC = () => {
   // and `useWallets().wallets` get fresh identities on most renders, so
   // depending on them would tear the timeout below down and restart it before
   // it could ever fire — the same trap the navigation effect above documents.
-  const diagnosticsRef = useRef({
+  const buildDiagnostics = () => ({
     hasSmartWallet: !!user?.smartWallet,
+    isPreparingSmartWallet,
     wallets: wallets.map((w) => ({
       connectorType: w.connectorType,
       walletClientType: w.walletClientType,
       imported: w.imported,
     })),
   });
-  diagnosticsRef.current = {
-    hasSmartWallet: !!user?.smartWallet,
-    wallets: wallets.map((w) => ({
-      connectorType: w.connectorType,
-      walletClientType: w.walletClientType,
-      imported: w.imported,
-    })),
-  };
+  const diagnosticsRef = useRef(buildDiagnostics());
+  diagnosticsRef.current = buildDiagnostics();
 
-  // Privy provisions a brand-new account's smart wallet by having the freshly
-  // created embedded EOA sign a SIWE message and then linking it server-side;
-  // `useSmartWallets().client` — and with it the address our profile lookup is
-  // keyed on — stays undefined until that lands. `SmartWalletsProvider`
-  // swallows any failure in that flow (it only `console.error`s
-  // "Error creating smart wallet:"), so the card would otherwise spin forever:
-  // the ENS timeout below can't cover this, because it only starts once we
-  // already have an address. Give provisioning its own deadline and surface
-  // the failure so the user can retry instead of staring at the spinner.
+  // Nothing downstream can move until an address shows up, and every way that
+  // can fail is quiet. Two stalls have been seen in the wild:
+  //
+  // 1. Privy provisions a brand-new account's smart wallet by having the
+  //    freshly created embedded EOA sign a SIWE message and then linking it
+  //    server-side. Until that lands `useSmartWallets().client` — and with it
+  //    the address our profile lookup is keyed on — stays undefined, and
+  //    `SmartWalletsProvider` swallows any failure in that flow (it only
+  //    `console.error`s "Error creating smart wallet:").
+  // 2. The embedded wallet connector is never added at all, so `wallets`
+  //    stays empty. Privy reports this as a lone `console.debug`
+  //    ("Failed to add embedded wallet connector: Wallet proxy not
+  //    initialized") — its hidden auth.privy.io iframe never completed the
+  //    `privy:iframe:ready` handshake.
+  //
+  // Gate on the resolved address rather than on `isPreparingSmartWallet`, so
+  // case 2 — where there is no embedded wallet to be "preparing" — is covered
+  // too. The ENS timeout below can't help with either: it only starts once we
+  // already have an address.
   useEffect(() => {
-    if (!authenticated || !isPreparingSmartWallet) {
-      setSmartWalletFailed(false);
+    if (!authenticated || resolvedAddress) {
+      setWalletSetupFailed(false);
       return;
     }
     const timeoutId = setTimeout(() => {
-      // Privy's own failure paths are quiet: `SmartWalletsProvider` only
-      // `console.error`s "Error creating smart wallet:" for the *link* step,
-      // and the client-creation step (factory `getAddress()` read → RPC) can
-      // reject or hang with nothing in the console at all. Dump enough state
-      // to tell those apart from a repro.
       console.error(
-        `Smart wallet was not provisioned within ${SMART_WALLET_TIMEOUT_MS}ms`,
-        {
-          hasSmartWallet: !!diagnosticsRef.current.hasSmartWallet,
-          wallets: diagnosticsRef.current.wallets,
-        },
+        `No wallet address ${WALLET_READY_TIMEOUT_MS}ms after authentication`,
+        diagnosticsRef.current,
       );
-      setSmartWalletFailed(true);
-    }, SMART_WALLET_TIMEOUT_MS);
+      setWalletSetupFailed(true);
+    }, WALLET_READY_TIMEOUT_MS);
     return () => clearTimeout(timeoutId);
-  }, [authenticated, isPreparingSmartWallet]);
+  }, [authenticated, resolvedAddress]);
 
   useEffect(() => {
     const address = resolvedAddress;
@@ -363,7 +361,7 @@ const Login: FC = () => {
 
           {isAuthenticated && (
             <>
-              {smartWalletFailed ? (
+              {walletSetupFailed ? (
                 <div
                   className="flex flex-col items-center gap-3 py-2"
                   role="alert"
@@ -405,7 +403,7 @@ const Login: FC = () => {
                   </Typography>
                 </output>
               )}
-              {smartWalletFailed && (
+              {walletSetupFailed && (
                 <Button
                   size="lg"
                   full

@@ -73,17 +73,17 @@ export const currentChainRPCBaseURL = [http(alchemyRpcUrl, HTTP_RETRY)];
  * no smart account. `publicClient` below survives the same outage only
  * because it falls through to publicnode.
  *
- * Hand Privy publicnode — the keyless middle tier `publicClient` already
- * trusts — rather than Alchemy. Alchemy would tie login to a keyed app (the
- * Base one is currently inactive and answers 403 "App is inactive"), and this
- * client cannot fall back, so the RPC it gets should be the one least likely
- * to need babysitting.
+ * Hand Privy Alchemy. It costs a couple of reads per session (the account
+ * address and nonce; user-op gas pricing goes to Pimlico's bundler), which is
+ * negligible next to a broken signup. Because this client can't fall back,
+ * login now depends on the Alchemy app staying live — keep `VITE_ALCHEMY_KEY`
+ * pointed at an active app per environment.
  */
 export const privyChain = {
   ...currentChain,
   rpcUrls: {
     ...currentChain.rpcUrls,
-    default: { http: [publicNodeRpcUrl] as [string] },
+    default: { http: [alchemyRpcUrl] as [string] },
   },
 };
 

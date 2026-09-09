@@ -21,14 +21,20 @@ export default function PrivyAppRoot() {
       appId={import.meta.env.VITE_PRIVY_APP_ID}
       config={{
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          // v3 moved `createOnLogin` under the per-chain-type key. v2 accepted
+          // it at the top level of `embeddedWallets`; that flat form is gone.
+          ethereum: {
+            createOnLogin: "users-without-wallets",
+          },
           // Suppress Privy's built-in signature/transaction confirmation modals
           // for the embedded wallet — writes go through app-level UX instead.
           showWalletUIs: false,
         },
         externalWallets: {
           coinbaseWallet: {
-            connectionOptions: "smartWalletOnly",
+            // v3 replaced the `connectionOptions: "smartWalletOnly"` shorthand
+            // with the Coinbase SDK's own options object.
+            config: { preference: { options: "smartWalletOnly" } },
           },
         },
         // `privyChain` — not `currentChain` — so Privy's own public client

@@ -29,7 +29,8 @@ const WALLET_READY_TIMEOUT_MS = 20000;
 const Login: FC = () => {
   const { authenticated, user } = usePrivy();
   const { wallets } = useWallets();
-  const { wallet, isPreparingSmartWallet } = useActiveWallet();
+  const { wallet, isPreparingSmartWallet, isConnectingEmbeddedWallet } =
+    useActiveWallet();
   const { fetchNames } = useNamesByAddresses();
   const handleLogout = useLogoutWallet();
 
@@ -63,8 +64,7 @@ const Login: FC = () => {
   // on "ワークスペースを準備しています…". The address string is stable
   // across those re-renders, so the effect now runs exactly once per real
   // address change.
-  const hasEmbeddedWallet = wallets.some((w) => w.connectorType === "embedded");
-  const resolvedAddress = hasEmbeddedWallet
+  const resolvedAddress = isConnectingEmbeddedWallet
     ? wallet?.account?.address
     : (wallet?.account?.address ?? wallets[0]?.address);
 
@@ -74,6 +74,7 @@ const Login: FC = () => {
   // it could ever fire — the same trap the navigation effect above documents.
   const buildDiagnostics = () => ({
     hasSmartWallet: !!user?.smartWallet,
+    hasEmbeddedWalletOnUser: user?.wallet?.walletClientType === "privy",
     isPreparingSmartWallet,
     wallets: wallets.map((w) => ({
       connectorType: w.connectorType,

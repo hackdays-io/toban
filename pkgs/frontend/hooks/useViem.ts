@@ -67,20 +67,23 @@ export const currentChainRPCBaseURL = [http(alchemyRpcUrl, HTTP_RETRY)];
  * viem's `sepolia.rpcUrls.default` is `https://sepolia.drpc.org`, which now
  * answers every request with HTTP 400 ("chain is not available on free plan,
  * please upgrade to paid plan"). That broke the factory `getAddress()` read
- * inside `toThirdwebSmartAccount`, so Privy never built a smart wallet client
- * and never linked the smart wallet — leaving brand-new accounts stuck on
- * /login with an embedded EOA and no smart account. `publicClient` above
- * survives the same outage only because it falls through to publicnode.
+ * that `toThirdwebSmartAccount` issues while building the account, so Privy
+ * never got a smart wallet client and never linked the smart wallet —
+ * leaving brand-new Sepolia accounts stuck on /login with an embedded EOA and
+ * no smart account. `publicClient` below survives the same outage only
+ * because it falls through to publicnode.
  *
- * Point Privy at Alchemy instead. This costs one read per session (the
- * account address and nonce; user-op gas pricing goes to Pimlico's bundler),
- * which is negligible next to a broken signup.
+ * Hand Privy publicnode — the keyless middle tier `publicClient` already
+ * trusts — rather than Alchemy. Alchemy would tie login to a keyed app (the
+ * Base one is currently inactive and answers 403 "App is inactive"), and this
+ * client cannot fall back, so the RPC it gets should be the one least likely
+ * to need babysitting.
  */
 export const privyChain = {
   ...currentChain,
   rpcUrls: {
     ...currentChain.rpcUrls,
-    default: { http: [alchemyRpcUrl] as [string] },
+    default: { http: [publicNodeRpcUrl] as [string] },
   },
 };
 

@@ -8,7 +8,7 @@ import {
 import { useNamesByAddresses } from "hooks/useENS";
 import { useLogoutWallet } from "hooks/useLogoutWallet";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthHero } from "~/components/composite/auth-hero";
 import { AuthLayout } from "~/components/layout/AuthLayout";
@@ -26,7 +26,7 @@ const OTP_LENGTH = 6;
 const SMART_WALLET_TIMEOUT_MS = 20000;
 
 const Login: FC = () => {
-  const { authenticated } = usePrivy();
+  const { authenticated, user } = usePrivy();
   const { wallets } = useWallets();
   const { wallet, isPreparingSmartWallet } = useActiveWallet();
   const { fetchNames } = useNamesByAddresses();
@@ -67,6 +67,27 @@ const Login: FC = () => {
     ? wallet?.account?.address
     : (wallet?.account?.address ?? wallets[0]?.address);
 
+  // Read through a ref, never the effect's dependency array: `usePrivy().user`
+  // and `useWallets().wallets` get fresh identities on most renders, so
+  // depending on them would tear the timeout below down and restart it before
+  // it could ever fire — the same trap the navigation effect above documents.
+  const diagnosticsRef = useRef({
+    hasSmartWallet: !!user?.smartWallet,
+    wallets: wallets.map((w) => ({
+      connectorType: w.connectorType,
+      walletClientType: w.walletClientType,
+      imported: w.imported,
+    })),
+  });
+  diagnosticsRef.current = {
+    hasSmartWallet: !!user?.smartWallet,
+    wallets: wallets.map((w) => ({
+      connectorType: w.connectorType,
+      walletClientType: w.walletClientType,
+      imported: w.imported,
+    })),
+  };
+
   // Privy provisions a brand-new account's smart wallet by having the freshly
   // created embedded EOA sign a SIWE message and then linking it server-side;
   // `useSmartWallets().client` — and with it the address our profile lookup is
@@ -82,10 +103,17 @@ const Login: FC = () => {
       return;
     }
     const timeoutId = setTimeout(() => {
+      // Privy's own failure paths are quiet: `SmartWalletsProvider` only
+      // `console.error`s "Error creating smart wallet:" for the *link* step,
+      // and the client-creation step (factory `getAddress()` read → RPC) can
+      // reject or hang with nothing in the console at all. Dump enough state
+      // to tell those apart from a repro.
       console.error(
-        "Smart wallet was not provisioned within",
-        SMART_WALLET_TIMEOUT_MS,
-        'ms — check the console for Privy\'s "Error creating smart wallet".',
+        `Smart wallet was not provisioned within ${SMART_WALLET_TIMEOUT_MS}ms`,
+        {
+          hasSmartWallet: !!diagnosticsRef.current.hasSmartWallet,
+          wallets: diagnosticsRef.current.wallets,
+        },
       );
       setSmartWalletFailed(true);
     }, SMART_WALLET_TIMEOUT_MS);

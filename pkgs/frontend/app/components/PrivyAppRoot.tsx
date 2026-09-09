@@ -1,7 +1,7 @@
 import { PrivyProvider } from "@privy-io/react-auth";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { currentChain } from "hooks/useViem";
+import { privyChain } from "hooks/useViem";
 import { PWAUpdater } from "./PWAUpdater";
 import { SwitchNetwork } from "./SwitchNetwork";
 import { AppShellLayout } from "./layout/AppShellLayout";
@@ -31,8 +31,10 @@ export default function PrivyAppRoot() {
             connectionOptions: "smartWalletOnly",
           },
         },
-        defaultChain: currentChain,
-        supportedChains: [currentChain],
+        // `privyChain` — not `currentChain` — so Privy's own public client
+        // doesn't fall back to viem's default RPC. See `hooks/useViem.ts`.
+        defaultChain: privyChain,
+        supportedChains: [privyChain],
       }}
     >
       <SmartWalletsProvider>

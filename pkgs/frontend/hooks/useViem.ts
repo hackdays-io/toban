@@ -52,6 +52,39 @@ const HTTP_RETRY = { retryCount: 1 } as const;
 export const currentChainRPCBaseURL = [http(alchemyRpcUrl, HTTP_RETRY)];
 
 /**
+ * The chain object handed to `PrivyProvider` (`supportedChains` /
+ * `defaultChain`).
+ *
+ * Privy's internal public client (`getPublicClient` in
+ * `@privy-io/react-auth`) resolves its RPC *from the chain object it is
+ * given*, in this order: `rpcUrls.privyWalletOverride` → the SDK's internal
+ * `rpcConfig` (not exposed on `PrivyProviderProps`, so we can't set it) →
+ * `rpcUrls.privy` → `rpcUrls.public` → `rpcUrls.default`. viem's chains only
+ * define `default`, and that client has no fallback transport — so whatever
+ * `rpcUrls.default` points at is a single point of failure for smart-account
+ * provisioning.
+ *
+ * viem's `sepolia.rpcUrls.default` is `https://sepolia.drpc.org`, which now
+ * answers every request with HTTP 400 ("chain is not available on free plan,
+ * please upgrade to paid plan"). That broke the factory `getAddress()` read
+ * inside `toThirdwebSmartAccount`, so Privy never built a smart wallet client
+ * and never linked the smart wallet — leaving brand-new accounts stuck on
+ * /login with an embedded EOA and no smart account. `publicClient` above
+ * survives the same outage only because it falls through to publicnode.
+ *
+ * Point Privy at Alchemy instead. This costs one read per session (the
+ * account address and nonce; user-op gas pricing goes to Pimlico's bundler),
+ * which is negligible next to a broken signup.
+ */
+export const privyChain = {
+  ...currentChain,
+  rpcUrls: {
+    ...currentChain.rpcUrls,
+    default: { http: [alchemyRpcUrl] as [string] },
+  },
+};
+
+/**
  * Public client for fetching data from the blockchain.
  *
  * Fallback order: viem default public RPC → publicnode → Alchemy. We lead with

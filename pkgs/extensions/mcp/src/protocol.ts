@@ -1,6 +1,9 @@
 /**
  * Minimal MCP server over JSON-RPC 2.0 / HTTP.
  *
+ * Moved from `@toban/discord-bot`'s `src/mcp/protocol.ts` unchanged — this
+ * module was already Discord-independent (`docs/mcp-extraction.md` §1).
+ *
  * Only what a tool-using client needs: `initialize`, `tools/list`,
  * `tools/call`, `ping`, and the `notifications/*` no-ops. No SSE, no
  * resources, no prompts — a Worker has no long-lived connection to hold open,

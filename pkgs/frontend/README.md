@@ -54,9 +54,11 @@ subgraph より先に走らせると、新しいフィールドが型に現れ�
 | ENS 名前解決（**サーバー専用**） | `NAMESPACE_API_KEY` / `NAMESPACE_MODE` / `ENS_PARENT_NAME` / `NAMESPACE_TIMEOUT_MS` |
 | Splits | `VITE_SPLITS_API_KEY` |
 | Discord 連携 | `VITE_IDENTITY_WORKER_URL` / `VITE_BOT_WORKER_URL` / `VITE_DISCORD_BOT_SIGNER_ADDRESS` |
+| MCP トークン | `VITE_MCP_WORKER_URL` |
 
-Discord 連携の 3 つは**ネットワークごとに値が違います**。未設定でもビルドは通り、該当 UI
-（「サーバーに追加」ボタンなど）が出ないだけなので、抜けに気づきにくい点に注意してください。
+Discord 連携の 3 つと MCP トークンの 1 つは**ネットワークごとに値が違います**。未設定でも
+ビルドは通り、該当 UI（「サーバーに追加」ボタン、MCP トークンの発行・一覧・失効など）が
+出ない／動かないだけなので、抜けに気づきにくい点に注意してください。
 
 `NAMESPACE_*` / `ENS_PARENT_NAME` に **`VITE_` を付けてはいけません**。これらはサーバー
 （loader / action）でしか読まれない値で、`VITE_` を付けるとクライアントバンドルに API キーが

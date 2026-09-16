@@ -57,14 +57,19 @@ export interface Env {
 
   // -- secrets ------------------------------------------------------------
   /**
-   * HMAC key behind the MCP endpoint's guild-scoped bearer tokens
-   * (`src/mcp/auth.ts`). A token is `HMAC(secret, guildId)`, so verification
-   * needs no storage — and rotating this secret revokes every guild's token
-   * at once, which is the only revocation we have today.
+   * Shared secret gating `POST /internal/propose` (header
+   * `x-toban-mcp-propose-secret`). This route is meant to be reached only
+   * via `@toban/mcp`'s `CONFIRM` service binding, but a service binding
+   * does not stop the same route from also being reachable at this
+   * Worker's public URL — this secret is what actually closes that off.
+   * MUST equal `@toban/mcp`'s value for the same environment. See
+   * `src/internal/propose.ts`.
    *
-   * Mint one with `pnpm --filter @toban/discord-bot mint-mcp-token <guildId>`.
+   * `MCP_TOKEN_SECRET` used to live here (guild-scoped `tbn1` bearer
+   * tokens); it moved to `@toban/mcp` along with the MCP endpoint itself —
+   * see `docs/mcp-extraction.md` §8.
    */
-  MCP_TOKEN_SECRET?: string;
+  MCP_INTERNAL_PROPOSE_SECRET?: string;
   /**
    * Ethereum mainnet JSON-RPC endpoint, used only for ENS resolution
    * (ENS records live on mainnet regardless of the chain the bot's

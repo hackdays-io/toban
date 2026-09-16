@@ -13,6 +13,7 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 | Cloudflare Workers（共通） | [`pkgs/extensions/README.md`](pkgs/extensions/README.md) |
 | identity Worker | [`pkgs/extensions/identity/README.md`](pkgs/extensions/identity/README.md) |
 | discord-bot Worker | [`pkgs/extensions/discord-bot/README.md`](pkgs/extensions/discord-bot/README.md) |
+| mcp Worker(MCP サーバー本体) | [`pkgs/extensions/mcp/CLAUDE.md`](pkgs/extensions/mcp/CLAUDE.md) |
 | OpenClaw（Discord エージェント / Fly.io） | [`pkgs/openclaw/README.md`](pkgs/openclaw/README.md) |
 | 症状別の対処 | [`pkgs/extensions/discord-bot/docs/deploy-base-production.md`](pkgs/extensions/discord-bot/docs/deploy-base-production.md) |
 | 鍵のローテーション | [`pkgs/extensions/discord-bot/docs/key-rotation.md`](pkgs/extensions/discord-bot/docs/key-rotation.md) |
@@ -27,11 +28,19 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 [1] contract ──→ [2] sync:abis ──┬─→ [3] subgraph ──→ [4] frontend
                                  │
                                  └─→ [5] Turnkey ──→ [6] Workers ──→ [7] OpenClaw
-                                                     identity → discord-bot
+                                                     identity → discord-bot → mcp
 ```
 
-**[7] が [6] より後**なのは、OpenClaw が discord-bot Worker の MCP エンドポイントを
-呼ぶためです。Worker が無い状態でエージェントを起こしても、読み取りも起案もできません。
+**[6] の中で `mcp` が最後**なのは、`@toban/mcp` が `discord-bot`（`CONFIRM` binding、
+`/internal/propose` 用）と `identity`（`IDENTITY` binding、identity 解決用）の両方に
+service binding するためです。どちらかが無い状態で `mcp` を deploy すると Cloudflare
+error 10143 で失敗します。
+
+**[7] が [6] より後**なのは、OpenClaw が MCP エンドポイント（`@toban/mcp` の
+`POST /mcp`）を呼ぶためです。Worker が無い状態でエージェントを起こしても、読み取りも
+起案もできません。（以前は discord-bot Worker が MCP エンドポイントを兼ねていましたが、
+`@toban/mcp` への切り出し後は discord-bot ではなく `@toban/mcp` の URL を向きます —
+`guilds.json` の `mcpUrl` を参照。）
 
 変更したレイヤー以降だけを実行すれば十分です（コントラクトを触っていないなら [1]〜[3] は不要）。
 
@@ -173,16 +182,23 @@ stamper 鍵は secret なので、デプロイ後にいつでも入れられま�
 
 ## 6. Cloudflare Workers
 
-**identity → discord-bot の順**に deploy します（bot が identity を service binding で参照）。
+**identity → discord-bot → mcp の順**に deploy します（discord-bot が identity を、
+mcp が identity と discord-bot の両方を service binding で参照するため）。
 **secret は deploy の後**に入れます（理由は §6-3）。
 
 ```bash
 # 初回のみ
 pnpm --filter @toban/identity db:migrate:remote:<sepolia|base>
+pnpm --filter @toban/mcp      db:migrate:remote:<sepolia|base>
 
 pnpm --filter @toban/identity    deploy:<sepolia|base>
 pnpm --filter @toban/discord-bot deploy:<sepolia|base>
+pnpm --filter @toban/mcp         deploy:<sepolia|base>
 ```
+
+`@toban/mcp` は `@toban/identity` と同じ D1（`toban-identity` / `toban-identity-base`）
+に自分のテーブル（`mcp_tokens` / `used_mcp_auth_nonces`）を持つので、`db:migrate:remote`
+はどちらのパッケージでも 1 回ずつ、環境ごとに実行します。
 
 secret が未投入でも deploy は成功します（実行時に落ちるだけ）。逆に `[vars]` の値は
 デプロイ時に焼き込まれるので、**var は deploy 前に `wrangler.toml` へ書いておく**必要があります。
@@ -225,10 +241,21 @@ openssl pkey -in verifier.key.pem -pubout -out verifier.pub.pem                 
 | `INSTALL_STATE_SECRET` | `openssl rand -hex 32` |
 | `LOOKUP_READ_SECRET` | **identity と同一値** |
 | `PLATFORM_LINK_WRITE_SECRET` | **identity と同一値** |
+| `MCP_INTERNAL_PROPOSE_SECRET` | `openssl rand -hex 32`。**mcp と同一値**。`POST /internal/propose` を守る（§7-0 参照） |
 | `RPC_URL` | 対象チェーンの RPC URL（Alchemy キーを含む） |
 | `HATS_GRAPHQL_ENDPOINT` | **Base のみ**。The Graph Gateway の URL（API キーを含む） |
 
 共有シークレット 2 本がずれると `/balance` などが 401 になります。
+
+`@toban/mcp`:
+
+| secret | 値 |
+|---|---|
+| `MCP_TOKEN_SECRET` | `openssl rand -base64 32`。`/mcp` の `tbn2` bearer token の HMAC 鍵。以前は discord-bot 側にあったが、MCP エンドポイントの切り出しに伴いこちらへ移動した |
+| `MCP_INTERNAL_PROPOSE_SECRET` | **discord-bot と同一値** |
+| `LOOKUP_READ_SECRET` | **identity・discord-bot と同一値** |
+| `RPC_URL` | 対象チェーンの RPC URL（Alchemy キーを含む） |
+| `HATS_GRAPHQL_ENDPOINT` | **Base のみ**。The Graph Gateway の URL（API キーを含む） |
 
 ### 6-3. secret の投入
 
@@ -275,22 +302,36 @@ Discord に常駐して会話し、15 分ごとに Goldsky を見て通知する
 
 ### 7-0. MCP エンドポイント（Toban 側）
 
-エージェントは `@toban/discord-bot` の `POST /mcp` 越しに Toban を触ります。**自前の
-OpenClaw でも、コミュニティが既に動かしている OpenClaw でも同じ**です。
+エージェントは `@toban/mcp` の `POST /mcp` 越しに Toban を触ります(discord-bot では
+ありません — MCP エンドポイントは `@toban/mcp` に切り出されています。
+`docs/mcp-extraction.md` 参照)。**自前の OpenClaw でも、コミュニティが既に動かしている
+OpenClaw でも同じ**です。
 
 ```bash
-# HMAC 鍵（1 回だけ生成して使い回す）
-openssl rand -base64 32 | pnpm --filter @toban/discord-bot exec wrangler secret put MCP_TOKEN_SECRET --env base
-
-# サーバーごとにトークンを発行して、そのサーバーの運用者に渡す
-MCP_TOKEN_SECRET='...' pnpm discord-bot mint-mcp-token <guildId>
+# HMAC 鍵(1 回だけ生成して使い回す。discord-bot の MCP_INTERNAL_PROPOSE_SECRET とは別物)
+openssl rand -base64 32 | pnpm --filter @toban/mcp exec wrangler secret put MCP_TOKEN_SECRET --env base
 ```
 
-トークンはギルド id を埋め込んだ HMAC なので、**他のサーバーの情報は取得できません**。
-書き込みは必ず確認ボタン経由なので、トークン単体では資産は動きません。
+**トークンの発行は `/$treeId/settings` から本人が行うのが主経路です。** ワークスペースの
+operator hat または top hat を着ているウォレットで EIP-712 に署名し、`POST
+/api/mcp-tokens` がその場でトークンを発行します(運営の手作業は不要)。同じ画面で
+発行済みトークンの一覧・失効もできます。詳細は `pkgs/extensions/mcp/CLAUDE.md` と
+`docs/mcp-extraction.md` §5。
 
-> ⚠️ 失効は今のところ **`MCP_TOKEN_SECRET` のローテーション（＝全ギルド一括失効）**
-> しかありません。個別失効が要るようになったら platform_links 側にバージョンを持たせます。
+CLI でのトークン発行は**非常口**として残っています(フロントが落ちているとき、または
+まだ hat を持っていない相手に出すとき):
+
+```bash
+MCP_TOKEN_SECRET='...' pnpm mcp mint-mcp-token <treeId> "<label>" --env base
+```
+
+このコマンドは登録簿(D1 の `mcp_tokens` テーブル)にも書き込みます — `tbn2` トークンは
+MAC だけでなく登録簿の行がないと検証を通らないため([§4](docs/mcp-extraction.md) 参照)。
+
+**失効は個別に行えます**(settings 画面の失効ボタン、または `@toban/mcp` の
+`POST /api/mcp-tokens/revoke`)。旧 `tbn1` 形式(discord-bot にあった guild 単位の
+HMAC)は全ギルド一括失効しかできませんでしたが、`tbn2` は 2 段検証(MAC → 登録簿参照)
+なので 1 トークンだけを止められます。
 
 ### 7-1. 初回のみ
 
@@ -324,7 +365,7 @@ fly volumes create openclaw_data --size 1 --region nrt --app tobanclaw
 | `OPENCLAW_GATEWAY_TOKEN` | loopback 以外にバインドする場合に必須 |
 | `ANTHROPIC_API_KEY` | エージェントのモデル |
 | `DISCORD_BOT_TOKEN` | 既存の Toban Bot と**同じ**トークン |
-| `TOBAN_MCP_TOKEN` | discord-bot Worker の MCP エンドポイントの認証 |
+| `TOBAN_MCP_TOKEN` | `@toban/mcp` Worker の MCP エンドポイント(`POST /mcp`)の認証。settings 画面か `pnpm mcp mint-mcp-token` で発行した `tbn2` トークン |
 
 ```bash
 fly secrets set OPENCLAW_GATEWAY_TOKEN=... --app tobanclaw

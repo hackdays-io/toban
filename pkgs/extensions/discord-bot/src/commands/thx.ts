@@ -220,7 +220,7 @@ export type ThxOutcome =
  * The `/thx` core: resolve identities, check head-room, sign, broadcast.
  *
  * Split out from the slash-command handler so the MCP confirm-button path
- * (`src/mcp/`) reaches the chain through **exactly this function**. There must
+ * (`src/confirm/`) reaches the chain through **exactly this function**. There must
  * be only one place that builds a `mintFrom` call — `turnkey/policy.json`
  * gates the selector, and two divergent call sites would eventually disagree
  * about what gets signed.

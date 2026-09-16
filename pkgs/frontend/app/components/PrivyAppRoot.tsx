@@ -1,7 +1,8 @@
 import { PrivyProvider } from "@privy-io/react-auth";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { currentChain } from "hooks/useViem";
+import { useEnsureEmbeddedWallet } from "hooks/useEnsureEmbeddedWallet";
+import { privyChain } from "hooks/useViem";
 import { PWAUpdater } from "./PWAUpdater";
 import { SwitchNetwork } from "./SwitchNetwork";
 import { AppShellLayout } from "./layout/AppShellLayout";
@@ -13,7 +14,13 @@ const queryClient = new QueryClient();
 // `AccountMenu` shows a small inline spinner in the account area
 // (top-left on desktop, account icon slot on mobile) rather than the
 // previous full-screen blocker.
-const AppContent = () => <AppShellLayout />;
+//
+// `useEnsureEmbeddedWallet` lives here rather than in `login.tsx` so it covers
+// every entry point into an authenticated session, not just the login card.
+const AppContent = () => {
+  useEnsureEmbeddedWallet();
+  return <AppShellLayout />;
+};
 
 export default function PrivyAppRoot() {
   return (
@@ -21,18 +28,26 @@ export default function PrivyAppRoot() {
       appId={import.meta.env.VITE_PRIVY_APP_ID}
       config={{
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          // v3 moved `createOnLogin` under the per-chain-type key. v2 accepted
+          // it at the top level of `embeddedWallets`; that flat form is gone.
+          ethereum: {
+            createOnLogin: "users-without-wallets",
+          },
           // Suppress Privy's built-in signature/transaction confirmation modals
           // for the embedded wallet — writes go through app-level UX instead.
           showWalletUIs: false,
         },
         externalWallets: {
           coinbaseWallet: {
-            connectionOptions: "smartWalletOnly",
+            // v3 replaced the `connectionOptions: "smartWalletOnly"` shorthand
+            // with the Coinbase SDK's own options object.
+            config: { preference: { options: "smartWalletOnly" } },
           },
         },
-        defaultChain: currentChain,
-        supportedChains: [currentChain],
+        // `privyChain` — not `currentChain` — so Privy's own public client
+        // doesn't fall back to viem's default RPC. See `hooks/useViem.ts`.
+        defaultChain: privyChain,
+        supportedChains: [privyChain],
       }}
     >
       <SmartWalletsProvider>

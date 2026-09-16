@@ -1,4 +1,8 @@
-import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
+import {
+  type ConnectedWallet,
+  usePrivy,
+  useWallets,
+} from "@privy-io/react-auth";
 import {
   type SmartWalletClientType,
   useSmartWallets,
@@ -45,14 +49,26 @@ export const useAccountClient = (wallets: ConnectedWallet[]) => {
 };
 
 export const useActiveWallet = () => {
-  const { wallets } = useWallets();
+  const { wallets, ready: walletsReady } = useWallets();
+  const { user } = usePrivy();
   const { client: walletClient, wallet: connectedWallet } =
     useAccountClient(wallets);
   const { client: smartWalletClient } = useSmartWallets();
 
+  // Read the embedded wallet from `user` as well as from `wallets`. The
+  // connected-wallet list only gains the embedded entry once Privy has
+  // registered its connector, which needs the hidden auth.privy.io wallet
+  // proxy iframe to finish its handshake; until then `wallets` can be empty
+  // even though the account owns an embedded wallet. Relying on `wallets`
+  // alone made us treat such a session as external and fall back to
+  // `wallets[0]`'s address, which is not the address the user's profile is
+  // keyed on.
   const isConnectingEmbeddedWallet = useMemo(() => {
-    return wallets.some((wallet) => wallet.connectorType === "embedded");
-  }, [wallets]);
+    return (
+      wallets.some((wallet) => wallet.connectorType === "embedded") ||
+      user?.wallet?.walletClientType === "privy"
+    );
+  }, [wallets, user?.wallet?.walletClientType]);
 
   const isSmartWallet = useMemo(() => {
     return !!smartWalletClient;
@@ -77,6 +93,7 @@ export const useActiveWallet = () => {
     isSmartWallet,
     isConnectingEmbeddedWallet,
     isPreparingSmartWallet,
+    walletsReady,
   };
 };
 

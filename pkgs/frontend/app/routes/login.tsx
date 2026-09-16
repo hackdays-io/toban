@@ -8,7 +8,7 @@ import {
 import { useNamesByAddresses } from "hooks/useENS";
 import { useLogoutWallet } from "hooks/useLogoutWallet";
 import { useActiveWallet } from "hooks/useWallet";
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthHero } from "~/components/composite/auth-hero";
 import { AuthLayout } from "~/components/layout/AuthLayout";
@@ -21,17 +21,23 @@ import { Typography } from "~/components/ui/typography";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_LENGTH = 6;
+// How long we wait, after Privy reports the user as authenticated, for a
+// usable wallet address to appear before giving up and showing an error
+// instead of the spinner.
+const WALLET_READY_TIMEOUT_MS = 20000;
 
 const Login: FC = () => {
-  const { authenticated } = usePrivy();
+  const { authenticated, user } = usePrivy();
   const { wallets } = useWallets();
-  const { wallet } = useActiveWallet();
+  const { wallet, isPreparingSmartWallet, isConnectingEmbeddedWallet } =
+    useActiveWallet();
   const { fetchNames } = useNamesByAddresses();
   const handleLogout = useLogoutWallet();
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"input" | "otp">("input");
+  const [walletSetupFailed, setWalletSetupFailed] = useState(false);
 
   const { sendCode, loginWithCode, state: emailState } = useLoginWithEmail();
   const { initOAuth, state: oauthState } = useLoginWithOAuth();
@@ -58,10 +64,60 @@ const Login: FC = () => {
   // on "ワークスペースを準備しています…". The address string is stable
   // across those re-renders, so the effect now runs exactly once per real
   // address change.
-  const hasEmbeddedWallet = wallets.some((w) => w.connectorType === "embedded");
-  const resolvedAddress = hasEmbeddedWallet
+  const resolvedAddress = isConnectingEmbeddedWallet
     ? wallet?.account?.address
     : (wallet?.account?.address ?? wallets[0]?.address);
+
+  // Read through a ref, never the effect's dependency array: `usePrivy().user`
+  // and `useWallets().wallets` get fresh identities on most renders, so
+  // depending on them would tear the timeout below down and restart it before
+  // it could ever fire — the same trap the navigation effect above documents.
+  const buildDiagnostics = () => ({
+    hasSmartWallet: !!user?.smartWallet,
+    hasEmbeddedWalletOnUser: user?.wallet?.walletClientType === "privy",
+    isPreparingSmartWallet,
+    wallets: wallets.map((w) => ({
+      connectorType: w.connectorType,
+      walletClientType: w.walletClientType,
+      imported: w.imported,
+    })),
+  });
+  const diagnosticsRef = useRef(buildDiagnostics());
+  diagnosticsRef.current = buildDiagnostics();
+
+  // Nothing downstream can move until an address shows up, and every way that
+  // can fail is quiet. Two stalls have been seen in the wild:
+  //
+  // 1. Privy provisions a brand-new account's smart wallet by having the
+  //    freshly created embedded EOA sign a SIWE message and then linking it
+  //    server-side. Until that lands `useSmartWallets().client` — and with it
+  //    the address our profile lookup is keyed on — stays undefined, and
+  //    `SmartWalletsProvider` swallows any failure in that flow (it only
+  //    `console.error`s "Error creating smart wallet:").
+  // 2. The embedded wallet connector is never added at all, so `wallets`
+  //    stays empty. Privy reports this as a lone `console.debug`
+  //    ("Failed to add embedded wallet connector: Wallet proxy not
+  //    initialized") — its hidden auth.privy.io iframe never completed the
+  //    `privy:iframe:ready` handshake.
+  //
+  // Gate on the resolved address rather than on `isPreparingSmartWallet`, so
+  // case 2 — where there is no embedded wallet to be "preparing" — is covered
+  // too. The ENS timeout below can't help with either: it only starts once we
+  // already have an address.
+  useEffect(() => {
+    if (!authenticated || resolvedAddress) {
+      setWalletSetupFailed(false);
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      console.error(
+        `No wallet address ${WALLET_READY_TIMEOUT_MS}ms after authentication`,
+        diagnosticsRef.current,
+      );
+      setWalletSetupFailed(true);
+    }, WALLET_READY_TIMEOUT_MS);
+    return () => clearTimeout(timeoutId);
+  }, [authenticated, resolvedAddress]);
 
   useEffect(() => {
     const address = resolvedAddress;
@@ -306,26 +362,58 @@ const Login: FC = () => {
 
           {isAuthenticated && (
             <>
-              <output
-                className="flex flex-col items-center gap-3 py-2"
-                aria-live="polite"
-              >
-                <Spinner size="lg" />
-                <Typography
-                  variant="bodySm"
-                  weight="bold"
-                  className="text-center"
+              {walletSetupFailed ? (
+                <div
+                  className="flex flex-col items-center gap-3 py-2"
+                  role="alert"
                 >
-                  ワークスペースを準備しています…
-                </Typography>
-                <Typography
-                  variant="caption"
-                  tone="secondary"
-                  className="text-center"
+                  <Typography
+                    variant="bodySm"
+                    weight="bold"
+                    className="text-center"
+                  >
+                    ウォレットの準備に失敗しました
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    tone="secondary"
+                    className="text-center"
+                  >
+                    もう一度お試しください。繰り返し失敗する場合は、サインアウトしてから時間をおいて再度お試しください。
+                  </Typography>
+                </div>
+              ) : (
+                <output
+                  className="flex flex-col items-center gap-3 py-2"
+                  aria-live="polite"
                 >
-                  自動で移動します。問題が起きた場合はサインアウトしてやり直してください。
-                </Typography>
-              </output>
+                  <Spinner size="lg" />
+                  <Typography
+                    variant="bodySm"
+                    weight="bold"
+                    className="text-center"
+                  >
+                    ワークスペースを準備しています…
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    tone="secondary"
+                    className="text-center"
+                  >
+                    自動で移動します。問題が起きた場合はサインアウトしてやり直してください。
+                  </Typography>
+                </output>
+              )}
+              {walletSetupFailed && (
+                <Button
+                  size="lg"
+                  full
+                  data-testid="login-retry"
+                  onClick={() => window.location.reload()}
+                >
+                  再試行
+                </Button>
+              )}
               <Button variant="secondary" size="lg" full onClick={handleLogout}>
                 <Icon name="logout" size={18} />
                 サインアウト

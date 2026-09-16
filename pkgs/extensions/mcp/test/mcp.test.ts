@@ -189,6 +189,7 @@ interface GraphCall {
   endpoint: string;
   query: string;
   variables: Record<string, unknown>;
+  authorization: string | null;
 }
 
 function graphStub(responder: (call: GraphCall) => unknown): {
@@ -205,6 +206,7 @@ function graphStub(responder: (call: GraphCall) => unknown): {
       endpoint: String(url),
       query: body.query,
       variables: body.variables,
+      authorization: new Headers(init.headers).get("authorization"),
     };
     calls.push(call);
     return new Response(JSON.stringify({ data: responder(call) }), {
@@ -287,6 +289,47 @@ describe("workspace info", () => {
       treeId: TREE_ID,
       indexed: false,
     });
+  });
+});
+
+describe("Goldsky API key", () => {
+  // open_quests with a discordUserId hits both Goldsky (quests) and the Hats
+  // subgraph (membership) — the one place to check the key goes to the
+  // former only. On Base the Hats endpoint is The Graph, a third party.
+  const callOpenQuestsAsMember = async (env: Env) => {
+    const { fetchImpl, calls } = graphStub(() => ({}));
+    await callTool(
+      env,
+      auth,
+      "toban_open_quests",
+      { discordUserId: ACTOR },
+      {
+        identity: identityStub({
+          getIdentity: async () => discordIdentity(ACTOR, WALLET_A),
+        }),
+        fetchImpl,
+      },
+    );
+    return calls;
+  };
+
+  it("sends GOLDSKY_API_KEY to Goldsky and never to the Hats endpoint", async () => {
+    const calls = await callOpenQuestsAsMember({
+      ...fakeEnv(),
+      GOLDSKY_API_KEY: "goldsky-key",
+    });
+    const goldsky = calls.filter((c) => c.endpoint !== HATS_ENDPOINT);
+    const hats = calls.filter((c) => c.endpoint === HATS_ENDPOINT);
+    expect(goldsky.length).toBeGreaterThan(0);
+    expect(hats.length).toBeGreaterThan(0);
+    for (const c of goldsky) expect(c.authorization).toBe("Bearer goldsky-key");
+    for (const c of hats) expect(c.authorization).toBeNull();
+  });
+
+  it("sends no Authorization header when the key is unset", async () => {
+    const calls = await callOpenQuestsAsMember(fakeEnv());
+    expect(calls.length).toBeGreaterThan(0);
+    for (const c of calls) expect(c.authorization).toBeNull();
   });
 });
 

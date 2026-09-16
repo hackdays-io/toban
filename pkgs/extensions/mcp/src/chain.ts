@@ -78,6 +78,10 @@ export function getPublicClient(env: Env): PublicClient {
  * POST a GraphQL `query` to `endpoint` and return its `data`. Identical
  * contract to discord-bot's `postGraphQL` (same error-shape handling), kept
  * as its own copy for the same workspace-boundary reason as the ABI above.
+ *
+ * `bearerToken` is sent as `Authorization: Bearer ...` when present. Only
+ * the Goldsky call sites pass one (`GOLDSKY_API_KEY`) — never pass it for
+ * `HATS_GRAPHQL_ENDPOINT`, which on Base is a third party (The Graph).
  */
 export async function postGraphQL<T>(
   endpoint: string | undefined,
@@ -86,13 +90,19 @@ export async function postGraphQL<T>(
   variables: Record<string, unknown>,
   fetchImpl: typeof fetch,
   label: string,
+  bearerToken?: string,
 ): Promise<T> {
   if (!endpoint) {
     throw new Error(`${envVarName} is not configured`);
   }
   const res = await fetchImpl(endpoint, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: bearerToken
+      ? {
+          "content-type": "application/json",
+          authorization: `Bearer ${bearerToken}`,
+        }
+      : { "content-type": "application/json" },
     body: JSON.stringify({ query, variables }),
   });
   if (!res.ok) {

@@ -244,6 +244,7 @@ openssl pkey -in verifier.key.pem -pubout -out verifier.pub.pem                 
 | `MCP_INTERNAL_PROPOSE_SECRET` | `openssl rand -hex 32`。**mcp と同一値**。`POST /internal/propose` を守る（§7-0 参照） |
 | `RPC_URL` | 対象チェーンの RPC URL（Alchemy キーを含む） |
 | `HATS_GRAPHQL_ENDPOINT` | **Base のみ**。The Graph Gateway の URL（API キーを含む） |
+| `GOLDSKY_API_KEY` | **Base のみ**。Goldsky のプロジェクト API トークン。Base の `GOLDSKY_GRAPHQL_ENDPOINT` は private endpoint（公開エンドポイントは Workers からだと 429 になる）なので必須。**discord-bot と mcp で同じ値** |
 
 共有シークレット 2 本がずれると `/balance` などが 401 になります。
 
@@ -256,6 +257,7 @@ openssl pkey -in verifier.key.pem -pubout -out verifier.pub.pem                 
 | `LOOKUP_READ_SECRET` | **identity・discord-bot と同一値** |
 | `RPC_URL` | 対象チェーンの RPC URL（Alchemy キーを含む） |
 | `HATS_GRAPHQL_ENDPOINT` | **Base のみ**。The Graph Gateway の URL（API キーを含む） |
+| `GOLDSKY_API_KEY` | **Base のみ**。Goldsky のプロジェクト API トークン。Base の `GOLDSKY_GRAPHQL_ENDPOINT` は private endpoint（公開エンドポイントは Workers からだと 429 になる）なので必須。**discord-bot と mcp で同じ値** |
 
 ### 6-3. secret の投入
 

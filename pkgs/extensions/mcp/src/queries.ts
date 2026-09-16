@@ -87,6 +87,7 @@ function goldsky<T>(
     variables,
     fetchImpl,
     label,
+    env.GOLDSKY_API_KEY,
   );
 }
 

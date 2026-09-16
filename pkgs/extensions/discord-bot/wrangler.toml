@@ -89,7 +89,9 @@ service = "toban-identity-base"
 
 [env.base.vars]
 # Toban subgraph (Goldsky) on Base.
-GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-base/0.0.1/gn"
+# Private endpoint: the public one rate-limits Workers' shared egress into
+# constant 429s. Requires the GOLDSKY_API_KEY secret (sent as a Bearer token).
+GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/private/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-base/0.0.1/gn"
 # Hats subgraph on Base — Hats Protocol's official subgraph on The Graph's
 # decentralised Gateway (the Studio endpoint was retired). The Gateway URL
 # embeds a Graph API key, so it is a secret (not in [vars]). Mirrors the
@@ -144,6 +146,9 @@ head_sampling_rate = 1
 #   RPC_URL                       - chain RPC (embeds the Alchemy key) for every
 #                                   env; kept as a secret so the key never lands
 #                                   in git. Local dev: put it in .dev.vars.
+#   GOLDSKY_API_KEY (base)        - Base only: Goldsky project API token for the
+#                                   private GOLDSKY_GRAPHQL_ENDPOINT. Sent to
+#                                   Goldsky only, never to the Hats endpoint.
 #   HATS_GRAPHQL_ENDPOINT (base)  - Base only: The Graph Gateway URL embeds an
 #                                   API key, so it is a secret on Base. Sepolia
 #                                   keeps the keyless Goldsky URL in [vars].

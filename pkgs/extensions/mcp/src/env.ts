@@ -54,6 +54,14 @@ export interface Env {
 
   // -- secrets --------------------------------------------------------------
   /**
+   * Goldsky project API token, sent as `Authorization: Bearer` to
+   * `GOLDSKY_GRAPHQL_ENDPOINT` only. Required when that endpoint is a
+   * `/api/private/` URL (Base): Goldsky's public endpoint rate-limits
+   * requests from Workers' shared egress into constant 429s. Unset → no
+   * header, which is what the public endpoint (Sepolia) expects.
+   */
+  GOLDSKY_API_KEY?: string;
+  /**
    * HMAC key behind the MCP endpoint's `tbn2` bearer tokens (`src/auth.ts`).
    * Moved here from `@toban/discord-bot` as part of the extraction — see
    * `docs/mcp-extraction.md` §8. Mint tokens via `POST /api/mcp-tokens`

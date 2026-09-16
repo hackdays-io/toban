@@ -165,7 +165,7 @@ export async function resolveThanksTokenAddress(
   }
   const res = await fetchImpl(endpoint, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: graphQLHeaders(env.GOLDSKY_API_KEY),
     body: JSON.stringify({
       query: "query($id: ID!) { workspace(id: $id) { thanksToken { id } } }",
       variables: { id: treeId },
@@ -200,6 +200,15 @@ function treeIdToHatsHex(treeId: string): string {
   return `0x${decimal.toString(16).padStart(8, "0")}`;
 }
 
+function graphQLHeaders(bearerToken: string | undefined): HeadersInit {
+  return bearerToken
+    ? {
+        "content-type": "application/json",
+        authorization: `Bearer ${bearerToken}`,
+      }
+    : { "content-type": "application/json" };
+}
+
 /**
  * POST a GraphQL `query` to `endpoint` and return its `data`, applying the
  * env guard, `res.ok` check, and `errors[]` handling every resolver in this
@@ -213,6 +222,10 @@ function treeIdToHatsHex(treeId: string): string {
  * copy of this same helper (`docs/mcp-extraction.md` §8 — an accepted,
  * deliberate duplication, not a shared import across the package boundary),
  * so nothing outside this file needs to reach this one.
+ *
+ * `bearerToken` is sent as `Authorization: Bearer ...` when present. Only
+ * the Goldsky call sites pass one (`GOLDSKY_API_KEY`) — never pass it for
+ * `HATS_GRAPHQL_ENDPOINT`, which on Base is a third party (The Graph).
  */
 async function postGraphQL<T>(
   endpoint: string | undefined,
@@ -221,13 +234,14 @@ async function postGraphQL<T>(
   variables: Record<string, unknown>,
   fetchImpl: typeof fetch,
   label: string,
+  bearerToken?: string,
 ): Promise<T> {
   if (!endpoint) {
     throw new Error(`${envVarName} is not configured`);
   }
   const res = await fetchImpl(endpoint, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: graphQLHeaders(bearerToken),
     body: JSON.stringify({ query, variables }),
   });
   if (!res.ok) {
@@ -297,7 +311,7 @@ export async function resolveRelatedRoles(
   > => {
     const tobanRes = await fetchImpl(env.GOLDSKY_GRAPHQL_ENDPOINT, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: graphQLHeaders(env.GOLDSKY_API_KEY),
       body: JSON.stringify({
         query:
           "query($owner: String!, $workspaceId: String!) {" +
@@ -413,6 +427,7 @@ export async function resolveQuestModuleAddress(
     { id: treeId },
     fetchImpl,
     "subgraph quest-module lookup",
+    env.GOLDSKY_API_KEY,
   );
   const addr = data.workspace?.hatsQuestModule;
   return addr ? (addr as Hex) : null;
@@ -492,6 +507,7 @@ export async function resolveSubmittableQuests(
     { id: treeId },
     fetchImpl,
     "subgraph quests lookup",
+    env.GOLDSKY_API_KEY,
   );
   const actorLower = actor.toLowerCase();
   return (data.workspace?.quests ?? [])

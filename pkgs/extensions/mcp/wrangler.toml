@@ -80,7 +80,9 @@ binding = "CONFIRM"
 service = "toban-discord-bot-base"
 
 [env.base.vars]
-GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-base/0.0.1/gn"
+# Private endpoint: the public one rate-limits Workers' shared egress into
+# constant 429s. Requires the GOLDSKY_API_KEY secret (sent as a Bearer token).
+GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/private/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-base/0.0.1/gn"
 TOBAN_FRONTEND_URL = "https://toban.xyz"
 # RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
 #   pnpm exec wrangler secret put RPC_URL --env base
@@ -113,6 +115,9 @@ head_sampling_rate = 1
 #                                   auth. MUST equal identity's AND
 #                                   discord-bot's value for the same env.
 #   RPC_URL                       - chain RPC (embeds the Alchemy key).
+#   GOLDSKY_API_KEY (base)        - Base only: Goldsky project API token for
+#                                   the private GOLDSKY_GRAPHQL_ENDPOINT. Sent
+#                                   to Goldsky only, never to the Hats endpoint.
 #   HATS_GRAPHQL_ENDPOINT (base)  - Base only: The Graph Gateway URL embeds
 #                                   an API key, so it is a secret on Base.
 #                                   Sepolia keeps the keyless Goldsky URL in

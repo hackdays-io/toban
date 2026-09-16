@@ -19,6 +19,12 @@ import { useActiveWallet } from "./useWallet";
 // the active wallet → wait for receipt → optionally parseEventLogs for the
 // id we need on the next screen. We split one hook per action so callers can
 // import only what they need, mirroring useHatsHatCreatorModule.
+//
+// Errors are *not* caught here. Every caller already wraps these in
+// `try { await …; toast.success() } catch { toast.error() }`, so swallowing a
+// revert or a wallet rejection turned it into a success toast in front of an
+// unchanged board. `useCreateQuest` is the one exception: it reports partial
+// batches through `CreateQuestsResult.error` instead of throwing.
 
 /**
  * Pull our own `QuestCreated` ids out of a receipt.
@@ -49,6 +55,31 @@ export const extractMyQuestIds = (
     )
     .map((log) => log.args?.questId)
     .filter((id): id is bigint => typeof id === "bigint");
+};
+
+/**
+ * Guard every quest write shares.
+ *
+ * The buttons that trigger these writes only render once the workspace has
+ * resolved a quest module and a wallet is connected, so a missing one is a
+ * bug rather than a state the user can be in. The previous `return undefined`
+ * resolved *successfully*, which let the caller announce success for a
+ * transaction that never left the browser — throwing puts it on the same
+ * path as a revert.
+ *
+ * Generic over the wallet so callers keep the narrowed `WalletType` union
+ * (smart-wallet client vs viem `WalletClient`) they already had.
+ */
+export const requireQuestWriteContext = <W>(
+  hatsQuestModuleAddress: Address | undefined,
+  wallet: W | undefined | null,
+): { moduleAddress: Address; wallet: W } => {
+  if (!hatsQuestModuleAddress || !wallet) {
+    throw new Error(
+      "Quest write attempted before the quest module address and wallet were ready",
+    );
+  }
+  return { moduleAddress: hatsQuestModuleAddress, wallet };
 };
 
 export interface CreateQuestsResult {
@@ -241,12 +272,15 @@ export const useSubmitQuestCompletion = (hatsQuestModuleAddress?: Address) => {
 
   const submitCompletion = useCallback(
     async (params: { questId: bigint; membershipHatId: bigint }) => {
-      if (!hatsQuestModuleAddress || !wallet) return;
+      const { moduleAddress, wallet: activeWallet } = requireQuestWriteContext(
+        hatsQuestModuleAddress,
+        wallet,
+      );
       setIsLoading(true);
       setIsSuccess(false);
       try {
-        const txHash = await wallet.writeContract({
-          ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
+        const txHash = await activeWallet.writeContract({
+          ...hatsQuestContractBaseConfig(moduleAddress),
           functionName: "submitCompletion",
           // Self-service path: submitter = address(0) → the contract records
           // msg.sender as the submitter. Proxy submission (non-zero submitter)
@@ -258,8 +292,6 @@ export const useSubmitQuestCompletion = (hatsQuestModuleAddress?: Address) => {
         });
         setIsSuccess(true);
         return receipt;
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -279,12 +311,15 @@ export const useWithdrawQuestSubmission = (
 
   const withdrawSubmission = useCallback(
     async (questId: bigint) => {
-      if (!hatsQuestModuleAddress || !wallet) return;
+      const { moduleAddress, wallet: activeWallet } = requireQuestWriteContext(
+        hatsQuestModuleAddress,
+        wallet,
+      );
       setIsLoading(true);
       setIsSuccess(false);
       try {
-        const txHash = await wallet.writeContract({
-          ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
+        const txHash = await activeWallet.writeContract({
+          ...hatsQuestContractBaseConfig(moduleAddress),
           functionName: "withdrawSubmission",
           args: [questId],
         });
@@ -293,8 +328,6 @@ export const useWithdrawQuestSubmission = (
         });
         setIsSuccess(true);
         return receipt;
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -312,12 +345,15 @@ export const useRejectQuestSubmission = (hatsQuestModuleAddress?: Address) => {
 
   const rejectSubmission = useCallback(
     async (questId: bigint) => {
-      if (!hatsQuestModuleAddress || !wallet) return;
+      const { moduleAddress, wallet: activeWallet } = requireQuestWriteContext(
+        hatsQuestModuleAddress,
+        wallet,
+      );
       setIsLoading(true);
       setIsSuccess(false);
       try {
-        const txHash = await wallet.writeContract({
-          ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
+        const txHash = await activeWallet.writeContract({
+          ...hatsQuestContractBaseConfig(moduleAddress),
           functionName: "rejectSubmission",
           args: [questId],
         });
@@ -326,8 +362,6 @@ export const useRejectQuestSubmission = (hatsQuestModuleAddress?: Address) => {
         });
         setIsSuccess(true);
         return receipt;
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -345,12 +379,15 @@ export const useApproveQuest = (hatsQuestModuleAddress?: Address) => {
 
   const approve = useCallback(
     async (params: { questId: bigint; membershipHatId: bigint }) => {
-      if (!hatsQuestModuleAddress || !wallet) return;
+      const { moduleAddress, wallet: activeWallet } = requireQuestWriteContext(
+        hatsQuestModuleAddress,
+        wallet,
+      );
       setIsLoading(true);
       setIsSuccess(false);
       try {
-        const txHash = await wallet.writeContract({
-          ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
+        const txHash = await activeWallet.writeContract({
+          ...hatsQuestContractBaseConfig(moduleAddress),
           functionName: "approve",
           args: [params.questId, params.membershipHatId],
         });
@@ -359,8 +396,6 @@ export const useApproveQuest = (hatsQuestModuleAddress?: Address) => {
         });
         setIsSuccess(true);
         return receipt;
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -378,12 +413,15 @@ export const useCancelQuest = (hatsQuestModuleAddress?: Address) => {
 
   const cancel = useCallback(
     async (questId: bigint) => {
-      if (!hatsQuestModuleAddress || !wallet) return;
+      const { moduleAddress, wallet: activeWallet } = requireQuestWriteContext(
+        hatsQuestModuleAddress,
+        wallet,
+      );
       setIsLoading(true);
       setIsSuccess(false);
       try {
-        const txHash = await wallet.writeContract({
-          ...hatsQuestContractBaseConfig(hatsQuestModuleAddress),
+        const txHash = await activeWallet.writeContract({
+          ...hatsQuestContractBaseConfig(moduleAddress),
           functionName: "cancel",
           args: [questId],
         });
@@ -392,8 +430,6 @@ export const useCancelQuest = (hatsQuestModuleAddress?: Address) => {
         });
         setIsSuccess(true);
         return receipt;
-      } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }

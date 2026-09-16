@@ -8,7 +8,10 @@ import {
   parseAbiParameters,
 } from "viem";
 import { describe, expect, it } from "vitest";
-import { extractMyQuestIds } from "./useHatsQuestModule";
+import {
+  extractMyQuestIds,
+  requireQuestWriteContext,
+} from "./useHatsQuestModule";
 
 const MODULE = "0x1111111111111111111111111111111111111111" as Address;
 const OTHER_MODULE = "0x2222222222222222222222222222222222222222" as Address;
@@ -103,5 +106,31 @@ describe("extractMyQuestIds", () => {
       } as Log,
     ];
     expect(extractMyQuestIds(logs, MODULE, ME)).toEqual([]);
+  });
+});
+
+// The quest write hooks used to `return` when either was missing, which the
+// route could not distinguish from a confirmed transaction — it awaited the
+// promise and fired a success toast. See #522.
+describe("requireQuestWriteContext", () => {
+  const WALLET = { writeContract: () => Promise.resolve("0x") };
+
+  it("returns the module address and wallet when both are present", () => {
+    expect(requireQuestWriteContext(MODULE, WALLET)).toEqual({
+      moduleAddress: MODULE,
+      wallet: WALLET,
+    });
+  });
+
+  it("throws when the quest module address has not resolved yet", () => {
+    expect(() => requireQuestWriteContext(undefined, WALLET)).toThrow(
+      /before the quest module address and wallet were ready/,
+    );
+  });
+
+  it("throws when no wallet is connected", () => {
+    expect(() => requireQuestWriteContext(MODULE, undefined)).toThrow(
+      /before the quest module address and wallet were ready/,
+    );
   });
 });

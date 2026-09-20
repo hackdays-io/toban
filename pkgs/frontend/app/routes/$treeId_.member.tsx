@@ -2,6 +2,7 @@ import type { Tree } from "@hatsprotocol/sdk-v1-subgraph";
 import { useNamesByAddresses } from "hooks/useENS";
 import { useGetBalanceOfFractionTokens } from "hooks/useFractionToken";
 import { useTreeInfo } from "hooks/useHats";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { type FC, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ipfs2https } from "utils/ipfs";
@@ -253,6 +254,7 @@ const DesktopMembersView: FC<DesktopMembersViewProps> = ({
   const [selectedAddress, setSelectedAddress] = useState<string>();
   const selected =
     members.find((m) => m.address === selectedAddress) ?? members[0];
+  const detailRef = useScrollToTop([selected?.address]);
 
   return (
     <div className="grid grid-cols-[320px_1fr] gap-6">
@@ -320,7 +322,10 @@ const DesktopMembersView: FC<DesktopMembersViewProps> = ({
       </aside>
 
       {/* Detail */}
-      <section>
+      <section
+        ref={detailRef}
+        className="max-h-[calc(100dvh-10rem)] overflow-auto"
+      >
         {selected ? (
           <Card className="gap-5 px-6 py-7">
             <MemberDetailContent

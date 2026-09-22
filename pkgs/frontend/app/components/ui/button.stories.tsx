@@ -77,3 +77,34 @@ export const Disabled: Story = () => (
     </Button>
   </div>
 );
+
+export const Loading: Story = () => (
+  <div className="flex flex-col items-start gap-3">
+    <div className="flex flex-wrap items-center gap-3">
+      <Button loading>送信する</Button>
+      <Button loading loadingText="送信中…">
+        送信する
+      </Button>
+      <Button variant="secondary" loading loadingText="保存中…">
+        保存する
+      </Button>
+      <Button variant="dark" loading loadingText="作成中…">
+        作成する
+      </Button>
+    </div>
+    <div className="flex items-center gap-3">
+      <Button size="sm" loading loadingText="送信中…">
+        送信する
+      </Button>
+      <Button size="lg" loading loadingText="送信中…">
+        送信する
+      </Button>
+      <Button size="icon" loading aria-label="送信中">
+        <Icon name="send" />
+      </Button>
+    </div>
+    <Button full loading loadingText="ブロックチェーンに書き込んでいます…">
+      送信する
+    </Button>
+  </div>
+);

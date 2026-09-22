@@ -52,12 +52,15 @@ import {
 } from "~/components/ui/dialog";
 import { Icon } from "~/components/ui/icon";
 import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { Typography } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 type Step = "form" | "preview" | "done";
 
 const TOTAL_STEPS = 3;
+/** Mirrors the quest-description cap; long enough for a sentence or two. */
+const SPLIT_DESCRIPTION_MAX_LENGTH = 200;
 const STEP_INDEX: Record<Step, number> = {
   form: 0,
   preview: 1,
@@ -138,6 +141,12 @@ const SplitterNew: FC = () => {
     if (!splitterName) return false;
     return addresses?.[0]?.length === 0;
   }, [splitterName, addresses]);
+
+  // Free-text "what is this split for?" — stored as the `description` text
+  // record on the split's ENS subname (the same key member profiles use for
+  // their bio) so the detail / list screens can explain the split without a
+  // contract change.
+  const [description, setDescription] = useState("");
 
   const [dutyWeight, setDutyWeight] = useState(75);
   const [recvWeight, setRecvWeight] = useState(50);
@@ -382,9 +391,13 @@ const SplitterNew: FC = () => {
         .split;
       if (created) {
         try {
+          const trimmedDescription = description.trim();
           await setName({
             name: `${splitterName}.split`,
             address: created,
+            text_records: trimmedDescription
+              ? { description: trimmedDescription }
+              : undefined,
           });
         } catch (error) {
           console.warn("Failed to set ENS name:", error);
@@ -395,7 +408,14 @@ const SplitterNew: FC = () => {
       console.error("Failed to create split:", error);
       toast.error("分配ルールの作成に失敗しました");
     }
-  }, [calcSplitsParams, createSplits, setName, splitterName, weightParams]);
+  }, [
+    calcSplitsParams,
+    createSplits,
+    description,
+    setName,
+    splitterName,
+    weightParams,
+  ]);
 
   const previewSlices = useMemo<DonutSlice[]>(() => {
     if (!preview || preview.totalOwnership === 0) return [];
@@ -495,6 +515,31 @@ const SplitterNew: FC = () => {
                 : availableName
                   ? "この名前は利用可能です"
                   : "この名前は利用できません"}
+            </Typography>
+          </div>
+
+          <div className="px-5">
+            <FieldLabel htmlFor="split-description">分配の説明</FieldLabel>
+            <Textarea
+              id="split-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="例：2026年5月分の活動への報酬。当番の実績とサンクスをもとに分配します"
+              rows={3}
+              maxLength={SPLIT_DESCRIPTION_MAX_LENGTH}
+            />
+            <Typography
+              variant="micro"
+              tone="secondary"
+              as="div"
+              className="mt-1 flex justify-between gap-2"
+            >
+              <span>
+                なんのための分配かを書いておくと、詳細画面に表示されます
+              </span>
+              <span className="tabular-nums">
+                {description.length} / {SPLIT_DESCRIPTION_MAX_LENGTH}
+              </span>
             </Typography>
           </div>
 
@@ -786,6 +831,15 @@ const SplitterNew: FC = () => {
               <Typography variant="caption" tone="secondary">
                 {splitterName}
               </Typography>
+              {description.trim() && (
+                <Typography
+                  variant="bodySm"
+                  tone="secondary"
+                  className="whitespace-pre-wrap"
+                >
+                  {description.trim()}
+                </Typography>
+              )}
             </Card>
 
             <section className="flex flex-col gap-2">

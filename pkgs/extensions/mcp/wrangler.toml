@@ -52,8 +52,8 @@ binding = "CONFIRM"
 service = "toban-discord-bot"
 
 [vars]
-GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/toban-sepolia/1.0.3/gn"
-HATS_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm4r39viziqcd01wo6y96c1r6/subgraphs/hats-v1-sepolia/0.0.1/gn"
+GOLDSKY_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm5nv64onnxxz01wf8smdgk1e/subgraphs/toban-sepolia/1.0.3/gn"
+HATS_GRAPHQL_ENDPOINT = "https://api.goldsky.com/api/public/project_cm5nv64onnxxz01wf8smdgk1e/subgraphs/hats-v1-sepolia/1.0.0/gn"
 TOBAN_FRONTEND_URL = "http://localhost:5173"
 # RPC_URL is a secret (it embeds the Alchemy key) — never put it in [vars]:
 #   wrangler secret put RPC_URL --env <env>   |   local dev: add it to .dev.vars

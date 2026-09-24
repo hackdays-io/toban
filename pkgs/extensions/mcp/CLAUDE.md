@@ -237,7 +237,8 @@ pnpm mcp mint-mcp-token <treeId> <label> [--env base]   # operator escape hatch
 
 **Deploying**: read `DEPLOYMENT.md` (repo root) first. Non-obvious constraints:
 
-- **Deploy order: `identity` → `discord-bot` → `mcp` → `openclaw`.** This
+- **Deploy order: `identity` → `discord-bot` → `mcp` → OpenClaw
+  ([`hackdays-io/openclaw-config`](https://github.com/hackdays-io/openclaw-config)).** This
   worker service-binds to *both* `toban-identity` (read-only identity
   resolution) and `toban-discord-bot` (the `CONFIRM` adapter) by name — a
   missing binding target fails the deploy with Cloudflare error 10143.

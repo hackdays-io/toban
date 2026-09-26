@@ -148,11 +148,13 @@ const SplitsIndex: FC = () => {
         ? `${ensEntry.name}.${ensEntry.domain}`
         : undefined;
       const displayName = ensFullName ?? abbreviateAddress(split.address);
+      const description = ensEntry?.text_records?.description?.trim();
       return {
         split,
         recipients,
         displayName,
         ensFullName,
+        description: description || undefined,
         recipientCount: recipients.list.length,
         createdAt: created
           ? dayjs(created * 1000).format("YYYY/MM/DD")
@@ -337,6 +339,8 @@ interface SplitListItem {
   recipients: ConsolidatedRecipients;
   displayName: string;
   ensFullName?: string;
+  /** `description` ENS text record — what the split is for, if the creator said. */
+  description?: string;
   recipientCount: number;
   createdAt?: string;
 }
@@ -413,6 +417,16 @@ const SplitListCard: FC<SplitListCardProps> = ({
               />
             )}
           </div>
+          {item.description && (
+            <Typography
+              as="div"
+              variant="caption"
+              tone="secondary"
+              className="mt-0.5 line-clamp-2 break-words"
+            >
+              {item.description}
+            </Typography>
+          )}
           <CopyableAddress address={item.split.address} />
           <Typography
             as="div"
@@ -478,6 +492,11 @@ const MasterRow: FC<MasterRowProps> = ({ item, selected, onClick }) => (
       <Typography as="div" variant="bodySm" weight="bold" truncate>
         {item.displayName}
       </Typography>
+      {item.description && (
+        <Typography variant="micro" tone="secondary" as="div" truncate>
+          {item.description}
+        </Typography>
+      )}
       <Typography variant="micro" tone="secondary" as="div" truncate>
         {item.recipientCount}人に分配
         {item.createdAt && ` ・ ${item.createdAt}`}
@@ -523,6 +542,14 @@ const DesktopDetailPreview: FC<DesktopDetailPreviewProps> = ({
               <CopyIconButton label="ENS名" value={item.ensFullName} />
             )}
           </div>
+          {item.description && (
+            <Typography
+              variant="bodySm"
+              className="mt-1 whitespace-pre-wrap break-words"
+            >
+              {item.description}
+            </Typography>
+          )}
           <CopyableAddress address={item.split.address} className="mt-1" />
           <Typography variant="bodySm" tone="secondary" className="mt-1">
             合計 100% ・ 対象 {item.recipientCount}人

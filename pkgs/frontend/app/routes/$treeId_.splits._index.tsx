@@ -421,6 +421,7 @@ const SplitListCard: FC<SplitListCardProps> = ({
             <Typography
               as="div"
               variant="caption"
+              tone="secondary"
               className="mt-0.5 line-clamp-2 break-words"
             >
               {item.description}
@@ -492,7 +493,7 @@ const MasterRow: FC<MasterRowProps> = ({ item, selected, onClick }) => (
         {item.displayName}
       </Typography>
       {item.description && (
-        <Typography variant="micro" as="div" truncate>
+        <Typography variant="micro" tone="secondary" as="div" truncate>
           {item.description}
         </Typography>
       )}

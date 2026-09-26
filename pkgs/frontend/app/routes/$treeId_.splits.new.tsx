@@ -59,7 +59,7 @@ import { cn } from "~/lib/utils";
 type Step = "form" | "preview" | "done";
 
 const TOTAL_STEPS = 3;
-/** Mirrors the quest-description cap; long enough for a sentence or two. */
+/** Long enough for a sentence or two; ENS text records are kept short. */
 const SPLIT_DESCRIPTION_MAX_LENGTH = 200;
 const STEP_INDEX: Record<Step, number> = {
   form: 0,
@@ -525,7 +525,6 @@ const SplitterNew: FC = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="例：2026年5月分の活動への報酬。当番の実績とサンクスをもとに分配します"
-              rows={3}
               maxLength={SPLIT_DESCRIPTION_MAX_LENGTH}
             />
             <Typography

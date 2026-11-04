@@ -63,7 +63,7 @@ error 10143 で失敗します。
 
 | 設定場所 | 変数 |
 |---|---|
-| `pkgs/contract/.env` | `PRIVATE_KEY`（Sepolia） / `PRODUCTION_PRIVATE_KEY`（Base） / `ALCHEMY_API_KEY` / `ETHERSCAN_API_KEY` / `BASESCAN_API_KEY` |
+| `pkgs/contract/.env` | `PRIVATE_KEY`（Sepolia / Base Sepolia） / `PRODUCTION_PRIVATE_KEY`（Base） / `ALCHEMY_API_KEY` / `ETHERSCAN_API_KEY`（Etherscan API v2 の単一キーで全チェーンを verify） |
 | `pkgs/subgraph/config/<net>.json` | `address`（BigBang） / `startBlock` |
 | `pkgs/frontend/.env`（Sepolia）<br>`pkgs/frontend/.env.base`（Base） | `VITE_BIGBANG_ADDRESS` ほか `VITE_*` / `VITE_GOLDSKY_GRAPHQL_ENDPOINT` |
 | Vercel の環境変数（**`VITE_` 無し = サーバー専用**） | `NAMESPACE_API_KEY` / `NAMESPACE_MODE` / `ENS_PARENT_NAME` / `NAMESPACE_TIMEOUT_MS` |

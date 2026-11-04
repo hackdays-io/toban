@@ -22,6 +22,7 @@ export const Default: Story = () => {
   return (
     <div className="overflow-hidden rounded-md border">
       <MasterDetailLayout
+        detailScrollKey={selected}
         master={
           <div className="flex flex-col gap-1.5 p-3">
             {duties.map((d) => {

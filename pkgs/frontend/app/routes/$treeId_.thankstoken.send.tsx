@@ -1,6 +1,7 @@
 import { MintThanksToken_OrderBy, type OrderDirection } from "gql/graphql";
 import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import {
   pollActivityMintsAfterSend,
   useGetMintThanksTokens,
@@ -332,8 +333,10 @@ const ThanksTokenSend: FC = () => {
   const showStepBar =
     step === "recipient" || step === "compose" || step === "confirm";
 
+  const rootRef = useScrollToTop([step]);
+
   return (
-    <PageContainer className="pt-2 pb-24">
+    <PageContainer ref={rootRef} className="pt-2 pb-24">
       {showHeader && (
         <ScreenHeader
           className="-mx-4 px-4 md:-mx-6 md:px-6"

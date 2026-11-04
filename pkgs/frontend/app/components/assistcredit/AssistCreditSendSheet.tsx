@@ -14,12 +14,14 @@ import type { HatsDetailSchama } from "types/hats";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress } from "utils/wallet";
 import type { Address } from "viem";
+import { CenteredPanel } from "~/components/composite/centered-panel";
 import { Chip } from "~/components/composite/chip";
 import { Divider } from "~/components/composite/divider";
 import { EmptyState } from "~/components/composite/empty-state";
 import { FieldLabel } from "~/components/composite/field-label";
 import { Row } from "~/components/composite/row";
 import { SectionLabel } from "~/components/composite/section-label";
+import { TransactionProgressPanel } from "~/components/composite/transaction-progress-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Icon } from "~/components/ui/icon";
@@ -268,7 +270,13 @@ const AssistCreditSendSheet: FC<AssistCreditSendSheetProps> = ({
           />
         )}
 
-        {step === "sending" && <SendingPanel />}
+        {step === "sending" && (
+          <TransactionProgressPanel
+            fill="panel"
+            title="ロールシェアを送信しています…"
+            description="ブロックチェーンへの書き込みを待っています"
+          />
+        )}
 
         {step === "done" && recipients.length > 0 && (
           <DonePanel
@@ -515,20 +523,6 @@ const ComposePanel: FC<{
   );
 };
 
-const SendingPanel: FC = () => (
-  <CenteredPanel>
-    <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-primary-soft animate-pulse">
-      <Icon name="send" size={28} className="text-primary" />
-    </div>
-    <Typography variant="body" weight="bold">
-      ロールシェアを送信しています…
-    </Typography>
-    <Typography variant="bodySm" tone="secondary" className="mt-2">
-      ブロックチェーンへの書き込みを待っています
-    </Typography>
-  </CenteredPanel>
-);
-
 const DonePanel: FC<{
   recipients: NameData[];
   amount: number;
@@ -542,7 +536,7 @@ const DonePanel: FC<{
       abbreviateAddress(recipients[0].address as `0x${string}`));
   const total = amount * recipients.length;
   return (
-    <CenteredPanel>
+    <CenteredPanel fill="panel">
       <div
         className="mb-5 flex size-[72px] items-center justify-center rounded-full bg-contrib text-white"
         style={{ boxShadow: "0 0 0 10px rgba(101,201,138,0.15)" }}
@@ -572,12 +566,6 @@ const DonePanel: FC<{
     </CenteredPanel>
   );
 };
-
-const CenteredPanel: FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex min-h-[280px] flex-1 flex-col items-center justify-center px-6 text-center">
-    {children}
-  </div>
-);
 
 const Skeleton: FC = () => (
   <div className="overflow-hidden rounded-md border bg-card">

@@ -1,5 +1,5 @@
 import { http, createPublicClient, fallback } from "viem";
-import { base, mainnet, optimism, sepolia } from "viem/chains";
+import { base, baseSepolia, mainnet, optimism, sepolia } from "viem/chains";
 
 export const chainId = Number(import.meta.env.VITE_CHAIN_ID) || 1;
 
@@ -12,7 +12,9 @@ export const currentChain =
         ? optimism
         : chainId === 8453
           ? base
-          : sepolia;
+          : chainId === 84532
+            ? baseSepolia
+            : sepolia;
 
 // Chain-specific Alchemy RPC URL. Centralised so both `publicClient` (fallback
 // transport, used by the rest of the app) and `alchemyPublicClient` (single
@@ -27,7 +29,9 @@ const alchemyRpcUrl =
         ? `https://opt-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`
         : chainId === 8453
           ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`
-          : `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`;
+          : chainId === 84532
+            ? `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`
+            : `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`;
 
 // Public-node RPC per chain. Adds a free, keyless fallback layer between
 // viem's built-in default (chain.rpcUrls.default) and Alchemy, so a single
@@ -41,7 +45,9 @@ const publicNodeRpcUrl =
         ? "https://optimism-rpc.publicnode.com"
         : chainId === 8453
           ? "https://base-rpc.publicnode.com"
-          : "https://ethereum-sepolia-rpc.publicnode.com";
+          : chainId === 84532
+            ? "https://base-sepolia-rpc.publicnode.com"
+            : "https://ethereum-sepolia-rpc.publicnode.com";
 
 // viem's default is `retryCount: 3` with exponential backoff. On a rate-limit
 // or outage that wastes the next-tier fallback's headroom (and Alchemy's

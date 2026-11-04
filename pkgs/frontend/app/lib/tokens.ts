@@ -35,6 +35,15 @@ export const TOKEN_PRESETS: Record<number, TokenPreset[]> = {
       decimals: 18,
     },
   ],
+  // Base Sepolia
+  84532: [
+    {
+      symbol: "USDC",
+      name: "USD Coin",
+      address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      decimals: 6,
+    },
+  ],
   // Base mainnet
   8453: [
     {

@@ -1,0 +1,17 @@
+{
+  "contracts": {
+    "HatsTimeFrameModule": "0x7fa6c0F8e4412ED72Ded8d591ABF58B276A992C9",
+    "ThanksTokenFactory_Implementation": "0x6E50A9C909043Bf518d31E43E35fffe34306A1D4",
+    "SplitsCreator": "0xbEDa908672b45ce6dd6a5a9461d5e83f03F27C9F",
+    "ScheduledDistributor": "0x406B184Ffe30FB5Bc096D373c42295F8F6474367",
+    "ThanksTokenFactory": "0xAaD7C0dE8B4729D3397EB44DF9757060E09Eeb1F",
+    "SplitsCreatorFactory": "0x68ff212A14F3d41db0BcFf4dE5D2375e88976383",
+    "ScheduledDistributorFactory": "0x4A6A3111eAc4b18E19298da6b94337262eB13758",
+    "BigBang": "0xCf5D0D5d95C8B14bE2E5C1E49740eBa312f7d696"
+  },
+  "implementations": {
+    "SplitsCreatorFactory_Implementation": "0xaFE964766cCD100F9FCd288F863B0972f8283885",
+    "ScheduledDistributorFactory_Implementation": "0xF0FA1255d179542d424D2110e17CA7cbe409E75B",
+    "BigBang_Implementation": "0xD91A21d104DB994572cEE83aD73cc745A4582f41"
+  }
+}

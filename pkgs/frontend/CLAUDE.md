@@ -105,7 +105,7 @@ Rules that are easy to get wrong:
 - **Writes go through `createSubname` only.** `POST /subnames` is an upsert, and every other SDK write helper (`updateSubname`, `addTextRecord`, `setDefaultEvmAddress`, …) rebuilds the record without `owner` and silently wipes ownership. Send the full record each time; an omitted text record is a deletion.
 - **Never `throw data(…)` from inside a `try`** in the API route. `data()` returns a `DataWithResponseInit`, so the route's own `catch` swallows it and re-reports a 500 — that was the original 409-becomes-500 bug. Throw `NameApiError(status, message)` and let the boundary translate it.
 - `getSingleSubname` does not return `null` on 404 despite its type; `NamespaceProvider` absorbs that.
-- Splits register dotted labels (`foo.split.toban.eth`). The provider derives the label from `fullName` rather than `dto.label` so re-parenting on the API side can't truncate it. **Nested labels are still unverified against a live Namespace tenant** — check this on Sepolia staging before trusting split names.
+- Splits register dotted labels (`foo.split.toban.eth`). The provider derives the label from `fullName` rather than `dto.label` so re-parenting on the API side can't truncate it. Verified against the live Namespace tenant on both networks (Base `分配１.split.toban.eth`, Sepolia `yosuke-test-20260924.split.toban.eth`): the label round-trips as `<name>.split`, and non-ASCII (Japanese) labels work.
 
 ## Testing
 

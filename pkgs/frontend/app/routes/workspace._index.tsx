@@ -126,7 +126,7 @@ const Workspace: FC = () => {
       ownedHats.map((h) => [String(treeIdHexToDecimal(h.tree.id)), h]),
     );
     // Keep Toban-indexed ids even when Hats metadata is unavailable (e.g.
-    // invalid VITE_THEGRAPH_API_KEY). Cards fall back to "Workspace #id".
+    // a misconfigured Hats subgraph endpoint). Cards fall back to "Workspace #id".
     return ownedIdsToResolve.map((id) => {
       const hat = hatByTreeId.get(id);
       return {

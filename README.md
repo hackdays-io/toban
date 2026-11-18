@@ -449,7 +449,7 @@ git add -A
 git commit -m "feat: ..."
 ```
 
-メインリポジトリと同じ lefthook の pre-commit (biome + frontend typecheck) が走ります。
+メインリポジトリと同じ lefthook の pre-commit (staged ファイルへの biome と、それを含むパッケージの typecheck) が走ります。
 
 ### 3. リモート main 向け PR を作成
 

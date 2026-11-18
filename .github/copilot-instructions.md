@@ -71,7 +71,7 @@ pnpm biome:check
 - **New contract**: Create in appropriate `/contracts/` subdirectory with tests
 - **Frontend components**: Place in `/app/components/` with proper typing
 - **GraphQL queries**: Use codegen with `pnpm frontend codegen`
-- **Documentation**: update the affected package's `README.md` / `CLAUDE.md`; deploy steps live in `DEPLOYMENT.md` at the repo root (there is no top-level `docs/` runbook)
+- **Documentation**: update the affected package's `README.md` / `AGENTS.md`; deploy steps live in `DEPLOYMENT.md` at the repo root (there is no top-level `docs/` runbook)
 
 ## Important Patterns & Best Practices
 
@@ -124,7 +124,7 @@ pnpm biome:check
 ## Serena MCP Integration
 
 > **⚠️ 非推奨 / DEPRECATED.** このセクションは Serena MCP が設定されていた頃の名残です。
-> **Claude Code はこの指示に従いません**（リポジトリルートの `CLAUDE.md` で明示的に無効化済み）。
+> **Claude Code はこの指示に従いません**（リポジトリルートの `AGENTS.md` で明示的に無効化済み）。
 > Serena をセットアップしていないツールでは、以下の `mcp_serena_*` 呼び出しはすべて失敗します。
 > 通常のファイル読み書き・検索ツールを使ってください。
 

@@ -13,7 +13,7 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 | Cloudflare Workers（共通） | [`pkgs/extensions/README.md`](pkgs/extensions/README.md) |
 | identity Worker | [`pkgs/extensions/identity/README.md`](pkgs/extensions/identity/README.md) |
 | discord-bot Worker | [`pkgs/extensions/discord-bot/README.md`](pkgs/extensions/discord-bot/README.md) |
-| mcp Worker(MCP サーバー本体) | [`pkgs/extensions/mcp/CLAUDE.md`](pkgs/extensions/mcp/CLAUDE.md) |
+| mcp Worker(MCP サーバー本体) | [`pkgs/extensions/mcp/AGENTS.md`](pkgs/extensions/mcp/AGENTS.md) |
 | OpenClaw（Discord エージェント / Fly.io） | [`pkgs/openclaw/README.md`](pkgs/openclaw/README.md) |
 | 症状別の対処 | [`pkgs/extensions/discord-bot/docs/deploy-base-production.md`](pkgs/extensions/discord-bot/docs/deploy-base-production.md) |
 | 鍵のローテーション | [`pkgs/extensions/discord-bot/docs/key-rotation.md`](pkgs/extensions/discord-bot/docs/key-rotation.md) |
@@ -317,7 +317,7 @@ openssl rand -base64 32 | pnpm --filter @toban/mcp exec wrangler secret put MCP_
 **トークンの発行は `/$treeId/settings` から本人が行うのが主経路です。** ワークスペースの
 operator hat または top hat を着ているウォレットで EIP-712 に署名し、`POST
 /api/mcp-tokens` がその場でトークンを発行します(運営の手作業は不要)。同じ画面で
-発行済みトークンの一覧・失効もできます。詳細は `pkgs/extensions/mcp/CLAUDE.md` と
+発行済みトークンの一覧・失効もできます。詳細は `pkgs/extensions/mcp/AGENTS.md` と
 `docs/mcp-extraction.md` §5。
 
 CLI でのトークン発行は**非常口**として残っています(フロントが落ちているとき、または

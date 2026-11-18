@@ -1,0 +1,34 @@
+name: Verify (scripts/verify.sh)
+
+# CI runs exactly what the agent loop runs locally: scripts/verify.sh against
+# the PR's base. It discovers workspace packages itself (Biome, typecheck/test
+# or each package's `verify` script, plus workspace structure checks), so this
+# file does not need to change when a package is added.
+# Contract tests and the frontend build also have their own workflows.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify affected packages
+        run: scripts/verify.sh
+        env:
+          VERIFY_BASE_REF: origin/${{ github.base_ref }}

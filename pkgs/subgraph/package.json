@@ -6,6 +6,7 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
+    "verify": "pnpm run prepare:sepolia && graph codegen && graph build",
     "codegen": "graph codegen",
     "build": "graph build",
     "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.yaml",

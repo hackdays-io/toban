@@ -1,19 +1,13 @@
 import { MintThanksToken_OrderBy, type OrderDirection } from "gql/graphql";
 import { useActiveWalletIdentity, useNamesByAddresses } from "hooks/useENS";
 import { useTreeInfo } from "hooks/useHats";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import {
   pollActivityMintsAfterSend,
   useGetMintThanksTokens,
   useThanksToken,
 } from "hooks/useThanksToken";
-import {
-  type FC,
-  type ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck } from "react-icons/lu";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -22,6 +16,7 @@ import { goldskyClient } from "utils/apollo";
 import { ipfs2https } from "utils/ipfs";
 import { abbreviateAddress, isValidEthAddress } from "utils/wallet";
 import { type Address, formatEther, parseEther, stringToHex } from "viem";
+import { CenteredPanel } from "~/components/composite/centered-panel";
 import { Chip } from "~/components/composite/chip";
 import { Divider } from "~/components/composite/divider";
 import { EmptyState } from "~/components/composite/empty-state";
@@ -29,6 +24,7 @@ import { FieldLabel } from "~/components/composite/field-label";
 import { Row } from "~/components/composite/row";
 import { SectionLabel } from "~/components/composite/section-label";
 import { StepBar } from "~/components/composite/step-bar";
+import { TransactionProgressPanel } from "~/components/composite/transaction-progress-panel";
 import { TreatEmojiSlider } from "~/components/composite/treat-emoji-slider";
 import { PageContainer } from "~/components/layout/PageContainer";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
@@ -332,8 +328,10 @@ const ThanksTokenSend: FC = () => {
   const showStepBar =
     step === "recipient" || step === "compose" || step === "confirm";
 
+  const rootRef = useScrollToTop([step]);
+
   return (
-    <PageContainer className="pt-2 pb-24">
+    <PageContainer ref={rootRef} className="pt-2 pb-24">
       {showHeader && (
         <ScreenHeader
           className="-mx-4 px-4 md:-mx-6 md:px-6"
@@ -393,7 +391,12 @@ const ThanksTokenSend: FC = () => {
         />
       )}
 
-      {step === "sending" && <SendingStep />}
+      {step === "sending" && (
+        <TransactionProgressPanel
+          title="サンクスを送信しています…"
+          description="ブロックチェーンへの書き込みを待っています"
+        />
+      )}
 
       {step === "done" && recipients.length > 0 && (
         <DoneStep
@@ -857,24 +860,6 @@ const ConfirmStep: FC<ConfirmStepProps> = ({
 };
 
 // ───────────────────────────────────────────────────────────────
-// Step 4: sending (pulse)
-// ───────────────────────────────────────────────────────────────
-
-const SendingStep: FC = () => (
-  <CenteredPanel>
-    <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-primary-soft animate-pulse">
-      <Icon name="send" size={28} className="text-primary" />
-    </div>
-    <Heading variant="h4" level={2}>
-      サンクスを送信しています…
-    </Heading>
-    <Typography variant="bodySm" tone="secondary" className="mt-2">
-      ブロックチェーンへの書き込みを待っています
-    </Typography>
-  </CenteredPanel>
-);
-
-// ───────────────────────────────────────────────────────────────
 // Step 5: done
 // ───────────────────────────────────────────────────────────────
 
@@ -927,17 +912,3 @@ const DoneStep: FC<{
     </CenteredPanel>
   );
 };
-
-const CenteredPanel: FC<{ children: ReactNode; className?: string }> = ({
-  children,
-  className,
-}) => (
-  <div
-    className={cn(
-      "flex min-h-[calc(100dvh-12rem)] flex-col items-center justify-center px-6 text-center",
-      className,
-    )}
-  >
-    {children}
-  </div>
-);

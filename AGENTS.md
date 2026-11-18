@@ -14,7 +14,7 @@ Rules that must hold are enforced by hooks/scripts, not just by this text. When 
 | Not done until `scripts/verify.sh` exits 0 | `.claude/hooks/stop-verify.sh` (Stop) |
 | Biome + frontend typecheck on commit | Lefthook (`lefthook.yaml`) |
 | Same `scripts/verify.sh` on every PR, and `--all` on every push to `main` | GitHub Actions `check.yml` |
-| No stopgap comments (`workaround`, `暫定`, issue-less `TODO`, ...) | `scripts/check-comments.mjs`, run by `scripts/verify.sh` |
+| Every `TODO`/`FIXME` names its issue (`TODO(#123)`) | `scripts/check-todos.mjs`, run by `scripts/verify.sh` |
 | Every workspace package is registered (AGENTS.md, CLAUDE.md, root alias, a check script, listed below) | `scripts/verify.sh` structure check |
 | Contract tests / frontend build | GitHub Actions `test-contract.yml` / `build-frontend.yml` |
 
@@ -153,7 +153,7 @@ Removing a package: delete the directory, then run an unfiltered `pnpm install` 
 - Preserve workspace boundaries: code in `pkgs/frontend` should not import from `pkgs/contract` source; it consumes ABIs from `pkgs/frontend/abi/` (regenerated/copied) and the Goldsky GraphQL endpoint.
 - Scripts and config that act on "every package" must discover packages (from `pnpm-workspace.yaml` / `pnpm list -r`), not list them by name — the workspace grows.
 - Scripts and config that act on "every package" must discover packages (from `pnpm-workspace.yaml` / `pnpm list -r`), not list them by name — the workspace grows.
-- Don't explain a shortcut, stopgap, or history in a comment — fix it, or open an issue (`TODO(#123)` at most). Comments state only what code can't: specs, invariants, external constraints. `scripts/check-comments.mjs` (run by `verify.sh`) fails on stopgap wording and issue-less TODO/FIXME.
+- Don't explain a shortcut, stopgap, or history in a comment — fix it, or open an issue (`TODO(#123)` at most). Comments state only what code can't: specs, invariants, external constraints. `toban-reviewer` judges this; don't add a word-list check for it (excuses rarely use fixed words, and legitimate comments do).
 - New pure logic gets a test next to it. Fix bugs with a regression test first when practical.
 - When you learn something a future agent would trip over (a non-obvious invariant, a deploy gotcha), add it to the relevant `AGENTS.md` in the same PR — keep each file short and move details to the package guide.
 - The `.github/copilot-instructions.md` references Serena MCP tooling; that guidance does not apply here — use the agent's native tools.

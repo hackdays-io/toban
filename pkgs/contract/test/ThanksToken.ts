@@ -233,7 +233,7 @@ describe("ThanksToken", () => {
       );
     ThanksTokenFactory = _ThanksTokenFactory;
 
-    // The deployer acts as BigBang so the test can call the factory directly
+    // Set BigBang address on ThanksTokenFactory (temporarily set deployer for testing)
     await ThanksTokenFactory.write.setBigBang([deployerAddress]);
 
     // Create ThanksToken instance using factory

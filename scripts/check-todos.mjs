@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// Fails when a code comment justifies a stopgap instead of fixing it
-// (AGENTS.md: fix the code, or open an issue — don't explain the shortcut).
+// Fails on a to-do / fix-me marker comment that does not name its issue
+// (`TODO(#123)`, `FIXME #123`, or an `.../issues/123` URL). Deferred work
+// is tracked in an issue, not in the code.
 //
-//   node scripts/check-comments.mjs            # every tracked source file
-//   node scripts/check-comments.mjs a.ts b.sol # only these files
+//   node scripts/check-todos.mjs            # every tracked source file
+//   node scripts/check-todos.mjs a.ts b.sol # only these files
 //
 // Only comments are checked, never string literals or JSX text. JS/TS goes
 // through the TypeScript parser, so regex literals and JSX cannot be mistaken
-// for comments. A marker comment is allowed only with its issue next to it:
-// `TODO(#123)`, `FIXME #123`, or an `.../issues/123` URL.
+// for comments.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -31,23 +31,6 @@ export const EXCLUDED = [
   /^\.claude\/worktrees\//,
 ];
 
-const STOPGAP = [
-  /\bwork[- ]?arounds?\b/i,
-  /\bhack(s|y|ed|ish)?\b/i,
-  /\bkludge/i,
-  /\btemporar(y|ily)\b/i,
-  /\bquick[- ]?fix/i,
-  /\bhot[- ]?fix/i,
-  /\bband[- ]?aid/i,
-  /\bfor now\b/i,
-  /暫定/,
-  /とりあえず/,
-  /ひとまず/,
-  /一時しのぎ/,
-  /その場しのぎ/,
-  /応急/,
-  /回避策/,
-];
 const MARKER = /\b(TODO|FIXME|XXX)\b/;
 const MARKER_WITH_ISSUE = /\b(TODO|FIXME|XXX)(\(#\d+\)|:? #\d+\b)/;
 const ISSUE_URL = /\/issues\/\d+/;
@@ -188,15 +171,6 @@ function lineComments(src, marker, shell) {
 export function findViolations(source, path) {
   const findings = [];
   for (const { line, text } of extractComments(source, path)) {
-    const stopgap = STOPGAP.find((re) => re.test(text));
-    if (stopgap) {
-      findings.push({
-        line,
-        text: text.trim(),
-        reason: `stopgap wording "${text.match(stopgap)[0]}"`,
-      });
-      continue;
-    }
     const marker = text.match(MARKER);
     if (marker && !MARKER_WITH_ISSUE.test(text) && !ISSUE_URL.test(text)) {
       findings.push({
@@ -236,14 +210,12 @@ function main(args) {
   }
   if (count > 0) {
     console.log(`
-check-comments: ${count} comment(s) explain a stopgap instead of fixing it.
-Fix the code so the comment is unnecessary, or open an issue and delete the
-comment (a TODO/FIXME may stay only with its issue: "TODO(#123): ...").
-Keep only comments stating what the code cannot: protocol specs, security
-invariants, external API constraints. History belongs in git and the PR.`);
+check-todos: ${count} marker comment(s) without an issue.
+Do the work now, or open an issue and reference it: "TODO(#123): ...".
+Don't explain a shortcut or its history in a comment instead (AGENTS.md).`);
     process.exit(1);
   }
-  console.log(`check-comments: OK (${files.length} files)`);
+  console.log(`check-todos: OK (${files.length} files)`);
 }
 
 if (

@@ -10,6 +10,12 @@ on:
   pull_request:
     branches:
       - main
+  # Also check main itself after every merge. A PR whose checks ran before this
+  # workflow existed (or before a sibling PR landed) can merge green and still
+  # leave main failing — #592/#593 did exactly that, found only by #613.
+  push:
+    branches:
+      - main
 
 concurrency:
   group: verify-${{ github.ref }}
@@ -29,6 +35,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Verify affected packages
+        if: github.event_name == 'pull_request'
         run: scripts/verify.sh
         env:
           VERIFY_BASE_REF: origin/${{ github.base_ref }}
+      - name: Verify every package (main)
+        if: github.event_name == 'push'
+        run: scripts/verify.sh --all

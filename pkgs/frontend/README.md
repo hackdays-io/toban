@@ -5,7 +5,7 @@ React Router v7（Remix の後継）+ Vite の SSR アプリ。Tailwind v4 / sha
 
 - **デプロイ全体の順序は [`DEPLOYMENT.md`](../../DEPLOYMENT.md)（リポジトリルート）。**
   フロントは **subgraph を deploy した後**でないと `codegen` が通りません。
-- アーキテクチャ・コンポーネント規約・デザインシステムは [`CLAUDE.md`](./CLAUDE.md)。
+- アーキテクチャ・コンポーネント規約・デザインシステムは [`AGENTS.md`](./AGENTS.md)。
 
 ## コマンド
 

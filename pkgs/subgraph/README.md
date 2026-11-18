@@ -6,7 +6,7 @@ ThanksToken / ScheduledDistributor / HatsQuestModule）を動的テンプレー�
 
 - **デプロイ手順の正は [`DEPLOYMENT.md`](../../DEPLOYMENT.md)（リポジトリルート）です。**
   subgraph は **contract → sync:abis の後、frontend codegen の前**という順序に挟まれています。
-- エンティティ / マッピングの構成は [`CLAUDE.md`](./CLAUDE.md) を参照。
+- エンティティ / マッピングの構成は [`AGENTS.md`](./AGENTS.md) を参照。
 
 | | Sepolia | Base |
 |---|---|---|

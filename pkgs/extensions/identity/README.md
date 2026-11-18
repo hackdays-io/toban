@@ -228,7 +228,7 @@ scripts/
 
 ## Stack
 
-- **Cloudflare Workers** ランタイム (Node 専用 API は禁止)。許可された依存ライブラリの一覧はこのディレクトリの CLAUDE.md にあります。
+- **Cloudflare Workers** ランタイム (Node 専用 API は禁止)。許可された依存ライブラリの一覧はこのディレクトリの AGENTS.md にあります。
 - **viem** — `recoverTypedDataAddress`, `publicClient.verifyTypedData`, `keccak256`。Worker 互換。
 - **jose** — ES256 JWT 検証 (`importSPKI` + `jwtVerify`)。Worker 互換。
 - **drizzle-orm/d1** — D1 への型付きクエリ。同じ `queries.ts` がテストでは in-memory `better-sqlite3` でも動きます。

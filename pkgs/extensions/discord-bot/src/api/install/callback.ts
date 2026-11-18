@@ -195,11 +195,7 @@ export async function handleInstallCallback(
     );
   }
 
-  // TODO: verify the admin's wallet holds the workspace admin Hat via the
-  //   Hats contract. The frontend-initiated flow doesn't know the admin's
-  //   wallet without a separate identity binding step; for MVP we record
-  //   the zero sentinel. /toban-link (Discord-initiated) does this
-  //   already by reading the caller's identity-bound wallet.
+  // TODO(#616): record the installer's wallet after checking its admin Hat.
   const installedBy: Address =
     "0x0000000000000000000000000000000000000000" as Address;
 

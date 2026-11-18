@@ -5,7 +5,8 @@
 # (diff against the merge-base with origin/main + untracked files):
 #   0. Workspace structure: every package is registered the way AGENTS.md
 #      ("Adding a workspace package") requires.
-#   1. Biome on changed JS/TS/JSON files.
+#   1. Biome on changed JS/TS/JSON files, and scripts/check-todos.mjs
+#      (every to-do marker names its issue) with its tests.
 #   2. For every workspace package with changed (non-Markdown) files, plus every
 #      package that depends on it (pnpm dependency graph):
 #        - its `verify` script if it defines one, otherwise
@@ -88,6 +89,8 @@ done <<<"$ALL_PKGS"
 # Always the whole tree: Biome 1.9 ignores biome.json `files.ignore` for paths
 # passed explicitly, so a file list would lint generated code. `.` takes <1s.
 add "biome" "npx biome check --no-errors-on-unmatched --files-ignore-unknown=true ."
+# Whole tree, like Biome: it reads only comments and takes <1s.
+add "todos" "node --test 'scripts/*.test.mjs' && node scripts/check-todos.mjs"
 
 # --- 2. Workspace packages ---------------------------------------------------
 if [ $ALL -eq 1 ]; then

@@ -133,7 +133,7 @@ interface UnhandledErrorScreenProps {
 function UnhandledErrorScreen({ error }: UnhandledErrorScreenProps) {
   const { t } = useTranslation();
 
-  // TODO: forward `error` to Sentry / equivalent once observability lands.
+  // TODO(#617): forward `error` to an error-monitoring service.
 
   let detail = "";
   if (error instanceof Error) {

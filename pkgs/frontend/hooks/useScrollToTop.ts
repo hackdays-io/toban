@@ -99,7 +99,7 @@ export function useScrollReset(deps: DependencyList): void {
  */
 export function useDetailScrollReset(
   key: unknown,
-): RefObject<HTMLElement> {
+): RefObject<HTMLElement | null> {
   const ref = useRef<HTMLElement>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: key drives detail-pane scroll reset
   useLayoutEffect(() => {
@@ -120,7 +120,7 @@ export function useDetailScrollReset(
  */
 export function useScrollToTop(
   deps?: DependencyList,
-): RefObject<HTMLDivElement> {
+): RefObject<HTMLDivElement | null> {
   const rootRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     return runScrollReset(rootRef.current);

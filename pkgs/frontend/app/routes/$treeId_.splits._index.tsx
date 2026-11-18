@@ -3,11 +3,11 @@ import { useQueries } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useCopyToClipboard } from "hooks/useCopyToClipboard";
 import { useNamesByAddresses } from "hooks/useENS";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import {
   useSplitsCreatorRelatedSplits,
   useUserEarnings,
 } from "hooks/useSplitsCreator";
-import { useScrollToTop } from "hooks/useScrollToTop";
 import { publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
 import { type FC, useMemo, useState } from "react";

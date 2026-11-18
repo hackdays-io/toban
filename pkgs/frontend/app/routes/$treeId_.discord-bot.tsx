@@ -145,7 +145,7 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
     setPending("revoke");
     try {
       // transferHat(from→signer)+renounce, so the admin param must be the
-      // signing wallet (it temporarily receives the hat before renouncing).
+      // signing wallet (it holds the hat between the transfer and the renounce).
       await adminRevokeAuthorityHat({
         hatId: questAgentHatId,
         from: revokeTarget,

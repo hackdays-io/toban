@@ -13,8 +13,9 @@ export type TokenPreset = {
  * fallback in the UI lives outside this map — anything not listed here can
  * still be entered manually.
  *
- * TODO: double-check JPYC addresses with the operator before mainnet rollout.
- * Sepolia entries are best-effort testnet deployments.
+ * Sepolia entries are testnet deployments.
+ *
+ * TODO(#618): confirm the Base JPYC address with the operator.
  */
 export const TOKEN_PRESETS: Record<number, TokenPreset[]> = {
   // Sepolia

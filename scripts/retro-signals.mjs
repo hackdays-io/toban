@@ -7,7 +7,7 @@
 //   node scripts/retro-signals.mjs --json
 //
 // Deliberately records only *structural facts* — never guesses meaning from
-// words. Keyword matching ("違う", "とりあえず", ...) mistakes a person's verbal
+// words. Keyword matching ("違う", ...) mistakes a person's verbal
 // habits for friction and misses politely worded corrections, so the meaning is
 // judged later by /retro, in context and against that person's usual phrasing.
 //

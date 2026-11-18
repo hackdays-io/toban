@@ -19,6 +19,7 @@ import { FieldLabel } from "~/components/composite/field-label";
 import { NextStepCard } from "~/components/composite/next-step-card";
 import { StepBar } from "~/components/composite/step-bar";
 import { SummaryRow } from "~/components/composite/summary-row";
+import { TransactionProgressPanel } from "~/components/composite/transaction-progress-panel";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
 import {
   Avatar,
@@ -47,20 +48,17 @@ const WorkspaceNew: FC = () => {
   const navigate = useNavigate();
   const switchWorkspace = useWorkspaceStore((s) => s.switch);
   const { wallet } = useActiveWallet();
-  const { bigbang, isLoading: isCreating } = useBigBang();
-  const { uploadHatsDetailsToIpfs, isLoading: isUploadingDetails } =
-    useUploadHatsDetailsToIpfs();
+  const { bigbang } = useBigBang();
+  const { uploadHatsDetailsToIpfs } = useUploadHatsDetailsToIpfs();
   const {
     uploadImageFileToIpfs: uploadWorkspaceImage,
     imageFile: workspaceImage,
     setImageFile: setWorkspaceImage,
-    isLoading: isUploadingWorkspaceImage,
   } = useUploadImageFileToIpfs();
   const {
     uploadImageFileToIpfs: uploadRoleImage,
     imageFile: roleImage,
     setImageFile: setRoleImage,
-    isLoading: isUploadingRoleImage,
   } = useUploadImageFileToIpfs();
 
   // Flow state
@@ -113,11 +111,10 @@ const WorkspaceNew: FC = () => {
 
   const isBasicValid = name.trim().length > 0;
   const isRoleValid = roleName.trim().length > 0;
-  const isWorking =
-    isUploadingDetails ||
-    isUploadingWorkspaceImage ||
-    isUploadingRoleImage ||
-    isCreating;
+  // Owned by `handleCreate` rather than derived from the hooks' loading flags:
+  // those drop to false between uploads and during the post-receipt indexing
+  // wait, which would flash the confirm form (and its submit button) back.
+  const [isWorking, setIsWorking] = useState(false);
 
   const workspaceImagePreview = useMemo(
     () => (workspaceImage ? URL.createObjectURL(workspaceImage) : undefined),
@@ -142,6 +139,7 @@ const WorkspaceNew: FC = () => {
       return;
     }
 
+    setIsWorking(true);
     try {
       const workspaceMetadata = await uploadHatsDetailsToIpfs({
         name,
@@ -199,6 +197,8 @@ const WorkspaceNew: FC = () => {
     } catch (error) {
       console.error(error);
       alert(`エラーが発生しました。${error}`);
+    } finally {
+      setIsWorking(false);
     }
   };
 
@@ -495,7 +495,15 @@ const WorkspaceNew: FC = () => {
         </div>
       )}
 
-      {step === "confirm" && (
+      {step === "confirm" && isWorking && (
+        <TransactionProgressPanel
+          icon="sparkle"
+          title="ワークスペースを作成しています…"
+          description="ブロックチェーンへの書き込みと、反映を待っています。しばらくかかることがあります"
+        />
+      )}
+
+      {step === "confirm" && !isWorking && (
         <div className="flex flex-col gap-3">
           <div className="px-4">
             <div className="flex flex-col items-center gap-3 rounded-md border border-border bg-surface p-5 text-center shadow-1">
@@ -599,7 +607,6 @@ const WorkspaceNew: FC = () => {
             <Button
               variant="secondary"
               onClick={() => setStep("initial")}
-              disabled={isWorking}
               className="shrink-0"
             >
               戻って修正
@@ -607,11 +614,11 @@ const WorkspaceNew: FC = () => {
             <Button
               variant="primary"
               onClick={handleCreate}
-              disabled={isWorking || !wallet}
+              disabled={!wallet}
               data-testid="workspace-create-submit"
               className="flex-1"
             >
-              {isWorking ? "作成中..." : "作成する"}
+              作成する
             </Button>
           </div>
         </div>

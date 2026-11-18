@@ -214,13 +214,15 @@ const EditRole: FC = () => {
         <Button
           type="button"
           variant="primary"
-          disabled={!isValid || isSubmitting}
+          disabled={!isValid}
+          loading={isSubmitting}
+          loadingText="保存中…"
           onClick={handleSubmit}
           data-testid="duty-edit-submit"
           className="flex-1"
         >
           <Icon name="check" size={16} />
-          {isSubmitting ? "保存中..." : "保存"}
+          保存
         </Button>
         {/* Delete CTA parked — restore alongside the Sheet below when the
             on-chain duty-toggle work ships.

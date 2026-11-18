@@ -184,12 +184,12 @@ const SignupForm: FC = () => {
           size="lg"
           full
           onClick={handleSubmit}
-          disabled={!availableName || isIpfsLoading || isSetNameLoading}
+          disabled={!availableName}
+          loading={isIpfsLoading || isSetNameLoading}
+          loadingText="保存中..."
           data-testid="save-button"
         >
-          {isIpfsLoading || isSetNameLoading
-            ? "保存中..."
-            : "プロフィールを保存"}
+          プロフィールを保存
         </Button>
       </CardContent>
     </Card>

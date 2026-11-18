@@ -281,11 +281,13 @@ const BasicInfoSection: FC<BasicInfoSectionProps> = ({
           variant="primary"
           full
           size="lg"
-          disabled={!canSave || isSaving}
+          disabled={!canSave}
+          loading={isSaving}
+          loadingText="保存中..."
           onClick={performSave}
         >
           <LuCheck size={18} />
-          {isSaving ? "保存中..." : "保存"}
+          保存
         </Button>
       </div>
     </>
@@ -750,10 +752,12 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
                     onChange={(e) => setLabel(e.target.value)}
                   />
                   <Button
-                    disabled={!label.trim() || issuing}
+                    disabled={!label.trim()}
+                    loading={issuing}
+                    loadingText="署名中…"
                     onClick={handleIssue}
                   >
-                    {issuing ? "署名中…" : "発行"}
+                    発行
                   </Button>
                 </div>
               </div>
@@ -794,10 +798,11 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
                   <Button
                     variant="secondary"
                     size="sm"
-                    disabled={listAuthLoading}
+                    loading={listAuthLoading}
+                    loadingText="署名中…"
                     onClick={() => void handleRevealList()}
                   >
-                    {listAuthLoading ? "署名中…" : "署名して一覧を表示"}
+                    署名して一覧を表示
                   </Button>
                 </div>
               ) : tokensQuery.isLoading ? (
@@ -832,10 +837,11 @@ const McpTokenSection: FC<McpTokenSectionProps> = ({ wallet, treeId }) => {
                           <Button
                             variant="danger"
                             size="sm"
-                            disabled={revokingId === t.tokenId}
+                            loading={revokingId === t.tokenId}
+                            loadingText="失効中…"
                             onClick={() => handleRevoke(t.tokenId)}
                           >
-                            {revokingId === t.tokenId ? "失効中…" : "失効"}
+                            失効
                           </Button>
                         )
                       }
@@ -1060,16 +1066,13 @@ const AuthorityList: FC<AuthorityListProps> = ({
                   <Button
                     variant="danger"
                     size="sm"
-                    disabled={isRemoving}
+                    loading={isRemoving}
+                    loadingText={
+                      action === "renounce" ? "返上中..." : "剥奪中..."
+                    }
                     onClick={() => handleRemove(account.address, action)}
                   >
-                    {isRemoving
-                      ? action === "renounce"
-                        ? "返上中..."
-                        : "剥奪中..."
-                      : action === "renounce"
-                        ? "返上"
-                        : "剥奪"}
+                    {action === "renounce" ? "返上" : "剥奪"}
                   </Button>
                 ) : null
               }
@@ -1105,16 +1108,12 @@ const AuthorityList: FC<AuthorityListProps> = ({
         </div>
         <Button
           variant="primary"
-          disabled={
-            !authorityHatId ||
-            !resolved ||
-            (mutationKind === "add" && pendingAddress === resolved)
-          }
+          disabled={!authorityHatId || !resolved}
+          loading={mutationKind === "add" && pendingAddress === resolved}
+          loadingText="追加中..."
           onClick={handleAdd}
         >
-          {mutationKind === "add" && pendingAddress === resolved
-            ? "追加中..."
-            : "追加"}
+          追加
         </Button>
       </div>
     </div>
@@ -1238,9 +1237,9 @@ const AuthoritiesSection: FC<AuthoritiesSectionProps> = ({
                 !wallet ||
                 !topHat ||
                 !resolvedNewOwner ||
-                isTransferLoading ||
                 resolvedNewOwner.toLowerCase() === owner?.toLowerCase()
               }
+              loading={isTransferLoading}
               onClick={() => {
                 if (!wallet || !topHat || !resolvedNewOwner) return;
                 transferHat({

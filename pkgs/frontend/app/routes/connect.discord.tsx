@@ -539,9 +539,11 @@ const ConnectDiscord: FC = () => {
               <Button
                 full
                 onClick={onSubmit}
-                disabled={submitting || tokenExpired}
+                disabled={tokenExpired}
+                loading={submitting}
+                loadingText="署名中…"
               >
-                {submitting ? "署名中…" : "署名して連携"}
+                署名して連携
               </Button>
               {errorCode && !ERROR_MESSAGES[errorCode] && (
                 <Typography variant="caption" tone="danger">

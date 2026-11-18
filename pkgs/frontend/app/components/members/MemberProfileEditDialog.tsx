@@ -212,10 +212,12 @@ export const MemberProfileEditDialog: FC<MemberProfileEditDialogProps> = ({
             type="button"
             variant="primary"
             onClick={handleSubmit}
-            disabled={saving || isUpdating || !trimmedName || !nameAvailable}
+            disabled={!trimmedName || !nameAvailable}
+            loading={saving || isUpdating}
+            loadingText="保存中..."
             className="flex-1"
           >
-            {saving || isUpdating ? "保存中..." : "保存"}
+            保存
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -757,10 +757,11 @@ const ScheduledNew: FC = () => {
             <Button
               variant="primary"
               onClick={submitCreate}
-              disabled={isCreating}
+              loading={isCreating}
+              loadingText="作成中…"
               full
             >
-              {isCreating ? "作成中…" : "予約を作成して次へ"}
+              予約を作成して次へ
             </Button>
 
             <Dialog
@@ -969,16 +970,12 @@ const DepositStep: FC<{
                 <Button
                   variant="primary"
                   size="sm"
-                  disabled={isDone || isSubmitting || isLoading || !meta}
+                  disabled={isDone || isLoading || !meta}
+                  loading={isSubmitting}
+                  loadingText="送信中…"
                   onClick={() => handleDeposit(row)}
                 >
-                  {isDone
-                    ? "預入済"
-                    : isSubmitting
-                      ? "送信中…"
-                      : !meta
-                        ? "読み込み中…"
-                        : "預け入れる"}
+                  {isDone ? "預入済" : !meta ? "読み込み中…" : "預け入れる"}
                 </Button>
               </div>
             </div>

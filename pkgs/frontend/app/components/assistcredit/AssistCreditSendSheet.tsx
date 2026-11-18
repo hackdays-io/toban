@@ -244,57 +244,57 @@ const AssistCreditSendSheet: FC<AssistCreditSendSheetProps> = ({
         </SheetHeader>
 
         <div ref={panelRef} className="flex min-h-0 flex-1 flex-col">
-        {step === "recipient" && (
-          <RecipientPanel
-            search={search}
-            onSearchChange={setSearch}
-            isLoading={isMembersLoading}
-            members={filteredMembers}
-            isSelected={isSelected}
-            onToggle={toggleRecipient}
-            count={recipients.length}
-            onNext={() => recipients.length > 0 && setStep("compose")}
-          />
-        )}
+          {step === "recipient" && (
+            <RecipientPanel
+              search={search}
+              onSearchChange={setSearch}
+              isLoading={isMembersLoading}
+              members={filteredMembers}
+              isSelected={isSelected}
+              onToggle={toggleRecipient}
+              count={recipients.length}
+              onNext={() => recipients.length > 0 && setStep("compose")}
+            />
+          )}
 
-        {step === "compose" && recipients.length > 0 && (
-          <ComposePanel
-            recipients={recipients}
-            onEditRecipients={() => setStep("recipient")}
-            amountInput={amountInput}
-            onAmountInputChange={setAmountInput}
-            amount={amount}
-            myBalance={myBalance}
-            effectiveMax={effectiveMax}
-            presets={presets}
-            isOverMax={isOverMax}
-            valid={valid}
-            isLoading={isLoading}
-            onSubmit={submit}
-          />
-        )}
+          {step === "compose" && recipients.length > 0 && (
+            <ComposePanel
+              recipients={recipients}
+              onEditRecipients={() => setStep("recipient")}
+              amountInput={amountInput}
+              onAmountInputChange={setAmountInput}
+              amount={amount}
+              myBalance={myBalance}
+              effectiveMax={effectiveMax}
+              presets={presets}
+              isOverMax={isOverMax}
+              valid={valid}
+              isLoading={isLoading}
+              onSubmit={submit}
+            />
+          )}
 
-        {step === "sending" && (
-          <TransactionProgressPanel
-            fill="panel"
-            title="ロールシェアを送信しています…"
-            description="ブロックチェーンへの書き込みを待っています"
-          />
-        )}
+          {step === "sending" && (
+            <TransactionProgressPanel
+              fill="panel"
+              title="ロールシェアを送信しています…"
+              description="ブロックチェーンへの書き込みを待っています"
+            />
+          )}
 
-        {step === "done" && recipients.length > 0 && (
-          <DonePanel
-            recipients={recipients}
-            amount={amount}
-            onClose={() => handleOpenChange(false)}
-            onSendAnother={() => {
-              setRecipients([]);
-              setAmountInput("");
-              setSearch("");
-              setStep("recipient");
-            }}
-          />
-        )}
+          {step === "done" && recipients.length > 0 && (
+            <DonePanel
+              recipients={recipients}
+              amount={amount}
+              onClose={() => handleOpenChange(false)}
+              onSendAnother={() => {
+                setRecipients([]);
+                setAmountInput("");
+                setSearch("");
+                setStep("recipient");
+              }}
+            />
+          )}
         </div>
       </SheetContent>
     </Sheet>

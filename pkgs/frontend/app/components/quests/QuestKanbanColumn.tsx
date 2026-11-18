@@ -68,9 +68,10 @@ const QuestKanbanColumn: FC<QuestKanbanColumnProps> = ({
           size="sm"
           full
           onClick={onLoadMore}
-          disabled={loadingMore}
+          loading={loadingMore}
+          loadingText="読み込み中…"
         >
-          {loadingMore ? "読み込み中…" : "もっと見る"}
+          もっと見る
         </Button>
       )}
     </section>

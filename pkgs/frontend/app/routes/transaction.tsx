@@ -285,11 +285,12 @@ const Transaction: FC = () => {
         <Button
           type="button"
           full
-          disabled={isLoading}
+          loading={isLoading}
+          loadingText="実行中…"
           onClick={handleTransactionExecution}
           className="mt-8"
         >
-          {isLoading ? "実行中…" : "実行"}
+          実行
         </Button>
       </PageContainer>
     </div>

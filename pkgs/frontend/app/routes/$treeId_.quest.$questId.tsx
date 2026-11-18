@@ -135,8 +135,18 @@ const QuestDetailRoute: FC = () => {
   const { cancel, isLoading: isCancelling } =
     useCancelQuest(questModuleAddress);
 
-  const txInFlight =
-    isSubmitting || isWithdrawing || isRejecting || isApproving || isCancelling;
+  const pendingAction: QuestAction | null = isSubmitting
+    ? "submit"
+    : isWithdrawing
+      ? "withdraw"
+      : isRejecting
+        ? "reject"
+        : isApproving
+          ? "approve"
+          : isCancelling
+            ? "cancel"
+            : null;
+  const txInFlight = pendingAction !== null;
 
   // ── Actions ──────────────────────────────────────────────────
   const onSubmitCompletion = async () => {
@@ -337,7 +347,7 @@ const QuestDetailRoute: FC = () => {
         isSubmitter={isSubmitter}
         isMember={isMember}
         hasApproved={hasApproved}
-        txInFlight={txInFlight}
+        pendingAction={pendingAction}
         onSubmitCompletion={onSubmitCompletion}
         onWithdraw={onWithdraw}
         onReject={onReject}
@@ -497,6 +507,8 @@ const CompletedCard: FC<{
   </Card>
 );
 
+type QuestAction = "submit" | "withdraw" | "reject" | "approve" | "cancel";
+
 interface ActionZoneProps {
   quest: QuestDetail;
   me?: string;
@@ -504,7 +516,8 @@ interface ActionZoneProps {
   isSubmitter: boolean;
   isMember: boolean;
   hasApproved: boolean;
-  txInFlight: boolean;
+  /** The write in flight — its button spins, the others are disabled. */
+  pendingAction: QuestAction | null;
   onSubmitCompletion: () => void;
   onWithdraw: () => void;
   onReject: () => void;
@@ -519,13 +532,14 @@ const ActionZone: FC<ActionZoneProps> = ({
   isSubmitter,
   isMember,
   hasApproved,
-  txInFlight,
+  pendingAction,
   onSubmitCompletion,
   onWithdraw,
   onReject,
   onApprove,
   onCancel,
 }) => {
+  const txInFlight = pendingAction !== null;
   if (!me) {
     return (
       <div className="px-1 pt-1">
@@ -550,6 +564,7 @@ const ActionZone: FC<ActionZoneProps> = ({
             full
             onClick={onCancel}
             disabled={txInFlight}
+            loading={pendingAction === "cancel"}
           >
             キャンセル
           </Button>
@@ -568,6 +583,8 @@ const ActionZone: FC<ActionZoneProps> = ({
           full
           onClick={onSubmitCompletion}
           disabled={txInFlight}
+          loading={pendingAction === "submit"}
+          loadingText="申請中…"
         >
           <Icon name="check" size={16} />
           完了申請する
@@ -585,6 +602,7 @@ const ActionZone: FC<ActionZoneProps> = ({
             full
             onClick={onWithdraw}
             disabled={txInFlight}
+            loading={pendingAction === "withdraw"}
           >
             申請を取り下げる
           </Button>
@@ -599,6 +617,8 @@ const ActionZone: FC<ActionZoneProps> = ({
             full
             onClick={onApprove}
             disabled={txInFlight}
+            loading={pendingAction === "approve"}
+            loadingText="承認中…"
           >
             <Icon name="check" size={16} />
             承認する
@@ -608,6 +628,7 @@ const ActionZone: FC<ActionZoneProps> = ({
             full
             onClick={onReject}
             disabled={txInFlight}
+            loading={pendingAction === "reject"}
           >
             申請を却下する
           </Button>
@@ -633,6 +654,8 @@ const ActionZone: FC<ActionZoneProps> = ({
           full
           onClick={onApprove}
           disabled={txInFlight}
+          loading={pendingAction === "approve"}
+          loadingText="承認中…"
         >
           <Icon name="check" size={16} />
           承認する

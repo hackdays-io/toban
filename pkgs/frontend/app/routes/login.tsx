@@ -264,11 +264,13 @@ const Login: FC = () => {
                 size="lg"
                 full
                 data-testid="login-email-submit"
-                disabled={!isEmailValid || isSendingCode}
+                disabled={!isEmailValid}
+                loading={isSendingCode}
+                loadingText="コードを送信中..."
                 onClick={handleSendCode}
               >
                 <Icon name="mail" size={18} />
-                {isSendingCode ? "コードを送信中..." : "メールで続ける"}
+                メールで続ける
               </Button>
 
               <div className="flex items-center gap-3 py-1" aria-hidden="true">
@@ -284,10 +286,11 @@ const Login: FC = () => {
                 size="lg"
                 full
                 data-testid="login-google"
-                disabled={isOAuthLoading}
+                loading={isOAuthLoading}
+                loadingText="Google に接続中..."
                 onClick={handleGoogle}
               >
-                {isOAuthLoading ? "Google に接続中..." : "Google で続ける"}
+                Google で続ける
               </Button>
               <Button
                 variant="ghost"
@@ -342,10 +345,12 @@ const Login: FC = () => {
                 size="lg"
                 full
                 data-testid="login-otp-submit"
-                disabled={otp.length !== OTP_LENGTH || isSubmittingCode}
+                disabled={otp.length !== OTP_LENGTH}
+                loading={isSubmittingCode}
+                loadingText="認証中..."
                 onClick={handleSubmitCode}
               >
-                {isSubmittingCode ? "認証中..." : "認証する"}
+                認証する
               </Button>
               <Button
                 variant="ghost"

@@ -19,6 +19,7 @@ import { FieldLabel } from "~/components/composite/field-label";
 import { Row } from "~/components/composite/row";
 import { SectionLabel } from "~/components/composite/section-label";
 import { SummaryRow } from "~/components/composite/summary-row";
+import { TransactionProgressPanel } from "~/components/composite/transaction-progress-panel";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -495,7 +496,14 @@ const AssignDuty: FC = () => {
       )}
 
       {/* ── Step 3: confirm ─────────────────────────────────── */}
-      {step === "confirm" && selected && (
+      {step === "confirm" && selected && submitting && (
+        <TransactionProgressPanel
+          icon="plus"
+          title="担当を追加しています…"
+          description="ブロックチェーンへの書き込みと、反映を待っています"
+        />
+      )}
+      {step === "confirm" && selected && !submitting && (
         <>
           <ScreenHeader
             title="内容を確認"
@@ -526,7 +534,6 @@ const AssignDuty: FC = () => {
               type="button"
               variant="secondary"
               onClick={() => setStep("settings")}
-              disabled={submitting}
               className="shrink-0"
             >
               戻って修正
@@ -535,12 +542,11 @@ const AssignDuty: FC = () => {
               type="button"
               variant="primary"
               onClick={handleAssign}
-              disabled={submitting}
               data-testid="assign-submit"
               className="flex-1"
             >
               <Icon name="plus" size={16} />
-              {submitting ? "追加中..." : "追加する"}
+              追加する
             </Button>
           </div>
         </>

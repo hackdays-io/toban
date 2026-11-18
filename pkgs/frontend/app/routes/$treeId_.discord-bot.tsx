@@ -229,16 +229,20 @@ const QuestAgentSection: FC<QuestAgentSectionProps> = ({
         <div className="grid grid-cols-2 gap-2">
           <Button
             disabled={!canManage || pending !== null || hasWearer}
+            loading={pending === "grant"}
+            loadingText="送信中…"
             onClick={grant}
           >
-            {pending === "grant" ? "送信中…" : "有効化（付与）"}
+            有効化（付与）
           </Button>
           <Button
             variant="danger"
             disabled={!canManage || pending !== null || !revokeTarget}
+            loading={pending === "revoke"}
+            loadingText="送信中…"
             onClick={revoke}
           >
-            {pending === "revoke" ? "送信中…" : "無効化（剥奪）"}
+            無効化（剥奪）
           </Button>
         </div>
       </CardContent>
@@ -537,11 +541,11 @@ const DiscordBotWorkspace: FC = () => {
                   key={amount.toString()}
                   variant="secondary"
                   disabled={submittingAmount !== null}
+                  loading={submittingAmount === parseEther(amount.toString())}
+                  loadingText="送信中…"
                   onClick={() => submitApprove(parseEther(amount.toString()))}
                 >
-                  {submittingAmount === parseEther(amount.toString())
-                    ? "送信中…"
-                    : `${amount.toString()} THX`}
+                  {`${amount.toString()} THX`}
                 </Button>
               ))}
             </div>
@@ -560,13 +564,15 @@ const DiscordBotWorkspace: FC = () => {
                 />
                 <Button
                   disabled={parsedCustom === null || submittingAmount !== null}
+                  loading={
+                    submittingAmount !== null &&
+                    parsedCustom !== null &&
+                    submittingAmount === parsedCustom
+                  }
+                  loadingText="送信中…"
                   onClick={() => parsedCustom && submitApprove(parsedCustom)}
                 >
-                  {submittingAmount !== null &&
-                  parsedCustom !== null &&
-                  submittingAmount === parsedCustom
-                    ? "送信中…"
-                    : "適用"}
+                  適用
                 </Button>
               </div>
               {customAmount && parsedCustom === null && (
@@ -585,16 +591,20 @@ const DiscordBotWorkspace: FC = () => {
                 <Button
                   variant="ghost"
                   disabled={submittingAmount !== null}
+                  loading={submittingAmount === maxUint256}
+                  loadingText="送信中…"
                   onClick={() => submitApprove(maxUint256)}
                 >
-                  {submittingAmount === maxUint256 ? "送信中…" : "∞ (非推奨)"}
+                  ∞ (非推奨)
                 </Button>
                 <Button
                   variant="danger"
                   disabled={submittingAmount !== null}
+                  loading={submittingAmount === 0n}
+                  loadingText="送信中…"
                   onClick={() => submitApprove(0n)}
                 >
-                  {submittingAmount === 0n ? "送信中…" : "Revoke (0)"}
+                  Revoke (0)
                 </Button>
               </div>
             </div>

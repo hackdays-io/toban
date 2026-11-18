@@ -11,6 +11,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { Address } from "viem";
+import { TransactionProgressPanel } from "~/components/composite/transaction-progress-panel";
 import { ScreenHeader } from "~/components/layout/ScreenHeader";
 import { DutyForm, type DutyFormValues } from "~/components/roles/DutyForm";
 import { SEED_PALETTE } from "~/components/ui/avatar";
@@ -152,37 +153,45 @@ const NewRole: FC = () => {
         title="当番を作成"
         onBack={() => navigate(`/${treeId}/role`)}
       />
-      <DutyForm
-        value={form}
-        onChange={setForm}
-        imagePreview={imagePreview}
-        onImageSelect={setImageFile}
-        fallbackColor={fallbackColor}
-        fallbackIcon={fallbackIcon}
-        disabled={isSubmitting}
-      />
-      <div className="flex gap-2.5 px-4 pt-2 pb-6">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => navigate(`/${treeId}/role`)}
-          disabled={isSubmitting}
-          className="shrink-0"
-        >
-          キャンセル
-        </Button>
-        <Button
-          type="button"
-          variant="primary"
-          disabled={!isValid || isSubmitting}
-          onClick={handleSubmit}
-          data-testid="duty-create-submit"
-          className="flex-1"
-        >
-          <Icon name="plus" size={16} />
-          {isSubmitting ? "作成中..." : "作成する"}
-        </Button>
-      </div>
+      {isSubmitting ? (
+        <TransactionProgressPanel
+          icon="duty"
+          title="当番を作成しています…"
+          description="ブロックチェーンへの書き込みと、反映を待っています"
+        />
+      ) : (
+        <>
+          <DutyForm
+            value={form}
+            onChange={setForm}
+            imagePreview={imagePreview}
+            onImageSelect={setImageFile}
+            fallbackColor={fallbackColor}
+            fallbackIcon={fallbackIcon}
+          />
+          <div className="flex gap-2.5 px-4 pt-2 pb-6">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate(`/${treeId}/role`)}
+              className="shrink-0"
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!isValid}
+              onClick={handleSubmit}
+              data-testid="duty-create-submit"
+              className="flex-1"
+            >
+              <Icon name="plus" size={16} />
+              作成する
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

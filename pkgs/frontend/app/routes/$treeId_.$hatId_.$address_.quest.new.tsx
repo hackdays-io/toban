@@ -214,7 +214,6 @@ const QuestCreate: FC = () => {
   // Batch is one signature and atomic, so a count would be noise. The EOA path
   // sends one transaction per quest and genuinely has a position to report.
   const submitLabel = useMemo(() => {
-    if (!isSubmitting) return undefined;
     if (progress?.mode === "sequential" && progress.requested > 1) {
       return `作成中… (${Math.min(progress.done + 1, progress.requested)}/${progress.requested})`;
     }
@@ -222,7 +221,7 @@ const QuestCreate: FC = () => {
       return `${progress.requested}件を作成中…`;
     }
     return "作成中…";
-  }, [isSubmitting, progress]);
+  }, [progress]);
 
   // ── Gate ──────────────────────────────────────────────────────
   // URL-direct hit when viewer holds no share: block the form. Wallet not
@@ -447,16 +446,12 @@ const QuestCreate: FC = () => {
           variant="primary"
           className="flex-1"
           onClick={onSubmit}
-          disabled={!valid || isSubmitting}
+          disabled={!valid}
+          loading={isSubmitting}
+          loadingText={submitLabel}
         >
-          {isSubmitting ? (
-            submitLabel
-          ) : (
-            <>
-              <Icon name="plus" size={16} />
-              {count > 1 ? `${count}件作成する` : "作成する"}
-            </>
-          )}
+          <Icon name="plus" size={16} />
+          {count > 1 ? `${count}件作成する` : "作成する"}
         </Button>
       </div>
 

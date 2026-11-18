@@ -683,11 +683,13 @@ const SplitterNew: FC = () => {
             <Button
               variant="primary"
               full
-              disabled={!isFormValid || isPreviewing}
+              disabled={!isFormValid}
+              loading={isPreviewing}
+              loadingText="プレビューを準備中…"
               onClick={handlePreview}
             >
               <Icon name="pie" size={16} />
-              {isPreviewing ? "プレビューを準備中…" : "プレビューを見る"}
+              プレビューを見る
             </Button>
           </div>
 
@@ -869,11 +871,12 @@ const SplitterNew: FC = () => {
               <Button
                 variant="primary"
                 onClick={handleCreate}
-                disabled={isLoading}
+                loading={isLoading}
+                loadingText="作成中…"
                 full
                 className="md:order-1"
               >
-                {isLoading ? "作成中…" : "作成する"}
+                作成する
               </Button>
               <Button
                 variant="secondary"

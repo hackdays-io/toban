@@ -64,6 +64,12 @@ const ScheduledDetail: FC = () => {
   // Selected token for the deposit row defaults to the first configured token.
   const [depositToken, setDepositToken] = useState<string>("");
   const [depositAmount, setDepositAmount] = useState("");
+  // `isLoading` is shared by every write, and after the deadline deposit,
+  // execute and reclaim are on screen together — remember which one was
+  // pressed so only that button spins.
+  const [pendingAction, setPendingAction] = useState<
+    "deposit" | "execute" | "reclaim" | null
+  >(null);
 
   const sd = detail.data?.scheduledDistributor;
 
@@ -222,7 +228,11 @@ const ScheduledDetail: FC = () => {
     // The hook catches errors internally and returns undefined on failure
     // (the failure toast comes from the hook). Gate the input-clear + refetch
     // on actual success so a reverted/rejected tx preserves the typed amount.
-    const receipt = await deposit(activeDepositToken as Address, amount);
+    setPendingAction("deposit");
+    const receipt = await deposit(
+      activeDepositToken as Address,
+      amount,
+    ).finally(() => setPendingAction(null));
     if (!receipt) return;
     setDepositAmount("");
     ruleQuery.refetch();
@@ -236,14 +246,18 @@ const ScheduledDetail: FC = () => {
     const wearersByHat = rule.confirmedWearers.map(
       (group) => group.filter(Boolean) as Address[],
     );
-    const receipt = await execute(wearersByHat);
+    setPendingAction("execute");
+    const receipt = await execute(wearersByHat).finally(() =>
+      setPendingAction(null),
+    );
     if (!receipt) return;
     ruleQuery.refetch();
     detail.refetch();
   };
 
   const handleReclaim = async () => {
-    const receipt = await reclaim();
+    setPendingAction("reclaim");
+    const receipt = await reclaim().finally(() => setPendingAction(null));
     if (!receipt) return;
     ruleQuery.refetch();
     detail.refetch();
@@ -466,7 +480,12 @@ const ScheduledDetail: FC = () => {
             {tokenLabel(activeDepositToken)}
           </Typography>
         </div>
-        <Button variant="primary" onClick={handleDeposit} disabled={isLoading}>
+        <Button
+          variant="primary"
+          onClick={handleDeposit}
+          disabled={isLoading}
+          loading={pendingAction === "deposit"}
+        >
           預け入れ
         </Button>
       </Card>
@@ -483,7 +502,12 @@ const ScheduledDetail: FC = () => {
           <br />
           誰でも実行できます（ガス代は実行者が負担）。
         </Typography>
-        <Button variant="primary" onClick={handleExecute} disabled={isLoading}>
+        <Button
+          variant="primary"
+          onClick={handleExecute}
+          disabled={isLoading}
+          loading={pendingAction === "execute"}
+        >
           分配実行
         </Button>
       </Card>
@@ -502,6 +526,7 @@ const ScheduledDetail: FC = () => {
           variant="secondary"
           onClick={handleReclaim}
           disabled={isLoading || !isReclaimable || !isBackupWallet}
+          loading={pendingAction === "reclaim"}
         >
           回収を試みる
         </Button>

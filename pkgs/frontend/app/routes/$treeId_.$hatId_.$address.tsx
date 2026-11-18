@@ -318,7 +318,8 @@ const HolderDetail: FC = () => {
       <Button
         variant="primary"
         full
-        disabled={isInitialMinting}
+        loading={isInitialMinting}
+        loadingText="初期発行中…"
         onClick={async () => {
           if (!hatId || !address) return;
           try {
@@ -334,7 +335,7 @@ const HolderDetail: FC = () => {
           }
         }}
       >
-        {isInitialMinting ? "初期発行中…" : `${shareTitle}を初期発行する`}
+        {`${shareTitle}を初期発行する`}
       </Button>
     ) : null;
 
@@ -357,7 +358,8 @@ const HolderDetail: FC = () => {
           <Button
             variant="secondary"
             full
-            disabled={isDeactivating}
+            loading={isDeactivating}
+            loadingText="一時休止中…"
             onClick={async () => {
               if (!hatId || !address) return;
               try {
@@ -370,13 +372,14 @@ const HolderDetail: FC = () => {
               }
             }}
           >
-            {isDeactivating ? "一時休止中…" : "一時休止"}
+            一時休止
           </Button>
         ) : (
           <Button
             variant="primary"
             full
-            disabled={isReactivating}
+            loading={isReactivating}
+            loadingText="再開中…"
             onClick={async () => {
               if (!hatId || !address) return;
               try {
@@ -389,13 +392,14 @@ const HolderDetail: FC = () => {
               }
             }}
           >
-            {isReactivating ? "再開中…" : "再開する"}
+            再開する
           </Button>
         )}
         <Button
           variant="danger"
           full
-          disabled={isRenouncing}
+          loading={isRenouncing}
+          loadingText="剥奪中…"
           onClick={async () => {
             if (!hatId || !address) return;
             try {
@@ -407,7 +411,7 @@ const HolderDetail: FC = () => {
             navigate(`/${treeId}/${hatId}`);
           }}
         >
-          {isRenouncing ? "剥奪中…" : "当番を剥奪"}
+          当番を剥奪
         </Button>
       </div>
     ) : null;

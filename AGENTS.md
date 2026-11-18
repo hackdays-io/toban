@@ -13,7 +13,7 @@ Rules that must hold are enforced by hooks/scripts, not just by this text. When 
 | Do not edit the main checkout while it is on `main` | `.claude/hooks/guard-main-checkout.sh` (PreToolUse) |
 | Not done until `scripts/verify.sh` exits 0 | `.claude/hooks/stop-verify.sh` (Stop) |
 | Biome + frontend typecheck on commit | Lefthook (`lefthook.yaml`) |
-| Same `scripts/verify.sh` on every PR | GitHub Actions `check.yml` |
+| Same `scripts/verify.sh` on every PR, and `--all` on every push to `main` | GitHub Actions `check.yml` |
 | Every workspace package is registered (AGENTS.md, CLAUDE.md, root alias, a check script, listed below) | `scripts/verify.sh` structure check |
 | Contract tests / frontend build | GitHub Actions `test-contract.yml` / `build-frontend.yml` |
 

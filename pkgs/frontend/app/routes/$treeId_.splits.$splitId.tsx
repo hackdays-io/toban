@@ -10,7 +10,7 @@ import {
 } from "hooks/useSplitsCreator";
 import { alchemyPublicClient, currentChain, publicClient } from "hooks/useViem";
 import { useGetWorkspace } from "hooks/useWorkspace";
-import { type FC, useMemo } from "react";
+import { type FC, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { NameData } from "types/ens";
@@ -523,6 +523,9 @@ const ClaimableBalancesCard: FC<ClaimableBalancesCardProps> = ({
   isDistributing,
   onDistribute,
 }) => {
+  // One `isDistributing` covers every row; remember which token was pressed so
+  // only that row's button spins.
+  const [pendingToken, setPendingToken] = useState<string>();
   const rows = useMemo(() => {
     if (!balances) return [];
     return Object.entries(balances).filter(
@@ -550,7 +553,11 @@ const ClaimableBalancesCard: FC<ClaimableBalancesCardProps> = ({
               size="sm"
               variant="primary"
               disabled={isDistributing}
-              onClick={() => onDistribute(tokenAddress)}
+              loading={isDistributing && pendingToken === tokenAddress}
+              onClick={() => {
+                setPendingToken(tokenAddress);
+                onDistribute(tokenAddress);
+              }}
             >
               分配する
             </Button>

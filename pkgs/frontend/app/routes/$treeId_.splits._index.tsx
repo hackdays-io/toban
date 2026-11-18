@@ -660,35 +660,47 @@ const UnclaimedRewardsCard: FC<UnclaimedRewardsCardProps> = ({
   onWithdraw,
   isWithdrawing,
   className,
-}) => (
-  <Card
-    className={cn(
-      "gap-3 border-primary/30 bg-primary-soft/40 px-4 py-4",
-      className,
-    )}
-  >
-    <Typography as="div" variant="bodySm" weight="bold">
-      未回収の報酬があります
-    </Typography>
-    <ul className="flex flex-col gap-2">
-      {balances.map((b) => (
-        <li key={b.address} className="flex items-center justify-between gap-2">
-          <Typography as="span" variant="bodySm">
-            {Number(b.balance.formattedAmount).toFixed(4)} {b.balance.symbol}
-          </Typography>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => onWithdraw(b.address)}
-            disabled={isWithdrawing}
+}) => {
+  // One `isWithdrawing` covers every row; remember which token was pressed so
+  // only that row's button spins.
+  const [pendingToken, setPendingToken] = useState<string>();
+  return (
+    <Card
+      className={cn(
+        "gap-3 border-primary/30 bg-primary-soft/40 px-4 py-4",
+        className,
+      )}
+    >
+      <Typography as="div" variant="bodySm" weight="bold">
+        未回収の報酬があります
+      </Typography>
+      <ul className="flex flex-col gap-2">
+        {balances.map((b) => (
+          <li
+            key={b.address}
+            className="flex items-center justify-between gap-2"
           >
-            引き出す
-          </Button>
-        </li>
-      ))}
-    </ul>
-  </Card>
-);
+            <Typography as="span" variant="bodySm">
+              {Number(b.balance.formattedAmount).toFixed(4)} {b.balance.symbol}
+            </Typography>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => {
+                setPendingToken(b.address);
+                onWithdraw(b.address);
+              }}
+              disabled={isWithdrawing}
+              loading={isWithdrawing && pendingToken === b.address}
+            >
+              引き出す
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+};
 
 // ─── Copy helpers ──────────────────────────────────────────────────────────
 //

@@ -4,8 +4,8 @@ Cloudflare Workers + D1. The Toban MCP server (`POST /mcp`) — read-only
 workspace tools, plus write "propose" tools that forward to
 `@toban/discord-bot`'s confirm-button adapter. Extracted from
 `@toban/discord-bot` so that **Discord is an adapter, not a requirement**:
-this package holds no Discord bot token, and any MCP-speaking client (our
-own OpenClaw, a community's OpenClaw, Claude Code, anything) can drive Toban
+this package holds no Discord bot token, and any MCP-speaking client (a
+community's OpenClaw, Claude Code, anything) can drive Toban
 through it. See `docs/mcp-extraction.md` for the full design rationale —
 this file is the "moved here" summary the design doc pointed at.
 
@@ -237,7 +237,7 @@ pnpm mcp mint-mcp-token <treeId> <label> [--env base]   # operator escape hatch
 
 **Deploying**: read `DEPLOYMENT.md` (repo root) first. Non-obvious constraints:
 
-- **Deploy order: `identity` → `discord-bot` → `mcp` → `openclaw`.** This
+- **Deploy order: `identity` → `discord-bot` → `mcp`.** This
   worker service-binds to *both* `toban-identity` (read-only identity
   resolution) and `toban-discord-bot` (the `CONFIRM` adapter) by name — a
   missing binding target fails the deploy with Cloudflare error 10143.

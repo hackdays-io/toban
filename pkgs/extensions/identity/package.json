@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Provider-abstracted account \u2194 wallet binding for Toban extensions (Discord, Slack, GitHub, ...). MVP ships the Discord provider.",
+  "description": "Provider-abstracted account ↔ wallet binding for Toban extensions (Discord, Slack, GitHub, ...). MVP ships the Discord provider.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",
     "@types/better-sqlite3": "^7.6.12",
-    "@types/node": "^22.7.4",
+    "@types/node": "^24.19.2",
     "better-sqlite3": "^11.5.0",
     "drizzle-kit": "^0.28.0",
     "tsx": "^4.19.2",

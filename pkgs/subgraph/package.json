@@ -31,7 +31,7 @@
     "@hatsprotocol/sdk-v1-core": "^0.10.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^24.19.2",
     "mustache": "^4.0.1"
   }
 }

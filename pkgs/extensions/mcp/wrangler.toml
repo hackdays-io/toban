@@ -25,7 +25,7 @@ head_sampling_rate = 1
 # are separated by worker name (`toban-mcp` / `toban-mcp-base`) and by D1
 # (`toban-identity` / `toban-identity-base`), NOT by account.
 #
-# DEPLOY ORDER: identity -> discord-bot -> mcp -> openclaw. This worker
+# DEPLOY ORDER: identity -> discord-bot -> mcp. This worker
 # service-binds to BOTH `toban-identity` (read-only identity resolution) and
 # `toban-discord-bot` (the CONFIRM adapter for propose tools) BY NAME, so both
 # must already exist or this deploy fails with Cloudflare error 10143.

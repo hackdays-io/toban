@@ -12,7 +12,7 @@ Rules that must hold are enforced by hooks/scripts, not just by this text. When 
 | --- | --- |
 | Do not edit the main checkout while it is on `main` | `.claude/hooks/guard-main-checkout.sh` (PreToolUse) |
 | Not done until `scripts/verify.sh` exits 0 | `.claude/hooks/stop-verify.sh` (Stop) |
-| Biome + frontend typecheck on commit | Lefthook (`lefthook.yaml`) |
+| Biome + typecheck of the owning packages on commit | Lefthook (`lefthook.yaml`) |
 | Same `scripts/verify.sh` on every PR, and `--all` on every push to `main` | GitHub Actions `check.yml` |
 | Every workspace package is registered (AGENTS.md, CLAUDE.md, root alias, a check script, listed below) | `scripts/verify.sh` structure check |
 | Contract tests / frontend build | GitHub Actions `test-contract.yml` / `build-frontend.yml` |
@@ -103,7 +103,7 @@ When adding a feature, expect to touch all three layers: contract event → subg
 ## Tooling shared across packages
 
 - **Biome** is the formatter/linter for JS/TS/JSON (`pnpm biome:check`, `pnpm biome:format`). ESLint/Prettier are not used at the root. `biome.json` excludes generated dirs (`subgraph/generated`, `frontend/gql`, `contract/test`, `contract/artifacts`, `.claude/worktrees`, etc.) — don't fight Biome by editing those.
-- **Lefthook** pre-commit (`lefthook.yaml`): Biome check + format on staged JS/TS/JSON, plus `pnpm frontend typecheck` on staged TS/TSX. If a hook fails, fix the underlying issue and create a new commit — do not `--no-verify`.
+- **Lefthook** pre-commit (`lefthook.yaml`): `biome check --write` on staged JS/TS/JSON only (`scripts/pre-commit-biome.mjs` drops `biome.json`-ignored paths, which Biome 1.9 would otherwise check when named explicitly), and `typecheck` for the packages that own staged TS/TSX (`scripts/pre-commit-typecheck.sh`; packages with a `verify` script are skipped, dependents are left to `verify.sh`). If a hook fails, fix the underlying issue and create a new commit — do not `--no-verify`.
 - **Solidity** has its own toolchain (solhint + Hardhat); see `pkgs/contract/AGENTS.md`.
 - **TypeScript strict** everywhere. Each package has its own `tsconfig.json`.
 - CI (`.github/workflows/check.yml`) runs `scripts/verify.sh` against the PR base, so local and CI checks are the same thing. Contract tests and the frontend build also have their own workflows. `pkgs/document/tsconfig.json` is editor-only, so the docs package is checked by `docusaurus build` (its `verify` script), not `tsc`.

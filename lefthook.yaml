@@ -1,12 +1,11 @@
 pre-commit:
   commands:
-    check:
+    # Staged files only; scripts/verify.sh runs the same Biome config on the whole tree.
+    biome:
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: npx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true . && git update-index --again
-    format:
-      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: npx biome format --write --no-errors-on-unmatched --files-ignore-unknown=true . && git update-index --again
+      run: node scripts/pre-commit-biome.mjs {staged_files}
+      stage_fixed: true
+    # Only the packages that own the staged files; dependents are left to verify.sh.
     type-check:
       glob: "*.{ts,tsx}"
-      run: |
-        pnpm frontend typecheck
+      run: bash scripts/pre-commit-typecheck.sh {staged_files}

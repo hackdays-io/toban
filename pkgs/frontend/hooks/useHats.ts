@@ -24,17 +24,10 @@ import { useActiveWallet } from "./useWallet";
 // Read with subgraph
 // ###############################################################
 
-// Share the chain switch with `hatsApolloClient` so the SDK-driven reads
-// (getTree / getWearer / etc.) and the raw Apollo queries hit the same
-// indexer. Base uses Hats Protocol's official subgraph on The Graph's
-// decentralised Gateway; Sepolia has no official deployment, so we fall
-// back to the self-hosted Goldsky endpoint configured via env.
+// Share the endpoint resolution with `hatsApolloClient` so the SDK-driven
+// reads (getTree / getWearer / etc.) and the raw Apollo queries hit the same
+// indexer. `resolveHatsEndpoint` throws if nothing is configured.
 const hatsSubgraphEndpoint = resolveHatsEndpoint();
-if (!hatsSubgraphEndpoint) {
-  throw new Error(
-    "Hats Protocol subgraph endpoint is not set. For Base mainnet set VITE_THEGRAPH_API_KEY; for Sepolia set VITE_HATS_GRAPHQL_ENDPOINT to your self-hosted Goldsky deployment.",
-  );
-}
 
 export const hatsSubgraphClient = new HatsSubgraphClient({
   config: {

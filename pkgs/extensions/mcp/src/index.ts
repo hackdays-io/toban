@@ -2,8 +2,8 @@
  * `POST /mcp` — the Toban MCP endpoint.
  *
  * Moved from `@toban/discord-bot`'s `src/mcp/index.ts` (`docs/mcp-extraction.md`
- * §3, §8). Lets any MCP-speaking client drive Toban: our own OpenClaw, a
- * community's existing OpenClaw, Claude Code, anything. Authorisation is a
+ * §3, §8). Lets any MCP-speaking client drive Toban: a community's
+ * existing OpenClaw, Claude Code, anything. Authorisation is a
  * `tbn2` bearer token pinning a home `treeId` (`auth.ts`), and writes only
  * ever produce a confirm button by forwarding to `@toban/discord-bot`
  * (`tools.ts`) — so an agent we do not run is not a trusted party here.

@@ -14,12 +14,19 @@ NAME=$(echo "$INPUT" | jq -r '.name')
 REPO_PATH="$CLAUDE_PROJECT_DIR"
 WORKTREE_PATH="${REPO_PATH}/.claude/worktrees/${NAME}"
 BRANCH="worktree-${NAME}"
-BASE_REF="${TOBAN_WORKTREE_BASE_REF:-HEAD}"
+# Default to a fresh origin/main so a PR never picks up unrelated local commits.
+# Override with TOBAN_WORKTREE_BASE_REF=HEAD (or any ref) when stacking work.
+BASE_REF="${TOBAN_WORKTREE_BASE_REF:-origin/main}"
 
 TTY=/dev/tty
 log() { echo "$*" > "$TTY" 2>/dev/null || true; }
 
 mkdir -p "${REPO_PATH}/.claude/worktrees"
+
+if [ "$BASE_REF" = "origin/main" ]; then
+  log "Fetching origin/main..."
+  git -C "$REPO_PATH" fetch --quiet origin main >/dev/null 2>&1 || log "  fetch failed; using local origin/main"
+fi
 
 log "Creating worktree '${NAME}' from ${BASE_REF}..."
 if git -C "$REPO_PATH" rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
@@ -35,6 +42,7 @@ ENV_FILES=(
   "pkgs/contract/.env"
   "pkgs/frontend/.env"
   "pkgs/frontend/.env.base"
+  ".claude/settings.local.json"
 )
 for f in "${ENV_FILES[@]}"; do
   if [ -f "${REPO_PATH}/$f" ]; then

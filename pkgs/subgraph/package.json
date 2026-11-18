@@ -6,6 +6,7 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
+    "verify": "pnpm run prepare:sepolia && graph codegen && graph build",
     "codegen": "graph codegen",
     "build": "graph build",
     "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.yaml",
@@ -16,6 +17,10 @@
     "deploy:base": "goldsky subgraph deploy toban-base/0.0.1 --path .",
     "update:base": "goldsky subgraph update toban-base/0.0.1",
     "delete:base": "goldsky subgraph delete toban-base/0.0.1",
+    "prepare:base-sepolia": "mustache config/base-sepolia.json subgraph.template.yaml > subgraph.yaml",
+    "deploy:base-sepolia": "goldsky subgraph deploy toban-base-sepolia/0.0.1 --path .",
+    "update:base-sepolia": "goldsky subgraph update toban-base-sepolia/0.0.1",
+    "delete:base-sepolia": "goldsky subgraph delete toban-base-sepolia/0.0.1",
     "create-local": "graph create --node http://localhost:8020/ poap-xyz/poap",
     "remove-local": "graph remove --node http://localhost:8020/ poap-xyz/poap",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 poap-xyz/poap"
@@ -26,7 +31,7 @@
     "@hatsprotocol/sdk-v1-core": "^0.10.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^24.19.2",
     "mustache": "^4.0.1"
   }
 }

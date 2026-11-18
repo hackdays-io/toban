@@ -4,7 +4,7 @@
 `pkgs/extensions/mcp`（`@toban/mcp`）へ移し、Discord を**確認チャネルのアダプタ**という
 位置に下げる。
 
-この文書は実装前の設計合意用。実装したらこの内容は `pkgs/extensions/mcp/CLAUDE.md` と
+この文書は実装前の設計合意用。実装したらこの内容は `pkgs/extensions/mcp/AGENTS.md` と
 `DEPLOYMENT.md` へ移し、このファイルは消す。
 
 ## 1. なぜ分けるか
@@ -316,7 +316,7 @@ identity → discord-bot → mcp → openclaw
   `mintAllowance` / `mintableAmount` のオンチェーン read なので、`@toban/mcp` が
   **view 専用**の ABI 断片を持つ。`turnkey/policy.json` が gate しているのは state を
   変える selector だけなので policy 同期の invariant は壊れないが、
-  discord-bot の CLAUDE.md の「`chain.ts` が ABI の single source of truth」は
+  discord-bot の AGENTS.md の「`chain.ts` が ABI の single source of truth」は
   「**書き込み selector は** `chain.ts`」に書き換える必要がある
 - デプロイ順が 1 段増える（`DEPLOYMENT.md` は順序依存が壊れやすいと自ら警告している箇所）
 - secrets が一部二重管理になる（上表）
@@ -346,7 +346,7 @@ identity → discord-bot → mcp → openclaw
   済むよう、ここに書いておく。
 - **propose ツールの `inputSchema` は Discord のデータモデルを名前で埋め込んで
   いる。** `CONFIRM` binding 自体は汎用的な名前で、discord-bot / `@toban/mcp` 両方の
-  CLAUDE.md も Discord を「アダプタであって requirement ではない」と書いているが、
+  AGENTS.md も Discord を「アダプタであって requirement ではない」と書いているが、
   サードパーティの MCP クライアントが実際に読む契約——propose 系ツールの
   `inputSchema`——は `forDiscordUserId` / `toDiscordUserId` や、Discord のチャンネル
   として説明された `channelId` など、Discord の語彙をそのまま使っている。アダプタが

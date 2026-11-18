@@ -3,7 +3,7 @@
 [Docusaurus](https://docusaurus.io/) で作られた利用者向けドキュメントサイトです。
 コンテンツは `docs/` 配下の Markdown / MDX。公開先は https://hackdays-io.github.io/toban/ 。
 
-構成と執筆規約は [`CLAUDE.md`](./CLAUDE.md) を参照。
+構成と執筆規約は [`AGENTS.md`](./AGENTS.md) を参照。
 
 ## コマンド
 

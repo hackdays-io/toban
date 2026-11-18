@@ -5,7 +5,7 @@ Hats Protocol v1 と 0xSplits の上に、ワークスペース（＝ロール�
 
 - **デプロイ手順の正は [`DEPLOYMENT.md`](../../DEPLOYMENT.md)（リポジトリルート）です。**
   コントラクトだけを見て進めるとインデクサーとフロントが壊れます。
-- 設計・命名・ファイル構成は [`CLAUDE.md`](./CLAUDE.md) に詳しく書いてあります。
+- 設計・命名・ファイル構成は [`AGENTS.md`](./AGENTS.md) に詳しく書いてあります。
 
 ## コマンド
 
@@ -96,7 +96,7 @@ ABI を手書きで直さず、必ず `sync:abis` を使ってください。
 | `sepolia` / `holesky` | `PRIVATE_KEY` | `ETHERSCAN_API_KEY` |
 | `base` | **`PRODUCTION_PRIVATE_KEY`** | `BASESCAN_API_KEY` |
 
-必要な `.env` は [`CLAUDE.md`](./CLAUDE.md) の「Required env」を参照。
+必要な `.env` は [`AGENTS.md`](./AGENTS.md) の「Required env」を参照。
 
 ## デプロイ済みアドレス
 

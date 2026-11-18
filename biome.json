@@ -26,6 +26,7 @@
       "**/subgraph/generated",
       "**/subgraph/build",
       "**/frontend/gql",
+      "**/document/.docusaurus",
       "**/frontend/.react-router",
       "**/frontend/**/downloads",
       "**/frontend/**/.react-router",

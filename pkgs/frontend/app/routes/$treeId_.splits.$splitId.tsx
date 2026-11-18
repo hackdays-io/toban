@@ -158,6 +158,9 @@ const SplitDetailPage: FC = () => {
   const ensFullName = splitEnsEntry?.name
     ? `${splitEnsEntry.name}.${splitEnsEntry.domain}`
     : undefined;
+  // "What is this split for?" — the `description` text record written at
+  // creation time. Splits created before the field existed simply have none.
+  const description = splitEnsEntry?.text_records?.description?.trim();
 
   const recipientNameByAddress = useMemo(() => {
     const m = new Map<string, NameData>();
@@ -268,6 +271,7 @@ const SplitDetailPage: FC = () => {
               <CopyIconButton label="ENS名" value={ensFullName} />
             )}
           </div>
+          {description && <SplitDescription text={description} />}
           {split?.address && <AddressRow address={split.address} />}
           <Typography variant="caption" tone="secondary">
             {createdAt && `作成日: ${createdAt}`}
@@ -325,6 +329,7 @@ const SplitDetailPage: FC = () => {
                 <CopyIconButton label="ENS名" value={ensFullName} />
               )}
             </div>
+            {description && <SplitDescription text={description} />}
             {split?.address && <AddressRow address={split.address} />}
             <Typography variant="bodySm" tone="secondary">
               合計 100% ・ 対象 {recipients.list.length}人
@@ -401,6 +406,18 @@ const DonutSummaryCard: FC<DonutSummaryCardProps> = ({
       }
     />
   </Card>
+);
+
+// ─── SplitDescription ──────────────────────────────────────────────────────
+//
+// Sits directly under the title so the first thing a visitor reads after the
+// `foo.split.toban.eth` label is *why* this split exists, before the raw
+// contract address.
+
+const SplitDescription: FC<{ text: string }> = ({ text }) => (
+  <Typography variant="bodySm" className="whitespace-pre-wrap break-words">
+    {text}
+  </Typography>
 );
 
 // ─── AddressRow / CopyIconButton ───────────────────────────────────────────

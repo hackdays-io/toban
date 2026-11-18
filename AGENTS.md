@@ -71,11 +71,10 @@ Each workspace package has its own `AGENTS.md` with package-specific architectur
 - `pkgs/subgraph/AGENTS.md` — Goldsky-deployed The Graph subgraph
 - `pkgs/document/AGENTS.md` — Docusaurus documentation site
 - `pkgs/extensions/*/AGENTS.md` — External-service integrations (`identity`, `discord-bot`, `mcp`). Cloudflare Workers + D1 runtime. Each extension imports `@toban/identity` for account ↔ wallet binding.
-- `pkgs/openclaw/AGENTS.md` — OpenClaw gateway on Fly.io (Discord agent). Deploy config + config template only, no app code. **No Turnkey stamper here** — signing stays in `@toban/discord-bot`.
 
 ## Monorepo layout
 
-pnpm workspace (`pnpm-workspace.yaml` → `pkgs/*`). Node `>=20`, package manager pinned to `pnpm@10.15.0`. Workspace scripts at the root delegate via `pnpm --filter`:
+pnpm workspace (`pnpm-workspace.yaml` → `pkgs/*`). Node 24 (`.nvmrc`; CI and engines follow it), package manager pinned to `pnpm@10.15.0`. Workspace scripts at the root delegate via `pnpm --filter`:
 
 ```
 pnpm frontend <script>     # → pkgs/frontend
@@ -85,7 +84,6 @@ pnpm document <script>     # → pkgs/document
 pnpm identity <script>     # → pkgs/extensions/identity     (@toban/identity)
 pnpm discord-bot <script>  # → pkgs/extensions/discord-bot  (@toban/discord-bot)
 pnpm mcp <script>          # → pkgs/extensions/mcp          (@toban/mcp)
-pnpm openclaw <script>     # → pkgs/openclaw                (@toban/openclaw)
 ```
 
 Always run from the repo root using these aliases rather than `cd`-ing into a package.
@@ -122,7 +120,6 @@ order-dependent and quietly break each other — read it before touching a deplo
 - Contract change → **always** `pnpm contract sync:abis`. A stale `pkgs/frontend/abi/bigbang.ts` changes `Executed`'s topic0 and silently breaks *all* workspace creation. (`verify.sh` warns when contract sources change without `pkgs/frontend/abi/`.)
 - Subgraph must be deployed **before** `pnpm frontend codegen` (gql types come from the live schema).
 - Cloudflare: **identity Worker before discord-bot** (service binding, else Cloudflare error 10143).
-- **OpenClaw (Fly) after the Workers** — the agent calls the discord-bot Worker's MCP endpoint. `fly deploy` does *not* replace `/data/openclaw.json` (it lives on the volume); use `pnpm openclaw push:config` for config changes.
 - Sepolia = wrangler *top-level* config; Base = `--env base`. **Both live in the same Cloudflare account**, separated by worker name and D1 — not by account.
 - `pnpm --filter <pkg> deploy` collides with pnpm's builtin — use `deploy:sepolia` / `deploy:base`.
 - Turnkey's `policy.json` is **not** auto-applied; new bot-signed selectors need a manual policy update. All Turnkey ops go through the `turnkey` CLI (`./turnkey/apply-policy.sh <base|sepolia>`), not the dashboard.
@@ -145,6 +142,8 @@ Agents prepare deploy-affecting changes and describe them in the PR; humans run 
 - Deployable (Worker, Fly app, subgraph) → a section in `DEPLOYMENT.md`, including where it sits in the deploy order.
 - New cross-package invariants (service bindings, shared D1, ABIs it consumes) → the "Cross-layer invariants" list in `.claude/agents/toban-reviewer.md`.
 - Generated or build-output directories → `biome.json` `files.ignore`.
+
+Removing a package: delete the directory, then run an unfiltered `pnpm install` — `pnpm --filter ... add/install` does not prune the removed importer from `pnpm-lock.yaml`. Also remove its root alias, its "Per-package guides" entry, and its `DEPLOYMENT.md` section / deploy-order mentions.
 
 ## When making changes
 

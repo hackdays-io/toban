@@ -14,7 +14,6 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 | identity Worker | [`pkgs/extensions/identity/README.md`](pkgs/extensions/identity/README.md) |
 | discord-bot Worker | [`pkgs/extensions/discord-bot/README.md`](pkgs/extensions/discord-bot/README.md) |
 | mcp Worker(MCP サーバー本体) | [`pkgs/extensions/mcp/AGENTS.md`](pkgs/extensions/mcp/AGENTS.md) |
-| OpenClaw（Discord エージェント / Fly.io） | [`pkgs/openclaw/README.md`](pkgs/openclaw/README.md) |
 | 症状別の対処 | [`pkgs/extensions/discord-bot/docs/deploy-base-production.md`](pkgs/extensions/discord-bot/docs/deploy-base-production.md) |
 | 鍵のローテーション | [`pkgs/extensions/discord-bot/docs/key-rotation.md`](pkgs/extensions/discord-bot/docs/key-rotation.md) |
 
@@ -27,7 +26,7 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 ```
 [1] contract ──→ [2] sync:abis ──┬─→ [3] subgraph ──→ [4] frontend
                                  │
-                                 └─→ [5] Turnkey ──→ [6] Workers ──→ [7] OpenClaw
+                                 └─→ [5] Turnkey ──→ [6] Workers
                                                      identity → discord-bot → mcp
 ```
 
@@ -35,12 +34,6 @@ Turnkey / Discord）の設定方法、判断が要る場面、詰まったとき
 `/internal/propose` 用）と `identity`（`IDENTITY` binding、identity 解決用）の両方に
 service binding するためです。どちらかが無い状態で `mcp` を deploy すると Cloudflare
 error 10143 で失敗します。
-
-**[7] が [6] より後**なのは、OpenClaw が MCP エンドポイント（`@toban/mcp` の
-`POST /mcp`）を呼ぶためです。Worker が無い状態でエージェントを起こしても、読み取りも
-起案もできません。（以前は discord-bot Worker が MCP エンドポイントを兼ねていましたが、
-`@toban/mcp` への切り出し後は discord-bot ではなく `@toban/mcp` の URL を向きます —
-`guilds.json` の `mcpUrl` を参照。）
 
 変更したレイヤー以降だけを実行すれば十分です（コントラクトを触っていないなら [1]〜[3] は不要）。
 
@@ -292,154 +285,6 @@ pnpm --filter @toban/discord-bot exec wrangler secret list --env base
 > しかもこの確認は**非対話環境では自動的に「はい」**に倒れる実装なので、worker 名を打ち間違えると
 > 気づかないままゴミの Worker がアカウントに増えます。
 > deploy を先に済ませておけば、この分岐自体に入りません。
-
----
-
-## 7. OpenClaw（Discord エージェント / Fly.io）
-
-Discord に常駐して会話し、15 分ごとに Goldsky を見て通知するエージェント。
-構成の説明は [`pkgs/openclaw/README.md`](pkgs/openclaw/README.md)。
-
-**Cloudflare Workers（§6）より後**にデプロイします。
-
-### 7-0. MCP エンドポイント（Toban 側）
-
-エージェントは `@toban/mcp` の `POST /mcp` 越しに Toban を触ります(discord-bot では
-ありません — MCP エンドポイントは `@toban/mcp` に切り出されています。
-`docs/mcp-extraction.md` 参照)。**自前の OpenClaw でも、コミュニティが既に動かしている
-OpenClaw でも同じ**です。
-
-```bash
-# HMAC 鍵(1 回だけ生成して使い回す。discord-bot の MCP_INTERNAL_PROPOSE_SECRET とは別物)
-openssl rand -base64 32 | pnpm --filter @toban/mcp exec wrangler secret put MCP_TOKEN_SECRET --env base
-```
-
-**トークンの発行は `/$treeId/settings` から本人が行うのが主経路です。** ワークスペースの
-operator hat または top hat を着ているウォレットで EIP-712 に署名し、`POST
-/api/mcp-tokens` がその場でトークンを発行します(運営の手作業は不要)。同じ画面で
-発行済みトークンの一覧・失効もできます。詳細は `pkgs/extensions/mcp/AGENTS.md` と
-`docs/mcp-extraction.md` §5。
-
-CLI でのトークン発行は**非常口**として残っています(フロントが落ちているとき、または
-まだ hat を持っていない相手に出すとき):
-
-```bash
-MCP_TOKEN_SECRET='...' pnpm mcp mint-mcp-token <treeId> "<label>" --env base
-```
-
-このコマンドは登録簿(D1 の `mcp_tokens` テーブル)にも書き込みます — `tbn2` トークンは
-MAC だけでなく登録簿の行がないと検証を通らないため([§4](docs/mcp-extraction.md) 参照)。
-
-**失効は個別に行えます**(settings 画面の失効ボタン、または `@toban/mcp` の
-`POST /api/mcp-tokens/revoke`)。旧 `tbn1` 形式(discord-bot にあった guild 単位の
-HMAC)は全ギルド一括失効しかできませんでしたが、`tbn2` は 2 段検証(MAC → 登録簿参照)
-なので 1 トークンだけを止められます。
-
-### 7-1. 初回のみ
-
-**Discord Developer Portal** — 既存の Toban Bot と**同じアプリケーション・同じトークン**を
-使います（Bot を 2 つ入れない）。
-
-- Privileged Gateway Intents: **Message Content**（必須）と **Server Members**（許可リスト
-  解決用）を有効化
-- **Interactions Endpoint URL は discord-bot Worker のまま変えない。** OpenClaw は
-  Gateway で interaction を受け取れませんが、それで正しい状態です
-
-> ⚠️ **同じトークンで OpenClaw を 2 インスタンス起動しないでください。** 両方が Gateway に
-> 接続し、同じメッセージに 2 回返信します。エージェントは Base 本番のみに置き、staging が
-> 必要なときは別の Discord Application を作ります。
-
-**Fly**
-
-```bash
-fly apps create tobanclaw
-# ボリュームが無いまま deploy すると、設定と automations の状態が再起動のたびに消えます
-fly volumes create openclaw_data --size 1 --region nrt --app tobanclaw
-```
-
-> ⚠️ **trial org ではデプロイできません。** リリース作成が 422 で拒否されます
-> (`This functionality is disabled for trial organizations`)。クレジットカードの登録が要ります。
-
-**secrets**
-
-| 名前 | 用途 |
-|---|---|
-| `OPENCLAW_GATEWAY_TOKEN` | loopback 以外にバインドする場合に必須 |
-| `ANTHROPIC_API_KEY` | エージェントのモデル |
-| `DISCORD_BOT_TOKEN` | 既存の Toban Bot と**同じ**トークン |
-| `TOBAN_MCP_TOKEN` | `@toban/mcp` Worker の MCP エンドポイント(`POST /mcp`)の認証。settings 画面か `pnpm mcp mint-mcp-token` で発行した `tbn2` トークン |
-
-```bash
-fly secrets set OPENCLAW_GATEWAY_TOKEN=... --app tobanclaw
-```
-
-LLM プロバイダの鍵は `ANTHROPIC_API_KEY` / `OPENROUTER_API_KEY` / `OPENAI_API_KEY` の
-いずれか 1 つがあれば足ります。
-
-設定ファイルには秘密を書きません。`${TOBAN_MCP_TOKEN}` のような参照が実行時に解決されます。
-
-### 7-2. ギルド一覧
-
-```bash
-cp pkgs/openclaw/config/guilds.example.json pkgs/openclaw/config/guilds.json
-```
-
-`label` / `guildId` / `treeId` / `chainId` / `mcpUrl` / `allowUsers` を書きます。
-**`allowUsers` を空にすると Bot が参加している全員に反応する**ため、レンダリング時に
-弾かれます。
-
-### 7-3. デプロイ
-
-```bash
-pnpm openclaw test                    # 設定レンダリングの検証
-pnpm openclaw push:config --dry-run   # 設定が組み立つことを確認（送信しない）
-pnpm openclaw deploy:fly              # 事前確認 → fly deploy
-pnpm openclaw push:config             # /data/openclaw.json を送って再起動
-```
-
-**`fly deploy` は設定ファイルを入れ替えません。** 設定の実体はボリューム上の
-`/data/openclaw.json` なので、変えたときは `push:config` を流します。`instructions/`
-も同じく `push:config` で各ワークスペースへ `AGENTS.md` として送られます
-（イメージには焼き込まれていません）。
-
-`push:config` は送信後・再起動前にリモートで `openclaw config validate` を通し、
-落ちたら退避した設定へ戻して中断します。**不正な設定のまま再起動すると gateway が
-exit 78 で再起動ループに入り、10 回でマシンが停止して ssh も入れなくなります。**
-
-テンプレートのキー名を本家のスキーマと突き合わせるとき:
-
-```bash
-fly console --app tobanclaw -C "openclaw config schema"
-```
-
-### 7-4. 詰まったとき
-
-**不正な設定を置いてマシンが停止した場合**、gateway はボリューム上の設定を読んで即死する
-ため、通常の起動では ssh が間に合いません。プロセスコマンドを一時的に差し替えて掃除します。
-
-```bash
-# 引数を無視するエントリポイントに差し替えて起動（--entrypoint は既存 cmd の前に置かれる
-# ので、後続の引数を読み捨てる形にする必要があります）
-fly machine update <machine-id> -a tobanclaw --entrypoint "/bin/sh -c 'exec sleep 900' --" --yes
-fly machines start <machine-id> -a tobanclaw
-
-# flyctl はヘルスチェックが通っていないマシンを選ばないので --machine で名指しする
-fly ssh console -a tobanclaw --machine <machine-id> -C "rm -f /data/openclaw.json"
-
-# 元に戻す
-fly machine update <machine-id> -a tobanclaw --entrypoint "" --yes
-```
-
-### 7-5. 確認
-
-```bash
-fly status --app tobanclaw     # 1 台動いていて checks が passing
-fly logs --app tobanclaw
-fly ssh console --app tobanclaw -C "openclaw automations list"
-# Discord で話しかけて応答すること、スラッシュコマンドが消えていないこと
-```
-
-ヘルスチェックは `/startupz` を見ていて、正常なら `{"ok":true,"status":"started"}` を返します。
 
 ---
 

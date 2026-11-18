@@ -4,15 +4,9 @@ import {
   useUploadHatsDetailsToIpfs,
   useUploadImageFileToIpfs,
 } from "hooks/useIpfs";
+import { useScrollToTop } from "hooks/useScrollToTop";
 import { useActiveWallet } from "hooks/useWallet";
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import type { HatsDetailSchama } from "types/hats";
@@ -91,24 +85,7 @@ const EditRole: FC = () => {
     setFallbackIcon(pickRandomDutyIcon());
   }, []);
 
-  // Scroll to top on mount so the form opens at the header, not wherever the
-  // previous page left the AppShell scroll container.
-  const rootRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    let node: HTMLElement | null = el;
-    while (node) {
-      if (node.scrollHeight > node.clientHeight) {
-        node.scrollTo({ top: 0, behavior: "auto" });
-        break;
-      }
-      node = node.parentElement;
-    }
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
-  }, []);
+  const rootRef = useScrollToTop();
 
   // Newly-picked file wins over the on-chain imageUri; otherwise show whatever
   // the hat currently points at.

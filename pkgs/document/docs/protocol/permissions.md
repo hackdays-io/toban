@@ -25,4 +25,5 @@ Toban の権限は 2 種類ある。
 | --- | --- |
 | SplitsCreator | `preview`、`create`、`createWithSalt` は誰でも呼べる。split を作っても資金は動かず、どの split に資金を送るかは支払う側が決める。[SplitsCreator の設計の理由](./modules/splits-creator.md#rationale)を参照。 |
 | ThanksToken | `setAddressCoefficient` と `setAddressCoefficients` は、作成時に clone の引数に入れたワークスペースの owner(`bigbang` の `_owner`)しか呼べない。top hat の着用者とは連動しない。`mint`、`batchMint`、`approveMint`、`permitMint` と ERC-20 の関数は誰でも呼べる。mint できる量は上限の式で、`mintFrom` は許可量で制限される。[ThanksToken の仕組み](./modules/thanks-token.md#mechanism)を参照。 |
+| HatsTimeFrameModule | `mintHat` と `batchMintHat` は、minter hat(BigBang が作る `minterHatId`)の admin か着用者だけが呼べる。`deactivate`、`reactivate`、`renounce` は、それに加えて対象の着用者本人も呼べる。view は誰でも呼べる。[HatsTimeFrameModule の原則](./modules/hats-time-frame-module.md#principles)の HTF-6 を参照。 |
 | その他のモジュール | 各モジュールのページで定める予定。 |

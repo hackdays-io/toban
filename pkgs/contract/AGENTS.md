@@ -83,6 +83,8 @@ Per-workspace deployment (deploying a `BigBang` *invocation*) goes through `pnpm
 
 Mocha + chai with viem matchers. Each top-level contract has its own file. `IntegrationTest.ts` exercises the full BigBang → modules → splits flow — read it first to understand contract wiring before changing module APIs.
 
+`*.Differential.ts` replays Lean-generated vectors from `@toban/spec` (`pkgs/spec/vectors/`) against the contract, fed through data mocks in `contracts/<module>/mock/*DataMocks.sol`. Changing SplitsCreator's allocation logic means changing `pkgs/spec/Spec/SplitsCreator/Model.lean`, running `pnpm spec vectors`, and updating the protocol docs page in the same PR (`pkgs/spec/AGENTS.md`). `[SPL-n]` in a test name links it to a principle — add one only if the test checks that principle.
+
 ## Required env (`pkgs/contract/.env`)
 
 ```

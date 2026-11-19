@@ -36,6 +36,7 @@
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "5.0.2",
     "@openzeppelin/upgrades-core": "^1.48.0",
+    "@toban/spec": "workspace:*",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/jsonfile": "^6.1.4",

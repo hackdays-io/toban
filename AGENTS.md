@@ -70,7 +70,8 @@ Each workspace package has its own `AGENTS.md` with package-specific architectur
 - `pkgs/frontend/AGENTS.md` — React Router v7 (Remix) app, Tailwind v4, shadcn/ui, Privy, viem, Goldsky/Apollo
 - `pkgs/contract/AGENTS.md` — Hardhat + UUPS upgradeable Solidity, Hats Protocol / Splits integration
 - `pkgs/subgraph/AGENTS.md` — Goldsky-deployed The Graph subgraph
-- `pkgs/document/AGENTS.md` — Docusaurus documentation site
+- `pkgs/document/AGENTS.md` — Docusaurus documentation site (incl. the Protocol spec section)
+- `pkgs/spec/AGENTS.md` — Lean 4 models + proofs of protocol principles, and the differential-test vectors the contract tests replay
 - `pkgs/extensions/*/AGENTS.md` — External-service integrations (`identity`, `discord-bot`, `mcp`). Cloudflare Workers + D1 runtime. Each extension imports `@toban/identity` for account ↔ wallet binding.
 
 ## Monorepo layout
@@ -82,6 +83,7 @@ pnpm frontend <script>     # → pkgs/frontend
 pnpm contract <script>     # → pkgs/contract
 pnpm subgraph <script>     # → pkgs/subgraph
 pnpm document <script>     # → pkgs/document
+pnpm spec <script>         # → pkgs/spec                    (@toban/spec)
 pnpm identity <script>     # → pkgs/extensions/identity     (@toban/identity)
 pnpm discord-bot <script>  # → pkgs/extensions/discord-bot  (@toban/discord-bot)
 pnpm mcp <script>          # → pkgs/extensions/mcp          (@toban/mcp)
@@ -106,6 +108,7 @@ When adding a feature, expect to touch all three layers: contract event → subg
 - **Biome** is the formatter/linter for JS/TS/JSON (`pnpm biome:check`, `pnpm biome:format`). ESLint/Prettier are not used at the root. `biome.json` excludes generated dirs (`subgraph/generated`, `frontend/gql`, `contract/test`, `contract/artifacts`, `.claude/worktrees`, etc.) — don't fight Biome by editing those.
 - **Lefthook** pre-commit (`lefthook.yaml`): `biome check --write` on staged JS/TS/JSON only (`scripts/pre-commit-biome.mjs` drops `biome.json`-ignored paths, which Biome 1.9 would otherwise check when named explicitly), and `typecheck` for the packages that own staged TS/TSX (`scripts/pre-commit-typecheck.sh`; packages with a `verify` script are skipped, dependents are left to `verify.sh`). If a hook fails, fix the underlying issue and create a new commit — do not `--no-verify`.
 - **Solidity** has its own toolchain (solhint + Hardhat); see `pkgs/contract/AGENTS.md`.
+- **Lean 4** (via elan, like nvm; `pnpm spec setup`) is used only by `pkgs/spec`. Protocol principle IDs (`SPL-1`, ...) must agree across docs, Lean and contract tests — `scripts/check-spec-ids.mjs`, run by `verify.sh`.
 - **TypeScript strict** everywhere. Each package has its own `tsconfig.json`.
 - CI (`.github/workflows/check.yml`) runs `scripts/verify.sh` against the PR base, so local and CI checks are the same thing. Contract tests and the frontend build also have their own workflows. `pkgs/document/tsconfig.json` is editor-only, so the docs package is checked by `docusaurus build` (its `verify` script), not `tsc`.
 

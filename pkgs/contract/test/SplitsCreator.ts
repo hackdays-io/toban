@@ -1097,7 +1097,7 @@ describe("CreateSplit without thanks token weight", () => {
     expect(address3Diff).gt(249);
   });
 
-  it("should preview allocations correctly", async () => {
+  it("[SPL-4] should preview allocations correctly (thanks weight 0: role holders only)", async () => {
     const splitsInfo = [
       {
         hatId: hat1_id,

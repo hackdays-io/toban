@@ -1,0 +1,8 @@
+{
+  "label": "Protocol",
+  "position": 10,
+  "link": {
+    "type": "doc",
+    "id": "protocol/index"
+  }
+}

@@ -6,12 +6,14 @@ The model takes, as plain data, everything the contract reads from other
 contracts (ThanksToken balances, FractionToken balances and supplies, wear time,
 quest escrow), and computes the same allocations with the same integer
 arithmetic: every `/` below is floor division, done in the same order as the
-Solidity expression it mirrors. `none` means the contract reverts.
+Solidity expression it mirrors. `none` means a division by zero.
 
-What the model does NOT cover (see the "Known limitations" docs page):
-* uint256 overflow — `Nat` is unbounded; the contract would revert instead.
-* How `recipients` is read: the model takes each wearer's other holders
-  already filtered (wearer itself and the quest module removed).
+This model uses unbounded `Nat`. `Contract.lean` is the same computation with
+uint256 overflow checks (what the contract actually does), and
+`Refinement.lean` proves the two agree whenever the contract returns (SPL-8).
+
+Not covered: how `recipients` is read — the model takes each wearer's other
+holders already filtered (wearer itself and the quest module removed).
 -/
 namespace Spec.SplitsCreator
 

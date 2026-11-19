@@ -83,11 +83,14 @@ $$
 | `SPL-2` | 各側が受け取るのは、多くてもその重みの割合ぶんの $P$ までである。サンクス側は $P \cdot W_t/(W_t+W_r)$ 以下、ロール側は $P \cdot W_r/(W_t+W_r)$ 以下になる。 | proven (Lean) | fuzzed |
 | `SPL-3` | 丸めで値が増えることはない。`totalAllocation` ≤ $P$ である。 | proven (Lean) | fuzzed |
 | `SPL-4` | 重みが 0 の側、またはスコアがすべて 0 の側には受取人がいないので、その側の合計 0 で割ることは起きない。結果は、その側にエントリーがまったくなかった場合とまったく同じになる。 | proven (Lean) | fuzzed, tested |
-| `SPL-5` | `preview` が revert するのは、割る数が 0 になるときだけで、そのときは必ず revert する。サンクスが保有も送付もされている($B > 0$ かつ $M > 0$)のに `received + sent` の重みが 0 のとき、`multiplierBottom` が 0 のロールがあるとき、着用者がいるのにシェアの供給量の合計が 0 のロールがあるとき、の 3 つである。 | proven (Lean) | fuzzed |
+| `SPL-5` | `preview` が 0 除算(Panic 0x12)で revert するのは、次の 3 つのどれかに当たるときだけである。サンクスが保有も送付もされている($B > 0$ かつ $M > 0$)のに `received + sent` の重みが 0 のとき、`multiplierBottom` が 0 のロールがあるとき、着用者がいるのにシェアの供給量の合計が 0 のロールがあるとき。この 3 つのどれかに当たれば必ず revert する(先に overflow が起きれば 0x11 になる)。それ以外の revert は、すべて uint256 の overflow(Panic 0x11)である。 | proven (Lean) | fuzzed |
 | `SPL-6` | サンクス側では、ThanksToken の保有量と送った量がどちらも他の参加者以上である参加者は、その参加者より少なく受け取ることがない。 | proven (Lean) | fuzzed |
 | `SPL-7` | 同じロールの中では、シェアを他の保有者以上に持ち、そのシェアの着用者のロール着用期間も他の保有者の着用者以上である保有者は、その保有者より少なく受け取ることがない。時間は ⌊√秒⌋ で数える。 | proven (Lean) | fuzzed |
+| `SPL-8` | `preview` が値を返すなら、それは上限のない自然数で計算した結果とまったく同じである。uint256 で計算することによる誤差は生じず、生じる誤差は切り捨てだけである。 | proven (Lean) | fuzzed |
 
-**ここでの「fuzzed」が確かめていること。** Lean のモデルは実行できる。`lake exe gen-vectors` は、手書きの境界ケース 23 件と、シードを固定した乱数の入力 150 件でモデルを実行する。差分テストは、それぞれの入力をデータ用の mock を通して実際のコントラクトに与え、受取人・配分・合計がモデルと一致すること、モデルが revert する入力ではコントラクトも revert することを求める。出力が一致するので、モデルについて証明した原則は、これらの入力ではコントラクトでも成り立つ。モデルは uint256 のオーバーフローと、FractionToken モジュールが受取人の一覧をどう作るかは扱っていない([既知の制約](../known-limitations.md)を参照)。
+**Lean のモデルは 2 つある。** 原則を証明しやすいように、上限のない自然数で配分を計算するモデル([`Model.lean`](https://github.com/hackdays-io/toban/blob/main/pkgs/spec/Spec/SplitsCreator/Model.lean))と、Solidity 0.8 と同じく掛け算・足し算の結果が 2^256 以上になると overflow で revert するモデル([`Contract.lean`](https://github.com/hackdays-io/toban/blob/main/pkgs/spec/Spec/SplitsCreator/Contract.lean))である。後者は演算の順序もコントラクトと同じなので、どの panic で revert するかまで一致する。SPL-1・3・5・8 は後者についての定理で、SPL-2・4・6・7 は両者に共通する配分の式についての定理である。
+
+**ここでの「fuzzed」が確かめていること。** Lean のモデルは実行できる。`lake exe gen-vectors` は、手書きの境界ケース 33 件と、シードを固定した乱数の入力 150 件で uint256 のモデルを実行する。境界ケースには、overflow する入力と、overflow する直前の入力も含めてある。差分テストは、それぞれの入力をデータ用の mock を通して実際のコントラクトに与え、受取人・配分・合計がモデルと一致すること、モデルが revert する入力ではコントラクトも同じ panic で revert することを求める。出力が一致するので、モデルについて証明した原則は、これらの入力ではコントラクトでも成り立つ。モデルは、FractionToken モジュールが受取人の一覧をどう作るかは扱っていない([既知の制約](../known-limitations.md)を参照)。
 
 ## 既知の制約 {#known-limitations}
 

@@ -1,7 +1,7 @@
 /**
  * Differential test: SplitsCreator.preview vs the Lean reference model.
  *
- * The vectors are generated from pkgs/spec (Spec/SplitsCreator/Model.lean) by
+ * The vectors are generated from the uint256 model in pkgs/spec (Spec/SplitsCreator/Contract.lean) by
  * `pnpm spec vectors`. Every principle SPL-n is proven for the model in
  * Spec/SplitsCreator/Theorems.lean; this test shows the Solidity code computes
  * the same thing as the model, so the principles carry over to the contract
@@ -10,8 +10,8 @@
  * Each case feeds SplitsCreator exactly the model's inputs through data mocks
  * (contracts/splitscreator/mock/SplitsCreatorDataMocks.sol), clones it through
  * SplitsCreatorFactory like BigBang does, then compares the
- * recipients, allocations and totalAllocation — or that it reverts when the
- * model says `none`.
+ * recipients, allocations and totalAllocation — or that it reverts with the
+ * same panic (0x11 overflow / 0x12 division by zero) as the model.
  */
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -51,11 +51,19 @@ type Vector = {
     participants: { addr: Address; balance: string; minted: string }[];
     roles: Role[];
   };
-  expected: {
-    recipients: Address[];
-    allocations: string[];
-    totalAllocation: string;
-  } | null;
+  expected:
+    | {
+        recipients: Address[];
+        allocations: string[];
+        totalAllocation: string;
+      }
+    | { revert: "overflow" | "divZero" };
+};
+
+// viem's messages for Solidity panics 0x11 and 0x12.
+const panicMessage = {
+  overflow: /Arithmetic operation resulted in underflow or overflow/,
+  divZero: /Division or modulo by zero/,
 };
 
 const vectorsPath = createRequire(import.meta.url).resolve(
@@ -67,7 +75,7 @@ const { cases } = JSON.parse(readFileSync(vectorsPath, "utf8")) as {
 
 const big = (s: string) => BigInt(s);
 
-describe("[SPL-1][SPL-2][SPL-3][SPL-4][SPL-5][SPL-6][SPL-7] SplitsCreator.preview matches the Lean model (differential)", () => {
+describe("[SPL-1][SPL-2][SPL-3][SPL-4][SPL-5][SPL-6][SPL-7][SPL-8] SplitsCreator.preview matches the Lean model (differential)", () => {
   // The production clone path: SplitsCreatorFactory with this test as BigBang.
   let factory: Awaited<
     ReturnType<typeof deploySplitsCreatorFactory>
@@ -88,7 +96,11 @@ describe("[SPL-1][SPL-2][SPL-3][SPL-4][SPL-5][SPL-6][SPL-7] SplitsCreator.previe
 
   it("has vectors for edge cases and generated cases", () => {
     expect(cases.length).to.be.greaterThan(100);
-    expect(cases.some((c) => c.expected === null)).to.equal(true);
+    for (const kind of ["overflow", "divZero"]) {
+      expect(
+        cases.some((c) => "revert" in c.expected && c.expected.revert === kind),
+      ).to.equal(true);
+    }
   });
 
   for (const [index, c] of cases.entries()) {
@@ -180,9 +192,8 @@ describe("[SPL-1][SPL-2][SPL-3][SPL-4][SPL-5][SPL-6][SPL-7] SplitsCreator.previe
       };
 
       const call = splitsCreator.read.preview([splitsInfo, weightsInfo]);
-      if (c.expected === null) {
-        // Every revert the model allows is a division by zero (Panic 0x12).
-        await expect(call).to.be.rejectedWith(/Division or modulo by zero/);
+      if ("revert" in c.expected) {
+        await expect(call).to.be.rejectedWith(panicMessage[c.expected.revert]);
         return;
       }
       const [recipients, allocations, totalAllocation] = await call;

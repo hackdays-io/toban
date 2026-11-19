@@ -6,7 +6,7 @@ Each principle theorem carries its ID in the comment line directly above it
 pkgs/document/docs/protocol/modules/splits-creator.md and the `[SPL-n]` tags in
 pkgs/contract/test. `scripts/check-spec-ids.mjs` checks that the three agree.
 -/
-import Spec.SplitsCreator.Model
+import Spec.SplitsCreator.Refinement
 
 namespace Spec.SplitsCreator
 
@@ -32,16 +32,6 @@ theorem sum_map_mul {α : Type} (l : List α) (f : α → Nat) (k : Nat) :
   | nil => simp
   | cons x xs ih => simp [List.sum_cons, ih, Nat.add_mul]
 
-theorem accumulate_eq_sum (l : List Entry) : accumulate l = allocSum l := by
-  suffices h : ∀ a, l.foldl (fun acc e => acc + e.2) a = a + allocSum l by
-    simpa [accumulate] using h 0
-  induction l with
-  | nil => simp [allocSum]
-  | cons e es ih =>
-    intro a
-    simp only [List.foldl_cons, ih, allocSum, List.map_cons, List.sum_cons]
-    omega
-
 theorem sqrt_mono {a b : Nat} (h : a ≤ b) : Nat.sqrt a ≤ Nat.sqrt b := by
   apply Nat.le_of_lt_succ
   apply Nat.lt_of_not_le
@@ -60,8 +50,8 @@ theorem preview_eq_some {i : Input} {o : Output} (h : preview i = some o) :
 
 /-! ## Principles -/
 
--- SPL-1: totalAllocation is exactly the sum of the allocations, one per recipient.
-theorem spl1_total_is_sum {i : Input} {o : Output} (h : preview i = some o) :
+/-- SPL-1 for the unbounded model. -/
+theorem total_is_sum {i : Input} {o : Output} (h : preview i = some o) :
     o.totalAllocation = o.allocations.sum ∧ o.recipients.length = o.allocations.length := by
   obtain ⟨_, _, _, _, rfl⟩ := preview_eq_some h
   simp [combine, Output.allocations, Output.recipients, accumulate_eq_sum, allocSum]
@@ -93,8 +83,8 @@ theorem spl2_side_bounded_by_weight (w : Weights) (thanks roles : List Entry) :
     allocSum (side w.role (w.thanks + w.role) roles) ≤ w.role * PRECISION / (w.thanks + w.role) :=
   ⟨side_sum_le _ _ _, side_sum_le _ _ _⟩
 
--- SPL-3: rounding only ever loses: totalAllocation never exceeds PRECISION.
-theorem spl3_total_le_precision {i : Input} {o : Output} (h : preview i = some o) :
+/-- SPL-3 for the unbounded model. -/
+theorem total_le_precision {i : Input} {o : Output} (h : preview i = some o) :
     o.totalAllocation ≤ PRECISION := by
   obtain ⟨thanks, roles, _, _, rfl⟩ := preview_eq_some h
   have ⟨ht, hr⟩ := spl2_side_bounded_by_weight i.weights thanks roles
@@ -174,8 +164,8 @@ theorem roleSide_eq_none_iff (m : Modules) (rs : List Role) :
       | none => simp_all
       | some _ => simp_all
 
--- SPL-5: preview reverts exactly when a divisor would be 0: both ThanksToken totals are non-zero but received+sent weight is 0, or some role has multiplierBottom = 0, or some role has wearers but a total FractionToken supply of 0.
-theorem spl5_reverts_iff (i : Input) :
+/-- SPL-5 for the unbounded model: it fails exactly when a divisor would be 0. -/
+theorem reverts_iff (i : Input) :
     preview i = none ↔
       thanksReverts i.weights i.participants ∨ ∃ r ∈ i.roles, roleReverts r := by
   rw [← thanksSide_eq_none_iff, ← roleSide_eq_none_iff i.modules]
@@ -238,5 +228,43 @@ theorem roleEntries_entries {m : Modules} {r : Role} {es : List Entry} (h : role
     · simp [h1, h2] at h
     · simp only [h1, h2, ite_false, Option.some.injEq] at h
       exact h.symm
+
+/-! ## Principles of the contract (uint256 model) -/
+
+-- SPL-8: whenever preview returns (no uint256 overflow), the result is exactly the unbounded computation's; it reverts with division by zero (Panic 0x12) only where the unbounded computation also fails, and wherever that fails it reverts too.
+theorem spl8_uint256_matches_unbounded (i : Input) :
+    (∀ o, previewU i = .ok o → preview i = some o) ∧
+    (previewU i = .error .divZero → preview i = none) ∧
+    (preview i = none → ∀ o, previewU i ≠ .ok o) := by
+  have h := rel_preview i
+  refine ⟨fun o ho => ?_, fun hd => ?_, fun hn o ho => ?_⟩
+  · rw [ho] at h; exact h
+  · rw [hd] at h; exact h
+  · rw [ho] at h
+    simp only [Rel] at h
+    rw [hn] at h
+    cases h
+
+-- SPL-1: totalAllocation is exactly the sum of the allocations, one per recipient.
+theorem spl1_total_is_sum {i : Input} {o : Output} (h : previewU i = .ok o) :
+    o.totalAllocation = o.allocations.sum ∧ o.recipients.length = o.allocations.length :=
+  total_is_sum ((spl8_uint256_matches_unbounded i).1 o h)
+
+-- SPL-3: rounding only ever loses: totalAllocation never exceeds PRECISION.
+theorem spl3_total_le_precision {i : Input} {o : Output} (h : previewU i = .ok o) :
+    o.totalAllocation ≤ PRECISION :=
+  total_le_precision ((spl8_uint256_matches_unbounded i).1 o h)
+
+-- SPL-5: preview reverts with division by zero (Panic 0x12) only when both ThanksToken totals are non-zero but received+sent weight is 0, or some role has multiplierBottom = 0, or some role has wearers but a total FractionToken supply of 0; under those conditions it always reverts (with 0x12, or 0x11 if an overflow comes first). Any other revert is an overflow (Panic 0x11).
+theorem spl5_reverts (i : Input) :
+    (previewU i = .error .divZero →
+      thanksReverts i.weights i.participants ∨ ∃ r ∈ i.roles, roleReverts r) ∧
+    ((thanksReverts i.weights i.participants ∨ ∃ r ∈ i.roles, roleReverts r) →
+      ∀ o, previewU i ≠ .ok o) ∧
+    (∀ e, previewU i = .error e → e = .divZero ∨ e = .overflow) := by
+  have h8 := spl8_uint256_matches_unbounded i
+  refine ⟨fun hd => (reverts_iff i).mp (h8.2.1 hd), fun hc => h8.2.2 ((reverts_iff i).mpr hc),
+    fun e _ => ?_⟩
+  cases e <;> simp
 
 end Spec.SplitsCreator

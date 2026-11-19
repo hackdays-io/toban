@@ -18,7 +18,9 @@ pnpm spec verify     # lake build + fail if committed vectors differ from a fres
 
 ## Layout
 
-- `Spec/<Module>/Model.lean` — the executable model. Mirror the Solidity expression order exactly (every `/` is `Nat` floor division in the same place). `none` = the contract reverts. Data read from other contracts is plain input.
+- `Spec/<Module>/Model.lean` — the executable model over unbounded `Nat` (easy to prove things about). Mirror the Solidity expression order exactly (every `/` is `Nat` floor division in the same place). `none` = division by zero. Data read from other contracts is plain input.
+- `Spec/<Module>/Contract.lean` — the same computation with Solidity 0.8 uint256 semantics (`Except Panic`: every `*` / `+` overflows at 2^256 → `.overflow` (0x11), `/` by 0 → `.divZero` (0x12)), in the contract's operation order, so the panic code matches. This is what the vectors are generated from.
+- `Spec/<Module>/Refinement.lean` — proves `Rel (previewU i) (preview i)`: if the uint256 model returns, the `Nat` model returns the same value. Principles about results are then stated for the uint256 model via this. When you change one model, change the other and keep this proof building.
 - `Spec/<Module>/Theorems.lean` — principles. Each principle theorem has `-- <ID>: <one-line statement>` on the line directly above it.
 - `GenVectors.lean` — hand-written edge cases + seeded pseudo-random inputs → JSON (numbers as decimal strings). Deterministic: same seed, same file.
 - `vectors/` — generated, committed (so contract tests run without Lean). Consumed by `pkgs/contract/test/*.Differential.ts` via the `@toban/spec` devDependency.
@@ -32,7 +34,7 @@ pnpm spec verify     # lake build + fail if committed vectors differ from a fres
 
 ## Adding a module
 
-1. `Spec/<Module>/Model.lean` + `Theorems.lean`, import both from `Spec.lean`.
+1. `Spec/<Module>/Model.lean`, `Contract.lean`, `Refinement.lean` + `Theorems.lean`, imported from `Spec.lean`.
 2. Extend `GenVectors.lean` (or add an exe) to write `vectors/<module>.json`.
 3. Contract: data mocks under `contracts/<module>/mock/` + `test/<Module>.Differential.ts`.
 4. Docs: fill `pkgs/document/docs/protocol/modules/<module>.md` (目的 / 仕組み / 設計の理由 / 原則, in Japanese).

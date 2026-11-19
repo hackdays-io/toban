@@ -7,7 +7,7 @@ seeded pseudo-random inputs and prints JSON to stdout.
 pkgs/contract/test/SplitsCreator.Differential.ts replays every case against
 the Solidity contract. Numbers are decimal strings (they exceed 2^53).
 -/
-import Spec.SplitsCreator.Model
+import Spec.SplitsCreator.Contract
 
 open Spec.SplitsCreator
 
@@ -45,17 +45,21 @@ def jInput (i : Input) : String :=
       jObj [("addr", jAddr p.addr), ("balance", jNat p.balance), ("minted", jNat p.minted)])),
     ("roles", jArr (i.roles.map jRole))]
 
-def jOutput : Option Output → String
-  | none => "null"
-  | some o => jObj [("recipients", jArr (o.recipients.map jAddr)),
+/-- Expected result of the uint256 model: the output, or which panic it reverts with. -/
+def jOutput : EVM Output → String
+  | .error .overflow => jObj [("revert", jStr "overflow")]
+  | .error .divZero => jObj [("revert", jStr "divZero")]
+  | .ok o => jObj [("recipients", jArr (o.recipients.map jAddr)),
       ("allocations", jArr (o.allocations.map jNat)), ("totalAllocation", jNat o.totalAllocation)]
 
 def jCase (name : String) (i : Input) : String :=
-  jObj [("name", jStr name), ("input", jInput i), ("expected", jOutput (preview i))]
+  jObj [("name", jStr name), ("input", jInput i), ("expected", jOutput (previewU i))]
 
 /-! ## Hand-written cases -/
 
 def A (k : Nat) : Nat := 0xA000 + k
+/-- The largest `x` with `x * PRECISION < 2^256`. -/
+def maxFit : Nat := (WORD - 1) / PRECISION
 def ether : Nat := 1000000000000000000
 
 def holder (k b : Nat) (e : Nat := 0) : Holder := ⟨A k, b, e⟩
@@ -105,7 +109,25 @@ def edgeCases : List (String × Input) := [
   ("same account in several roles and in thanks", ⟨both, ⟨1, 1, 1, 1⟩, baseParticipants,
     [role 1 1 1 [wearer 1 10000 100], role 2 1 1 [wearer 1 10000 400, wearer 2 10000 900]]⟩),
   ("large balances", ⟨both, ⟨100, 100, 7, 3⟩,
-    [⟨A 1, 1000000 * ether, 999999 * ether⟩, ⟨A 2, 1, 1⟩], baseRoles⟩)
+    [⟨A 1, 1000000 * ether, 999999 * ether⟩, ⟨A 2, 1, 1⟩], baseRoles⟩),
+  -- uint256 overflow (Panic 0x11)
+  ("overflow: thanks balances sum past 2^256", ⟨both, ⟨1, 1, 1, 1⟩,
+    [⟨A 1, 2 ^ 255, ether⟩, ⟨A 2, 2 ^ 255, ether⟩], baseRoles⟩),
+  ("overflow: received weight × balance", ⟨both, ⟨1, 1, 2 ^ 200, 1⟩, baseParticipants, baseRoles⟩),
+  ("largest received weight that fits", ⟨both, ⟨0, 1, maxFit, 0⟩, [⟨A 1, 1, 1⟩], []⟩),
+  ("one more overflows", ⟨both, ⟨0, 1, maxFit + 1, 0⟩, [⟨A 1, 1, 1⟩], []⟩),
+  ("overflow: role multiplier × balance", ⟨both, ⟨1, 1, 1, 1⟩, baseParticipants,
+    [role 1 (2 ^ 250) 1 [wearer 1 10000 100]]⟩),
+  ("overflow: thanks weight + role weight", ⟨both, ⟨2 ^ 255, 2 ^ 255, 1, 1⟩,
+    baseParticipants, baseRoles⟩),
+  ("overflow: quest escrow added to balance", ⟨both, ⟨1, 1, 1, 1⟩, baseParticipants,
+    [role 1 1 1 [wearer 1 (2 ^ 255) 100 10000 [] (2 ^ 255)]]⟩),
+  ("overflow: share supplies sum past 2^256", ⟨both, ⟨1, 1, 1, 1⟩, baseParticipants,
+    [role 1 1 1 [wearer 1 10000 100 (2 ^ 255), wearer 2 10000 100 (2 ^ 255)]]⟩),
+  ("overflow comes before division by zero", ⟨both, ⟨1, 1, 0, 0⟩,
+    [⟨A 1, 2 ^ 255, ether⟩, ⟨A 2, 2 ^ 255, ether⟩], baseRoles⟩),
+  ("division by zero comes before overflow", ⟨both, ⟨1, 1, 1, 1⟩, baseParticipants,
+    [role 1 1 0 [wearer 1 10000 100], role 2 (2 ^ 250) 1 [wearer 2 10000 100]]⟩)
 ]
 
 /-! ## Seeded pseudo-random cases -/
@@ -136,8 +158,14 @@ def genAddrs (n : Nat) (exclude : List Nat := []) : Gen (List Nat) := do
     unless out.contains a || exclude.contains a do out := out ++ [a]
   pure out
 
+/-- Occasionally a value big enough to overflow somewhere (still < 2^256). -/
+def huge : Gen Nat := do pure (2 ^ (150 + (← rand 106)) + (← rand 1000))
+
+def maybeHuge (percent : Nat) (g : Gen Nat) : Gen Nat := do
+  if ← chance percent then huge else g
+
 def genHolder (m : Modules) (addr : Nat) : Gen Holder := do
-  let balance ← pick [0, 10000, ← rand 10001]
+  let balance ← maybeHuge 2 do pick [0, 10000, ← rand 10001]
   let escrow ← if m.quest && (← chance 30) then rand 5000 else pure 0
   pure ⟨addr, balance, escrow⟩
 
@@ -150,19 +178,20 @@ def genWearer (m : Modules) (addr : Nat) : Gen Wearer := do
 
 def genRole (m : Modules) (hat : Nat) : Gen Role := do
   let bottom ← if (← chance 2) then pure 0 else pick [1, 1, 1, 2, 3]
-  let top ← pick [1, 1, 2, 3, 5, ← rand 20]
+  let top ← maybeHuge 2 do pick [1, 1, 2, 3, 5, ← rand 20]
   let ws ← (← genAddrs (← rand 4)).mapM (genWearer m)
   pure ⟨hat, top, bottom, ws⟩
 
 def genParticipant (addr : Nat) : Gen Participant := do
-  let amount : Gen Nat := do pick [0, ether, (← rand 1000000) * 1000000000000, ← rand 1000]
+  let amount : Gen Nat := maybeHuge 2 do
+    pick [0, ether, (← rand 1000000) * 1000000000000, ← rand 1000]
   pure ⟨addr, ← amount, ← amount⟩
 
-def genWeight : Gen Nat := do pick [0, 1, ← rand 101, ← rand 101]
+def genWeight : Gen Nat := maybeHuge 2 do pick [0, 1, ← rand 101, ← rand 101]
 
 def genInput : Gen Input := do
   let m : Modules := ⟨← chance 80, ← chance 70⟩
-  let w : Weights := ⟨← genWeight, ← genWeight, ← rand 11, ← rand 11⟩
+  let w : Weights := ⟨← genWeight, ← genWeight, ← maybeHuge 2 (rand 11), ← maybeHuge 2 (rand 11)⟩
   let ps ← (← genAddrs (← rand 6)).mapM genParticipant
   let rs ← (List.range (← rand 4)).mapM fun k => do genRole m ((k + 1) * 1000 + (← rand 1000))
   pure ⟨m, w, ps, rs⟩

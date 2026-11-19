@@ -8,7 +8,7 @@ sidebar_position: 1
 
 このセクションでは、Toban のスマートコントラクトをプロトコルとして説明する。各コントラクトが何のためにあり、どう動き、なぜその設計にしたのか、そして何を約束するのかを書く。アプリの使い方は [Toban を始める](../getstarted/index.md)を参照。
 
-Toban は、貢献を**ロール**([Hats Protocol](https://docs.hatsprotocol.xyz/) の hat)と**サンクス**(ThanksToken)として記録し、それを報酬の **split**([0xSplits](https://docs.splits.org/))に変える。Toban がデプロイするのは、Hats と 0xSplits に組み込むモジュールと creator で、監査済みのこの 2 つのプロトコル自体は変更しない。このセクションで扱うのも、Toban 独自のロジックだけである。
+Toban は、貢献を**ロール**([Hats Protocol](https://docs.hatsprotocol.xyz/) の hat)と**サンクス**(ThanksToken)として記録し、それを報酬の **split**([0xSplits](https://splits.org/))に変える。Toban がデプロイするのは、Hats と 0xSplits に組み込むモジュールと creator で、監査済みのこの 2 つのプロトコル自体は変更しない。このセクションで扱うのも、Toban 独自のロジックだけである。
 
 ## モジュールのページの構成 {#how-each-module-page-is-organized}
 

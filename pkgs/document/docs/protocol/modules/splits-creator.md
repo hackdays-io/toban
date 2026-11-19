@@ -11,7 +11,7 @@ sidebar_position: 1
 
 ## 目的 {#goal}
 
-ワークスペースに記録されたこと(誰がどのロールをどれだけの期間担ったか、そのロールの報酬を誰と分け合ったか、互いにどれだけ感謝を送ったか)から、誰でも検算できる報酬の分配を作る。SplitsCreator は配分を計算し、その配分で [0xSplits V2](https://docs.splits.org/) の split コントラクトをデプロイする。SplitsCreator 自身は資金を保持も移動もしない。
+ワークスペースに記録されたこと(誰がどのロールをどれだけの期間担ったか、そのロールの報酬を誰と分け合ったか、互いにどれだけ感謝を送ったか)から、誰でも検算できる報酬の分配を作る。SplitsCreator は配分を計算し、その配分で [0xSplits](https://splits.org/) V2 の split コントラクトをデプロイする([開発者向けドキュメント](https://docs.splits.org/))。SplitsCreator 自身は資金を保持も移動もしない。
 
 ## 仕組み {#mechanism}
 

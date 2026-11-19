@@ -35,7 +35,7 @@ flowchart TB
 | HatsFractionTokenModule | HatsModuleFactory | ロールごとのシェアトークン。着用者はシェアの一部を他人に渡せる |
 | HatsQuestModule | HatsModuleFactory | クエストと、クエストのためにエスクローに預けたシェアトークン |
 | ThanksToken | ThanksTokenFactory | メンバーどうしで送るサンクス(アシストクレジット)。残高と mint 量 |
-| SplitsCreator | SplitsCreatorFactory | なし。上のコントラクトを読んで 0xSplits の split を作る |
+| SplitsCreator | SplitsCreatorFactory | なし。上のコントラクトを読んで [0xSplits](https://splits.org/) の split を作る |
 | ScheduledDistributor | ScheduledDistributorFactory | 予定された分配。実行時に split を作る |
 
 ## 報酬が届くまでの流れ {#data-flow-of-a-reward}

@@ -37,6 +37,7 @@ const config: Config = {
     mermaid: true,
   },
   themes: ["@docusaurus/theme-mermaid"],
+  clientModules: ["./src/clientModules/d3Transition.ts"],
 
   presets: [
     [

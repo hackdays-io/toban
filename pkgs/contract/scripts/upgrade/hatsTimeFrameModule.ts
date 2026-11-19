@@ -1,4 +1,4 @@
-import { network, viem } from "hardhat";
+import { networkName, viem } from "../../helpers/connection";
 import { deployHatsTimeFrameModule } from "../../helpers/deploy/Hats";
 import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJsonHelper";
 
@@ -10,7 +10,7 @@ const upgrade = async () => {
   // Load BigBang address from outputs JSON file
   const {
     contracts: { BigBang },
-  } = loadDeployedContractAddresses(network.name);
+  } = loadDeployedContractAddresses(networkName);
 
   const bigBang = await viem.getContractAt("BigBang", BigBang);
 
@@ -20,7 +20,7 @@ const upgrade = async () => {
 
   console.log(
     "HatsTimeframeModule module:\n",
-    `npx hardhat verify ${module.HatsTimeFrameModule.address} "0.0.0" 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+    `npx hardhat verify ${module.HatsTimeFrameModule.address} "0.0.0" 0x0000000000000000000000000000000000000001 --network ${networkName}\n`,
   );
 };
 

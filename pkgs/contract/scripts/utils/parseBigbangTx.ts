@@ -1,4 +1,4 @@
-import { ethers, network } from "hardhat";
+import { ethers, networkName } from "../../helpers/connection";
 import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJsonHelper";
 
 const TX = process.env.TX_HASH;
@@ -7,7 +7,7 @@ const main = async () => {
   if (!TX) throw new Error("set TX_HASH env");
   const {
     contracts: { BigBang },
-  } = loadDeployedContractAddresses(network.name);
+  } = loadDeployedContractAddresses(networkName);
   const receipt = await ethers.provider.getTransactionReceipt(TX);
   if (!receipt) throw new Error(`receipt not found for ${TX}`);
 

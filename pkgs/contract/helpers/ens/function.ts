@@ -1,5 +1,5 @@
+import type { HardhatViemHelpers } from "@nomicfoundation/hardhat-viem/types";
 import * as dotenv from "dotenv";
-import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import { privateKeyToAccount } from "viem/accounts";
 import { NAME_WRAPPER_ABI } from "./abi";
 import {
@@ -19,10 +19,10 @@ const account = privateKeyToAccount(PRIVATE_KEY as `0x${string}`);
  * register subdomain method
  */
 export const registerSubdomain = async (
-  hre: HardhatRuntimeEnvironment,
+  viem: HardhatViemHelpers,
   label: string,
 ) => {
-  const [bobWalletClient] = await hre.viem.getWalletClients();
+  const [bobWalletClient] = await viem.getWalletClients();
   // register subdomain methodを呼び出す。
   const txHash = await bobWalletClient.writeContract({
     address: NAME_WRAPPER_CONTRACT_ADDRESS,

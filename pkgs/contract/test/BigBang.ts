@@ -1,5 +1,5 @@
-import { expect } from "chai";
-import { viem } from "hardhat";
+import { expect } from "../helpers/test/chai";
+import { viem } from "../helpers/connection";
 import { type PublicClient, type WalletClient, decodeEventLog } from "viem";
 import { type BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
@@ -207,9 +207,9 @@ describe("BigBang", () => {
             address1.account?.address!,
           );
           expect(decodedLog.args.memberHatId).to.be.not.equal(null);
-          Hats.read.isWearerOfHat([
+          await Hats.read.isWearerOfHat([
+            address1.account?.address!,
             decodedLog.args.memberHatId,
-            BigInt(address1.account?.address!),
           ]);
           console.log(decodedLog.args);
         }

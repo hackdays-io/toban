@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import { network } from "hardhat";
+import { networkName } from "../../helpers/connection";
 import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJsonHelper";
 import { upgradeFractionToken } from "../../helpers/upgrade/fractionToken";
 
@@ -17,7 +17,7 @@ const upgrade = async () => {
   // FractionTokenコントラクトの各アドレスをjsonファイルから取得してくる。
   const {
     contracts: { FractionToken },
-  } = loadDeployedContractAddresses(network.name);
+  } = loadDeployedContractAddresses(networkName);
 
   // FractionTokenコントラクトをアップグレードする
   const newFractionToken = await upgradeFractionToken(

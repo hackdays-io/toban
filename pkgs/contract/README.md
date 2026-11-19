@@ -1,6 +1,6 @@
 # `@toban/contract`
 
-Toban のスマートコントラクト（Hardhat + Viem toolbox、Solidity 0.8.24、UUPS アップグレーダブル）。
+Toban のスマートコントラクト（Hardhat 3 + viem、Solidity 0.8.24、UUPS アップグレーダブル）。
 Hats Protocol v1 と 0xSplits の上に、ワークスペース（＝ロールの木）と報酬分配を組み立てます。
 
 - **デプロイ手順の正は [`DEPLOYMENT.md`](../../DEPLOYMENT.md)（リポジトリルート）です。**
@@ -13,7 +13,7 @@ Hats Protocol v1 と 0xSplits の上に、ワークスペース（＝ロール�
 
 ```bash
 pnpm contract compile
-pnpm contract test                  # 単体: pnpm contract test test/BigBang.ts
+pnpm contract test                  # 単体: pnpm contract test mocha test/BigBang.ts
 pnpm contract coverage
 pnpm contract lint                  # solhint --fix
 pnpm contract local                 # ローカル hardhat node
@@ -55,6 +55,9 @@ pnpm contract mintHat --hatid <id> --wearer <addr> --module <addr> --network <ne
 `deploy:all` は CREATE2 なので、**bytecode が変わっていないコントラクトは既存アドレスを再利用**
 します（`already deployed at ...` と出てスキップ）。BigBang は impl が変わると proxy の initcode も
 変わるため**アドレスが変わります**。
+
+bytecode には metadata hash を含めていない（`metadata.bytecodeHash: "none"`）ので、bytecode はロジックと
+コンパイラ設定だけで決まります。ソースのパスやコメントを変えても、アドレスは変わりません。
 
 ### 検証
 

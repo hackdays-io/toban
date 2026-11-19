@@ -145,8 +145,6 @@ contract → sync:abis → subgraph → frontend(codegen)
      ALCHEMY_API_KEY=""
      ETHERSCAN_API_KEY=""       # Sepolia / Holesky
      BASESCAN_API_KEY=""        # Base
-     COINMARKETCAP_API_KEY=""
-     GAS_REPORT=
      HATS_ADDRESS=""
      HATS_MODULE_FACTORY_ADDRESS=""
      PULL_SPLITS_FACTORY_ADDRESS=""

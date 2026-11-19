@@ -1,6 +1,6 @@
-import { task } from "hardhat/config";
-import type { HardhatRuntimeEnvironment } from "hardhat/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 import { getContractAddress } from "../../helpers/deploy/contractJsonIgnitionHelper";
+import { requireOption } from "./requireOption";
 
 interface GetContractAddressTaskArgs {
   contract: string;
@@ -9,31 +9,29 @@ interface GetContractAddressTaskArgs {
 /**
  * 【Task】	get deployed contract address
  */
-task("getContractAddress", "getContractAddress of connected chain")
-  .addParam("contract", "contract name in <contractName>Moduel#<contractName>")
-  .setAction(
-    async (
-      taskArgs: GetContractAddressTaskArgs,
-      hre: HardhatRuntimeEnvironment,
-    ) => {
-      console.log(
-        "################################### [START] ###################################",
-      );
+export default async function getContractAddressTask(
+  taskArgs: GetContractAddressTaskArgs,
+  hre: HardhatRuntimeEnvironment,
+) {
+  console.log(
+    "################################### [START] ###################################",
+  );
 
-      const publicClient = await hre.viem.getPublicClient();
-      const chainId = (await publicClient.getChainId()).toString();
-      // get contract name
-      const contractName = `${taskArgs.contract}Module#${taskArgs.contract}`;
+  const contract = requireOption(taskArgs.contract, "contract");
+  const { viem } = await hre.network.getOrCreate();
+  const publicClient = await viem.getPublicClient();
+  const chainId = (await publicClient.getChainId()).toString();
+  // get contract name
+  const contractName = `${contract}Module#${contract}`;
 
-      // get contract address
-      const contractAddress = getContractAddress(chainId, contractName);
+  // get contract address
+  const contractAddress = getContractAddress(chainId, contractName);
 
-      console.log(`
+  console.log(`
       ${contractName} 's address is ${contractAddress}
     `);
 
-      console.log(
-        "################################### [END] ###################################",
-      );
-    },
+  console.log(
+    "################################### [END] ###################################",
   );
+}

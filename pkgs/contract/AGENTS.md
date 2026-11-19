@@ -4,10 +4,14 @@ Guidance for the Toban smart contracts. Repo-root `AGENTS.md` covers monorepo co
 
 ## Stack
 
-- **Hardhat** with the Viem toolbox (`@nomicfoundation/hardhat-toolbox-viem`) plus `hardhat-ethers` (some deploy scripts still use ethers signers — both are wired).
-- **Solidity 0.8.24** with `viaIR: true`, optimizer runs `200`, evmVersion `cancun` (see `hardhat.config.ts`).
+- **Hardhat 3** (ESM, `"type": "module"`) with plugins listed in `hardhat.config.ts`: `hardhat-viem`, `hardhat-ethers` (some deploy helpers still use ethers — both are wired), `hardhat-mocha`, `hardhat-network-helpers`, `hardhat-verify`. Coverage and gas stats are built in (no `solidity-coverage` / `hardhat-gas-reporter`).
+- **There is no global `viem` / `ethers` / `network.name`.** Helpers, scripts and tests import them from `helpers/connection.ts` (one shared `network.getOrCreate()` connection, so everything in a process talks to the same chain). Never import that module from `hardhat.config.ts` or `tasks/index.ts` — it awaits the network at load time.
+- Tasks: definitions live in `tasks/index.ts` (`task().addOption().setAction(() => import(...))`); each action file default-exports `async (args, hre)` and calls `hre.network.getOrCreate()`. Options always have a default, so formerly required params default to `""` and are checked with `tasks/utils/requireOption.ts`.
+- Tests use `expect` from `helpers/test/chai.ts` (registers chai-as-promised). `hardhat-mocha` fails the run on unhandled rejections, so always `await` contract calls and `.catch()` chains in tests. For views that read `block.timestamp`, pass `{ blockNumber }` and compare with that block's time — without it the call context's timestamp (latest vs latest+1) depends on wall-clock and the test flakes.
+- **Solidity 0.8.24** with `viaIR: true`, optimizer **disabled** (`runs: 200` is set but inert), evmVersion `cancun` (see `hardhat.config.ts`). The same settings are pinned for both the `default` and `production` build profiles — Hardhat 3 enables the optimizer in `production` by default.
+- **`metadata.bytecodeHash: "none"`** — the bytecode carries no metadata hash, so `deploy:all` CREATE2 addresses depend only on code + compiler settings, not on source paths, comments or the build tool (same as Uniswap v4 / Seaport / Morpho Blue). Don't remove it: adding a hash back changes every address.
 - **OpenZeppelin Upgradeable** (`@openzeppelin/contracts-upgradeable` 5.0.2) — UUPS pattern for `BigBang` and `FractionToken`-family contracts.
-- **OpenZeppelin Hardhat Upgrades** plugin for proxy deploys/upgrades (`scripts/upgrade/*`).
+- Proxies are deployed by hand from `@openzeppelin/upgrades-core` artifacts (`helpers/deploy/Upgradeable.ts`) and upgraded via `upgradeToAndCall` (`helpers/upgrade/*`); the OZ Hardhat Upgrades plugin is not used.
 - **Hats Protocol v1** (`@hatsprotocol/sdk-v1-core`) and **0xSplits** are external dependencies — Toban deploys *modules* and *creators* that plug into them.
 - **solhint** (`pnpm contract lint`) for Solidity linting. Biome handles TS scripts/tests. Note: `biome.json` excludes `contract/test` from lint and `contract/artifacts`/`contract/cache` from everything.
 
@@ -16,7 +20,7 @@ Guidance for the Toban smart contracts. Repo-root `AGENTS.md` covers monorepo co
 ```
 pnpm contract compile            # hardhat compile
 pnpm contract test               # hardhat test (mocha + viem matchers)
-pnpm contract coverage           # solidity-coverage
+pnpm contract coverage           # hardhat test --coverage (built in)
 pnpm contract clean              # hardhat clean
 pnpm contract lint               # solhint --fix
 pnpm contract local              # local hardhat node
@@ -40,17 +44,19 @@ pnpm contract getContractAddress --contract <Name> --network <net>
 pnpm contract registerSubdomain --label <label> --network <net>
 ```
 
-To run a single test: `pnpm contract test test/BigBang.ts` (Hardhat forwards to Mocha; use `--grep "<pattern>"` for a single case).
+To run a single test: `pnpm contract test mocha test/BigBang.ts` (use `--grep "<pattern>"` for a single case). Add `--gas-stats` for a gas report.
+
+Dry-run a deploy/upgrade script without broadcasting: use a throwaway config that spreads `hardhat.config.ts` and overrides `sepolia` with `type: "edr-simulated"` + `forking.url`, then `npx hardhat --config <it> run --network sepolia scripts/...`. The network name stays `sepolia`, so the script **rewrites `outputs/contracts-sepolia.json`** — restore it with git afterwards.
 
 ## Networks
 
 Defined in `hardhat.config.ts`:
-- `hardhat` (local, `allowUnlimitedContractSize`)
+- `default` (in-process EDR, `allowUnlimitedContractSize`) and `localhost` (for `pnpm contract local`)
 - `sepolia` — uses `PRIVATE_KEY` + `ALCHEMY_API_KEY`
 - `holesky` — uses `PRIVATE_KEY` + `ALCHEMY_API_KEY`
 - `base` — uses `PRODUCTION_PRIVATE_KEY` (separate from testnet key)
 
-Etherscan/Basescan keys are split between `ETHERSCAN_API_KEY` (Sepolia/Holesky) and `BASESCAN_API_KEY` (Base).
+Keys and RPC URLs are `configVariable`s, resolved only when that network is used (from `.env` via `dotenv`). With no `PRIVATE_KEY` / `PRODUCTION_PRIVATE_KEY` in the env the network has no accounts, so read-only tasks still work. Verification uses the single `ETHERSCAN_API_KEY` (Etherscan API v2, multichain); Blockscout / Sourcify are disabled.
 
 ## Contract layout (`contracts/`)
 
@@ -85,8 +91,6 @@ PRODUCTION_PRIVATE_KEY=
 ETHERSCAN_API_KEY=
 BASESCAN_API_KEY=
 ALCHEMY_API_KEY=
-COINMARKETCAP_API_KEY=
-GAS_REPORT=
 HATS_ADDRESS=
 HATS_MODULE_FACTORY_ADDRESS=
 PULL_SPLITS_FACTORY_ADDRESS=

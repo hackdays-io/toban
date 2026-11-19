@@ -1,5 +1,5 @@
-import { ethers, network } from "hardhat";
 import type { Address } from "viem";
+import { ethers, networkName } from "../../helpers/connection";
 import {
   deployThanksToken,
   deployThanksTokenFactory,
@@ -44,12 +44,12 @@ const deploy = async () => {
 
   console.log(
     "ThanksToken:\n",
-    `pnpm contract hardhat verify ${thanksTokenAddress} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${thanksTokenAddress} --network ${networkName}\n`,
   );
   console.log(
     "ThanksTokenFactory:\n",
-    `pnpm contract hardhat verify ${ThanksTokenFactoryImplAddress} --network ${network.name} &&`,
-    `pnpm contract hardhat verify ${thanksTokenFactoryAddress} ${ThanksTokenFactoryImplAddress} ${ThanksTokenFactoryInitData} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${ThanksTokenFactoryImplAddress} --network ${networkName} &&`,
+    `pnpm contract hardhat verify ${thanksTokenFactoryAddress} ${ThanksTokenFactoryImplAddress} ${ThanksTokenFactoryInitData} --network ${networkName}\n`,
   );
 
   console.log(

@@ -1,5 +1,5 @@
-import { ethers, viem } from "hardhat";
 import type { Address } from "viem";
+import { ethers, viem } from "../connection";
 
 const create2DeployerAbi = [
   "function deploy(uint256 amount, bytes32 salt, bytes calldata code) public returns (address)",

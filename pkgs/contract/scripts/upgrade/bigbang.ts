@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import { network } from "hardhat";
+import { networkName } from "../../helpers/connection";
 import { loadDeployedContractAddresses } from "../../helpers/deploy/contractsJsonHelper";
 import { upgradeBigBang } from "../../helpers/upgrade/bigbang";
 
@@ -17,7 +17,7 @@ const upgrade = async () => {
   // BigBangコントラクトの各アドレスをjsonファイルから取得してくる。
   const {
     contracts: { BigBang },
-  } = loadDeployedContractAddresses(network.name);
+  } = loadDeployedContractAddresses(networkName);
 
   // BigBangコントラクトをアップグレードする
   const newBigBang = await upgradeBigBang(

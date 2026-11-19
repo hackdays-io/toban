@@ -397,7 +397,7 @@ describe("HatsFractionTokenModule", () => {
       ).to.equal(0n);
     });
 
-    it("wearer still cannot transfer their entire balance", async () => {
+    it("[HFT-6] wearer still cannot transfer their entire balance", async () => {
       const tokenId = await HatsFractionTokenModule.read.getTokenId([
         hatId1,
         address2Validated,

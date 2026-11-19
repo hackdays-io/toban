@@ -135,6 +135,8 @@ contract ThanksTokenFactory is
         address workspaceOwner,
         bytes32 salt
     ) internal pure returns (bytes32) {
+        // slither: Not exploitable: the clone address also commits to initData, which abi.encode()s name and symbol, and only BigBang can call. Changing the encoding would move every predicted address.
+        // slither-disable-next-line encode-packed-collision
         return keccak256(abi.encodePacked(name, symbol, workspaceOwner, salt));
     }
 

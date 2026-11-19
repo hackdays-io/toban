@@ -23,6 +23,8 @@ pnpm contract test               # hardhat test (mocha + viem matchers)
 pnpm contract coverage           # hardhat test --coverage (built in)
 pnpm contract clean              # hardhat clean
 pnpm contract lint               # solhint --fix
+pnpm contract slither            # Slither static analysis (fails on any unsuppressed finding)
+pnpm contract verify             # what scripts/verify.sh runs: hardhat test + slither
 pnpm contract local              # local hardhat node
 pnpm contract sync:abis          # ★ regenerate pkgs/frontend/abi/ + pkgs/subgraph/abis/ — run after ANY contract change
 pnpm contract deploy:all --network <net>          # CREATE2 deploy of all impls + factories
@@ -84,6 +86,22 @@ Per-workspace deployment (deploying a `BigBang` *invocation*) goes through `pnpm
 Mocha + chai with viem matchers. Each top-level contract has its own file. `IntegrationTest.ts` exercises the full BigBang → modules → splits flow — read it first to understand contract wiring before changing module APIs.
 
 `*.Differential.ts` replays Lean-generated vectors from `@toban/spec` (`pkgs/spec/vectors/`) against the contract, fed through data mocks in `contracts/<module>/mock/*DataMocks.sol`. Changing SplitsCreator's allocation logic means changing both `pkgs/spec/Spec/SplitsCreator/Model.lean` and `Contract.lean` (vectors come from `Contract.lean`; keep `Refinement.lean` building), running `pnpm spec vectors`, and updating the protocol docs page in the same PR (`pkgs/spec/AGENTS.md`). `[SPL-n]` in a test name links it to a principle — add one only if the test checks that principle.
+
+## Static analysis (Slither)
+
+`pnpm contract verify` (and so `scripts/verify.sh` / CI) runs `scripts/slither.sh`, which fails on **any** finding not suppressed.
+
+- **Install:** nothing to do. The script runs Slither through `uvx` at the version pinned in `scripts/slither.sh` and installs uv into `~/.local/bin` if it is missing (CI, fresh machines). The WorktreeCreate hook pre-caches it (`pnpm contract slither:setup`). Bump the version there.
+- **Build:** the script runs `hardhat compile --force` first. An incremental Hardhat 3 compile leaves a stale partial build-info next to the new one, and Slither reads both (stale line numbers, suppressions miss).
+- **Scope** (`slither.config.json` `filter_paths`): vendored, audited code (`contracts/hats/`, `contracts/splits/`, `node_modules/`) and test-only `*/mock/` contracts are not analysed.
+- **Suppressing a finding:** fix it if it is a real bug (or open an issue). Otherwise put `// slither-disable-next-line <detector>` above the flagged line, with a `// slither: <reason>` line above it. Comments do not change bytecode (`bytecodeHash: "none"`).
+- **Detectors excluded for the whole repo** (`detectors_to_exclude`), each because it flags a pattern the design relies on:
+  - `naming-convention`: style only (solhint covers style); renaming public getters would change the ABI.
+  - `calls-loop`: loops over Hats / module / ERC20 / Splits calls are the design. Some are capped (`MAX_WEARERS_PER_HAT`, batch ≤ 100), others are not. One call failing reverts the whole loop: e.g. a paused token blocks `ScheduledDistributor.execute` / `reclaim` for every token (#636).
+  - `missing-zero-check`: every hit is an owner-only setter or initializer.
+  - `reentrancy-events`: state is finalised before each flagged external call (checks-effects-interactions), so a re-entrant callee can only reorder logs. That includes untrusted receivers: ERC1155 `onERC1155Received` in `HatsQuestModule.approve` / `cancel`, and scheduler-chosen tokens in `ScheduledDistributor.execute`. A new hit that writes state after a callback is a `reentrancy-no-eth` / `-benign` finding, which is not excluded.
+  - `timestamp`: schedules and wear time are minutes-to-days scale; validator drift is irrelevant.
+  - `cyclomatic-complexity`: informational.
 
 ## Required env (`pkgs/contract/.env`)
 

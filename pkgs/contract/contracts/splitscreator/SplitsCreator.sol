@@ -319,6 +319,8 @@ contract SplitsCreator is ISplitsCreator, Clone {
         for (uint256 i = 0; i < _splitsInfo.length; i++) {
             SplitsInfo memory _splitInfo = _splitsInfo[i];
 
+            // slither: Specified behaviour: the multiplier is truncated (protocol docs splits-creator.md "Known limitations", Lean model in pkgs/spec). The frontend scales every role to an integer multiplier with bottom = 1 (pkgs/frontend/utils/multiplier.ts).
+            // slither-disable-next-line divide-before-multiply
             uint256 roleMultiplier = _splitInfo.multiplierTop /
                 _splitInfo.multiplierBottom;
 

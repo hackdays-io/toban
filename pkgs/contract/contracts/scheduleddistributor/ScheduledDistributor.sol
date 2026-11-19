@@ -109,6 +109,8 @@ contract ScheduledDistributor is IScheduledDistributor {
 			"ScheduledDistributor: length mismatch"
 		);
 
+		// slither: Solidity zero-initialises locals; this is a counter starting at 0.
+		// slither-disable-next-line uninitialized-local
 		uint256 totalConfirmed;
 		for (uint256 i = 0; i < hatsLen; i++) {
 			require(
@@ -192,6 +194,8 @@ contract ScheduledDistributor is IScheduledDistributor {
 		) = ISplitsCreator(splitsCreator).preview(splitsInfo, weights);
 
 		bytes32 salt = keccak256(abi.encode(address(this), scheduledDate));
+		// slither: splitsCreator is fixed at initialize by the scheduler, who already decides where the funds go; re-entering execute() gains nothing.
+		// slither-disable-next-line reentrancy-no-eth,reentrancy-benign
 		address splitAddr = ISplitsCreator(splitsCreator).createWithSalt(
 			splitsInfo,
 			weights,
@@ -212,6 +216,8 @@ contract ScheduledDistributor is IScheduledDistributor {
 		for (uint256 i = 0; i < tokensLen; i++) {
 			address t = _tokens[i];
 			uint256 balance = IERC20(t).balanceOf(address(this));
+			// slither: Only skips the transfer for an empty token; an attacker sending tokens just gets them distributed.
+			// slither-disable-next-line incorrect-equality
 			if (balance == 0) {
 				// Still emit Executed so off-chain consumers can show the
 				// per-token outcome (zero distributed) without ambiguity.

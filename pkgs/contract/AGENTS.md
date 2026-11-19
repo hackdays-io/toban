@@ -8,8 +8,8 @@ Guidance for the Toban smart contracts. Repo-root `AGENTS.md` covers monorepo co
 - **There is no global `viem` / `ethers` / `network.name`.** Helpers, scripts and tests import them from `helpers/connection.ts` (one shared `network.getOrCreate()` connection, so everything in a process talks to the same chain). Never import that module from `hardhat.config.ts` or `tasks/index.ts` — it awaits the network at load time.
 - Tasks: definitions live in `tasks/index.ts` (`task().addOption().setAction(() => import(...))`); each action file default-exports `async (args, hre)` and calls `hre.network.getOrCreate()`. Options always have a default, so formerly required params default to `""` and are checked with `tasks/utils/requireOption.ts`.
 - Tests use `expect` from `helpers/test/chai.ts` (registers chai-as-promised). `hardhat-mocha` fails the run on unhandled rejections, so always `await` contract calls and `.catch()` chains in tests. For views that read `block.timestamp`, pass `{ blockNumber }` and compare with that block's time — without it the call context's timestamp (latest vs latest+1) depends on wall-clock and the test flakes.
-- **Solidity 0.8.24** with `viaIR: true`, optimizer **disabled** (`runs: 200` is set but inert), evmVersion `cancun` (see `hardhat.config.ts`). The same settings are pinned for both the `default` and `production` build profiles — Hardhat 3 would otherwise enable the optimizer in `production`.
-- **`metadata.bytecodeHash: "none"`** — the bytecode carries no metadata hash, so `deploy:all` CREATE2 addresses depend only on code + compiler settings, not on source paths, comments or the build tool (same as Uniswap v4 / Seaport / Morpho Blue). Don't remove it: Hardhat 3 names sources `project/contracts/...`, so with a hash every address would move. Introduced with the Hardhat 3 migration (#623) — contracts deployed before that have different initcode, so the first `deploy:all` after it redeploys everything.
+- **Solidity 0.8.24** with `viaIR: true`, optimizer **disabled** (`runs: 200` is set but inert), evmVersion `cancun` (see `hardhat.config.ts`). The same settings are pinned for both the `default` and `production` build profiles — Hardhat 3 enables the optimizer in `production` by default.
+- **`metadata.bytecodeHash: "none"`** — the bytecode carries no metadata hash, so `deploy:all` CREATE2 addresses depend only on code + compiler settings, not on source paths, comments or the build tool (same as Uniswap v4 / Seaport / Morpho Blue). Don't remove it: adding a hash back changes every address.
 - **OpenZeppelin Upgradeable** (`@openzeppelin/contracts-upgradeable` 5.0.2) — UUPS pattern for `BigBang` and `FractionToken`-family contracts.
 - Proxies are deployed by hand from `@openzeppelin/upgrades-core` artifacts (`helpers/deploy/Upgradeable.ts`) and upgraded via `upgradeToAndCall` (`helpers/upgrade/*`); the OZ Hardhat Upgrades plugin is not used.
 - **Hats Protocol v1** (`@hatsprotocol/sdk-v1-core`) and **0xSplits** are external dependencies — Toban deploys *modules* and *creators* that plug into them.
@@ -51,12 +51,12 @@ Dry-run a deploy/upgrade script without broadcasting: use a throwaway config tha
 ## Networks
 
 Defined in `hardhat.config.ts`:
-- `default` (in-process EDR, `allowUnlimitedContractSize`; Hardhat 2 called this `hardhat`) and `localhost` (for `pnpm contract local`)
+- `default` (in-process EDR, `allowUnlimitedContractSize`) and `localhost` (for `pnpm contract local`)
 - `sepolia` — uses `PRIVATE_KEY` + `ALCHEMY_API_KEY`
 - `holesky` — uses `PRIVATE_KEY` + `ALCHEMY_API_KEY`
 - `base` — uses `PRODUCTION_PRIVATE_KEY` (separate from testnet key)
 
-Keys and RPC URLs are `configVariable`s, resolved only when that network is used (from `.env` via `dotenv`). With no `PRIVATE_KEY` / `PRODUCTION_PRIVATE_KEY` in the env the network has no accounts, so read-only tasks still work. Verification uses the single `ETHERSCAN_API_KEY` (Etherscan API v2, multichain); Blockscout / Sourcify are disabled to match Hardhat 2.
+Keys and RPC URLs are `configVariable`s, resolved only when that network is used (from `.env` via `dotenv`). With no `PRIVATE_KEY` / `PRODUCTION_PRIVATE_KEY` in the env the network has no accounts, so read-only tasks still work. Verification uses the single `ETHERSCAN_API_KEY` (Etherscan API v2, multichain); Blockscout / Sourcify are disabled.
 
 ## Contract layout (`contracts/`)
 

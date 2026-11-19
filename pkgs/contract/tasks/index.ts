@@ -5,9 +5,8 @@ import { task } from "hardhat/config";
  * anything that touches the network), so each action file default-exports
  * `async (args, hre) => {}` and opens its own connection.
  *
- * Hardhat 3 options always carry a default value; options that were
- * `addParam` (required) in Hardhat 2 default to "" and are checked by the
- * action via `requireOption`.
+ * Options always carry a default value, so required options default to ""
+ * and are checked by the action via `requireOption`.
  */
 export const tasks = [
   task("bigbang", "bigbang")

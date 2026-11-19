@@ -56,9 +56,8 @@ pnpm contract mintHat --hatid <id> --wearer <addr> --module <addr> --network <ne
 します（`already deployed at ...` と出てスキップ）。BigBang は impl が変わると proxy の initcode も
 変わるため**アドレスが変わります**。
 
-> **Hardhat 3 移行（#623）後の最初の `deploy:all` だけは、全コントラクトが再デプロイされ、全アドレスが変わります。**
-> 移行で `metadata.bytecodeHash: "none"` にしたため、Hardhat 2 でビルドした既存コントラクトとは initcode が一致しないからです。
-> 以降は、ソースのパスやツールチェーンが変わっても、ロジックとコンパイラ設定が同じならアドレスは再利用されます。
+bytecode には metadata hash を含めていない（`metadata.bytecodeHash: "none"`）ので、bytecode はロジックと
+コンパイラ設定だけで決まります。ソースのパスやコメントを変えても、アドレスは変わりません。
 
 ### 検証
 

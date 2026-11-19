@@ -20,8 +20,7 @@ export default async function bigbangTask(
   taskArgs: BigBangTaskArgs,
   hre: HardhatRuntimeEnvironment,
 ) {
-  // Only the owner is checked: empty details / image URIs are valid values
-  // (Hardhat 2 accepted `--tophatimageuri ""`).
+  // Only the owner is checked: empty details / image URIs are valid values.
   requireOption(taskArgs.owner, "owner");
   console.log(
     "################################### [START] ###################################",

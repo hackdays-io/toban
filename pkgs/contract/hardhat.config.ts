@@ -7,9 +7,8 @@ import hardhatViem from "@nomicfoundation/hardhat-viem";
 import { configVariable, defineConfig } from "hardhat/config";
 import { tasks } from "./tasks";
 
-// Keep the compiler settings identical across build profiles. Hardhat 3's
-// `production` profile turns the optimizer on by default, which would change
-// the bytecode of every deploy compared with the Hardhat 2 era.
+// Identical settings for every build profile: Hardhat's `production` profile
+// would otherwise turn the optimizer on and change the deployed bytecode.
 const compilerSettings = {
   version: "0.8.24",
   settings: {
@@ -21,9 +20,8 @@ const compilerSettings = {
     evmVersion: "cancun",
     // No metadata hash in the bytecode, so CREATE2 addresses (deploy:all)
     // depend only on the code and compiler settings — not on source paths,
-    // comments or the build tool. Hardhat 3's source names
-    // (`project/contracts/...`) would otherwise change every address.
-    // Same choice as Uniswap v4, Seaport and Morpho Blue.
+    // comments or the build tool. Same choice as Uniswap v4, Seaport and
+    // Morpho Blue.
     metadata: {
       bytecodeHash: "none",
     },
@@ -35,7 +33,7 @@ const alchemyUrl = (subdomain: string) =>
     format: `https://${subdomain}.g.alchemy.com/v2/{variable}`,
   });
 
-// Like Hardhat 2: with no key in the env the network has no accounts, so
+// With no key in the env the network has no accounts, so
 // read-only tasks (getChainInfo, getWoreTime, ...) still work.
 const accountsFrom = (envName: string) =>
   process.env[envName] ? [configVariable(envName)] : [];
@@ -94,8 +92,7 @@ export default defineConfig({
     etherscan: {
       apiKey: configVariable("ETHERSCAN_API_KEY"),
     },
-    // Hardhat 3 verifies on every explorer by default; keep Hardhat 2's
-    // Etherscan-only behaviour.
+    // Verify on Etherscan only.
     blockscout: { enabled: false },
     sourcify: { enabled: false },
   },

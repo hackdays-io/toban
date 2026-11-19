@@ -183,7 +183,7 @@ export function findViolations(source, path) {
   return findings;
 }
 
-function trackedFiles() {
+export function trackedFiles() {
   return execFileSync(
     "git",
     ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],

@@ -16,6 +16,7 @@
     "contract": "pnpm --filter contract",
     "document": "pnpm --filter document",
     "subgraph": "pnpm --filter subgraph",
+    "spec": "pnpm --filter @toban/spec",
     "identity": "pnpm --filter @toban/identity",
     "discord-bot": "pnpm --filter @toban/discord-bot",
     "mcp": "pnpm --filter @toban/mcp"

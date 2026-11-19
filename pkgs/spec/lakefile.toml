@@ -1,0 +1,16 @@
+name = "spec"
+version = "0.1.0"
+defaultTargets = ["Spec", "gen-vectors"]
+
+# Core Lean only (no Mathlib): keeps CI and worktree setup to one toolchain download.
+# warningAsError turns "declaration uses 'sorry'" into a build failure.
+[leanOptions]
+warningAsError = true
+autoImplicit = false
+
+[[lean_lib]]
+name = "Spec"
+
+[[lean_exe]]
+name = "gen-vectors"
+root = "GenVectors"

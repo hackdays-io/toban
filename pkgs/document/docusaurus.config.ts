@@ -33,6 +33,12 @@ const config: Config = {
     locales: ["en", "ja"],
   },
 
+  markdown: {
+    mermaid: true,
+  },
+  themes: ["@docusaurus/theme-mermaid"],
+  clientModules: ["./src/clientModules/d3Transition.ts"],
+
   presets: [
     [
       "classic",

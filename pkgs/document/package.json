@@ -18,8 +18,10 @@
   "dependencies": {
     "@docusaurus/core": "3.6.1",
     "@docusaurus/preset-classic": "3.6.1",
+    "@docusaurus/theme-mermaid": "3.6.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
+    "d3-transition": "3.0.2",
     "prism-react-renderer": "^2.3.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

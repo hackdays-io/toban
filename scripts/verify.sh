@@ -91,6 +91,8 @@ done <<<"$ALL_PKGS"
 add "biome" "npx biome check --no-errors-on-unmatched --files-ignore-unknown=true ."
 # Whole tree, like Biome: it reads only comments and takes <1s.
 add "todos" "node --test 'scripts/*.test.mjs' && node scripts/check-todos.mjs"
+# Whole tree too: protocol docs are Markdown, which never triggers package checks.
+add "spec-ids" "node scripts/check-spec-ids.mjs"
 
 # --- 2. Workspace packages ---------------------------------------------------
 if [ $ALL -eq 1 ]; then

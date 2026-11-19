@@ -18,6 +18,7 @@ The caller gives you a diff range (default: `git diff $(git merge-base HEAD orig
    - Subgraph schema change → frontend `gql/` regenerated only after deploy (DEPLOYMENT.md order).
    - New bot-signed selector → Turnkey `policy.json` change called out for manual apply.
    - `pkgs/frontend` does not import `pkgs/contract` source; Workers code uses no Node-only APIs.
+   - Logic modeled in `pkgs/spec` (SplitsCreator allocation) changed → the Lean model, `vectors/` and the protocol docs page change in the same PR; a principle's wording still matches its theorem; a `[ID]` test tag is on a test that really checks that principle.
 4. **Frontend conventions** (`pkgs/frontend/AGENTS.md`) — pages composed from `layout/` + `composite/` + `ui/`, `Heading`/`Typography` instead of ad-hoc text utilities, stories for new shared components, i18n strings in `app/locales/`.
 5. **Tests** — new pure logic has tests; tests assert behavior, not implementation; no test was deleted, skipped, or weakened to make things pass.
 6. **Comments** — a comment that explains why a shortcut or stopgap was taken, recounts history, or repeats the code is a finding: fix the code, or open an issue and delete the comment. Keep only specs/invariants/external constraints the code cannot show. No script can judge this (it is meaning, not wording), so it is yours to catch. The same applies to docs (`*.md`): a passage about a migration or past behavior ("after #123 ...", "unlike before ...") is a finding — docs describe the current spec; transition notes belong in the PR body.

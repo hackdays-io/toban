@@ -1,0 +1,13 @@
+{
+  "name": "@toban/spec",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lean reference model and proofs of Toban protocol principles; source of the differential test vectors",
+  "scripts": {
+    "build": "PATH=\"$HOME/.elan/bin:$PATH\" lake build",
+    "vectors": "PATH=\"$HOME/.elan/bin:$PATH\" lake exe gen-vectors > vectors/splits-creator.json",
+    "verify": "bash scripts/verify.sh",
+    "setup": "bash scripts/setup-lean.sh"
+  },
+  "files": ["vectors"]
+}

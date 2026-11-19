@@ -35,8 +35,6 @@ contract ThanksToken is
             "PermitMint(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
 
-    uint256 private constant SECONDS_PER_HOUR = 3600;
-
     uint256 private constant DEFAULT_COEFFICIENT = 1e18;
 
     // Clone data accessors
@@ -244,6 +242,8 @@ contract ThanksToken is
 
             uint256 wearingTimeSeconds = HATS_TIME_FRAME_MODULE()
                 .getWearingElapsedTime(role.wearer, role.hatId);
+            // slither: Intentional: mintable amount accrues per whole 10-minute unit of wear.
+            // slither-disable-next-line divide-before-multiply
             uint256 wearingTime10Minutes = wearingTimeSeconds / 10 minutes;
 
             // Calculate mintable amount based on role tenure (hours) and share ownership
@@ -258,6 +258,8 @@ contract ThanksToken is
             ? _addressCoefficient[owner]
             : DEFAULT_COEFFICIENT;
 
+        // slither: Intentional: the role-based amount is rounded down to whole tokens.
+        // slither-disable-next-line divide-before-multiply
         totalMintable = ((totalMintable * coefficient) / 1e18) * 1 ether;
 
         // Add 10% of received ThanksTokens

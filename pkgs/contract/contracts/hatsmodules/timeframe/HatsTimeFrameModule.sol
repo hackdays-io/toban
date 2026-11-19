@@ -65,6 +65,8 @@ contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
 
         _setWoreTime(wearer, hatId, time);
         isActive[hatId][wearer] = true;
+        // slither: Hats.mintHat returns true or reverts.
+        // slither-disable-next-line unused-return
         HATS().mintHat(hatId, wearer);
 
         emit HatMinted(hatId, wearer, time == 0 ? block.timestamp : time);
@@ -102,6 +104,8 @@ contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
 
             _setWoreTime(wearer, hatId, time);
             isActive[hatId][wearer] = true;
+            // slither: Hats.mintHat returns true or reverts. HATS is the trusted Hats Protocol contract and cannot re-enter (view-only module checks).
+            // slither-disable-next-line unused-return,reentrancy-no-eth,reentrancy-benign
             HATS().mintHat(hatId, wearer);
 
             emit HatMinted(hatId, wearer, time == 0 ? block.timestamp : time);
@@ -156,6 +160,8 @@ contract HatsTimeFrameModule is HatsModule, IHatsTimeFrameModule {
             "Not authorized"
         );
 
+        // slither: HATS is the trusted Hats Protocol contract; its eligibility/toggle checks are view calls (STATICCALL), so it cannot re-enter.
+        // slither-disable-next-line reentrancy-benign
         HATS().transferHat(hatId, wearer, address(this));
         HATS().renounceHat(hatId);
         woreTime[hatId][wearer] = 0;

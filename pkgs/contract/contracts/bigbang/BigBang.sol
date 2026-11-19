@@ -224,6 +224,8 @@ contract BigBang is OwnableUpgradeable, UUPSUpgradeable {
         modules[0] = hatsTimeFrameModule;
         modules[1] = hatsHatCreatorModule;
 
+        // slither: Hats.batchMintHats returns true or reverts.
+        // slither-disable-next-line unused-return
         Hats.batchMintHats(hatIds, modules);
 
         // 9. TopHatIdの権限を_ownerに譲渡

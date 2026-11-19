@@ -1,0 +1,6 @@
+{
+  "hardhat_ignore_compile": true,
+  "filter_paths": "node_modules/|contracts/hats/|contracts/splits/|/mock/",
+  "detectors_to_exclude": "naming-convention,calls-loop,missing-zero-check,reentrancy-events,timestamp,cyclomatic-complexity",
+  "fail_on": "pedantic"
+}

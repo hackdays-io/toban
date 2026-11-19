@@ -17,6 +17,8 @@ interface ISplitsCreator {
 		uint256 thanksTokenSentWeight;
 	}
 
+	// slither: Indexing a parameter changes the log layout the subgraph decodes (ABI sync + subgraph redeploy).
+	// slither-disable-next-line unindexed-event-address
 	event SplitsCreated(
 		address split,
 		address[] shareHolders,

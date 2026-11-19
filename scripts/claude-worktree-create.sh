@@ -62,6 +62,12 @@ log "Running contract hardhat compile..."
 (cd "$WORKTREE_PATH" && pnpm contract compile) >> "$LOGFILE" 2>&1 \
   || SETUP_ERRORS+=("contract compile failed")
 
+# Installs uv if missing and caches the pinned Slither, so `pnpm contract verify`
+# does not download it mid-loop.
+log "Setting up Slither..."
+(cd "$WORKTREE_PATH" && pnpm contract slither:setup) >> "$LOGFILE" 2>&1 \
+  || SETUP_ERRORS+=("slither setup failed")
+
 if [ ${#SETUP_ERRORS[@]} -gt 0 ]; then
   log "Worktree created with warnings:"
   printf '  - %s\n' "${SETUP_ERRORS[@]}" > "$TTY" 2>/dev/null || true

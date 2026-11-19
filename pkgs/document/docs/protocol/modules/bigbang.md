@@ -5,24 +5,24 @@ sidebar_position: 5
 
 # BigBang
 
-**Source:** [`pkgs/contract/contracts/bigbang/BigBang.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/bigbang/BigBang.sol)
+**ソース:** [`pkgs/contract/contracts/bigbang/BigBang.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/bigbang/BigBang.sol)
 
-:::note Outline only
-This module has not been specified yet. SplitsCreator is the pilot, and this page will follow the same structure. Principle IDs will use the prefix `BB`.
+:::note 枠のみ
+このモジュールの仕様はまだ書いていない。パイロットの SplitsCreator と同じ構成で書く予定で、原則の ID の接頭辞は `BB` を使う。
 :::
 
-## Goal
+## 目的 {#goal}
 
-Create a complete workspace (hats, modules, ThanksToken and SplitsCreator) in one transaction.
+ワークスペース一式(hat、モジュール、ThanksToken、SplitsCreator)を 1 回のトランザクションで作る。
 
-## Mechanism
+## 仕組み {#mechanism}
 
-To be written: state, functions, events, and how this module relates to other contracts (diagram).
+未記入。状態、関数、イベント、他のコントラクトとの関係(図)を書く。
 
-## Rationale
+## 設計の理由 {#rationale}
 
-To be written.
+未記入。
 
-## Principles
+## 原則 {#principles}
 
-None yet.
+まだない。

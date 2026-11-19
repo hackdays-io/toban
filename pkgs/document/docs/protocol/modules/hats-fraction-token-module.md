@@ -5,24 +5,24 @@ sidebar_position: 4
 
 # HatsFractionTokenModule
 
-**Source:** [`pkgs/contract/contracts/hatsmodules/fractiontoken/HatsFractionTokenModule.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/hatsmodules/fractiontoken/HatsFractionTokenModule.sol)
+**ソース:** [`pkgs/contract/contracts/hatsmodules/fractiontoken/HatsFractionTokenModule.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/hatsmodules/fractiontoken/HatsFractionTokenModule.sol)
 
-:::note Outline only
-This module has not been specified yet. SplitsCreator is the pilot, and this page will follow the same structure. Principle IDs will use the prefix `HFT`.
+:::note 枠のみ
+このモジュールの仕様はまだ書いていない。パイロットの SplitsCreator と同じ構成で書く予定で、原則の ID の接頭辞は `HFT` を使う。
 :::
 
-## Goal
+## 目的 {#goal}
 
-Let a role's wearer share that role's reward with the people who help with it.
+ロールの着用者が、そのロールの報酬を手伝ってくれた人と分け合えるようにする。
 
-## Mechanism
+## 仕組み {#mechanism}
 
-To be written: state, functions, events, and how this module relates to other contracts (diagram).
+未記入。状態、関数、イベント、他のコントラクトとの関係(図)を書く。
 
-## Rationale
+## 設計の理由 {#rationale}
 
-To be written.
+未記入。
 
-## Principles
+## 原則 {#principles}
 
-None yet.
+まだない。

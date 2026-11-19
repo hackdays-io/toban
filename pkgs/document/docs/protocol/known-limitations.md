@@ -1,17 +1,17 @@
 ---
-title: Known limitations
+title: 既知の制約
 sidebar_position: 5
 ---
 
-# Known limitations
+# 既知の制約
 
-## Scope of verification
+## 検証の範囲 {#scope-of-verification}
 
-- **Toban's own logic only.** Hats Protocol and 0xSplits are audited external code. They are not modeled, and their behavior is taken as given.
-- **The model has unbounded integers.** Lean's `Nat` never overflows, but Solidity's `uint256` reverts on overflow. The principles hold for the contract as long as no intermediate product overflows. Realistic inputs stay well below that limit.
-- **Data from other contracts is an input.** The SplitsCreator model takes balances, supplies, wear times and escrow as given numbers. It assumes `HatsFractionTokenModule.getTokenRecipients` is either empty or lists the wearer once, plus distinct other holders, and possibly the quest module. Whether that module keeps this shape belongs to that module's own spec (not written yet).
-- **Fuzzed is not proven for the implementation.** The differential test compares the contract with the model on 173 inputs, not on all inputs. Exhaustive verification of the implementation itself (for example with Halmos or Certora) is out of scope for now.
+- **対象は Toban 独自のロジックだけ。** Hats Protocol と 0xSplits は監査済みの外部コードである。モデル化はせず、その動作を前提として扱う。
+- **モデルの整数には上限がない。** Lean の `Nat` はオーバーフローしないが、Solidity の `uint256` はオーバーフローすると revert する。原則がコントラクトで成り立つのは、途中の積がオーバーフローしない範囲である。現実的な入力は、この上限を大きく下回る。
+- **他のコントラクトから読む値は、モデルへの入力として扱う。** SplitsCreator のモデルは、残高・供給量・着用時間・エスクローを与えられた数として受け取る。`HatsFractionTokenModule.getTokenRecipients` が返す一覧は、空であるか、着用者を 1 回だけ含み、残りは互いに異なる他の保有者と、場合によってはクエストモジュールである、と仮定している。そのモジュールがこの形を保つかは、そのモジュール自身の仕様で扱う(まだ書いていない)。
+- **fuzzed は、実装について証明したことにはならない。** 差分テストがコントラクトとモデルを比べているのは 173 件の入力で、すべての入力ではない。実装そのものの網羅的な検証(Halmos や Certora など)は、今のところ範囲外である。
 
-## SplitsCreator
+## SplitsCreator {#splitscreator}
 
-See [SplitsCreator › Known limitations](./modules/splits-creator.md#known-limitations).
+[SplitsCreator の既知の制約](./modules/splits-creator.md#known-limitations)を参照。

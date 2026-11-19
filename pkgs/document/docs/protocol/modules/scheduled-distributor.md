@@ -5,24 +5,24 @@ sidebar_position: 7
 
 # ScheduledDistributor
 
-**Source:** [`pkgs/contract/contracts/scheduleddistributor/ScheduledDistributor.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/scheduleddistributor/ScheduledDistributor.sol)
+**ソース:** [`pkgs/contract/contracts/scheduleddistributor/ScheduledDistributor.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/scheduleddistributor/ScheduledDistributor.sol)
 
-:::note Outline only
-This module has not been specified yet. SplitsCreator is the pilot, and this page will follow the same structure. Principle IDs will use the prefix `SD`.
+:::note 枠のみ
+このモジュールの仕様はまだ書いていない。パイロットの SplitsCreator と同じ構成で書く予定で、原則の ID の接頭辞は `SD` を使う。
 :::
 
-## Goal
+## 目的 {#goal}
 
-Distribute rewards on a schedule, creating the split when the distribution runs.
+予定に沿って報酬を分配する。split は分配を実行するときに作る。
 
-## Mechanism
+## 仕組み {#mechanism}
 
-To be written: state, functions, events, and how this module relates to other contracts (diagram).
+未記入。状態、関数、イベント、他のコントラクトとの関係(図)を書く。
 
-## Rationale
+## 設計の理由 {#rationale}
 
-To be written.
+未記入。
 
-## Principles
+## 原則 {#principles}
 
-None yet.
+まだない。

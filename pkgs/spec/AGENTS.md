@@ -35,4 +35,4 @@ pnpm spec verify     # lake build + fail if committed vectors differ from a fres
 1. `Spec/<Module>/Model.lean` + `Theorems.lean`, import both from `Spec.lean`.
 2. Extend `GenVectors.lean` (or add an exe) to write `vectors/<module>.json`.
 3. Contract: data mocks under `contracts/<module>/mock/` + `test/<Module>.Differential.ts`.
-4. Docs: fill `pkgs/document/docs/protocol/modules/<module>.md` (Goal / Mechanism / Rationale / Principles).
+4. Docs: fill `pkgs/document/docs/protocol/modules/<module>.md` (目的 / 仕組み / 設計の理由 / 原則, in Japanese).

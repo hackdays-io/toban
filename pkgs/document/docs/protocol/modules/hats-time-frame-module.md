@@ -5,24 +5,24 @@ sidebar_position: 3
 
 # HatsTimeFrameModule
 
-**Source:** [`pkgs/contract/contracts/hatsmodules/timeframe/HatsTimeFrameModule.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/hatsmodules/timeframe/HatsTimeFrameModule.sol)
+**ソース:** [`pkgs/contract/contracts/hatsmodules/timeframe/HatsTimeFrameModule.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/hatsmodules/timeframe/HatsTimeFrameModule.sol)
 
-:::note Outline only
-This module has not been specified yet. SplitsCreator is the pilot, and this page will follow the same structure. Principle IDs will use the prefix `HTF`.
+:::note 枠のみ
+このモジュールの仕様はまだ書いていない。パイロットの SplitsCreator と同じ構成で書く予定で、原則の ID の接頭辞は `HTF` を使う。
 :::
 
-## Goal
+## 目的 {#goal}
 
-Record how long each wearer has worn a role, including pauses, so that rewards can grow with time.
+各着用者がロールをどれだけの期間担ったかを、中断も含めて記録し、時間に応じて報酬が増えるようにする。
 
-## Mechanism
+## 仕組み {#mechanism}
 
-To be written: state, functions, events, and how this module relates to other contracts (diagram).
+未記入。状態、関数、イベント、他のコントラクトとの関係(図)を書く。
 
-## Rationale
+## 設計の理由 {#rationale}
 
-To be written.
+未記入。
 
-## Principles
+## 原則 {#principles}
 
-None yet.
+まだない。

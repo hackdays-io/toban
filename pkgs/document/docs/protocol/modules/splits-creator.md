@@ -5,21 +5,21 @@ sidebar_position: 1
 
 # SplitsCreator
 
-**Source:** [`pkgs/contract/contracts/splitscreator/SplitsCreator.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/splitscreator/SplitsCreator.sol)
-· **Model and proofs:** [`pkgs/spec/Spec/SplitsCreator/`](https://github.com/hackdays-io/toban/tree/main/pkgs/spec/Spec/SplitsCreator)
-· **Differential test:** [`pkgs/contract/test/SplitsCreator.Differential.ts`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/test/SplitsCreator.Differential.ts)
+**ソース:** [`pkgs/contract/contracts/splitscreator/SplitsCreator.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/splitscreator/SplitsCreator.sol)
+· **モデルと証明:** [`pkgs/spec/Spec/SplitsCreator/`](https://github.com/hackdays-io/toban/tree/main/pkgs/spec/Spec/SplitsCreator)
+· **差分テスト:** [`pkgs/contract/test/SplitsCreator.Differential.ts`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/test/SplitsCreator.Differential.ts)
 
-## Goal
+## 目的 {#goal}
 
-Turn what a workspace has recorded (who held which role, for how long, how they shared that role, and how much they thanked each other) into a reward split that anyone can check. SplitsCreator computes the allocations and deploys a [0xSplits V2](https://docs.splits.org/) split contract with them. It does not hold or move any funds itself.
+ワークスペースに記録されたこと(誰がどのロールをどれだけの期間担ったか、そのロールの報酬を誰と分け合ったか、互いにどれだけ感謝を送ったか)から、誰でも検算できる報酬の分配を作る。SplitsCreator は配分を計算し、その配分で [0xSplits V2](https://docs.splits.org/) の split コントラクトをデプロイする。SplitsCreator 自身は資金を保持も移動もしない。
 
-## Mechanism
+## 仕組み {#mechanism}
 
-Each workspace gets its own SplitsCreator. `SplitsCreatorFactory` deploys it as a minimal clone during `BigBang.bigbang`. Its dependencies are immutable clone arguments: Hats, the Splits factory, `HatsTimeFrameModule`, `HatsFractionTokenModule`, `ThanksToken` and `HatsQuestModule`.
+SplitsCreator はワークスペースごとに 1 つある。`BigBang.bigbang` の実行中に、`SplitsCreatorFactory` が最小限の clone としてデプロイする。依存先のコントラクト(Hats、Splits の factory、`HatsTimeFrameModule`、`HatsFractionTokenModule`、`ThanksToken`、`HatsQuestModule`)は、clone の immutable な引数として持つ。
 
 ```mermaid
 flowchart LR
-  caller([caller]) -- "create / createWithSalt / preview<br/>(SplitsInfo[], WeightsInfo)" --> SC[SplitsCreator]
+  caller([呼び出し元]) -- "create / createWithSalt / preview<br/>(SplitsInfo[], WeightsInfo)" --> SC[SplitsCreator]
   SC -- "getParticipants, balanceOf, mintedAmount" --> TT[ThanksToken]
   SC -- "getTokenRecipients, balanceOf, totalSupply" --> FT[HatsFractionTokenModule]
   SC -- "getWearingElapsedTime" --> TF[HatsTimeFrameModule]
@@ -29,71 +29,71 @@ flowchart LR
   SC -. "SplitsCreated(split, shareHolders, allocations, totalAllocation)" .-> SG[(Toban subgraph)]
 ```
 
-### Functions
+### 関数 {#functions}
 
-| Function | Access | Effect |
+| 関数 | 呼べる人 | 動作 |
 | --- | --- | --- |
-| `preview(splitsInfo, weightsInfo)` | anyone, view | Returns `(shareHolders, allocations, totalAllocation)`. |
-| `create(splitsInfo, weightsInfo)` | anyone | Same computation, then deploys a split. The salt is `keccak256(abi.encode(splitsInfo))`. Reverts if there are fewer than 2 recipients. Emits `SplitsCreated`. |
-| `createWithSalt(splitsInfo, weightsInfo, salt)` | anyone | Like `create`, with salt `keccak256(abi.encode(msg.sender, salt))`. Used by `ScheduledDistributor`, which needs to know the split address in advance. Mixing in `msg.sender` stops others from deploying at that address first. |
+| `preview(splitsInfo, weightsInfo)` | 誰でも(view) | `(shareHolders, allocations, totalAllocation)` を返す。 |
+| `create(splitsInfo, weightsInfo)` | 誰でも | 同じ計算をしてから split をデプロイする。salt は `keccak256(abi.encode(splitsInfo))`。受取人が 2 人未満なら revert する。`SplitsCreated` を emit する。 |
+| `createWithSalt(splitsInfo, weightsInfo, salt)` | 誰でも | `create` と同じだが、salt は `keccak256(abi.encode(msg.sender, salt))`。split のアドレスを事前に知る必要がある `ScheduledDistributor` が使う。`msg.sender` を混ぜることで、他人が同じアドレスに先にデプロイできないようにしている。 |
 
-The caller chooses the roles (`hatId`), wearers and role multipliers (`multiplierTop / multiplierBottom`). The caller also chooses the four weights: `roleWeight`, `thanksTokenWeight`, `thanksTokenReceivedWeight` and `thanksTokenSentWeight`. Everything else is read on-chain.
+ロール(`hatId`)、着用者、ロールの倍率(`multiplierTop / multiplierBottom`)は、呼び出し元が指定する。4 つの重み(`roleWeight`、`thanksTokenWeight`、`thanksTokenReceivedWeight`、`thanksTokenSentWeight`)も呼び出し元が指定する。それ以外の値はすべてオンチェーンから読む。
 
-### The allocation formula
+### 配分の式 {#the-allocation-formula}
 
-Let $P = 10^9$ (`PRECISION`). Every `/` is integer division that rounds down, done in the order shown.
+$P = 10^9$(`PRECISION`)とする。`/` はすべて切り捨ての整数除算で、ここに書いた順に計算する。
 
-**Thanks side.** Every ThanksToken participant $p$ has a balance $b_p$ (thanks held: received, minus any transferred away, since ThanksToken is a transferable ERC-20) and a minted amount $m_p$ (thanks sent). Let $B = \sum b_p$ and $M = \sum m_p$, and let $r$ and $s$ be the received and sent weights. If $B > 0$ and $M > 0$, each participant's score is
+**サンクス側。** ThanksToken の参加者 $p$ には、残高 $b_p$ と mint 量 $m_p$ がある。残高は、受け取ったサンクスから他人に送金した分を引いた保有量である(ThanksToken は送金できる ERC-20 のため)。mint 量は、送ったサンクスの量である。$B = \sum b_p$、$M = \sum m_p$ とし、受け取りと送りの重みを $r$、$s$ とする。$B > 0$ かつ $M > 0$ なら、各参加者のスコアは次のとおり。
 
 $$
 t_p = \left(\frac{r \cdot b_p \cdot P}{B} + \frac{s \cdot m_p \cdot P}{M}\right) \Big/ (r + s)
 $$
 
-Otherwise every score is 0.
+そうでなければ、全員のスコアは 0 になる。
 
-**Role side.** For each role $R$, the multiplier is $\mu_R = \lfloor top / bottom \rfloor$. Each wearer $w$ has a share token. Its holders are the wearer and anyone the wearer passed part of the share to. A holder $h$ has balance $e_h$, plus any quest escrow credited back to it. The wearer's time multiplier is $\tau_w = \lfloor\sqrt{\text{seconds worn}}\rfloor$, or 1 when the workspace has no time frame module. With $S_R$ the sum of the role's share-token supplies, the holder's score is
+**ロール側。** ロール $R$ の倍率は $\mu_R = \lfloor top / bottom \rfloor$ である。各着用者 $w$ はシェアトークンを持ち、その保有者は着用者本人と、着用者がシェアの一部を渡した相手である。保有者 $h$ の残高 $e_h$ には、クエストのエスクローとして預けている分を足し戻す。着用者の時間倍率は $\tau_w = \lfloor\sqrt{\text{着用秒数}}\rfloor$ で、ワークスペースに time frame モジュールがなければ 1 とする。ロールのシェアトークンの供給量の合計を $S_R$ とすると、保有者のスコアは次のとおり。
 
 $$
 q_h = \frac{e_h \cdot \mu_R \cdot \tau_w \cdot P}{S_R}
 $$
 
-**Combining.** Let $W_t$ and $W_r$ be the thanks and role weights. A side takes part only if its weight and its score total $T$ are both non-zero. Each of its entries becomes
+**両側の合成。** サンクス側とロール側の重みを $W_t$、$W_r$ とする。重みとスコアの合計 $T$ がどちらも 0 でない側だけが配分に加わり、その側の各エントリーは次の値になる。
 
 $$
 \text{allocation} = \frac{x \cdot W \cdot P}{T} \Big/ (W_t + W_r)
 $$
 
-Thanks entries come first, in participant order. Role entries follow, in `SplitsInfo` order: each wearer, then the wearer's other holders. `totalAllocation` is the sum of all allocations. 0xSplits pays each recipient `allocation / totalAllocation` of the funds. An account that appears several times is paid for each entry.
+並び順は、サンクス側のエントリーが先で、参加者の順に並ぶ。続いてロール側のエントリーが `SplitsInfo` の順に、着用者本人、その着用者の他の保有者の順で並ぶ。`totalAllocation` はすべての配分の合計である。0xSplits は各受取人に、資金の `allocation / totalAllocation` を支払う。同じアカウントが複数のエントリーに現れたら、エントリーごとに支払われる。
 
-## Rationale
+## 設計の理由 {#rationale}
 
-- **Two independent sides, mixed by weight.** Role-based and thanks-based rewards measure different things: steady responsibility versus visible help. Normalizing each side to $P$ before mixing lets a workspace set the balance with two numbers, whatever the token amounts are. We rejected adding raw scores together: one side's units (token wei against shares × √seconds) would swamp the other.
-- **√ of wear time.** Time should count, but showing up early should not decide the split forever. A square root rewards the first months most and still never lets a longer tenure count for less (SPL-7).
-- **Skip a zero side instead of reverting.** A new workspace often has no thanks yet. If such a side made the whole split revert, `ScheduledDistributor.execute` would fall back to reclaiming the funds. Dropping the side gives exactly the result of a split where that side had no entries at all (SPL-4). The other side's recipients keep their ratios up to rounding.
-- **Computed at creation, then frozen.** Allocations are fixed into an immutable split, so the result can be checked against the `SplitsCreated` event and the chain state at that block. We rejected computing at withdrawal time: the result would change after people agreed to it.
-- **Permissionless creation.** Creating a split moves no money. A split matters only when someone sends funds to it, so the payer, for example `ScheduledDistributor` or the frontend, decides which split to pay.
+- **独立した 2 つの側を、重みで混ぜる。** ロールにもとづく報酬とサンクスにもとづく報酬は、別のものを測っている。前者は継続的な責任を、後者は目に見える手助けを測る。それぞれの側を $P$ に正規化してから混ぜるので、ワークスペースはトークンの量に関係なく、2 つの数で比率を決められる。素点をそのまま足し合わせる案は採らなかった。片方の単位(トークンの wei と、シェア × √秒)がもう片方を圧倒してしまうためだ。
+- **着用時間は √ で数える。** 時間は報酬に反映したいが、早く参加したことが分配をいつまでも決めてしまうのは避けたい。平方根を使うと、最初の数か月が最も重く数えられる。それでも、長く担った人の取り分が短い人より少なくなることはない(SPL-7)。
+- **0 の側は revert せずに外す。** できたばかりのワークスペースでは、サンクスがまだないことが多い。それで分配全体が revert すると、`ScheduledDistributor.execute` は資金を回収する処理に移ってしまう。その側を外した結果は、その側にエントリーがまったくなかった場合とまったく同じになる(SPL-4)。もう一方の側の受取人どうしの比率は、切り捨ての誤差を除いて変わらない。
+- **作成時に計算し、そこで固定する。** 配分は変更できない split に固定されるので、`SplitsCreated` イベントとそのブロックのチェーンの状態から検算できる。引き出しのときに計算する案は採らなかった。合意したあとで結果が変わってしまうためだ。
+- **誰でも作成できる。** split を作っても資金は動かない。split が意味を持つのは誰かが資金を送ったときだけなので、どの split に支払うかは支払う側(`ScheduledDistributor` やフロントエンドなど)が決める。
 
-## Principles
+## 原則 {#principles}
 
-The ID of each principle is the same in this table, in the Lean theorem (`-- SPL-n` in [`Theorems.lean`](https://github.com/hackdays-io/toban/blob/main/pkgs/spec/Spec/SplitsCreator/Theorems.lean)) and in contract test names (`[SPL-n]`). `scripts/check-spec-ids.mjs` checks that the three agree. The [overview](../index.md#verification-status) explains the two status columns.
+各原則の ID は、この表、Lean の定理([`Theorems.lean`](https://github.com/hackdays-io/toban/blob/main/pkgs/spec/Spec/SplitsCreator/Theorems.lean) の `-- SPL-n`)、コントラクトのテスト名(`[SPL-n]`)で同じものを使う。3 か所が一致しているかは `scripts/check-spec-ids.mjs` が確かめる。「証明」と「実装との一致」の 2 列の意味は、[概要](../index.md#verification-status)に書いてある。
 
-| ID | Principle | Proof | Implementation |
+| ID | 原則 | 証明 | 実装との一致 |
 | --- | --- | --- | --- |
-| `SPL-1` | `totalAllocation` is exactly the sum of `allocations`, and there is one allocation per recipient. | proven (Lean) | fuzzed |
-| `SPL-2` | Each side gets at most its weight's share of $P$: the thanks side at most $P \cdot W_t/(W_t+W_r)$, the role side at most $P \cdot W_r/(W_t+W_r)$. | proven (Lean) | fuzzed |
-| `SPL-3` | Rounding never creates value: `totalAllocation` ≤ $P$. | proven (Lean) | fuzzed |
-| `SPL-4` | A side whose weight is 0, or whose scores are all 0, has no recipients, so nothing divides by its zero total. The result is exactly the same as if that side had no entries at all. | proven (Lean) | fuzzed, tested |
-| `SPL-5` | `preview` reverts exactly when a divisor would be 0. That happens when thanks are both held and sent ($B > 0$ and $M > 0$) but the `received + sent` weight is 0, when a role has `multiplierBottom` = 0, or when a role has wearers but a total share supply of 0. | proven (Lean) | fuzzed |
-| `SPL-6` | On the thanks side, a participant who holds and has sent at least as much ThanksToken as another never gets less. | proven (Lean) | fuzzed |
-| `SPL-7` | Within one role, a holder with at least as much share, of a wearer who has worn the role at least as long, never gets less. Time counts as ⌊√seconds⌋. | proven (Lean) | fuzzed |
+| `SPL-1` | `totalAllocation` は `allocations` の合計とちょうど等しく、受取人 1 人につき配分が 1 つある。 | proven (Lean) | fuzzed |
+| `SPL-2` | 各側が受け取るのは、多くてもその重みの割合ぶんの $P$ までである。サンクス側は $P \cdot W_t/(W_t+W_r)$ 以下、ロール側は $P \cdot W_r/(W_t+W_r)$ 以下になる。 | proven (Lean) | fuzzed |
+| `SPL-3` | 丸めで値が増えることはない。`totalAllocation` ≤ $P$ である。 | proven (Lean) | fuzzed |
+| `SPL-4` | 重みが 0 の側、またはスコアがすべて 0 の側には受取人がいないので、その側の合計 0 で割ることは起きない。結果は、その側にエントリーがまったくなかった場合とまったく同じになる。 | proven (Lean) | fuzzed, tested |
+| `SPL-5` | `preview` が revert するのは、割る数が 0 になるときだけで、そのときは必ず revert する。サンクスが保有も送付もされている($B > 0$ かつ $M > 0$)のに `received + sent` の重みが 0 のとき、`multiplierBottom` が 0 のロールがあるとき、着用者がいるのにシェアの供給量の合計が 0 のロールがあるとき、の 3 つである。 | proven (Lean) | fuzzed |
+| `SPL-6` | サンクス側では、ThanksToken の保有量と送った量がどちらも他の参加者以上である参加者は、その参加者より少なく受け取ることがない。 | proven (Lean) | fuzzed |
+| `SPL-7` | 同じロールの中では、シェアを他の保有者以上に持ち、そのシェアの着用者のロール着用期間も他の保有者の着用者以上である保有者は、その保有者より少なく受け取ることがない。時間は ⌊√秒⌋ で数える。 | proven (Lean) | fuzzed |
 
-**What "fuzzed" covers here.** The Lean model is executable. `lake exe gen-vectors` runs it on 23 hand-written edge cases and 150 seeded random inputs. The differential test feeds each input to the real contract through data mocks and requires the same recipients, allocations and total, or a revert when the model reverts. Once the outputs agree, the proven principles hold for the contract on those inputs. The model does not cover uint256 overflow, or how the FractionToken module builds its recipients list (see [Known limitations](../known-limitations.md)).
+**ここでの「fuzzed」が確かめていること。** Lean のモデルは実行できる。`lake exe gen-vectors` は、手書きの境界ケース 23 件と、シードを固定した乱数の入力 150 件でモデルを実行する。差分テストは、それぞれの入力をデータ用の mock を通して実際のコントラクトに与え、受取人・配分・合計がモデルと一致すること、モデルが revert する入力ではコントラクトも revert することを求める。出力が一致するので、モデルについて証明した原則は、これらの入力ではコントラクトでも成り立つ。モデルは uint256 のオーバーフローと、FractionToken モジュールが受取人の一覧をどう作るかは扱っていない([既知の制約](../known-limitations.md)を参照)。
 
-## Known limitations
+## 既知の制約 {#known-limitations}
 
-- `multiplierTop / multiplierBottom` rounds down before it is used: 3/2 counts as 1, and 1/2 counts as 0, which removes the role.
-- If thanks are both held and sent ($B > 0$ and $M > 0$), `received + sent` = 0 makes `preview` and `create` revert, even when `thanksTokenWeight` is 0 (SPL-5).
-- Balances are current ThanksToken holdings. Thanks a participant received and then transferred away no longer count for them.
-- When one side drops out (SPL-4), the other side is still scaled by $W/(W_t+W_r)$, so `totalAllocation` ends up below $P$. 0xSplits pays relative to `totalAllocation`, so recipients' shares stay the same up to rounding.
-- `PRECISION` is written `10e8`, which is $10^9$.
-- An account is not merged across entries: it can appear once on the thanks side and once for each role share it holds.
+- `multiplierTop / multiplierBottom` は、使う前に切り捨てられる。3/2 は 1 として、1/2 は 0 として数えられ、0 になったロールは配分から消える。
+- サンクスが保有も送付もされている($B > 0$ かつ $M > 0$)とき、`received + sent` が 0 だと `preview` と `create` は revert する。`thanksTokenWeight` が 0 でも revert する(SPL-5)。
+- 残高は ThanksToken の現在の保有量である。受け取ったあとで他人に送金したサンクスは、その参加者の分としては数えない。
+- 片方の側が外れたとき(SPL-4)も、もう一方の側には $W/(W_t+W_r)$ が掛かるので、`totalAllocation` は $P$ より小さくなる。0xSplits は `totalAllocation` に対する割合で支払うので、受取人の取り分は切り捨ての誤差を除いて変わらない。
+- `PRECISION` はコード上 `10e8` と書かれており、値は $10^9$ である。
+- 同じアカウントは、エントリーをまたいでまとめられない。サンクス側に 1 回、保有しているロールのシェアごとに 1 回ずつ現れうる。

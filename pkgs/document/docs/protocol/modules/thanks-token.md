@@ -5,24 +5,24 @@ sidebar_position: 2
 
 # ThanksToken
 
-**Source:** [`pkgs/contract/contracts/thankstoken/ThanksToken.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/thankstoken/ThanksToken.sol)
+**ソース:** [`pkgs/contract/contracts/thankstoken/ThanksToken.sol`](https://github.com/hackdays-io/toban/blob/main/pkgs/contract/contracts/thankstoken/ThanksToken.sol)
 
-:::note Outline only
-This module has not been specified yet. SplitsCreator is the pilot, and this page will follow the same structure. Principle IDs will use the prefix `THX`.
+:::note 枠のみ
+このモジュールの仕様はまだ書いていない。パイロットの SplitsCreator と同じ構成で書く予定で、原則の ID の接頭辞は `THX` を使う。
 :::
 
-## Goal
+## 目的 {#goal}
 
-Peer-to-peer thanks ("assist credit") between workspace members, with a mint limit derived from roles and wear time.
+ワークスペースのメンバーどうしでサンクス(アシストクレジット)を送り合えるようにする。mint できる量の上限は、ロールと着用時間から決まる。
 
-## Mechanism
+## 仕組み {#mechanism}
 
-To be written: state, functions, events, and how this module relates to other contracts (diagram).
+未記入。状態、関数、イベント、他のコントラクトとの関係(図)を書く。
 
-## Rationale
+## 設計の理由 {#rationale}
 
-To be written.
+未記入。
 
-## Principles
+## 原則 {#principles}
 
-None yet.
+まだない。

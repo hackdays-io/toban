@@ -1,11 +1,11 @@
 ---
-title: Architecture
+title: アーキテクチャ
 sidebar_position: 2
 ---
 
-# Architecture
+# アーキテクチャ
 
-A **workspace** is a Hats tree. `BigBang.bigbang` creates it in a single transaction. It mints the top hat, creates the hatter and member hats, deploys the per-workspace modules and creators, and emits `Executed`. The subgraph starts indexing a workspace from that event.
+**ワークスペース**は Hats のツリーである。`BigBang.bigbang` が 1 回のトランザクションでワークスペースを作る。top hat を mint し、hatter hat と member hat を作り、ワークスペースごとのモジュールと creator をデプロイして、`Executed` を emit する。subgraph は、このイベントからワークスペースのインデックスを始める。
 
 ```mermaid
 flowchart TB
@@ -19,28 +19,28 @@ flowchart TB
   SCF --> SC[SplitsCreator<br/>clone]
   BB -- createThanksTokenDeterministic --> TTF[ThanksTokenFactory<br/>UUPS proxy]
   TTF --> TT[ThanksToken<br/>clone]
-  SC -- reads --> TF & FT & QM & TT
+  SC -- 読み取り --> TF & FT & QM & TT
   SC -- createSplitDeterministic --> SF[(0xSplits SplitFactoryV2)]
   SDF[ScheduledDistributorFactory<br/>UUPS proxy] --> SD[ScheduledDistributor<br/>clone]
   SD -- createWithSalt --> SC
   BB -. Executed .-> SG[(subgraph)]
 ```
 
-## Per-workspace contracts
+## ワークスペースごとのコントラクト {#per-workspace-contracts}
 
-| Contract | Deployed by | Holds |
+| コントラクト | デプロイするもの | 保持するもの |
 | --- | --- | --- |
-| HatsTimeFrameModule | HatsModuleFactory | When each wearer received or lost a hat, which gives the wear time |
-| HatsHatCreatorModule | HatsModuleFactory | Who may create child hats without being a hat admin |
-| HatsFractionTokenModule | HatsModuleFactory | The per-role share token: a wearer can pass part of the share to others |
-| HatsQuestModule | HatsModuleFactory | Quests, and the share tokens held in escrow for them |
-| ThanksToken | ThanksTokenFactory | Peer-to-peer thanks ("assist credit"): balances and minted amounts |
-| SplitsCreator | SplitsCreatorFactory | Nothing. It reads the contracts above and creates 0xSplits splits |
-| ScheduledDistributor | ScheduledDistributorFactory | Scheduled distributions that create a split when they run |
+| HatsTimeFrameModule | HatsModuleFactory | 各着用者が hat を受け取った日時と外れた日時。ここから着用時間が決まる |
+| HatsHatCreatorModule | HatsModuleFactory | hat の admin でなくても子 hat を作れる人 |
+| HatsFractionTokenModule | HatsModuleFactory | ロールごとのシェアトークン。着用者はシェアの一部を他人に渡せる |
+| HatsQuestModule | HatsModuleFactory | クエストと、クエストのためにエスクローに預けたシェアトークン |
+| ThanksToken | ThanksTokenFactory | メンバーどうしで送るサンクス(アシストクレジット)。残高と mint 量 |
+| SplitsCreator | SplitsCreatorFactory | なし。上のコントラクトを読んで 0xSplits の split を作る |
+| ScheduledDistributor | ScheduledDistributorFactory | 予定された分配。実行時に split を作る |
 
-## Data flow of a reward
+## 報酬が届くまでの流れ {#data-flow-of-a-reward}
 
-1. Members wear roles. `HatsTimeFrameModule` accumulates wear time, and `HatsFractionTokenModule` records how each role share is divided.
-2. Members thank each other with `ThanksToken`.
-3. Someone calls `SplitsCreator.create`, directly or through `ScheduledDistributor`. The allocations are computed from that block's state and fixed in a new split ([SplitsCreator](./modules/splits-creator.md)).
-4. Funds sent to the split are paid out by 0xSplits in proportion to the allocations.
+1. メンバーがロールを担う。`HatsTimeFrameModule` が着用時間を積み上げ、`HatsFractionTokenModule` が各ロールのシェアの分け方を記録する。
+2. メンバーどうしが `ThanksToken` でサンクスを送り合う。
+3. 誰かが `SplitsCreator.create` を、直接または `ScheduledDistributor` を通して呼ぶ。そのブロックの状態から配分が計算され、新しい split に固定される([SplitsCreator](./modules/splits-creator.md))。
+4. split に送られた資金は、0xSplits が配分に比例して支払う。

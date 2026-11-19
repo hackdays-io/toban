@@ -11,11 +11,5 @@ export PATH="$HOME/.elan/bin:$PATH"
 command -v lake >/dev/null || bash scripts/setup-lean.sh
 
 lake build
-tmp=$(mktemp)
-trap 'rm -f "$tmp"' EXIT
-lake exe gen-vectors >"$tmp"
-if ! cmp -s "$tmp" vectors/splits-creator.json; then
-  echo "vectors/splits-creator.json is stale: run 'pnpm spec vectors' and commit the result." >&2
-  exit 1
-fi
+bash scripts/vectors.sh --check
 echo "spec: proofs build, vectors up to date"

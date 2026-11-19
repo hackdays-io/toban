@@ -8,13 +8,11 @@
  * (on the inputs covered here).
  *
  * Each case feeds SplitsCreator exactly the model's inputs through data mocks
- * (contracts/splitscreator/mock/SplitsCreatorDataMocks.sol), clones it through
+ * (contracts/{thankstoken,hatsmodules}/mock/*DataMock*.sol), clones it through
  * SplitsCreatorFactory like BigBang does, then compares the
  * recipients, allocations and totalAllocation — or that it reverts with the
  * same panic (0x11 overflow / 0x12 division by zero) as the model.
  */
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { type Address, zeroAddress, zeroHash } from "viem";
 import { viem } from "../helpers/connection";
 import { deployCreate2Deployer } from "../helpers/deploy/Create2Factory";
@@ -23,6 +21,7 @@ import {
   deploySplitsCreatorFactory,
 } from "../helpers/deploy/Splits";
 import { expect } from "../helpers/test/chai";
+import { loadVectors, panicMessage } from "../helpers/test/specVectors";
 
 type Holder = { addr: Address; balance: string; escrow: string };
 type Wearer = {
@@ -60,18 +59,7 @@ type Vector = {
     | { revert: "overflow" | "divZero" };
 };
 
-// viem's messages for Solidity panics 0x11 and 0x12.
-const panicMessage = {
-  overflow: /Arithmetic operation resulted in underflow or overflow/,
-  divZero: /Division or modulo by zero/,
-};
-
-const vectorsPath = createRequire(import.meta.url).resolve(
-  "@toban/spec/vectors/splits-creator.json",
-);
-const { cases } = JSON.parse(readFileSync(vectorsPath, "utf8")) as {
-  cases: Vector[];
-};
+const { cases } = loadVectors<{ cases: Vector[] }>("splits-creator");
 
 const big = (s: string) => BigInt(s);
 

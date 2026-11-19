@@ -482,7 +482,7 @@ describe("ThanksToken", () => {
   });
 
   describe("ThanksToken specific functions", () => {
-    it("should mint tokens correctly", async () => {
+    it("[THX-5] should mint tokens correctly", async () => {
       const isWearingHat = await Hats.read.balanceOf([
         address1Validated,
         hatId,
@@ -724,28 +724,26 @@ describe("ThanksToken", () => {
       }
     });
 
-    it("should prevent minting more than mintable amount", async () => {
+    it("[THX-1] should prevent minting more than mintable amount", async () => {
       const relatedRoles = [
         {
           hatId,
           wearer: address1Validated,
         },
       ];
-      try {
-        await DeployedThanksToken.write.mint(
-          [address2Validated, 1000000n, relatedRoles, "0x"],
+      const mintable = await DeployedThanksToken.read.mintableAmount([
+        address1Validated,
+        relatedRoles,
+      ]);
+      await expect(
+        DeployedThanksToken.write.mint(
+          [address2Validated, mintable + 1n, relatedRoles, "0x"],
           { account: address1.account },
-        );
-        // If we get here, the mint succeeded when it should have failed
-        expect.fail("Mint exceeding mintable amount should have failed");
-      } catch (error: any) {
-        expect(error.message).to.include(
-          "Mint exceeding mintable amount should have failed",
-        );
-      }
+        ),
+      ).to.be.rejectedWith("Amount exceeds mintable amount");
     });
 
-    it("should track participants correctly", async () => {
+    it("[THX-6] should track participants correctly", async () => {
       // Note: previous tests have already minted from address1 to address2.
       // So, participants should already include both.
       let participants = await DeployedThanksToken.read.getParticipants();

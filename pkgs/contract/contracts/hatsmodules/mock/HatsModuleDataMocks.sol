@@ -3,34 +3,12 @@
 pragma solidity ^0.8.24;
 
 /**
- * Test-only data sources for the SplitsCreator differential test
- * (test/SplitsCreator.Differential.ts). Each mock implements only the view
- * functions SplitsCreator reads, and returns whatever the test sets, so the
- * contract can be fed exactly the inputs of a Lean-model test vector.
+ * Test-only data sources for the differential tests (test/*.Differential.ts):
+ * the Hats-module views (FractionToken, time frame, quest) that SplitsCreator
+ * and ThanksToken read. Each returns whatever the test sets, so the contract
+ * under test can be fed exactly the inputs of a Lean-model test vector.
  * Never deployed by the deploy scripts.
  */
-
-contract ThanksTokenDataMock {
-    address[] private participants;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => uint256) public mintedAmount;
-
-    function setParticipants(
-        address[] calldata _accounts,
-        uint256[] calldata _balances,
-        uint256[] calldata _minted
-    ) external {
-        participants = _accounts;
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            balanceOf[_accounts[i]] = _balances[i];
-            mintedAmount[_accounts[i]] = _minted[i];
-        }
-    }
-
-    function getParticipants() external view returns (address[] memory) {
-        return participants;
-    }
-}
 
 contract FractionTokenDataMock {
     mapping(uint256 => address[]) private recipients;

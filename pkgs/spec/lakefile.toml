@@ -11,6 +11,10 @@ autoImplicit = false
 [[lean_lib]]
 name = "Spec"
 
+# Test vector generators (one module per contract), used only by gen-vectors.
+[[lean_lib]]
+name = "Vectors"
+
 [[lean_exe]]
 name = "gen-vectors"
 root = "GenVectors"

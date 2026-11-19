@@ -1,28 +1,27 @@
-import { task } from "hardhat/config";
-import type { HardhatRuntimeEnvironment } from "hardhat/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 import { registerSubdomain } from "../../helpers/ens/function";
+import { requireOption } from "../utils/requireOption";
 
 /**
  * 【Task】register subdomain
  */
-task("registerSubdomain", "register subdomain")
-  .addParam("label", "label for subdomain")
-  .setAction(
-    async (
-      taskArgs: {
-        label: string;
-      },
-      hre: HardhatRuntimeEnvironment,
-    ) => {
-      console.log(
-        "################################### [START] ###################################",
-      );
-
-      // call registerSubdomain method
-      await registerSubdomain(hre, taskArgs.label);
-
-      console.log(
-        "################################### [END] ###################################",
-      );
-    },
+export default async function registerSubdomainTask(
+  taskArgs: {
+    label: string;
+  },
+  hre: HardhatRuntimeEnvironment,
+) {
+  console.log(
+    "################################### [START] ###################################",
   );
+
+  const label = requireOption(taskArgs.label, "label");
+  const { viem } = await hre.network.getOrCreate();
+
+  // call registerSubdomain method
+  await registerSubdomain(viem, label);
+
+  console.log(
+    "################################### [END] ###################################",
+  );
+}

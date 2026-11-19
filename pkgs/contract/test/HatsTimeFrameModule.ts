@@ -1,6 +1,5 @@
-import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
-import { viem } from "hardhat";
+import { expect } from "../helpers/test/chai";
+import { networkHelpers, viem } from "../helpers/connection";
 import type { Address, PublicClient, WalletClient } from "viem";
 import { decodeEventLog, encodeAbiParameters } from "viem";
 import {
@@ -15,6 +14,8 @@ import {
   deployHatsProtocol,
   deployHatsTimeFrameModule,
 } from "../helpers/deploy/Hats";
+
+const { time } = networkHelpers;
 
 describe("HatsTimeFrameModule", () => {
   let Create2Deployer: Create2Deployer;
@@ -161,6 +162,16 @@ describe("HatsTimeFrameModule", () => {
       throw new Error("Role hat ID is undefined");
     }
 
+    // Evaluate the view in the latest mined block, so block.timestamp equals
+    // time.latest(). Without a block, the node picks the timestamp of the
+    // call context (latest or latest+1 depending on wall-clock), which made
+    // the expected value off by one.
+    const readElapsedAtLatestBlock = async () =>
+      HatsTimeFrameModule.read.getWearingElapsedTime(
+        [address1Validated, roleHatId!],
+        { blockNumber: await publicClient.getBlockNumber() },
+      );
+
     const initialTime = BigInt(await time.latest());
 
     await HatsTimeFrameModule.write.mintHat([roleHatId, address1Validated, 0n]);
@@ -178,12 +189,9 @@ describe("HatsTimeFrameModule", () => {
 
     const currentTime1 = BigInt(await time.latest());
 
-    let expectedElapsedTime = currentTime1 - woreTime + 1n;
+    let expectedElapsedTime = currentTime1 - woreTime;
 
-    let elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1Validated,
-      roleHatId,
-    ]);
+    let elapsedTime = await readElapsedAtLatestBlock();
 
     expect(elapsedTime).to.equal(expectedElapsedTime);
 
@@ -191,12 +199,9 @@ describe("HatsTimeFrameModule", () => {
 
     const currentTime2 = BigInt(await time.latest());
 
-    expectedElapsedTime = currentTime2 - woreTime + 1n;
+    expectedElapsedTime = currentTime2 - woreTime;
 
-    elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1Validated,
-      roleHatId,
-    ]);
+    elapsedTime = await readElapsedAtLatestBlock();
 
     expect(elapsedTime).to.equal(expectedElapsedTime);
 
@@ -212,10 +217,7 @@ describe("HatsTimeFrameModule", () => {
     await time.increaseTo(initialTime + 250n);
 
     // Elapsed time should remain the same
-    elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1Validated,
-      roleHatId,
-    ]);
+    elapsedTime = await readElapsedAtLatestBlock();
 
     expect(elapsedTime).to.equal(expectedElapsedTime);
 
@@ -230,12 +232,9 @@ describe("HatsTimeFrameModule", () => {
     const currentTime3 = BigInt(await time.latest());
 
     expectedElapsedTime =
-      totalActiveTimeAfterDeactivation + (currentTime3 - woreTime) + 1n;
+      totalActiveTimeAfterDeactivation + (currentTime3 - woreTime);
 
-    elapsedTime = await HatsTimeFrameModule.read.getWearingElapsedTime([
-      address1Validated,
-      roleHatId,
-    ]);
+    elapsedTime = await readElapsedAtLatestBlock();
 
     expect(elapsedTime).to.equal(expectedElapsedTime);
   });

@@ -1,6 +1,5 @@
-import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
-import { viem } from "hardhat";
+import { expect } from "../helpers/test/chai";
+import { networkHelpers, viem } from "../helpers/connection";
 import {
   type Address,
   type PublicClient,
@@ -43,6 +42,8 @@ import {
   Create2Deployer,
   deployCreate2Deployer,
 } from "../helpers/deploy/Create2Factory";
+
+const { time } = networkHelpers;
 
 const createHat = async (
   Hats: Hats,

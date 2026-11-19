@@ -1,11 +1,11 @@
-import { network, viem } from "hardhat";
+import { networkName, viem } from "../helpers/connection";
 import { loadDeployedContractAddresses } from "../helpers/deploy/contractsJsonHelper";
 
 const create = async () => {
   // SplitsCreatorコントラクトのアドレスをjsonファイルから取得してくる。
   const {
     contracts: { SplitsCreator },
-  } = loadDeployedContractAddresses(network.name);
+  } = loadDeployedContractAddresses(networkName);
 
   const contract = await viem.getContractAt(
     "SplitsCreator",

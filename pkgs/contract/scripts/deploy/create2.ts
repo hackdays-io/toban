@@ -1,5 +1,5 @@
-import { ethers, network } from "hardhat";
 import type { Address } from "viem";
+import { ethers, networkName } from "../../helpers/connection";
 import { deployBigBang } from "../../helpers/deploy/BigBang";
 // import { deployFractionToken } from "../../helpers/deploy/FractionToken";
 import {
@@ -132,51 +132,51 @@ const deploy = async () => {
 
   console.log(
     "HatsTimeframeModule module:\n",
-    `pnpm contract hardhat verify ${hatsTimeFrameModuleAddress} 0.0.0 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsTimeFrameModuleAddress} 0.0.0 --network ${networkName}\n`,
   );
   console.log(
     "HatsHatCreatorModule module:\n",
-    `pnpm contract hardhat verify ${hatsHatCreatorModuleAddress} 0.0.0 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsHatCreatorModuleAddress} 0.0.0 --network ${networkName}\n`,
   );
   console.log(
     "HatsFractionTokenModule:\n",
-    `pnpm contract hardhat verify ${hatsFractionTokenModuleAddress} 0.0.0 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsFractionTokenModuleAddress} 0.0.0 --network ${networkName}\n`,
   );
   console.log(
     "HatsQuestModule:\n",
-    `pnpm contract hardhat verify ${hatsQuestModuleAddress} 0.0.0 --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${hatsQuestModuleAddress} 0.0.0 --network ${networkName}\n`,
   );
   console.log(
     "ThanksToken:\n",
-    `pnpm contract hardhat verify ${thanksTokenAddress} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${thanksTokenAddress} --network ${networkName}\n`,
   );
   console.log(
     "ThanksTokenFactory:\n",
-    `pnpm contract hardhat verify ${ThanksTokenFactoryImplAddress} --network ${network.name} &&`,
-    `pnpm contract hardhat verify ${thanksTokenFactoryAddress} ${ThanksTokenFactoryImplAddress} ${ThanksTokenFactoryInitData} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${ThanksTokenFactoryImplAddress} --network ${networkName} &&`,
+    `pnpm contract hardhat verify ${thanksTokenFactoryAddress} ${ThanksTokenFactoryImplAddress} ${ThanksTokenFactoryInitData} --network ${networkName}\n`,
   );
   console.log(
     "SplitsCreator:\n",
-    `pnpm contract hardhat verify ${splitsCreatorAddress} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${splitsCreatorAddress} --network ${networkName}\n`,
   );
   console.log(
     "SplitsCreatorFactory:\n",
-    `pnpm contract hardhat verify ${SplitsCreatorFactoryImplAddress} --network ${network.name} &&`,
-    `pnpm contract hardhat verify ${splitsCreatorFactoryAddress} ${SplitsCreatorFactoryImplAddress} ${SplitsCreatorFactoryInitData} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${SplitsCreatorFactoryImplAddress} --network ${networkName} &&`,
+    `pnpm contract hardhat verify ${splitsCreatorFactoryAddress} ${SplitsCreatorFactoryImplAddress} ${SplitsCreatorFactoryInitData} --network ${networkName}\n`,
   );
   console.log(
     "ScheduledDistributor:\n",
-    `pnpm contract hardhat verify ${scheduledDistributorAddress} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${scheduledDistributorAddress} --network ${networkName}\n`,
   );
   console.log(
     "ScheduledDistributorFactory:\n",
-    `pnpm contract hardhat verify ${ScheduledDistributorFactoryImplAddress} --network ${network.name} &&`,
-    `pnpm contract hardhat verify ${scheduledDistributorFactoryAddress} ${ScheduledDistributorFactoryImplAddress} ${ScheduledDistributorFactoryInitData} --network ${network.name}\n`,
+    `pnpm contract hardhat verify ${ScheduledDistributorFactoryImplAddress} --network ${networkName} &&`,
+    `pnpm contract hardhat verify ${scheduledDistributorFactoryAddress} ${ScheduledDistributorFactoryImplAddress} ${ScheduledDistributorFactoryInitData} --network ${networkName}\n`,
   );
   console.log(
     "BigBang:\n",
-    `pnpm contract hardhat verify ${BigBangImplAddress} --network ${network.name} &&`,
-    `pnpm contract hardhat verify ${bigBangAddress} ${BigBangImplAddress} ${BigBangInitData} --network ${network.name}`,
+    `pnpm contract hardhat verify ${BigBangImplAddress} --network ${networkName} &&`,
+    `pnpm contract hardhat verify ${bigBangAddress} ${BigBangImplAddress} ${BigBangInitData} --network ${networkName}`,
   );
 
   // Save non-upgradeable contracts
@@ -184,25 +184,25 @@ const deploy = async () => {
     group: "contracts",
     name: "HatsTimeFrameModule",
     value: hatsTimeFrameModuleAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "ThanksTokenFactory_Implementation",
     value: ThanksTokenFactoryImplAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "SplitsCreator",
     value: splitsCreatorAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "ScheduledDistributor",
     value: scheduledDistributorAddress,
-    network: network.name,
+    network: networkName,
   });
 
   // Save upgradeable contracts implementations
@@ -210,19 +210,19 @@ const deploy = async () => {
     group: "implementations",
     name: "SplitsCreatorFactory_Implementation",
     value: SplitsCreatorFactoryImplAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "implementations",
     name: "ScheduledDistributorFactory_Implementation",
     value: ScheduledDistributorFactoryImplAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "implementations",
     name: "BigBang_Implementation",
     value: BigBangImplAddress,
-    network: network.name,
+    network: networkName,
   });
 
   // Save upgradeable contracts proxies
@@ -230,31 +230,31 @@ const deploy = async () => {
     group: "contracts",
     name: "HatsTimeFrameModule",
     value: hatsTimeFrameModuleAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "ThanksTokenFactory",
     value: thanksTokenFactoryAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "SplitsCreatorFactory",
     value: splitsCreatorFactoryAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "ScheduledDistributorFactory",
     value: scheduledDistributorFactoryAddress,
-    network: network.name,
+    network: networkName,
   });
   writeContractAddress({
     group: "contracts",
     name: "BigBang",
     value: bigBangAddress,
-    network: network.name,
+    network: networkName,
   });
 
   console.log(

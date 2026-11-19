@@ -1,5 +1,5 @@
-import { expect } from "chai";
-import { viem } from "hardhat";
+import { expect } from "../helpers/test/chai";
+import { viem } from "../helpers/connection";
 import {
   type Address,
   type PublicClient,

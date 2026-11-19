@@ -1,34 +1,35 @@
-import { task } from "hardhat/config";
-import type { HardhatRuntimeEnvironment } from "hardhat/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 import { formatEther } from "viem";
 
 /**
  * 【Task】get the balance of the account
  */
-task("getBalance", "getBalance").setAction(
-  async (_taskArgs: Record<string, never>, hre: HardhatRuntimeEnvironment) => {
-    console.log(
-      "################################### [START] ###################################",
-    );
-    const [bobWalletClient] = await hre.viem.getWalletClients();
+export default async function getBalance(
+  _taskArgs: unknown,
+  hre: HardhatRuntimeEnvironment,
+) {
+  console.log(
+    "################################### [START] ###################################",
+  );
+  const { viem } = await hre.network.getOrCreate();
+  const [bobWalletClient] = await viem.getWalletClients();
 
-    if (!bobWalletClient.account?.address) {
-      throw new Error("Wallet client account address is undefined");
-    }
+  if (!bobWalletClient.account?.address) {
+    throw new Error("Wallet client account address is undefined");
+  }
 
-    const publicClient = await hre.viem.getPublicClient();
-    const bobBalance = await publicClient.getBalance({
-      address: bobWalletClient.account.address,
-    });
+  const publicClient = await viem.getPublicClient();
+  const bobBalance = await publicClient.getBalance({
+    address: bobWalletClient.account.address,
+  });
 
-    console.log(
-      `Balance of ${bobWalletClient.account.address}: ${formatEther(
-        bobBalance,
-      )} ETH`,
-    );
+  console.log(
+    `Balance of ${bobWalletClient.account.address}: ${formatEther(
+      bobBalance,
+    )} ETH`,
+  );
 
-    console.log(
-      "################################### [END] ###################################",
-    );
-  },
-);
+  console.log(
+    "################################### [END] ###################################",
+  );
+}

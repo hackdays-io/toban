@@ -14,7 +14,7 @@ export function getContractAddress(
   try {
     // ファイルパスを構築
     const filePath = path.join(
-      __dirname,
+      import.meta.dirname,
       "../../",
       "ignition",
       "deployments",

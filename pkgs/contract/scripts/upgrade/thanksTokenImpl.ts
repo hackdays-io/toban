@@ -13,8 +13,8 @@
  *   pnpm contract upgrade:ThanksTokenImpl --network sepolia
  */
 import * as dotenv from "dotenv";
-import { ethers, network } from "hardhat";
 import type { Address } from "viem";
+import { ethers, networkName } from "../../helpers/connection";
 import { deployThanksToken } from "../../helpers/deploy/ThanksToken";
 import {
   loadDeployedContractAddresses,
@@ -30,11 +30,11 @@ const main = async () => {
 
   const {
     contracts: { ThanksTokenFactory: ThanksTokenFactoryAddress },
-  } = loadDeployedContractAddresses(network.name);
+  } = loadDeployedContractAddresses(networkName);
 
   if (!ThanksTokenFactoryAddress) {
     throw new Error(
-      `ThanksTokenFactory not found in outputs/contracts-${network.name}.json — run deploy:all first.`,
+      `ThanksTokenFactory not found in outputs/contracts-${networkName}.json — run deploy:all first.`,
     );
   }
 
@@ -76,11 +76,11 @@ const main = async () => {
     group: "contracts",
     name: "ThanksToken_Implementation",
     value: ThanksTokenImplAddress as Address,
-    network: network.name,
+    network: networkName,
   });
 
   console.log(
-    `\nVerify on Etherscan:\n  pnpm contract hardhat verify ${ThanksTokenImplAddress} --network ${network.name}`,
+    `\nVerify on Etherscan:\n  pnpm contract hardhat verify ${ThanksTokenImplAddress} --network ${networkName}`,
   );
 
   console.log(

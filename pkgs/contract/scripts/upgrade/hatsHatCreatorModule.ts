@@ -1,4 +1,4 @@
-import { network, viem } from "hardhat";
+import { networkName, viem } from "../../helpers/connection";
 import { deployHatsHatCreatorModule } from "../../helpers/deploy/Hats";
 
 const upgrade = async () => {
@@ -17,7 +17,7 @@ const upgrade = async () => {
 
   console.log(
     "HatsHatCreatorModule module:\n",
-    `npx hardhat verify ${module.HatsHatCreatorModule.address} "0.0.0" 0x0000000000000000000000000000000000000001 --network ${network.name}\n`,
+    `npx hardhat verify ${module.HatsHatCreatorModule.address} "0.0.0" 0x0000000000000000000000000000000000000001 --network ${networkName}\n`,
   );
 };
 

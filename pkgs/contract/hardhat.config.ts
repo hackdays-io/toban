@@ -1,74 +1,102 @@
-import "@nomicfoundation/hardhat-ethers";
-import "@nomicfoundation/hardhat-toolbox-viem";
-import "@nomicfoundation/hardhat-viem";
-import "@openzeppelin/hardhat-upgrades";
-import "@nomicfoundation/hardhat-verify";
-import * as dotenv from "dotenv";
-import "hardhat-gas-reporter";
-import type { HardhatUserConfig } from "hardhat/config";
-import "./tasks";
+import "dotenv/config";
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import hardhatMocha from "@nomicfoundation/hardhat-mocha";
+import hardhatNetworkHelpers from "@nomicfoundation/hardhat-network-helpers";
+import hardhatVerify from "@nomicfoundation/hardhat-verify";
+import hardhatViem from "@nomicfoundation/hardhat-viem";
+import { configVariable, defineConfig } from "hardhat/config";
+import { tasks } from "./tasks";
 
-dotenv.config();
-
-const {
-  PRIVATE_KEY,
-  ETHERSCAN_API_KEY,
-  ALCHEMY_API_KEY,
-  COINMARKETCAP_API_KEY,
-  PRODUCTION_PRIVATE_KEY,
-  GAS_REPORT,
-} = process.env;
-
-const config: HardhatUserConfig = {
-  solidity: {
-    compilers: [
-      {
-        version: "0.8.24",
-        settings: {
-          viaIR: true,
-          optimizer: {
-            runs: 200,
-          },
-          evmVersion: "cancun",
-        },
-      },
-    ],
-  },
-  networks: {
-    hardhat: {
-      allowUnlimitedContractSize: true,
+// Keep the compiler settings identical across build profiles. Hardhat 3's
+// `production` profile turns the optimizer on by default, which would change
+// the bytecode of every deploy compared with the Hardhat 2 era.
+const compilerSettings = {
+  version: "0.8.24",
+  settings: {
+    viaIR: true,
+    optimizer: {
+      enabled: false,
+      runs: 200,
     },
-    sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+    evmVersion: "cancun",
+    // No metadata hash in the bytecode, so CREATE2 addresses (deploy:all)
+    // depend only on the code and compiler settings — not on source paths,
+    // comments or the build tool. Hardhat 3's source names
+    // (`project/contracts/...`) would otherwise change every address.
+    // Same choice as Uniswap v4, Seaport and Morpho Blue.
+    metadata: {
+      bytecodeHash: "none",
     },
-    holesky: {
-      url: `https://eth-holesky.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-    },
-    baseSepolia: {
-      url: `https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-    },
-    base: {
-      url: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts:
-        PRODUCTION_PRIVATE_KEY !== undefined ? [PRODUCTION_PRIVATE_KEY] : [],
-    },
-  },
-  etherscan: {
-    // Single Etherscan.io key → Etherscan API v2 (multichain: sepolia, base,
-    // baseSepolia, ...). Per-explorer keys force the retired v1 endpoint.
-    apiKey: ETHERSCAN_API_KEY ?? "",
-  },
-  gasReporter: {
-    enabled: true,
-    currency: "USD",
-    token: "ETH",
-    coinmarketcap: COINMARKETCAP_API_KEY,
-    gasPriceApi:
-      "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice",
   },
 };
 
-export default config;
+const alchemyUrl = (subdomain: string) =>
+  configVariable("ALCHEMY_API_KEY", {
+    format: `https://${subdomain}.g.alchemy.com/v2/{variable}`,
+  });
+
+// Like Hardhat 2: with no key in the env the network has no accounts, so
+// read-only tasks (getChainInfo, getWoreTime, ...) still work.
+const accountsFrom = (envName: string) =>
+  process.env[envName] ? [configVariable(envName)] : [];
+
+export default defineConfig({
+  plugins: [
+    hardhatViem,
+    hardhatEthers,
+    hardhatMocha,
+    hardhatNetworkHelpers,
+    hardhatVerify,
+  ],
+  tasks,
+  solidity: {
+    profiles: {
+      default: compilerSettings,
+      production: compilerSettings,
+    },
+  },
+  paths: {
+    tests: { mocha: "test" },
+  },
+  networks: {
+    default: {
+      type: "edr-simulated",
+      allowUnlimitedContractSize: true,
+    },
+    localhost: {
+      type: "http",
+      url: "http://127.0.0.1:8545",
+    },
+    sepolia: {
+      type: "http",
+      url: alchemyUrl("eth-sepolia"),
+      accounts: accountsFrom("PRIVATE_KEY"),
+    },
+    holesky: {
+      type: "http",
+      url: alchemyUrl("eth-holesky"),
+      accounts: accountsFrom("PRIVATE_KEY"),
+    },
+    baseSepolia: {
+      type: "http",
+      url: alchemyUrl("base-sepolia"),
+      accounts: accountsFrom("PRIVATE_KEY"),
+    },
+    base: {
+      type: "http",
+      url: alchemyUrl("base-mainnet"),
+      accounts: accountsFrom("PRODUCTION_PRIVATE_KEY"),
+    },
+  },
+  verify: {
+    // Single Etherscan.io key → Etherscan API v2 (multichain: sepolia, base,
+    // baseSepolia, ...).
+    etherscan: {
+      apiKey: configVariable("ETHERSCAN_API_KEY"),
+    },
+    // Hardhat 3 verifies on every explorer by default; keep Hardhat 2's
+    // Etherscan-only behaviour.
+    blockscout: { enabled: false },
+    sourcify: { enabled: false },
+  },
+});

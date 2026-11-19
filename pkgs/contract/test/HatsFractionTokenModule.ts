@@ -1,4 +1,4 @@
-import { viem } from "hardhat";
+import { viem } from "../helpers/connection";
 import {
   Address,
   WalletClient,
@@ -18,7 +18,7 @@ import {
   HatsFractionTokenModule,
   HatsModuleFactory,
 } from "../helpers/deploy/Hats";
-import { expect } from "chai";
+import { expect } from "../helpers/test/chai";
 
 describe("HatsFractionTokenModule", () => {
   let Create2Deployer: Create2Deployer;
@@ -265,13 +265,13 @@ describe("HatsFractionTokenModule", () => {
         });
 
       // hat1のWearerでないaddress3はhat1に紐づくトークンをミントできない
-      HatsFractionTokenModule.write
+      await HatsFractionTokenModule.write
         .mintInitialSupply([hatId1, address3Validated, 0n], {
           account: address1Validated,
         })
         .catch((error) => {
           expect(error).to.be.instanceOf(Error);
-          expect(error.message).to.include("WearerDoesNothavehat()");
+          expect(error.message).to.include("WearerDoesNotHaveHat()");
         });
     });
 

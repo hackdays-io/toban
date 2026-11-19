@@ -91,6 +91,8 @@ pnpm contract upgrade:BigBang --network <sepolia|base>   # UUPS（アドレス�
 
 アドレスは `pkgs/contract/outputs/contracts-<net>.json` に自動記録されます。
 
+> Hardhat 3 移行（#623）後の最初の `deploy:all` は、**全 impl / factory が新しいアドレスになります**（bytecode の metadata hash をやめたため。詳細は `pkgs/contract/README.md`）。subgraph の `config/<net>.json`、frontend / Worker の環境変数のアドレスも、すべて更新が必要です。`upgrade:BigBang` などの UUPS upgrade はアドレス据え置きなので影響しません。
+
 ## 2. ABI 同期
 
 コントラクトを変更したら**必ず**実行します。

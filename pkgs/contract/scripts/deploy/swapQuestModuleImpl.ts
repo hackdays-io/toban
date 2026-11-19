@@ -1,5 +1,5 @@
-import { ethers, network } from "hardhat";
 import type { Address } from "viem";
+import { ethers, networkName } from "../../helpers/connection";
 import { deployHatsQuestModule } from "../../helpers/deploy/Hats";
 import {
   loadDeployedContractAddresses,
@@ -16,10 +16,10 @@ import {
 const swap = async () => {
   const [deployerSigner] = await ethers.getSigners();
   const deployerAddress = await deployerSigner.getAddress();
-  console.log(`Network: ${network.name}`);
+  console.log(`Network: ${networkName}`);
   console.log(`Deployer: ${deployerAddress}`);
 
-  const existing = loadDeployedContractAddresses(network.name);
+  const existing = loadDeployedContractAddresses(networkName);
   const bigBangAddress = existing.contracts.BigBang as Address;
   if (!bigBangAddress) throw new Error("BigBang address not found in outputs");
   console.log(`BigBang: ${bigBangAddress}`);
@@ -57,12 +57,12 @@ const swap = async () => {
     group: "contracts",
     name: "HatsQuestModule",
     value: newImpl,
-    network: network.name,
+    network: networkName,
   });
 
   console.log("HatsQuestModule impl swap complete 🎉");
   console.log(
-    `Verify: pnpm contract hardhat verify ${newImpl} 0.0.0 --network ${network.name}`,
+    `Verify: pnpm contract hardhat verify ${newImpl} 0.0.0 --network ${networkName}`,
   );
 };
 

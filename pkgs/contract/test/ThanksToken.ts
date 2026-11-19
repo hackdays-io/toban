@@ -1,6 +1,5 @@
-import { expect } from "chai";
-import { viem } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "../helpers/test/chai";
+import { networkHelpers, viem } from "../helpers/connection";
 import type { Address, PublicClient, WalletClient } from "viem";
 import { decodeEventLog, encodeAbiParameters } from "viem";
 import {
@@ -23,6 +22,8 @@ import {
   deployThanksToken,
   deployThanksTokenFactory,
 } from "../helpers/deploy/ThanksToken";
+
+const { time } = networkHelpers;
 
 interface ContractError extends Error {
   message: string;

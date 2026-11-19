@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const REPO_ROOT = resolve(__dirname, "../../../..");
+const REPO_ROOT = resolve(import.meta.dirname, "../../../..");
 const ARTIFACTS = resolve(REPO_ROOT, "pkgs/contract/artifacts/contracts");
 const FRONTEND_ABI_DIR = resolve(REPO_ROOT, "pkgs/frontend/abi");
 const SUBGRAPH_ABI_DIR = resolve(REPO_ROOT, "pkgs/subgraph/abis");

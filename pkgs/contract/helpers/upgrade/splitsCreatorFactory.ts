@@ -1,5 +1,5 @@
-import { ethers, upgrades, viem } from "hardhat";
 import type { Address } from "viem";
+import { ethers, viem } from "../connection";
 import { baseSalt, deployContract_Create2 } from "../deploy/Create2Factory";
 
 /**

@@ -1,5 +1,5 @@
-import { expect } from "chai";
-import { viem } from "hardhat";
+import { expect } from "../helpers/test/chai";
+import { networkHelpers, viem } from "../helpers/connection";
 import {
   type Address,
   type PublicClient,
@@ -9,7 +9,7 @@ import {
   parseEther,
   zeroAddress,
 } from "viem";
-import BigBangJson from "../artifacts/contracts/bigbang/BigBang.sol/BigBang.json";
+import BigBangJson from "../artifacts/contracts/bigbang/BigBang.sol/BigBang.json" with { type: "json" };
 import { type BigBang, deployBigBang } from "../helpers/deploy/BigBang";
 import {
   type ThanksToken,
@@ -45,7 +45,8 @@ import {
   Create2Deployer,
   deployCreate2Deployer,
 } from "../helpers/deploy/Create2Factory";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+
+const { time } = networkHelpers;
 
 describe("IntegrationTest", () => {
   let Create2Deployer: Create2Deployer;

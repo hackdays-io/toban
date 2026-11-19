@@ -10,3 +10,7 @@ import Spec.HatsTimeFrameModule.Model
 import Spec.HatsTimeFrameModule.Contract
 import Spec.HatsTimeFrameModule.Refinement
 import Spec.HatsTimeFrameModule.Theorems
+import Spec.HatsFractionTokenModule.Model
+import Spec.HatsFractionTokenModule.Contract
+import Spec.HatsFractionTokenModule.Refinement
+import Spec.HatsFractionTokenModule.Theorems

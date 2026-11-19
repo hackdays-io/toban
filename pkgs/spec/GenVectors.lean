@@ -12,10 +12,12 @@ Solidity contract. Numbers are decimal strings (they exceed 2^53).
 import Vectors.SplitsCreator
 import Vectors.ThanksToken
 import Vectors.HatsTimeFrameModule
+import Vectors.HatsFractionTokenModule
 
 def modules : List (String × String) :=
   [("splits-creator", Vectors.SplitsCreator.json), ("thanks-token", Vectors.ThanksToken.json),
-   ("hats-time-frame-module", Vectors.HatsTimeFrameModule.json)]
+   ("hats-time-frame-module", Vectors.HatsTimeFrameModule.json),
+   ("hats-fraction-token-module", Vectors.HatsFractionTokenModule.json)]
 
 def main (args : List String) : IO UInt32 := do
   match args with

@@ -44,7 +44,7 @@ flowchart TB
 
 ### ID {#ids}
 
-ID は `<接頭辞>-<番号>` の形にする。接頭辞はモジュールを表し(`SPL` は SplitsCreator、`THX` は ThanksToken、`HTF` は HatsTimeFrameModule)、番号は再利用しない。同じ ID を次の 3 か所に書き、食い違っていると `scripts/check-spec-ids.mjs`(CI で `scripts/verify.sh` から実行される)が失敗する。
+ID は `<接頭辞>-<番号>` の形にする。接頭辞はモジュールを表し(`SPL` は SplitsCreator、`THX` は ThanksToken、`HTF` は HatsTimeFrameModule、`HFT` は HatsFractionTokenModule)、番号は再利用しない。同じ ID を次の 3 か所に書き、食い違っていると `scripts/check-spec-ids.mjs`(CI で `scripts/verify.sh` から実行される)が失敗する。
 
 - モジュールのページの原則の表
 - Lean の定理の直前の行の `-- SPL-n` というコメント
@@ -57,7 +57,7 @@ ID は `<接頭辞>-<番号>` の形にする。接頭辞はモジュールを�
 | [SplitsCreator](./modules/splits-creator.md) | 原則を証明し、差分テスト済み(パイロット) |
 | [ThanksToken](./modules/thanks-token.md) | 原則を証明し、差分テスト済み |
 | [HatsTimeFrameModule](./modules/hats-time-frame-module.md) | 原則を証明し、差分テスト済み |
-| [HatsFractionTokenModule](./modules/hats-fraction-token-module.md) | 枠のみ |
+| [HatsFractionTokenModule](./modules/hats-fraction-token-module.md) | 原則を証明し、差分テスト済み |
 | [BigBang](./modules/bigbang.md) | 枠のみ |
 | [HatsHatCreatorModule](./modules/hats-hat-creator-module.md) | 枠のみ |
 | [ScheduledDistributor](./modules/scheduled-distributor.md) | 枠のみ |

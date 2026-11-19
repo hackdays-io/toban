@@ -92,9 +92,14 @@ export function parseLean(files, errors) {
 export function parseTests(files) {
   const ids = new Map();
   const tag = new RegExp(`\\[(${ID})\\]`, "g");
+  // Only the title (first string argument) of it(...) / describe(...) counts,
+  // not comments or other strings in the file.
+  const title =
+    /\b(?:it|describe)(?:\.only|\.skip)?\(\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1/g;
   for (const [file, text] of files) {
     const kind = /differential/i.test(basename(file)) ? "fuzzed" : "tested";
-    for (const m of text.matchAll(tag)) {
+    const titles = [...text.matchAll(title)].map((t) => t[2]).join("\n");
+    for (const m of titles.matchAll(tag)) {
       if (!ids.has(m[1])) ids.set(m[1], { fuzzed: [], tested: [] });
       const list = ids.get(m[1])[kind];
       if (!list.includes(file)) list.push(file);
@@ -140,8 +145,11 @@ export function check({ docs, lean, tests }) {
         `${where}: Lean theorem tagged ${id}, which no protocol page declares`,
       );
   }
+  // Tags like [EIP-712] in a title are not principles: only prefixes a
+  // protocol page uses (SPL, ...) are checked.
+  const prefixes = new Set([...declared.keys()].map((id) => id.split("-")[0]));
   for (const [id, t] of tagged) {
-    if (!declared.has(id)) {
+    if (prefixes.has(id.split("-")[0]) && !declared.has(id)) {
       errors.push(
         `${[...t.fuzzed, ...t.tested].join(", ")}: test tagged [${id}], which no protocol page declares`,
       );

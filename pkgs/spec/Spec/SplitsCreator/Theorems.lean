@@ -111,13 +111,26 @@ theorem spl3_total_le_precision {i : Input} {o : Output} (h : preview i = some o
   · rw [Nat.mul_div_cancel_left _ hpos] at hsum
     omega
 
--- SPL-4: a side whose weight is 0, or whose raw total is 0, has no recipients at all (so no division by zero), and the other side is paid alone.
-theorem spl4_zero_side_excluded (weight weightSum : Nat) (es : List Entry)
+theorem side_eq_nil (weight weightSum : Nat) (es : List Entry)
     (h : weight = 0 ∨ allocSum es = 0) : side weight weightSum es = [] := by
   unfold side
   split
   · omega
   · rfl
+
+-- SPL-4: a side whose weight is 0, or whose raw scores sum to 0, has no recipients (no division by zero happens), and the result is exactly what it would be if that side had no entries at all.
+theorem spl4_zero_side_excluded (w : Weights) (thanks roles : List Entry) :
+    ((w.role = 0 ∨ allocSum roles = 0) →
+      side w.role (w.thanks + w.role) roles = [] ∧ combine w thanks roles = combine w thanks []) ∧
+    ((w.thanks = 0 ∨ allocSum thanks = 0) →
+      side w.thanks (w.thanks + w.role) thanks = [] ∧ combine w thanks roles = combine w [] roles) := by
+  have hnil : ∀ wt, side wt (w.thanks + w.role) [] = [] := fun wt =>
+    side_eq_nil _ _ _ (Or.inr (by simp [allocSum]))
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · have := side_eq_nil _ (w.thanks + w.role) _ h
+    exact ⟨this, by simp [combine, this, hnil]⟩
+  · have := side_eq_nil _ (w.thanks + w.role) _ h
+    exact ⟨this, by simp [combine, this, hnil]⟩
 
 def thanksReverts (w : Weights) (ps : List Participant) : Prop :=
   0 < totalBalance ps ∧ 0 < totalMinted ps ∧ w.received + w.sent = 0
@@ -169,7 +182,7 @@ theorem spl5_reverts_iff (i : Input) :
   simp only [preview, bind, Option.bind, pure]
   cases thanksSide i.weights i.participants <;> cases roleSide i.modules i.roles <;> simp
 
--- SPL-6: on the thanks side, a participant who received and sent at least as much as another never gets less.
+-- SPL-6: on the thanks side, a participant who holds and has sent at least as much ThanksToken as another never gets less.
 theorem spl6_thanks_monotone (w : Weights) (tb tm total weightSum : Nat) (p q : Participant)
     (hb : p.balance ≤ q.balance) (hm : p.minted ≤ q.minted) :
     (scale w.thanks total weightSum (p.addr, thanksScore w tb tm p)).2 ≤

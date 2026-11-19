@@ -26,7 +26,7 @@ flowchart LR
   SC -- "getEscrowedBalance" --> QM[HatsQuestModule]
   SC -- "createSplitDeterministic" --> SF[0xSplits SplitFactoryV2]
   SF --> S[(Split)]
-  SC -. "SplitsCreated(split, shareHolders, allocations, totalAllocation)" .-> subgraph[(subgraph)]
+  SC -. "SplitsCreated(split, shareHolders, allocations, totalAllocation)" .-> SG[(Toban subgraph)]
 ```
 
 ### Functions
@@ -43,7 +43,7 @@ The caller chooses the roles (`hatId`), wearers and role multipliers (`multiplie
 
 Let $P = 10^9$ (`PRECISION`). Every `/` is integer division that rounds down, done in the order shown.
 
-**Thanks side.** Every ThanksToken participant $p$ has a balance $b_p$ (thanks received) and a minted amount $m_p$ (thanks sent). Let $B = \sum b_p$ and $M = \sum m_p$, and let $r$ and $s$ be the received and sent weights. If $B > 0$ and $M > 0$, each participant's score is
+**Thanks side.** Every ThanksToken participant $p$ has a balance $b_p$ (thanks held: received, minus any transferred away, since ThanksToken is a transferable ERC-20) and a minted amount $m_p$ (thanks sent). Let $B = \sum b_p$ and $M = \sum m_p$, and let $r$ and $s$ be the received and sent weights. If $B > 0$ and $M > 0$, each participant's score is
 
 $$
 t_p = \left(\frac{r \cdot b_p \cdot P}{B} + \frac{s \cdot m_p \cdot P}{M}\right) \Big/ (r + s)
@@ -69,7 +69,7 @@ Thanks entries come first, in participant order. Role entries follow, in `Splits
 
 - **Two independent sides, mixed by weight.** Role-based and thanks-based rewards measure different things: steady responsibility versus visible help. Normalizing each side to $P$ before mixing lets a workspace set the balance with two numbers, whatever the token amounts are. We rejected adding raw scores together: one side's units (token wei against shares × √seconds) would swamp the other.
 - **√ of wear time.** Time should count, but showing up early should not decide the split forever. A square root rewards the first months most and still never lets a longer tenure count for less (SPL-7).
-- **Skip a zero side instead of reverting.** A new workspace often has no thanks yet. If such a side made the whole split revert, `ScheduledDistributor.execute` would fall back to reclaiming the funds. Dropping the side keeps the other side's ratios exact (SPL-4).
+- **Skip a zero side instead of reverting.** A new workspace often has no thanks yet. If such a side made the whole split revert, `ScheduledDistributor.execute` would fall back to reclaiming the funds. Dropping the side gives exactly the result of a split where that side had no entries at all (SPL-4). The other side's recipients keep their ratios up to rounding.
 - **Computed at creation, then frozen.** Allocations are fixed into an immutable split, so the result can be checked against the `SplitsCreated` event and the chain state at that block. We rejected computing at withdrawal time: the result would change after people agreed to it.
 - **Permissionless creation.** Creating a split moves no money. A split matters only when someone sends funds to it, so the payer, for example `ScheduledDistributor` or the frontend, decides which split to pay.
 
@@ -82,9 +82,9 @@ The ID of each principle is the same in this table, in the Lean theorem (`-- SPL
 | `SPL-1` | `totalAllocation` is exactly the sum of `allocations`, and there is one allocation per recipient. | proven (Lean) | fuzzed |
 | `SPL-2` | Each side gets at most its weight's share of $P$: the thanks side at most $P \cdot W_t/(W_t+W_r)$, the role side at most $P \cdot W_r/(W_t+W_r)$. | proven (Lean) | fuzzed |
 | `SPL-3` | Rounding never creates value: `totalAllocation` ≤ $P$. | proven (Lean) | fuzzed |
-| `SPL-4` | A side whose weight is 0, or whose scores are all 0, has no recipients, and the other side is paid as if it were alone. | proven (Lean) | fuzzed, tested |
-| `SPL-5` | `preview` reverts exactly when a divisor would be 0. That happens when someone holds or has sent thanks but `received + sent` weight is 0, when a role has `multiplierBottom` = 0, or when a role has wearers but a total share supply of 0. | proven (Lean) | fuzzed |
-| `SPL-6` | On the thanks side, a participant who has received and sent at least as much as another never gets less. | proven (Lean) | fuzzed |
+| `SPL-4` | A side whose weight is 0, or whose scores are all 0, has no recipients, so nothing divides by its zero total. The result is exactly the same as if that side had no entries at all. | proven (Lean) | fuzzed, tested |
+| `SPL-5` | `preview` reverts exactly when a divisor would be 0. That happens when thanks are both held and sent ($B > 0$ and $M > 0$) but the `received + sent` weight is 0, when a role has `multiplierBottom` = 0, or when a role has wearers but a total share supply of 0. | proven (Lean) | fuzzed |
+| `SPL-6` | On the thanks side, a participant who holds and has sent at least as much ThanksToken as another never gets less. | proven (Lean) | fuzzed |
 | `SPL-7` | Within one role, a holder with at least as much share, of a wearer who has worn the role at least as long, never gets less. Time counts as ⌊√seconds⌋. | proven (Lean) | fuzzed |
 
 **What "fuzzed" covers here.** The Lean model is executable. `lake exe gen-vectors` runs it on 23 hand-written edge cases and 150 seeded random inputs. The differential test feeds each input to the real contract through data mocks and requires the same recipients, allocations and total, or a revert when the model reverts. Once the outputs agree, the proven principles hold for the contract on those inputs. The model does not cover uint256 overflow, or how the FractionToken module builds its recipients list (see [Known limitations](../known-limitations.md)).
@@ -92,6 +92,8 @@ The ID of each principle is the same in this table, in the Lean theorem (`-- SPL
 ## Known limitations
 
 - `multiplierTop / multiplierBottom` rounds down before it is used: 3/2 counts as 1, and 1/2 counts as 0, which removes the role.
-- If anyone holds or has sent thanks, `received + sent` = 0 makes `preview` and `create` revert, even when `thanksTokenWeight` is 0 (SPL-5).
+- If thanks are both held and sent ($B > 0$ and $M > 0$), `received + sent` = 0 makes `preview` and `create` revert, even when `thanksTokenWeight` is 0 (SPL-5).
+- Balances are current ThanksToken holdings. Thanks a participant received and then transferred away no longer count for them.
+- When one side drops out (SPL-4), the other side is still scaled by $W/(W_t+W_r)$, so `totalAllocation` ends up below $P$. 0xSplits pays relative to `totalAllocation`, so recipients' shares stay the same up to rounding.
 - `PRECISION` is written `10e8`, which is $10^9$.
 - An account is not merged across entries: it can appear once on the thanks side and once for each role share it holds.

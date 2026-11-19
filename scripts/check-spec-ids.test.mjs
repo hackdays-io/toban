@@ -78,9 +78,23 @@ test("fails when a test is tagged but the status omits it", () => {
   assert.match(r.errors.join("\n"), /add "tested"/);
 });
 
+test("counts tags only in it/describe titles, not comments or other strings", () => {
+  const r = check({
+    docs: page(["| `SPL-1` | s | — | — |"]),
+    lean: [],
+    tests: [
+      [
+        "test/X.ts",
+        '// see [SPL-1]\nconst s = "[SPL-1]";\nit("[EIP-712] signs", async () => {});',
+      ],
+    ],
+  });
+  assert.deepEqual(r.errors, []);
+});
+
 test("fails on IDs no page declares", () => {
   const r = check({
-    docs: page([]),
+    docs: page(["| `SPL-1` | s | — | — |"]),
     lean: lean(["SPL-9"]),
     tests: [unit(["SPL-8"])],
   });

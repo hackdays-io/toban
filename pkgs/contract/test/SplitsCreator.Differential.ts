@@ -181,7 +181,8 @@ describe("[SPL-1][SPL-2][SPL-3][SPL-4][SPL-5][SPL-6][SPL-7] SplitsCreator.previe
 
       const call = splitsCreator.read.preview([splitsInfo, weightsInfo]);
       if (c.expected === null) {
-        await expect(call).to.be.rejected;
+        // Every revert the model allows is a division by zero (Panic 0x12).
+        await expect(call).to.be.rejectedWith(/Division or modulo by zero/);
         return;
       }
       const [recipients, allocations, totalAllocation] = await call;

@@ -126,6 +126,8 @@ def edgeCases : List (String × Input) := [
     [role 1 1 1 [wearer 1 10000 100 (2 ^ 255), wearer 2 10000 100 (2 ^ 255)]]⟩),
   ("overflow comes before division by zero", ⟨both, ⟨1, 1, 0, 0⟩,
     [⟨A 1, 2 ^ 255, ether⟩, ⟨A 2, 2 ^ 255, ether⟩], baseRoles⟩),
+  ("wear time near 2^256 (sqrt of the largest uint256)", ⟨both, ⟨1, 0, 1, 1⟩, [],
+    [role 1 1 1 [wearer 1 10000 (WORD - 1), wearer 2 10000 (2 ^ 255)]]⟩),
   ("division by zero comes before overflow", ⟨both, ⟨1, 1, 1, 1⟩, baseParticipants,
     [role 1 1 0 [wearer 1 10000 100], role 2 (2 ^ 250) 1 [wearer 2 10000 100]]⟩)
 ]
@@ -144,7 +146,14 @@ def chance (percent : Nat) : Gen Bool := return (← rand 100) < percent
 
 def pick {α : Type} [Inhabited α] (xs : List α) : Gen α := return xs[← rand xs.length]!
 
+/-- Occasionally a value big enough to overflow somewhere (still < 2^256). -/
+def huge : Gen Nat := do pure (2 ^ (150 + (← rand 106)) + (← rand 1000))
+
+def maybeHuge (percent : Nat) (g : Gen Nat) : Gen Nat := do
+  if ← chance percent then huge else g
+
 def genElapsed : Gen Nat := do
+  if ← chance 2 then return (← huge)
   match ← rand 4 with
   | 0 => let r ← rand 3000; pure (r * r + (← pick [0, 1, 2 * r]))
   | 1 => rand 100
@@ -157,12 +166,6 @@ def genAddrs (n : Nat) (exclude : List Nat := []) : Gen (List Nat) := do
     let a := A (← rand 16)
     unless out.contains a || exclude.contains a do out := out ++ [a]
   pure out
-
-/-- Occasionally a value big enough to overflow somewhere (still < 2^256). -/
-def huge : Gen Nat := do pure (2 ^ (150 + (← rand 106)) + (← rand 1000))
-
-def maybeHuge (percent : Nat) (g : Gen Nat) : Gen Nat := do
-  if ← chance percent then huge else g
 
 def genHolder (m : Modules) (addr : Nat) : Gen Holder := do
   let balance ← maybeHuge 2 do pick [0, 10000, ← rand 10001]

@@ -1,8 +1,14 @@
 /-
 `SplitsCreator.preview` with Solidity 0.8 uint256 semantics: every `*` and `+`
 reverts with Panic 0x11 when the result does not fit in 256 bits, and every `/`
-reverts with Panic 0x12 when the divisor is 0. Operations run in the same order
-as the Solidity code, so the first failing operation decides the panic code.
+reverts with Panic 0x12 when the divisor is 0. Every division runs in the same
+place relative to the other operations as in the Solidity code, so the first
+failing operation — and thus the panic code — is the same. Some additions are
+grouped differently (sums taken after a loop instead of inside it; balance and
+minted totals summed one after the other instead of interleaved; the
+`totalAllocation +=` inside `_calculateThanksAllocations`' score loop, which the
+contract discards and recomputes, is not repeated). These only move one overflow
+check past another, never past a division, so they cannot change the panic code.
 
 `Model.lean` computes the same allocations with unbounded `Nat`, which is
 where the principles are easiest to prove; `Refinement.lean` proves the two

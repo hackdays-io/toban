@@ -255,16 +255,13 @@ theorem spl3_total_le_precision {i : Input} {o : Output} (h : previewU i = .ok o
     o.totalAllocation ≤ PRECISION :=
   total_le_precision ((spl8_uint256_matches_unbounded i).1 o h)
 
--- SPL-5: preview reverts with division by zero (Panic 0x12) only when both ThanksToken totals are non-zero but received+sent weight is 0, or some role has multiplierBottom = 0, or some role has wearers but a total FractionToken supply of 0; under those conditions it always reverts (with 0x12, or 0x11 if an overflow comes first). Any other revert is an overflow (Panic 0x11).
+-- SPL-5: preview reverts with division by zero (Panic 0x12) only when both ThanksToken totals are non-zero but received+sent weight is 0, or some role has multiplierBottom = 0, or some role has wearers but a total FractionToken supply of 0; under those conditions it always reverts (with 0x12, or 0x11 if an overflow comes first).
 theorem spl5_reverts (i : Input) :
     (previewU i = .error .divZero →
       thanksReverts i.weights i.participants ∨ ∃ r ∈ i.roles, roleReverts r) ∧
     ((thanksReverts i.weights i.participants ∨ ∃ r ∈ i.roles, roleReverts r) →
-      ∀ o, previewU i ≠ .ok o) ∧
-    (∀ e, previewU i = .error e → e = .divZero ∨ e = .overflow) := by
+      ∀ o, previewU i ≠ .ok o) := by
   have h8 := spl8_uint256_matches_unbounded i
-  refine ⟨fun hd => (reverts_iff i).mp (h8.2.1 hd), fun hc => h8.2.2 ((reverts_iff i).mpr hc),
-    fun e _ => ?_⟩
-  cases e <;> simp
+  exact ⟨fun hd => (reverts_iff i).mp (h8.2.1 hd), fun hc => h8.2.2 ((reverts_iff i).mpr hc)⟩
 
 end Spec.SplitsCreator

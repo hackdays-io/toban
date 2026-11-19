@@ -157,7 +157,7 @@ describe("HatsTimeFrameModule", () => {
     roleHatId = await createHat(publicClient, hatterHatId, "Role Hat");
   });
 
-  it("mint hat", async () => {
+  it("[HTF-1][HTF-2] mint hat", async () => {
     if (!roleHatId) {
       throw new Error("Role hat ID is undefined");
     }
@@ -351,7 +351,7 @@ describe("HatsTimeFrameModule", () => {
       ).to.be.true;
     });
 
-    it("should revert if not authorized", async () => {
+    it("[HTF-6] should revert if not authorized", async () => {
       if (!roleHatId) {
         throw new Error("Role hat ID is undefined");
       }

@@ -6,3 +6,7 @@ import Spec.ThanksToken.Model
 import Spec.ThanksToken.Contract
 import Spec.ThanksToken.Refinement
 import Spec.ThanksToken.Theorems
+import Spec.HatsTimeFrameModule.Model
+import Spec.HatsTimeFrameModule.Contract
+import Spec.HatsTimeFrameModule.Refinement
+import Spec.HatsTimeFrameModule.Theorems

@@ -407,7 +407,7 @@ describe("ThanksToken mint allowance", () => {
   });
 
   describe("mintFrom", () => {
-    it("consumes allowance, mints, and emits MintFrom + TokenMinted", async () => {
+    it("[THX-3] consumes allowance, mints, and emits MintFrom + TokenMinted", async () => {
       const relatedRoles = [{ hatId, wearer: ownerAddr }];
       const mintable = await DeployedThanksToken.read.mintableAmount([
         ownerAddr,
@@ -479,7 +479,7 @@ describe("ThanksToken mint allowance", () => {
       expect(tokenMintedSeen, "TokenMinted event").to.equal(true);
     });
 
-    it("reverts when allowance is insufficient", async () => {
+    it("[THX-3] reverts when allowance is insufficient", async () => {
       const relatedRoles = [{ hatId, wearer: ownerAddr }];
       // reset allowance to 1 wei
       await DeployedThanksToken.write.approveMint([spenderAddr, 1n], {
@@ -496,7 +496,7 @@ describe("ThanksToken mint allowance", () => {
       }
     });
 
-    it("reverts when value exceeds mintableAmount (formula cap)", async () => {
+    it("[THX-1] reverts when value exceeds mintableAmount (formula cap)", async () => {
       const relatedRoles = [{ hatId, wearer: ownerAddr }];
       const mintable = await DeployedThanksToken.read.mintableAmount([
         ownerAddr,
@@ -578,7 +578,7 @@ describe("ThanksToken mint allowance", () => {
       }
     });
 
-    it("deduplicates relatedRoles so a spender cannot inflate the cap", async () => {
+    it("[THX-2] deduplicates relatedRoles so a spender cannot inflate the cap", async () => {
       // Without dedup, a compromised spender could pass the same (wearer,hatId)
       // N times to multiply the role-derived cap by N. The mintableAmount cap
       // is the second defensive boundary that backs the allowance, so dedup
@@ -692,7 +692,7 @@ describe("ThanksToken mint allowance", () => {
       expect(newNonce).to.equal(nonce + 1n);
     });
 
-    it("reverts on replayed signature", async () => {
+    it("[THX-4] reverts on replayed signature", async () => {
       const nonce = await DeployedThanksToken.read.mintNonces([ownerAddr]);
       const deadline = BigInt(await time.latest()) + ONE_HOUR;
       const value = 9n;

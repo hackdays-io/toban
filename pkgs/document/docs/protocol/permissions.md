@@ -16,7 +16,7 @@ Toban の権限は 2 種類ある。
 | --- | --- | --- |
 | BigBang | `set*`(Hats、モジュールの実装、factory)、アップグレード | `bigbang(...)`: ワークスペースを作る |
 | SplitsCreatorFactory | `setImplementation`、`setBigBang`、アップグレード | `predictDeterministicAddress`(view)。`createSplitCreatorDeterministic` は `BigBang` しか呼べない。 |
-| ThanksTokenFactory | `setImplementation`、`setHatsAddress`、`setBigBang`、アップグレード | [ThanksToken](./modules/thanks-token.md) のページで定める予定。 |
+| ThanksTokenFactory | `setImplementation`、`setHatsAddress`、`setBigBang`、アップグレード | `predictThanksTokenAddress`(view)。`createThanksToken` と `createThanksTokenDeterministic` は `BigBang` しか呼べない。 |
 | ScheduledDistributorFactory | `setImplementation`、`setHats`、アップグレード | [ScheduledDistributor](./modules/scheduled-distributor.md) のページで定める予定。 |
 
 ## ワークスペースごとのコントラクト {#per-workspace-contracts}
@@ -24,4 +24,5 @@ Toban の権限は 2 種類ある。
 | コントラクト | 規則 |
 | --- | --- |
 | SplitsCreator | `preview`、`create`、`createWithSalt` は誰でも呼べる。split を作っても資金は動かず、どの split に資金を送るかは支払う側が決める。[SplitsCreator の設計の理由](./modules/splits-creator.md#rationale)を参照。 |
+| ThanksToken | `setAddressCoefficient` と `setAddressCoefficients` は、作成時に clone の引数に入れたワークスペースの owner(`bigbang` の `_owner`)しか呼べない。top hat の着用者とは連動しない。`mint`、`batchMint`、`approveMint`、`permitMint` と ERC-20 の関数は誰でも呼べる。mint できる量は上限の式で、`mintFrom` は許可量で制限される。[ThanksToken の仕組み](./modules/thanks-token.md#mechanism)を参照。 |
 | その他のモジュール | 各モジュールのページで定める予定。 |
